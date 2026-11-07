@@ -30,7 +30,7 @@ import java.util.Set;
  * <p>加载时只覆盖档案里实际存在的字段：模组升级新增的字段保持当前值，
  * 不会被旧档案重置成默认值；档案里已废弃的字段名会被静默跳过。
  *
- * <p>失败语义分三种（{@link Result}）：档案不存在、档案文件损坏、写盘失败，
+ * <p>失败语义分四种（{@link Result}）：档案不存在、档案文件损坏、文件读失败、写盘失败，
  * 便于命令层给出可操作的提示；文件损坏时 {@link #save} 会先备份再重建，
  * 不会静默覆盖掉已有的全部档案。
  */
@@ -48,13 +48,16 @@ public final class ConfigProfiles {
 	private ConfigProfiles() {
 	}
 
-	// 档案操作结果：区分「不存在 / 文件损坏 / 写盘失败」三种失败语义。
+	// 档案操作结果：四种失败语义一一对应，
+	// 避免「读失败」与「写失败」共用一个值导致命令层文案错配。
 	public enum Result {
 		OK,
 		// 档案不存在（或参数非法）。
 		NOT_FOUND,
 		// 档案文件损坏，且无法安全处理（备份失败时不覆盖原文件）。
 		BROKEN,
+		// 文件读不出来（被独占、权限不足等），不能当作损坏处理。
+		READ_FAILED,
 		// 文件写入失败。
 		WRITE_FAILED
 	}
@@ -87,9 +90,6 @@ public final class ConfigProfiles {
 	// 档案列表 + 文件状态：损坏或读失败时列表为空，调用方需要知道原因，
 	// 否则 list 会误报“还没有任何档案”。
 	public record NamesResult(List<String> names, Result status) {
-		public boolean ok() {
-			return status == Result.OK;
-		}
 	}
 
 	// 已读取的档案文件：
@@ -134,7 +134,7 @@ public final class ConfigProfiles {
 	static NamesResult names(Path path) {
 		ProfilesFile file = readAll(path);
 		if (file.readFailed()) {
-			return new NamesResult(List.of(), Result.WRITE_FAILED);
+			return new NamesResult(List.of(), Result.READ_FAILED);
 		}
 		if (file.corrupt()) {
 			return new NamesResult(List.of(), Result.BROKEN);
@@ -149,7 +149,7 @@ public final class ConfigProfiles {
 		ProfilesFile file = readAll(path);
 		if (file.readFailed()) {
 			// 读失败：既不能确认档案存在，也不能断言它损坏。
-			return new ReadResult(null, Result.WRITE_FAILED);
+			return new ReadResult(null, Result.READ_FAILED);
 		}
 		if (file.corrupt()) {
 			return new ReadResult(null, Result.BROKEN);
@@ -182,8 +182,8 @@ public final class ConfigProfiles {
 		synchronized (FILE_LOCK) {
 			ProfilesFile file = readAll(path);
 			if (file.readFailed()) {
-				// 读不出来时既不能备份也不能重建：直接报写盘失败，绝不覆盖原文件。
-				return SaveOutcome.of(Result.WRITE_FAILED);
+				// 读不出来时既不能备份也不能重建：直接报读失败，绝不覆盖原文件。
+				return SaveOutcome.of(Result.READ_FAILED);
 			}
 			Path backupPath = null;
 			if (file.corrupt()) {
@@ -207,7 +207,7 @@ public final class ConfigProfiles {
 		synchronized (FILE_LOCK) {
 			ProfilesFile file = readAll(path);
 			if (file.readFailed()) {
-				return Result.WRITE_FAILED;
+				return Result.READ_FAILED;
 			}
 			if (file.corrupt()) {
 				// 文件损坏时既不删也不覆盖：留给 save 走「备份后重建」的流程。

@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -192,19 +193,26 @@ class ConfigProfilesTest {
 			"empty object file must stay a valid state");
 	}
 
-	// 读取失败（IO 异常）不能被当成“内容损坏”：否则 save 会把完好档案搬走并清空。
+	// ReadResult 不允许构造出「成功但没有内容」的矛盾状态。
+	@Test
+	void readResultRejectsInconsistentState() {
+		assertThrows(IllegalArgumentException.class,
+			() -> new ConfigProfiles.ReadResult(null, ConfigProfiles.Result.OK));
+	}
+
+	// 读取失败（IO 异常）不能被当成“内容损坏”：否则 save 会把完好的档案搬走并清空。
 	// 这里用“路径是目录”构造读取失败（Files.readString 对目录抛 IOException）。
 	@Test
 	void unreadableFileIsNotTreatedAsCorrupt() throws IOException {
 		Path dir = tempDir.resolve("profiles-is-a-directory");
 		Files.createDirectories(dir);
 
-		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.read(dir, "PvP").status());
-		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.delete(dir, "PvP"));
-		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.save(dir, "PvP", newConfig()).result());
+		assertEquals(ConfigProfiles.Result.READ_FAILED, ConfigProfiles.read(dir, "PvP").status());
+		assertEquals(ConfigProfiles.Result.READ_FAILED, ConfigProfiles.delete(dir, "PvP"));
+		assertEquals(ConfigProfiles.Result.READ_FAILED, ConfigProfiles.save(dir, "PvP", newConfig()).result());
 		ConfigProfiles.NamesResult names = ConfigProfiles.names(dir);
 		assertTrue(names.names().isEmpty());
-		assertEquals(ConfigProfiles.Result.WRITE_FAILED, names.status(),
+		assertEquals(ConfigProfiles.Result.READ_FAILED, names.status(),
 			"unreadable path must be reported instead of an empty list");
 
 		// 目录必须原样保留：不能被当成损坏文件搬走或覆盖
