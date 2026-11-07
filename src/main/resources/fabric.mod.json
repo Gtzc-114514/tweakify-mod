@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "tweakify-mod",
+	"version": "${version}",
+	"name": "Tweakify Mod",
+	"description": "这是一个调整优化原版机制的工具",
+	"authors": [
+		"Gtzc114514"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/tweakify-mod/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"main": [
+			"com.gtzc.tweakify.TweakifyMod"
+		],
+		"client": [
+			"com.gtzc.tweakify.client.TweakifyModClient"
+		],
+		"modmenu": [
+			"com.gtzc.tweakify.client.TweakifyModMenu"
+		]
+	},
+	"mixins": [
+		{
+			"config": "tweakify-mod.client.mixins.json",
+			"environment": "client"
+		},
+		{
+			"config": "tweakify-mod.modmenu.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*",
+		"malilib": ">=0.30.2- <0.31.0-"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}

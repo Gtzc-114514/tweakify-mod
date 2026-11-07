@@ -1,0 +1,54 @@
+# gradle
+
+.gradle/
+build/
+out/
+classes/
+
+# eclipse
+
+*.launch
+
+# idea
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# vscode
+
+.settings/
+.vscode/
+bin/
+.classpath
+.project
+
+# macos
+
+*.DS_Store
+
+# fabric
+
+run/
+
+# 本地调试产物（反编译输出、构建日志、运行日志）
+
+/logs/
+/net/
+/build_log.txt
+/build_out.txt
+/mc.txt
+/sgpli.txt
+/spgi.txt
+*.class
+
+# 本地分析脚本（反编译 / 语言键校验 / Mixin 检查），不属于项目源码
+/*.py
+
+# java
+
+hs_err_*.log
+replay_*.log
+*.hprof
+*.jfr

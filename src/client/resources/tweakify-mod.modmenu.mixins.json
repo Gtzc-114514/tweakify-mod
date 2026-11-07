@@ -1,0 +1,12 @@
+{
+	"required": false,
+	"package": "com.gtzc.tweakify.client.mixin.modmenu",
+	"compatibilityLevel": "JAVA_25",
+	"plugin": "com.gtzc.tweakify.client.mixin.modmenu.ModMenuMixinPlugin",
+	"client": [
+		"ModsScreenScrollMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}
