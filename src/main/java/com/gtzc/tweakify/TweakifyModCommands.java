@@ -40,6 +40,8 @@ public class TweakifyModCommands {
 	private static final String PROFILE_MISSING = "tweakify-mod.command.profile.missing";
 	private static final String PROFILE_DELETED = "tweakify-mod.command.profile.deleted";
 	private static final String PROFILE_SAVE_FAILED = "tweakify-mod.command.profile.save_failed";
+	private static final String PROFILE_SAVE_FAILED_WITH_BACKUP =
+		"tweakify-mod.command.profile.save_failed_with_backup";
 	private static final String PROFILE_LIST_HEADER = "tweakify-mod.command.profile.list_header";
 	private static final String PROFILE_LIST_EMPTY = "tweakify-mod.command.profile.list_empty";
 	private static final String PROFILE_BROKEN = "tweakify-mod.command.profile.broken";
@@ -207,11 +209,16 @@ public class TweakifyModCommands {
 	// 把当前整套配置存成命名档案（同名覆盖）。
 	private static int saveProfile(CommandContext<CommandSourceStack> context) {
 		String name = StringArgumentType.getString(context, "name");
-		ConfigProfiles.Result result = ConfigProfiles.save(name, TweakifyMod.CONFIG);
-		if (result != ConfigProfiles.Result.OK) {
-			// BROKEN 表示档案文件已损坏且备份失败，需要用户先处理文件；其余按写盘失败报告。
-			String key = result == ConfigProfiles.Result.BROKEN ? PROFILE_BROKEN : PROFILE_SAVE_FAILED;
-			context.getSource().sendFailure(Component.translatable(key, name));
+		ConfigProfiles.SaveOutcome outcome = ConfigProfiles.save(name, TweakifyMod.CONFIG);
+		if (outcome.result() != ConfigProfiles.Result.OK) {
+			if (outcome.backupPath() != null) {
+				// 已备份但写盘失败：把备份路径告诉玩家，否则旧档案等于“消失”。
+				context.getSource().sendFailure(Component.translatable(
+					PROFILE_SAVE_FAILED_WITH_BACKUP, name, outcome.backupPath().toString()));
+			} else {
+				context.getSource().sendFailure(Component.translatable(
+					failureKey(outcome.result(), PROFILE_SAVE_FAILED), name));
+			}
 			return 0;
 		}
 		context.getSource().sendSuccess(() -> Component.translatable(PROFILE_SAVED, name), true);
@@ -224,9 +231,9 @@ public class TweakifyModCommands {
 		String name = StringArgumentType.getString(context, "name");
 		ConfigProfiles.ReadResult read = ConfigProfiles.read(name);
 		if (!read.ok()) {
-			// 损坏与不存在分开提示：前者需要用户处理损坏文件，后者可能只是名字拼错。
-			String key = read.status() == ConfigProfiles.Result.BROKEN ? PROFILE_BROKEN : PROFILE_MISSING;
-			context.getSource().sendFailure(Component.translatable(key, name));
+			// 读取路径的 WRITE_FAILED 表示“文件读不出来”，用专门的文案。
+			context.getSource().sendFailure(Component.translatable(
+				failureKey(read.status(), PROFILE_FILE_UNREADABLE), name));
 			return 0;
 		}
 		ConfigProfiles.Loaded profile = read.profile();
@@ -267,16 +274,24 @@ public class TweakifyModCommands {
 		String name = StringArgumentType.getString(context, "name");
 		ConfigProfiles.Result result = ConfigProfiles.delete(name);
 		if (result != ConfigProfiles.Result.OK) {
-			String key = switch (result) {
-				case NOT_FOUND -> PROFILE_MISSING;
-				case BROKEN -> PROFILE_BROKEN;
-				default -> PROFILE_SAVE_FAILED;
-			};
-			context.getSource().sendFailure(Component.translatable(key, name));
+			context.getSource().sendFailure(Component.translatable(
+				failureKey(result, PROFILE_SAVE_FAILED), name));
 			return 0;
 		}
 		context.getSource().sendSuccess(() -> Component.translatable(PROFILE_DELETED, name), true);
 		return 1;
+	}
+
+	// 失败结果到提示文案的统一映射：用穷尽 switch 保证新增枚举值时编译期就能发现。
+	// writeFailedKey 由调用方提供：保存/删除的 WRITE_FAILED 是写盘失败，
+	// 而读取路径的 WRITE_FAILED 表示“文件读不出来”，两者文案不同。
+	private static String failureKey(ConfigProfiles.Result result, String writeFailedKey) {
+		return switch (result) {
+			case NOT_FOUND -> PROFILE_MISSING;
+			case BROKEN -> PROFILE_BROKEN;
+			case WRITE_FAILED -> writeFailedKey;
+			case OK -> throw new IllegalArgumentException("OK is not a failure result");
+		};
 	}
 
 	private static int listProfiles(CommandSourceStack source) {

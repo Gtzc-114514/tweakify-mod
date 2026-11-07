@@ -100,17 +100,23 @@ final class ConfigStorage {
 		}
 	}
 
-	// 损坏的配置移到带时间戳的备份文件，返回是否备份成功（失败时不覆盖原文件）。
-	static boolean backupBroken(Path configPath) {
-		Path backupPath = configPath.resolveSibling(
-			configPath.getFileName() + ".broken-" + System.currentTimeMillis());
+	// 损坏的文件移到带时间戳的备份文件，返回备份路径；失败返回 null（原文件保留）。
+	// 主配置与档案共用同一套命名规则：<原名>.broken-<时间戳>。
+	static Path backupBrokenTo(Path path) {
+		Path backupPath = path.resolveSibling(
+			path.getFileName() + ".broken-" + System.currentTimeMillis());
 		try {
-			Files.move(configPath, backupPath);
-			LOGGER.warn("Broken config moved to {}", backupPath);
-			return true;
+			Files.move(path, backupPath);
+			LOGGER.warn("Broken file moved to {}", backupPath);
+			return backupPath;
 		} catch (IOException e) {
-			LOGGER.error("Failed to back up broken config; the original file will not be overwritten", e);
-			return false;
+			LOGGER.error("Failed to back up broken file; the original file will not be overwritten", e);
+			return null;
 		}
+	}
+
+	// 只关心成功与否的调用方使用。
+	static boolean backupBroken(Path configPath) {
+		return backupBrokenTo(configPath) != null;
 	}
 }

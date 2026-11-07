@@ -37,7 +37,6 @@ import java.util.Set;
 public final class ConfigProfiles {
 	private static final Logger LOGGER = LoggerFactory.getLogger("tweakify-mod-config");
 	private static final String FILE_NAME = "tweakify-mod-profiles.json";
-	private static final String BACKUP_SUFFIX = ".broken-";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Type FILE_TYPE = new TypeToken<Map<String, JsonObject>>() {
 	}.getType();
@@ -66,8 +65,22 @@ public final class ConfigProfiles {
 
 	// 读取结果：profile 为 null 时用 status 区分「不存在」与「损坏」。
 	public record ReadResult(Loaded profile, Result status) {
+		public ReadResult {
+			// profile 与 status 必须一致：避免构造出「成功但没有内容」这类矛盾状态。
+			if ((status == Result.OK) != (profile != null)) {
+				throw new IllegalArgumentException("ReadResult: profile and status disagree");
+			}
+		}
+
 		public boolean ok() {
-			return profile != null;
+			return status == Result.OK;
+		}
+	}
+
+	// 保存结果：带备份路径，便于在「已备份但写盘失败」时告知用户旧档案位置。
+	public record SaveOutcome(Result result, Path backupPath) {
+		static SaveOutcome of(Result result) {
+			return new SaveOutcome(result, null);
 		}
 	}
 
@@ -107,7 +120,7 @@ public final class ConfigProfiles {
 	}
 
 	// 把当前配置整套保存为档案（同名覆盖）。
-	public static Result save(String name, TweakifyModConfig config) {
+	public static SaveOutcome save(String name, TweakifyModConfig config) {
 		return save(storagePath(), name, config);
 	}
 
@@ -158,9 +171,9 @@ public final class ConfigProfiles {
 		}
 	}
 
-	static Result save(Path path, String name, TweakifyModConfig config) {
+	static SaveOutcome save(Path path, String name, TweakifyModConfig config) {
 		if (name == null || name.isBlank() || config == null) {
-			return Result.NOT_FOUND;
+			return SaveOutcome.of(Result.NOT_FOUND);
 		}
 		// 序列化在配置锁内完成（toJsonTree 是 synchronized）：与客户端线程的写共用同一把锁，
 		// 避免拖滑块时存下“半新半旧”的档案（例如成对字段只更新了一半）。
@@ -170,18 +183,20 @@ public final class ConfigProfiles {
 			ProfilesFile file = readAll(path);
 			if (file.readFailed()) {
 				// 读不出来时既不能备份也不能重建：直接报写盘失败，绝不覆盖原文件。
-				return Result.WRITE_FAILED;
+				return SaveOutcome.of(Result.WRITE_FAILED);
 			}
+			Path backupPath = null;
 			if (file.corrupt()) {
 				// 损坏的档案文件不直接覆盖：先备份再重建，避免一次性丢掉已有的全部档案。
-				if (!backupBroken(path)) {
-					return Result.BROKEN;
+				backupPath = ConfigStorage.backupBrokenTo(path);
+				if (backupPath == null) {
+					return SaveOutcome.of(Result.BROKEN);
 				}
 				file = ProfilesFile.empty();
 			}
 			Map<String, JsonObject> profiles = file.profiles();
 			profiles.put(name, profile);
-			return writeAll(path, profiles) ? Result.OK : Result.WRITE_FAILED;
+			return new SaveOutcome(writeAll(path, profiles) ? Result.OK : Result.WRITE_FAILED, backupPath);
 		}
 	}
 
@@ -242,19 +257,6 @@ public final class ConfigProfiles {
 
 	private static boolean writeAll(Path path, Map<String, JsonObject> profiles) {
 		return ConfigStorage.writeAtomically(GSON.toJson(profiles, FILE_TYPE), path);
-	}
-
-	// 损坏的档案移到带时间戳的备份文件；失败时不覆盖原文件。
-	private static boolean backupBroken(Path path) {
-		Path backupPath = path.resolveSibling(path.getFileName() + BACKUP_SUFFIX + System.currentTimeMillis());
-		try {
-			Files.move(path, backupPath);
-			LOGGER.warn("Broken config profiles moved to {}", backupPath);
-			return true;
-		} catch (IOException e) {
-			LOGGER.error("Failed to back up broken config profiles; the original file will not be overwritten", e);
-			return false;
-		}
 	}
 
 	private static Path storagePath() {

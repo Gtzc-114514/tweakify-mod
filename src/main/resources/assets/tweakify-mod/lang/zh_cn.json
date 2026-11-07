@@ -241,6 +241,7 @@
   "tweakify-mod.command.profile.missing": "档案不存在：%s",
   "tweakify-mod.command.profile.deleted": "已删除档案：%s",
   "tweakify-mod.command.profile.save_failed": "保存档案失败：%s",
+  "tweakify-mod.command.profile.save_failed_with_backup": "保存档案失败：%s；旧档案已备份到 %s",
   "tweakify-mod.command.profile.list_header": "共 %s 个档案：",
   "tweakify-mod.command.profile.list_empty": "还没有任何档案，使用 /tweakify profile save <名字> 创建",
   "tweakify-mod.command.profile.broken": "档案文件损坏，请检查日志后重试：%s",

@@ -241,6 +241,7 @@
   "tweakify-mod.command.profile.missing": "Profile not found: %s",
   "tweakify-mod.command.profile.deleted": "Deleted profile: %s",
   "tweakify-mod.command.profile.save_failed": "Failed to save profile: %s",
+  "tweakify-mod.command.profile.save_failed_with_backup": "Failed to save profile: %s; previous profiles backed up to %s",
   "tweakify-mod.command.profile.list_header": "%s profiles:",
   "tweakify-mod.command.profile.list_empty": "No profiles yet; use /tweakify profile save <name> to create one",
   "tweakify-mod.command.profile.broken": "Profile file is corrupted; check the log and retry: %s",

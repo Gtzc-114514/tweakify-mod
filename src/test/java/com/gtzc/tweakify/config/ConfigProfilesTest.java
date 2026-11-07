@@ -11,6 +11,8 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -38,7 +40,7 @@ class ConfigProfilesTest {
 		config.miningCooldown = true;
 		config.disableHurtShake = true;
 
-		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "PvP", config));
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "PvP", config).result());
 		assertEquals(List.of("PvP"), ConfigProfiles.names(path).names());
 
 		ConfigProfiles.ReadResult read = ConfigProfiles.read(path, "PvP");
@@ -56,11 +58,11 @@ class ConfigProfilesTest {
 		Path path = profilesPath();
 		TweakifyModConfig first = newConfig();
 		first.miningCooldown = true;
-		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "P", first));
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "P", first).result());
 
 		TweakifyModConfig second = newConfig();
 		second.miningCooldown = false;
-		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "P", second));
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "P", second).result());
 
 		assertEquals(List.of("P"), ConfigProfiles.names(path).names());
 		assertFalse(ConfigProfiles.read(path, "P").profile().config().miningCooldown);
@@ -69,8 +71,8 @@ class ConfigProfilesTest {
 	@Test
 	void deleteRemovesOnlyThatProfile() {
 		Path path = profilesPath();
-		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "A", newConfig()));
-		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "B", newConfig()));
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "A", newConfig()).result());
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "B", newConfig()).result());
 
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.delete(path, "A"));
 		assertEquals(List.of("B"), ConfigProfiles.names(path).names());
@@ -138,7 +140,10 @@ class ConfigProfilesTest {
 		Path path = profilesPath();
 		Files.writeString(path, "{ broken");
 
-		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "PvP", newConfig()));
+		ConfigProfiles.SaveOutcome outcome = ConfigProfiles.save(path, "PvP", newConfig());
+		assertEquals(ConfigProfiles.Result.OK, outcome.result());
+		assertNotNull(outcome.backupPath(), "backup path must be reported so the player can recover");
+		assertEquals("{ broken", Files.readString(outcome.backupPath()));
 
 		// 原文件已被重建为合法档案
 		assertEquals(List.of("PvP"), ConfigProfiles.names(path).names());
@@ -152,6 +157,41 @@ class ConfigProfilesTest {
 		}
 	}
 
+	// 写盘失败（目标路径无父目录）时必须返回 WRITE_FAILED，且不带备份路径。
+	@Test
+	void saveReportsWriteFailedForInvalidTarget() {
+		Path invalid = Path.of("no-parent-profiles.json");
+		ConfigProfiles.SaveOutcome outcome = ConfigProfiles.save(invalid, "PvP", newConfig());
+
+		assertEquals(ConfigProfiles.Result.WRITE_FAILED, outcome.result());
+		assertNull(outcome.backupPath());
+		assertFalse(Files.exists(invalid), "invalid target must not be created");
+	}
+
+	// 空对象文件是合法的“没有档案”状态，不能当成损坏。
+	@Test
+	void emptyObjectFileIsNotTreatedAsBroken() throws IOException {
+		Path path = profilesPath();
+		Files.writeString(path, "{}");
+
+		ConfigProfiles.NamesResult names = ConfigProfiles.names(path);
+		assertTrue(names.names().isEmpty());
+		assertEquals(ConfigProfiles.Result.OK, names.status());
+		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.read(path, "PvP").status());
+	}
+
+	// 删除最后一个档案后文件应当变成 {}，且仍被当作合法状态。
+	@Test
+	void deletingLastProfileLeavesEmptyObject() throws IOException {
+		Path path = profilesPath();
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "only", newConfig()).result());
+
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.delete(path, "only"));
+		assertEquals("{}", Files.readString(path).trim());
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.names(path).status(),
+			"empty object file must stay a valid state");
+	}
+
 	// 读取失败（IO 异常）不能被当成“内容损坏”：否则 save 会把完好档案搬走并清空。
 	// 这里用“路径是目录”构造读取失败（Files.readString 对目录抛 IOException）。
 	@Test
@@ -161,7 +201,7 @@ class ConfigProfilesTest {
 
 		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.read(dir, "PvP").status());
 		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.delete(dir, "PvP"));
-		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.save(dir, "PvP", newConfig()));
+		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.save(dir, "PvP", newConfig()).result());
 		ConfigProfiles.NamesResult names = ConfigProfiles.names(dir);
 		assertTrue(names.names().isEmpty());
 		assertEquals(ConfigProfiles.Result.WRITE_FAILED, names.status(),
@@ -178,8 +218,8 @@ class ConfigProfilesTest {
 	void blankNameIsRejected() {
 		Path path = profilesPath();
 		TweakifyModConfig config = newConfig();
-		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.save(path, "", config));
-		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.save(path, null, config));
+		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.save(path, "", config).result());
+		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.save(path, null, config).result());
 		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.read(path, "").status());
 	}
 }

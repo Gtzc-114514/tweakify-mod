@@ -241,6 +241,7 @@
   "tweakify-mod.command.profile.missing": "Profil introuvable : %s",
   "tweakify-mod.command.profile.deleted": "Profil supprimé : %s",
   "tweakify-mod.command.profile.save_failed": "Échec de l'enregistrement du profil : %s",
+  "tweakify-mod.command.profile.save_failed_with_backup": "Échec de l'enregistrement du profil : %s ; les anciens profils ont été sauvegardés dans %s",
   "tweakify-mod.command.profile.list_header": "%s profils :",
   "tweakify-mod.command.profile.list_empty": "Aucun profil ; utilisez /tweakify profile save <nom> pour en créer un",
   "tweakify-mod.command.profile.broken": "Le fichier de profils est corrompu ; consultez le journal et réessayez : %s",
