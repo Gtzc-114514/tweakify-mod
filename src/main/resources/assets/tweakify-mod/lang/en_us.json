@@ -244,6 +244,8 @@
   "tweakify-mod.command.profile.list_header": "%s profiles:",
   "tweakify-mod.command.profile.list_empty": "No profiles yet; use /tweakify profile save <name> to create one",
   "tweakify-mod.command.profile.broken": "Profile file is corrupted; check the log and retry: %s",
+  "tweakify-mod.command.profile.file_broken": "Profile file is corrupted; cannot list profiles, check the log and retry",
+  "tweakify-mod.command.profile.file_unreadable": "Failed to read the profile file; check the log and retry",
   "tweakify-mod.config.general.name.itemDespawnTime": "Item Despawn Time",
   "tweakify-mod.config.general.prettyName.itemDespawnTime": "Item Despawn Time",
   "tweakify-mod.config.general.comment.itemDespawnTime": "How long dropped items last, in ticks (20 ticks = 1 second). The default 6000 is the vanilla 5 minutes; the slider ranges from 60 to 36000. Single player / LAN only.",

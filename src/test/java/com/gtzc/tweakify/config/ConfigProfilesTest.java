@@ -39,7 +39,7 @@ class ConfigProfilesTest {
 		config.disableHurtShake = true;
 
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "PvP", config));
-		assertEquals(List.of("PvP"), ConfigProfiles.names(path));
+		assertEquals(List.of("PvP"), ConfigProfiles.names(path).names());
 
 		ConfigProfiles.ReadResult read = ConfigProfiles.read(path, "PvP");
 		assertTrue(read.ok());
@@ -62,7 +62,7 @@ class ConfigProfilesTest {
 		second.miningCooldown = false;
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "P", second));
 
-		assertEquals(List.of("P"), ConfigProfiles.names(path));
+		assertEquals(List.of("P"), ConfigProfiles.names(path).names());
 		assertFalse(ConfigProfiles.read(path, "P").profile().config().miningCooldown);
 	}
 
@@ -73,7 +73,7 @@ class ConfigProfilesTest {
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "B", newConfig()));
 
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.delete(path, "A"));
-		assertEquals(List.of("B"), ConfigProfiles.names(path));
+		assertEquals(List.of("B"), ConfigProfiles.names(path).names());
 		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.read(path, "A").status());
 		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.delete(path, "A"),
 			"deleting a missing profile must report NOT_FOUND");
@@ -84,7 +84,7 @@ class ConfigProfilesTest {
 	@Test
 	void missingFileReportsNotFound() {
 		Path path = profilesPath();
-		assertTrue(ConfigProfiles.names(path).isEmpty());
+		assertTrue(ConfigProfiles.names(path).names().isEmpty());
 		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.read(path, "PvP").status());
 	}
 
@@ -96,7 +96,10 @@ class ConfigProfilesTest {
 
 		assertEquals(ConfigProfiles.Result.BROKEN, ConfigProfiles.read(path, "PvP").status());
 		assertEquals(ConfigProfiles.Result.BROKEN, ConfigProfiles.delete(path, "PvP"));
-		assertTrue(ConfigProfiles.names(path).isEmpty(), "broken file lists as empty, list command still works");
+		ConfigProfiles.NamesResult names = ConfigProfiles.names(path);
+		assertTrue(names.names().isEmpty());
+		assertEquals(ConfigProfiles.Result.BROKEN, names.status(),
+			"broken file must be reported, not treated as an empty list");
 	}
 
 	// 根节点不是对象（例如数组）同样按损坏处理。
@@ -108,6 +111,27 @@ class ConfigProfilesTest {
 		assertEquals(ConfigProfiles.Result.BROKEN, ConfigProfiles.read(path, "PvP").status());
 	}
 
+	// 档案值是非法 JSON 类型时（例如 {"bad": 42}），该条目被忽略：
+	// list 不应列出它，load 也不应因为它存在就报“文件损坏”。
+	@Test
+	void nonObjectProfileEntryIsIgnored() throws IOException {
+		Path path = profilesPath();
+		Files.writeString(path, """
+			{
+			  "good": {"configVersion": 2},
+			  "bad": 42
+			}
+			""");
+
+		ConfigProfiles.NamesResult names = ConfigProfiles.names(path);
+		assertEquals(List.of("good"), names.names(), "non-object entry must not be listed");
+		assertEquals(ConfigProfiles.Result.OK, names.status());
+
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.read(path, "good").status());
+		assertEquals(ConfigProfiles.Result.NOT_FOUND, ConfigProfiles.read(path, "bad").status(),
+			"non-object entry must be reported as not found, not broken");
+	}
+
 	// 损坏文件在 save 覆盖前先备份：不能一次性丢掉已有的全部档案。
 	@Test
 	void saveBacksUpBrokenFileBeforeOverwriting() throws IOException {
@@ -117,7 +141,7 @@ class ConfigProfilesTest {
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "PvP", newConfig()));
 
 		// 原文件已被重建为合法档案
-		assertEquals(List.of("PvP"), ConfigProfiles.names(path));
+		assertEquals(List.of("PvP"), ConfigProfiles.names(path).names());
 		// 损坏内容被移到带时间戳的备份文件
 		try (Stream<Path> files = Files.list(tempDir)) {
 			List<Path> backups = files
@@ -138,6 +162,10 @@ class ConfigProfilesTest {
 		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.read(dir, "PvP").status());
 		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.delete(dir, "PvP"));
 		assertEquals(ConfigProfiles.Result.WRITE_FAILED, ConfigProfiles.save(dir, "PvP", newConfig()));
+		ConfigProfiles.NamesResult names = ConfigProfiles.names(dir);
+		assertTrue(names.names().isEmpty());
+		assertEquals(ConfigProfiles.Result.WRITE_FAILED, names.status(),
+			"unreadable path must be reported instead of an empty list");
 
 		// 目录必须原样保留：不能被当成损坏文件搬走或覆盖
 		assertTrue(Files.isDirectory(dir));

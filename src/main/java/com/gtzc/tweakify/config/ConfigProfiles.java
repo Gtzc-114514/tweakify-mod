@@ -71,6 +71,14 @@ public final class ConfigProfiles {
 		}
 	}
 
+	// 档案列表 + 文件状态：损坏或读失败时列表为空，调用方需要知道原因，
+	// 否则 list 会误报“还没有任何档案”。
+	public record NamesResult(List<String> names, Result status) {
+		public boolean ok() {
+			return status == Result.OK;
+		}
+	}
+
 	// 已读取的档案文件：
 	// corrupt = 内容无法解析，可以备份后重建；
 	// readFailed = 读取本身失败（文件被独占、权限不足等），不能当作损坏处理。
@@ -88,8 +96,8 @@ public final class ConfigProfiles {
 		}
 	}
 
-	// 档案名列表（按写入顺序）。文件缺失或损坏时返回空表，不影响游戏。
-	public static List<String> names() {
+	// 档案名列表（按写入顺序），附带文件状态。
+	public static NamesResult names() {
 		return names(storagePath());
 	}
 
@@ -110,8 +118,15 @@ public final class ConfigProfiles {
 
 	// --- 包私有入口：测试注入临时路径，避免依赖 FabricLoader 环境 ---
 
-	static List<String> names(Path path) {
-		return List.copyOf(readAll(path).profiles().keySet());
+	static NamesResult names(Path path) {
+		ProfilesFile file = readAll(path);
+		if (file.readFailed()) {
+			return new NamesResult(List.of(), Result.WRITE_FAILED);
+		}
+		if (file.corrupt()) {
+			return new NamesResult(List.of(), Result.BROKEN);
+		}
+		return new NamesResult(List.copyOf(file.profiles().keySet()), Result.OK);
 	}
 
 	static ReadResult read(Path path, String name) {
@@ -207,9 +222,18 @@ public final class ConfigProfiles {
 			if (!parsed.isJsonObject()) {
 				throw new JsonParseException("Profiles root must be a JSON object");
 			}
-			Map<String, JsonObject> profiles = GSON.fromJson(parsed, FILE_TYPE);
-			return new ProfilesFile(
-				profiles == null ? new LinkedHashMap<>() : new LinkedHashMap<>(profiles), false, false);
+			// 逐条校验：Map<String, JsonObject> 的类型参数在运行期被擦除，
+			// 直接交给 Gson 会把 {"bad": 42} 静默塞成 JsonPrimitive（堆污染），
+			// 导致 list 能列出它、load 却报损坏。这里显式跳过非对象条目。
+			Map<String, JsonObject> profiles = new LinkedHashMap<>();
+			for (Map.Entry<String, JsonElement> entry : parsed.getAsJsonObject().entrySet()) {
+				if (!entry.getValue().isJsonObject()) {
+					LOGGER.warn("Ignoring non-object profile entry: {}", entry.getKey());
+					continue;
+				}
+				profiles.put(entry.getKey(), entry.getValue().getAsJsonObject());
+			}
+			return new ProfilesFile(profiles, false, false);
 		} catch (JsonParseException | IllegalStateException e) {
 			LOGGER.error("Failed to parse config profiles, treating as broken", e);
 			return ProfilesFile.corrupted();

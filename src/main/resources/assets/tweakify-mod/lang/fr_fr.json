@@ -244,6 +244,8 @@
   "tweakify-mod.command.profile.list_header": "%s profils :",
   "tweakify-mod.command.profile.list_empty": "Aucun profil ; utilisez /tweakify profile save <nom> pour en créer un",
   "tweakify-mod.command.profile.broken": "Le fichier de profils est corrompu ; consultez le journal et réessayez : %s",
+  "tweakify-mod.command.profile.file_broken": "Le fichier de profils est corrompu ; impossible de lister les profils, consultez le journal",
+  "tweakify-mod.command.profile.file_unreadable": "Échec de la lecture du fichier de profils ; consultez le journal et réessayez",
   "tweakify-mod.config.general.name.itemDespawnTime": "Délai de disparition des objets",
   "tweakify-mod.config.general.prettyName.itemDespawnTime": "Délai de disparition des objets",
   "tweakify-mod.config.general.comment.itemDespawnTime": "Durée de vie des objets lâchés en ticks (20 ticks = 1 seconde). La valeur par défaut 6000 correspond aux 5 minutes vanilla ; le curseur va de 60 à 36000. Solo / réseau local uniquement.",

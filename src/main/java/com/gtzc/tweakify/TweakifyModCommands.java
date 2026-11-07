@@ -43,6 +43,8 @@ public class TweakifyModCommands {
 	private static final String PROFILE_LIST_HEADER = "tweakify-mod.command.profile.list_header";
 	private static final String PROFILE_LIST_EMPTY = "tweakify-mod.command.profile.list_empty";
 	private static final String PROFILE_BROKEN = "tweakify-mod.command.profile.broken";
+	private static final String PROFILE_FILE_BROKEN = "tweakify-mod.command.profile.file_broken";
+	private static final String PROFILE_FILE_UNREADABLE = "tweakify-mod.command.profile.file_unreadable";
 
 	// 布尔开关命令：命令名即 TweakifyModConfig 字段名与 ConfigCatalog 的登记名，
 	// 反馈文案统一为 tweakify-mod.command.label.<name>，新增开关只需在目录里标记 command。
@@ -278,7 +280,17 @@ public class TweakifyModCommands {
 	}
 
 	private static int listProfiles(CommandSourceStack source) {
-		List<String> names = ConfigProfiles.names();
+		ConfigProfiles.NamesResult result = ConfigProfiles.names();
+		// 损坏与读失败要明确提示，否则会误报“还没有任何档案”。
+		if (result.status() == ConfigProfiles.Result.BROKEN) {
+			source.sendFailure(Component.translatable(PROFILE_FILE_BROKEN));
+			return 0;
+		}
+		if (result.status() == ConfigProfiles.Result.WRITE_FAILED) {
+			source.sendFailure(Component.translatable(PROFILE_FILE_UNREADABLE));
+			return 0;
+		}
+		List<String> names = result.names();
 		if (names.isEmpty()) {
 			source.sendSuccess(() -> Component.translatable(PROFILE_LIST_EMPTY), false);
 			return 0;

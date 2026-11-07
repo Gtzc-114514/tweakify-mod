@@ -244,6 +244,8 @@
   "tweakify-mod.command.profile.list_header": "共 %s 个档案：",
   "tweakify-mod.command.profile.list_empty": "还没有任何档案，使用 /tweakify profile save <名字> 创建",
   "tweakify-mod.command.profile.broken": "档案文件损坏，请检查日志后重试：%s",
+  "tweakify-mod.command.profile.file_broken": "档案文件损坏，无法列出档案，请检查日志后重试",
+  "tweakify-mod.command.profile.file_unreadable": "读取档案文件失败，请检查日志后重试",
   "tweakify-mod.config.general.name.itemDespawnTime": "掉落物消失时间",
   "tweakify-mod.config.general.prettyName.itemDespawnTime": "掉落物消失时间",
   "tweakify-mod.config.general.comment.itemDespawnTime": "掉落物消失时间（tick，20 tick = 1 秒）。默认 6000，即原版 5 分钟；滑块范围 60 ~ 36000。仅在单人/局域网世界生效。",

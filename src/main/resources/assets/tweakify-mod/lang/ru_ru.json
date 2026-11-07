@@ -244,6 +244,8 @@
   "tweakify-mod.command.profile.list_header": "Профилей: %s",
   "tweakify-mod.command.profile.list_empty": "Профилей пока нет; используйте /tweakify profile save <имя>",
   "tweakify-mod.command.profile.broken": "Файл профилей повреждён; проверьте лог и повторите: %s",
+  "tweakify-mod.command.profile.file_broken": "Файл профилей повреждён; невозможно показать список, проверьте лог",
+  "tweakify-mod.command.profile.file_unreadable": "Не удалось прочитать файл профилей; проверьте лог и повторите",
   "tweakify-mod.config.general.name.itemDespawnTime": "Время исчезновения предметов",
   "tweakify-mod.config.general.prettyName.itemDespawnTime": "Время исчезновения предметов",
   "tweakify-mod.config.general.comment.itemDespawnTime": "Время жизни выброшенных предметов в тиках (20 тиков = 1 секунда). По умолчанию 6000 — ванильные 5 минут; ползунок от 60 до 36000. Только одиночная игра / локальная сеть.",
