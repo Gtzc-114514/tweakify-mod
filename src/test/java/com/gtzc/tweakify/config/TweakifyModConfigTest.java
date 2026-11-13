@@ -38,9 +38,31 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class TweakifyModConfigTest {
+	// CI 的共享 runner 可能在线程调度与慢盘上停顿数百毫秒；等待上限放宽只影响失败场景的耗时，
+	// 正常路径仍然立即返回。
+	private static final long DRAIN_TIMEOUT_MILLIS = 15_000L;
+	private static final long START_TIMEOUT_SECONDS = 10L;
+
+	private static void awaitQuietly(CountDownLatch latch) {
+		try {
+			latch.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
+	// 轮询线程状态：只要状态在超时前到达就返回 true，不依赖单次采样时机。
+	private static boolean awaitThreadState(Thread thread, Thread.State state, long timeoutSeconds)
+			throws InterruptedException {
+		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
+		while (thread.getState() != state && System.nanoTime() < deadline) {
+			Thread.sleep(5L);
+		}
+		return thread.getState() == state;
+	}
+
 	@BeforeAll
 	static void bootstrapMinecraft() {
 		// 注册表在首次访问前必须初始化，否则 BuiltInRegistries 会抛异常；
@@ -506,7 +528,7 @@ class TweakifyModConfigTest {
 				Thread.currentThread().interrupt();
 			}
 		});
-		assertTrue(blocked.await(5, TimeUnit.SECONDS), "the writer should be blocked");
+		assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the writer should be blocked");
 
 		try {
 			// 真正入队：序号必须在 prepareSaveHandle 提交时分配；
@@ -518,14 +540,14 @@ class TweakifyModConfigTest {
 			assertEquals(Boolean.TRUE, config.writeSynchronously());
 
 			release.countDown();
-			assertTrue(Boolean.TRUE.equals(AsyncFileWriter.await(stale, 5000L, false)),
+			assertTrue(Boolean.TRUE.equals(AsyncFileWriter.await(stale, DRAIN_TIMEOUT_MILLIS, false)),
 				"the stale queued task should be skipped as already covered");
 
 			assertTrue(TweakifyModConfig.load(path).functions.blockOffhandFallback,
 				"the stale queued task must not overwrite the synchronous snapshot");
 		} finally {
 			release.countDown();
-			AsyncFileWriter.drain(5000L);
+			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 		}
 	}
 
@@ -549,12 +571,12 @@ class TweakifyModConfigTest {
 		});
 		holder.start();
 		try {
-			assertTrue(locked.await(5, TimeUnit.SECONDS), "the write lock should be held");
+			assertTrue(locked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the write lock should be held");
 			assertNull(config.writeSynchronously(),
 				"持有写锁时同步兜底应报告锁超时，而不是写盘失败");
 		} finally {
 			release.countDown();
-			holder.join(5000L);
+			holder.join(TimeUnit.SECONDS.toMillis(START_TIMEOUT_SECONDS));
 		}
 	}
 
@@ -618,46 +640,34 @@ class TweakifyModConfigTest {
 		CountDownLatch release = new CountDownLatch(1);
 		AsyncFileWriter.execute(() -> {
 			writerBusy.countDown();
-			try {
-				release.await();
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
+			awaitQuietly(release);
 		});
-		assertTrue(writerBusy.await(5, TimeUnit.SECONDS), "the blocking write should start");
+		assertTrue(writerBusy.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+			"the blocking write should start");
 
 		AtomicBoolean saveResult = new AtomicBoolean();
 		Thread saver = new Thread(() -> saveResult.set(config.save()));
 		saver.start();
 
 		// 等到 save 真正进入 Future.get 的等待，而不是还没入队（避免假通过）。
-		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-		while (saver.getState() != Thread.State.TIMED_WAITING && System.nanoTime() < deadline) {
-			Thread.sleep(1L);
-		}
-		assertTrue(saver.getState() == Thread.State.TIMED_WAITING,
+		assertTrue(awaitThreadState(saver, Thread.State.TIMED_WAITING, START_TIMEOUT_SECONDS),
 			"save should be waiting for the writer thread");
 
-		// 1 秒后自动放行：若 save 仍持锁，setBoolean 会等它，耗时明显超过 500ms。
-		Thread releaser = new Thread(() -> {
-			try {
-				Thread.sleep(1000L);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
-			release.countDown();
+		// 写盘线程仍被占住时从另一个线程写配置：只要 setter 在 save 结束前完成，
+		// 就说明 save 等待期间没有持锁。不再断言「setter 用时小于 N 毫秒」，
+		// 那种写法会被 CI 上的 GC / 调度停顿打断，而这里的结果只取决于锁是否被持有。
+		CountDownLatch probeDone = new CountDownLatch(1);
+		Thread probe = new Thread(() -> {
+			config.setBoolean("betterBold", true);
+			probeDone.countDown();
 		});
-		releaser.setDaemon(true);
-		releaser.start();
-
-		long start = System.nanoTime();
-		config.setBoolean("betterBold", true);
-		long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-		assertTrue(elapsedMillis < 500,
-			"save() must not hold the config lock while waiting (took " + elapsedMillis + " ms)");
+		probe.start();
+		assertTrue(probeDone.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+			"setBoolean must not block while save() is waiting for the writer");
+		assertTrue(saver.isAlive(), "save should still be waiting when the setter finishes");
 
 		release.countDown();
-		saver.join(5000L);
+		saver.join(TimeUnit.SECONDS.toMillis(START_TIMEOUT_SECONDS));
 		assertFalse(saver.isAlive(), "save should finish after the blocking write");
 		assertTrue(saveResult.get(), "save should succeed once the queue drains");
 	}
@@ -685,7 +695,7 @@ class TweakifyModConfigTest {
 
 	// 保存失败/超时回滚后提交的兜底快照最终必须落盘（异步，不阻塞调用方）。
 	@Test
-	void submitSaveAsyncWritesCurrentSnapshot() throws IOException, InterruptedException {
+	void submitSaveAsyncWritesCurrentSnapshot() throws IOException {
 		Path path = configPath();
 		TweakifyModConfig config = new TweakifyModConfig(path);
 		config.functions.blockOffhandFallback = false;
@@ -693,20 +703,14 @@ class TweakifyModConfigTest {
 
 		config.submitSaveAsync();
 
-		// 写盘排在全局队列中；轮询等待，不对后台线程调度时机做假设。
-		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-		String written = "";
-		while (System.nanoTime() < deadline) {
-			if (Files.exists(path)) {
-				written = Files.readString(path);
-				if (written.contains("\"blockOffhandFallback\": false")
-					&& written.contains("\"hotkeyOpenConfigGui\": \"H,J\"")) {
-					return;
-				}
-			}
-			Thread.sleep(10L);
-		}
-		fail("submitSaveAsync should write the current snapshot; last content: " + written);
+		// 写盘队列是串行的：drain 提交的屏障排在此次写盘之后，返回即代表写盘已结束。
+		// 直接读文件断言，不再轮询文件内容（轮询会引入与写盘时机无关的 flaky）。
+		assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS), "the queued write should finish");
+
+		String written = Files.readString(path);
+		assertTrue(written.contains("\"blockOffhandFallback\": false"),
+			"submitSaveAsync should write the current snapshot");
+		assertTrue(written.contains("\"hotkeyOpenConfigGui\": \"H,J\""));
 	}
 
 	// restoreSnapshot 只回滚内存：异步写盘失败时由客户端线程调用，不能又触发一次磁盘写入。
@@ -772,7 +776,7 @@ class TweakifyModConfigTest {
 		assertTrue(config.functions.blockOffhandFallback, "the mutated field must roll back");
 		assertTrue(config.modified.disableHurtShake, "unrelated fields must not be touched by the rollback");
 		// applyAndSave 失败后会异步提交兜底快照；等待它结束，避免临时文件残留影响 @TempDir 清理。
-		assertTrue(AsyncFileWriter.drain(5000L));
+		assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS));
 	}
 
 	// 写盘等待期间被其它线程改过的字段不能被回滚覆盖：只有仍未变的字段回到 before。
