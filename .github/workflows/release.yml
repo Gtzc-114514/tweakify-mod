@@ -65,7 +65,7 @@ jobs:
         shell: bash
         run: |
           NOTES="docs/release-notes/${GITHUB_REF_NAME}.md"
-          if [ -s "$NOTES" ]; then
+          if [ -s "$NOTES" ] && grep -q '[^[:space:]]' "$NOTES"; then
             echo "body_path=$NOTES" >> "$GITHUB_OUTPUT"
             echo "generate=false" >> "$GITHUB_OUTPUT"
           else
