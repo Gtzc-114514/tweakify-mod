@@ -7,3 +7,7 @@
 # These are Windows script files and should use crlf
 *.bat           text eol=crlf
 
+# 构建脚本读取的属性文件统一用 lf：release 工作流用 sed 提取 version，
+# CRLF 会把 \r 带进值，导致与标签比较时误报。
+*.properties    text eol=lf
+

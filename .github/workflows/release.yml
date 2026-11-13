@@ -44,7 +44,15 @@ jobs:
         run: |
           set -euo pipefail
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          GRADLE_VERSION=$(sed -n 's/^version=//p' gradle.properties | head -n 1)
+          # 提取规则与 Gradle 的 Properties 语义对齐：去掉 CRLF 的 \r、允许行首与等号两侧空格、
+          # 重复键取最后一个（后者覆盖前者）；解析不到时单独报错，避免被伪装成“版本不一致”。
+          GRADLE_VERSION=$(tr -d '\r' < gradle.properties \
+            | sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*//p' \
+            | tail -n 1)
+          if [ -z "$GRADLE_VERSION" ]; then
+            echo "::error::gradle.properties 中未找到 version= 行"
+            exit 1
+          fi
           echo "tag_version=$TAG_VERSION"
           echo "gradle_version=$GRADLE_VERSION"
           if [ "$TAG_VERSION" != "$GRADLE_VERSION" ]; then
@@ -58,18 +66,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | head -n 1)
+          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | head -n1)
           if [ -z "$JAR" ]; then
-            echo "No main jar found in build/libs"
+            echo "::error::No main jar found in build/libs"
             exit 1
           fi
           JAR_VERSION=$(unzip -p "$JAR" fabric.mod.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')
-          GRADLE_VERSION=$(sed -n 's/^version=//p' gradle.properties | head -n 1)
+          # 与 verify tag matches mod version 用同一套提取规则，避免两处漂移。
+          GRADLE_VERSION=$(tr -d '\r' < gradle.properties \
+            | sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*//p' \
+            | tail -n 1)
+          if [ -z "$GRADLE_VERSION" ]; then
+            echo "::error::gradle.properties 中未找到 version= 行"
+            exit 1
+          fi
           echo "jar=$JAR"
           echo "jar_version=$JAR_VERSION"
           echo "gradle_version=$GRADLE_VERSION"
           if [ "$JAR_VERSION" != "$GRADLE_VERSION" ]; then
-            echo "Version mismatch: fabric.mod.json=$JAR_VERSION gradle.properties=$GRADLE_VERSION"
+            echo "::error::Version mismatch: fabric.mod.json=$JAR_VERSION gradle.properties=$GRADLE_VERSION"
             exit 1
           fi
       # 发布正文优先用 docs/release-notes/<tag>.md（纳入版本管理、可回溯）。
