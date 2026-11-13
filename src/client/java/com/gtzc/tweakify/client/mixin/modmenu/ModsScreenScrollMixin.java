@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin.modmenu;
 
 import com.gtzc.tweakify.client.ScrollMemory;
+import com.gtzc.tweakify.util.HookProbe;
 import com.terraformersmc.modmenu.gui.ModsScreen;
 import com.terraformersmc.modmenu.gui.widget.ModListWidget;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -54,6 +55,7 @@ public class ModsScreenScrollMixin {
 	// 关闭界面时立即刷盘（需开启跨重启记忆才会真正写）。
 	@Inject(method = "removed", at = @At("HEAD"), require = 0)
 	private void tweakify$flushScroll(CallbackInfo ci) {
+		HookProbe.markOnce("modMenuScrollFlush");
 		ScrollMemory.flush();
 	}
 }

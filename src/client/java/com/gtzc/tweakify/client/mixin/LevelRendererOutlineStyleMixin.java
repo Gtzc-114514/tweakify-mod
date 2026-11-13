@@ -26,6 +26,9 @@ public class LevelRendererOutlineStyleMixin {
 	@Unique
 	private static final AtomicBoolean TWEAKIFY$REPORTED = new AtomicBoolean();
 
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$WIDTH_REPORTED = new AtomicBoolean();
+
 	@ModifyVariable(method = "submitHitOutline", at = @At("HEAD"), argsOnly = true, index = 5, require = 0)
 	private int tweakify$customOutlineColor(int original) {
 		HookProbe.markOnce(TWEAKIFY$REPORTED, "customBlockOutline");
@@ -40,6 +43,7 @@ public class LevelRendererOutlineStyleMixin {
 
 	@ModifyVariable(method = "submitHitOutline", at = @At("HEAD"), argsOnly = true, index = 6, require = 0)
 	private float tweakify$customOutlineWidth(float original) {
+		HookProbe.markOnce(TWEAKIFY$WIDTH_REPORTED, "customBlockOutlineWidth");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !BlockOutlineStyleState.shouldApplyCustomStyle(config.functions.customBlockOutline,
 			Minecraft.getInstance().options.highContrastBlockOutline().get())) {
