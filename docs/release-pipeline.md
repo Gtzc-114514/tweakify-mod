@@ -28,7 +28,7 @@
 | 6 | **resolve mod version**（`id: gv`） | 解析不到 version | `::error::...仅支持形如 version=1.0.1 的单行写法...` | **7–11 全跳过** |
 | 7 | **verify tag matches mod version** | 标签 ≠ `gradle.properties` | `::error::Tag vX (version X) does not match ...` | 8–11 跳过 |
 | 8 | build | 编译/测试失败 | Gradle 输出 | 9–11 跳过 |
-| 9 | **verify jar mod version** | 见「5 类 `::error::` 分支」 | 5 类 `::error::` | 10–11 跳过 |
+| 9 | **verify jar mod version** | 见「6 类 `::error::` 分支」 | 6 类 `::error::` | 10–11 跳过 |
 | 10 | **resolve release notes**（`id: notes`） | **不会失败** | `::warning::` + 回退自动生成 | 11 正常执行 |
 | 11 | create GitHub Release | action 失败 / 产物不匹配 | `fail_on_unmatched_files: true` | — |
 
@@ -48,12 +48,13 @@
 - 解析逻辑单点，两个校验步骤通过 `env: GRADLE_VERSION: ${{ steps.gv.outputs.version }}` 消费，不会漂移；
 - 解析提前到 build 与 unzip 之前：配置错误最先暴露，不用等完整构建。
 
-## 5 类 `::error::` 分支（verify jar mod version）
+## 6 类 `::error::` 分支（verify jar mod version）
 
 | 类别 | 触发条件 | 注解 |
 | --- | --- | --- |
 | 工具链 | `find`/`head`/`unzip`/`python3` 任一缺失 | `runner 镜像缺少 <tool>，无法校验 jar 版本` |
-| 枚举失败 | `find` 非零（`build/libs` 不存在或权限） | `无法枚举 build/libs（目录不存在或 find 失败）` |
+| 目录不存在 | `build/libs` 目录缺失（build 未产出） | `build/libs 不存在，build 步骤未产出` |
+| 枚举失败 | 目录存在但 `find` 非零（权限/挂载异常） | `无法枚举 build/libs（目录存在但 find 失败，可能是权限或挂载问题）` |
 | 无匹配 jar | `find` 成功但零匹配 | `No main jar found in build/libs` |
 | 内容问题 | 无 `fabric.mod.json` / jar 损坏 / 缺 `version` | `无法从 <jar> 读取 fabric.mod.json 的 version（文件缺失、jar 损坏或缺少 version 字段）` |
 | 版本不一致 | 值与 `GRADLE_VERSION` 不等 | `Version mismatch: fabric.mod.json=X gradle.properties=Y` |
