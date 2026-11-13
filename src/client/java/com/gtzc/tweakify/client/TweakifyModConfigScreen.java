@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class TweakifyModConfigScreen extends GuiConfigsBase {
-	// 左上角分类标签：全部 / 功能 / 通用 / 修改（disable 开头或直接改数值的功能）。
+	// 左上角分类标签：全部 / 通用 / 功能 / 修改 / 修复 / 优化 / 测试（枚举顺序即按钮顺序）。
 	// 功能标签按“分组根”归类：根节点及其全部子项都归入功能，其余进通用/修改。
 	private static final int TAB_X = 10;
 	private static final int TAB_Y = 30;
@@ -47,9 +47,12 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 	// 包私有：供配置树与分类标签的完整性测试引用。
 	enum ConfigTab {
 		ALL("tweakify-mod.gui.tab.all"),
-		FUNCTIONS("tweakify-mod.gui.tab.functions"),
 		GENERAL("tweakify-mod.gui.tab.general"),
-		MODIFIED("tweakify-mod.gui.tab.modified");
+		FUNCTIONS("tweakify-mod.gui.tab.functions"),
+		MODIFIED("tweakify-mod.gui.tab.modified"),
+		FIXING("tweakify-mod.gui.tab.fix"),
+		OPTIMIZATION("tweakify-mod.gui.tab.optimization"),
+		TESTING("tweakify-mod.gui.tab.testing");
 
 		private final String translationKey;
 
@@ -125,7 +128,11 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 
 	@Override
 	public List<ConfigOptionWrapper> getConfigs() {
-		return ConfigOptionWrapper.createFor(visibleConfigs(this.currentTab));
+		List<IConfigBase> visible = new ArrayList<>(visibleConfigs(this.currentTab));
+		if (this.currentTab == ConfigTab.TESTING) {
+			visible.add(TweakifyModConfigOptions.PROFILE_EDITOR);
+		}
+		return ConfigOptionWrapper.createFor(visible);
 	}
 
 	// 在右下角绘制配置统计：总数 / 可用 / 已修改 / 已禁用。
@@ -344,7 +351,7 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		return false;
 	}
 
-	// 分类归属由配置目录决定：功能/修改标签在目录里登记一次，子项自动继承。
+	// 分类归属由配置目录决定：功能/修改/修复/优化标签在目录里登记一次，子项自动继承。
 	static boolean matchesTab(IConfigBase config, ConfigTab tab) {
 		ConfigCatalog.Tab category = ConfigCatalog.tabOf(config.getName());
 		return switch (tab) {
@@ -354,6 +361,12 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 				|| category == ConfigCatalog.Tab.FUNCTION_AND_GENERAL;
 			// 修改标签只放直接在目录里标记为 MODIFIED 的功能项。
 			case MODIFIED -> category == ConfigCatalog.Tab.MODIFIED;
+			// 修复标签只放直接在目录里标记为 FIX 的项。
+			case FIXING -> category == ConfigCatalog.Tab.FIX;
+			// 测试标签只放直接在目录里标记为 TESTING 的项；档案编辑器作为界面操作项单独追加。
+			case TESTING -> category == ConfigCatalog.Tab.TESTING;
+			// 优化标签只放直接在目录里标记为 OPTIMIZATION 的项。
+			case OPTIMIZATION -> category == ConfigCatalog.Tab.OPTIMIZATION;
 			case GENERAL -> category == null || category == ConfigCatalog.Tab.FUNCTION_AND_GENERAL;
 		};
 	}

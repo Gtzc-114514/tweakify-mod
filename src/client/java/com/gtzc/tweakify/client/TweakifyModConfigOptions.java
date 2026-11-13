@@ -35,13 +35,23 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
+// 配置项字段通过 OPTIONS_BY_NAME 反射按名字索引，配置界面、快捷键与命令表都按名字派生；
+// IDE 无法追踪这种“按字符串使用”，会把大量公开配置声明误报为未使用。
+// 这些字段不能删除（漏一项会让启动期双向覆盖校验直接失败）。
+// 注意：类级注解也会抑制方法体内的未使用提示；当前私有成员与局部变量均已核对有调用，
+// 后续新增逻辑请自行确认没有引入真正的死代码。
+@SuppressWarnings("unused")
 public final class TweakifyModConfigOptions implements IConfigHandler {
 	private static final String GENERAL_KEY = TweakifyMod.MOD_ID + ".config.general";
 	private static final String LISTS_KEY = TweakifyMod.MOD_ID + ".config.lists";
 	private static final String HIGHLIGHT_KEY = TweakifyMod.MOD_ID + ".config.highlight";
+
+	// 仅由“测试”标签追加显示的界面操作项：打开配置档案编辑器。
+	// 使用 ConfigBoolean 以复用 MaLiLib 的配置行布局；条目控件会移除其原生开关/重置按钮，只保留“打开”。
+	public static final ConfigBoolean PROFILE_EDITOR = new ConfigBoolean("profileEditor", false).apply(GENERAL_KEY);
 
 	// 开关项的切换快捷键：默认无快捷键（允许为空），允许多余按键便于边走边按。
 	private static final KeybindSettings TOGGLE_HOTKEY_SETTINGS = KeybindSettings.PRESS_ALLOWEXTRA_EMPTY;
@@ -99,14 +109,21 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"disableHurtShake", false).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed DISABLE_FLIGHT_DRIFT = new ConfigBooleanHotkeyed(
 		"disableFlightDrift", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
-	public static final ConfigBooleanHotkeyed FLIGHT_DRIFT_VERTICAL = new ConfigBooleanHotkeyed(
-		"flightDriftVertical", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigBoolean FLIGHT_DRIFT_VERTICAL = new ConfigBoolean(
+		"flightDriftVertical", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_HURT_TINT = new ConfigBoolean(
 		"disableHurtTint", false).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed DISABLE_DIMENSION_TELEPORT = new ConfigBooleanHotkeyed(
 		"disableDimensionTeleport", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigBoolean DIMENSION_TELEPORT_PLAYERS_ONLY = new ConfigBoolean(
 		"dimensionTeleportPlayersOnly", false).apply(GENERAL_KEY);
+	// 地狱门传送延迟：生存模式可秒传，创造模式可改为等待生存延迟。
+	public static final ConfigBooleanHotkeyed NETHER_PORTAL_TELEPORT_DELAY = new ConfigBooleanHotkeyed(
+		"netherPortalTeleportDelay", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigBoolean NETHER_PORTAL_SURVIVAL_INSTANT_TELEPORT = new ConfigBoolean(
+		"netherPortalSurvivalInstantTeleport", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean NETHER_PORTAL_CREATIVE_DELAYED_TELEPORT = new ConfigBoolean(
+		"netherPortalCreativeDelayedTeleport", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_NETHER_PORTAL_TELEPORT = new ConfigBoolean(
 		"disableNetherPortalTeleport", true).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_END_PORTAL_TELEPORT = new ConfigBoolean(
@@ -134,11 +151,62 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 禁用附魔过于昂贵：铁砧花费达到 40 级时仍可取出结果。
 	public static final ConfigBoolean DISABLE_TOO_EXPENSIVE = new ConfigBoolean(
 		"disableTooExpensive", false).apply(GENERAL_KEY);
+	// 移除附魔冲突：铁砧合并时忽略附魔互斥限制。
+	public static final ConfigBoolean REMOVE_ENCHANTMENT_CONFLICTS = new ConfigBoolean(
+		"removeEnchantmentConflicts", false).apply(GENERAL_KEY);
+	// 附魔描述：在物品提示中为每个附魔追加一行描述。
+	public static final ConfigBoolean ENCHANTMENT_DESCRIPTIONS = new ConfigBoolean(
+		"enchantmentDescriptions", false).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed DISABLE_SHOVEL_SNOW_FULL_BREAK = new ConfigBooleanHotkeyed(
 		"disableShovelSnowFullBreak", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	// 草径卡船修复：土径对船使用满方块碰撞。
 	public static final ConfigBoolean FIX_BOAT_STUCK_ON_DIRT_PATH = new ConfigBoolean(
 		"fixBoatStuckOnDirtPath", false).apply(GENERAL_KEY);
+	// 鹦鹉肩膀跳舞：唱片机播放音乐时，肩膀上的鹦鹉也跳舞。
+	public static final ConfigBoolean PARROT_DANCE_ON_SHOULDER = new ConfigBoolean(
+		"parrotDanceOnShoulder", false).apply(GENERAL_KEY);
+	// 更好的粗体：粗体偏移从 1.0 改为 0.5。
+	public static final ConfigBoolean BETTER_BOLD = new ConfigBoolean(
+		"betterBold", false).apply(GENERAL_KEY);
+	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
+	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
+		"miniHudFpsOptimization", false).apply(GENERAL_KEY);
+	// 第三人称自身名字：第三/第二人称显示玩家自己的名字。
+	public static final ConfigBoolean THIRD_PERSON_PLAYER_NAME = new ConfigBoolean(
+		"thirdPersonPlayerName", false).apply(GENERAL_KEY);
+	// 雪傀儡不受群系影响：温暖/干燥群系不再因群系属性融化；雨/水仍会伤害，仅单人/局域网生效。
+	public static final ConfigBoolean SNOW_GOLEM_BIOME_IMMUNITY = new ConfigBoolean(
+		"snowGolemBiomeImmunity", false).apply(GENERAL_KEY);
+	// 相机运动：参考 CameraOverhaul 的转向/横移/俯仰/静止晃动与屏幕震动。
+	public static final ConfigBooleanHotkeyed CAMERA_MOTION = new ConfigBooleanHotkeyed(
+		"cameraMotion", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigInteger CAMERA_MOTION_INTENSITY = new ConfigInteger(
+		"cameraMotionIntensity", TweakifyModConfig.DEFAULT_CAMERA_MOTION_INTENSITY,
+		TweakifyModConfig.MIN_CAMERA_MOTION_INTENSITY,
+		TweakifyModConfig.MAX_CAMERA_MOTION_INTENSITY).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_TURNING_ROLL = new ConfigBoolean(
+		"cameraMotionTurningRoll", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_STRAFING_ROLL = new ConfigBoolean(
+		"cameraMotionStrafingRoll", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_FORWARD_PITCH = new ConfigBoolean(
+		"cameraMotionForwardPitch", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_VERTICAL_PITCH = new ConfigBoolean(
+		"cameraMotionVerticalPitch", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_IDLE_SWAY = new ConfigBoolean(
+		"cameraMotionIdleSway", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_SCREEN_SHAKE = new ConfigBoolean(
+		"cameraMotionScreenShake", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_MOUSE_SMOOTHING = new ConfigBoolean(
+		"cameraMotionMouseSmoothing", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_FIRST_PERSON = new ConfigBoolean(
+		"cameraMotionFirstPerson", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean CAMERA_MOTION_THIRD_PERSON = new ConfigBoolean(
+		"cameraMotionThirdPerson", true).apply(GENERAL_KEY);
+	// 物品分组：同类物品折叠成组图标，点击展开/收起。
+	public static final ConfigBooleanHotkeyed ITEM_GROUPS = new ConfigBooleanHotkeyed(
+		"itemGroups", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigOptionList ITEM_GROUPS_SORT = new ConfigOptionList(
+		"itemGroupsSort", ItemGroupSort.DEFAULT).apply(GENERAL_KEY);
 	// 鞘翅烟花限制：滑翔中使用烟花后，等加速结束才能再次右键使用。
 	public static final ConfigBooleanHotkeyed ELYTRA_FIREWORK_COOLDOWN = new ConfigBooleanHotkeyed(
 		"elytraFireworkCooldown", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -150,6 +218,21 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"disableFlatWorldSlimeSpawn", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean FLAT_WORLD_SLIME_SPAWN_ALL_WORLDS = new ConfigBoolean(
 		"flatWorldSlimeSpawnAllWorlds", false).apply(GENERAL_KEY);
+	// 关闭指定生物生成：列表为空时不生效。
+	public static final ConfigBooleanHotkeyed DISABLE_SPECIFIED_MOB_SPAWN = new ConfigBooleanHotkeyed(
+		"disableSpecifiedMobSpawn", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigBoolean DISABLED_SPAWN_ALLOW_PLAYER_SPAWN = new ConfigBoolean(
+		"disabledSpawnAllowPlayerSpawn", true).apply(GENERAL_KEY);
+	// 和平模式怪物：列表为空时不生效。
+	public static final ConfigBooleanHotkeyed PEACEFUL_MODE_MONSTERS = new ConfigBooleanHotkeyed(
+		"peacefulModeMonsters", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 刷怪蛋投掷：像鸡蛋/雪球一样投掷刷怪蛋，命中后生成生物。
+	public static final ConfigBooleanHotkeyed THROW_SPAWN_EGG = new ConfigBooleanHotkeyed(
+		"throwSpawnEgg", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigBoolean PEACEFUL_MODE_MONSTER_SPAWN = new ConfigBoolean(
+		"peacefulModeMonsterSpawn", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean PEACEFUL_MODE_MONSTER_NO_ATTACK = new ConfigBoolean(
+		"peacefulModeMonsterNoAttack", true).apply(GENERAL_KEY);
 	// 更好的隐身：隐身后去掉药水粒子，装备与第三人称手持物品也隐藏。
 	public static final ConfigBoolean BETTER_INVISIBILITY = new ConfigBoolean(
 		"betterInvisibility", false).apply(GENERAL_KEY);
@@ -209,8 +292,8 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE = new ConfigBoolean(
 		"connectedBlockOutline", false).apply(GENERAL_KEY);
 	// 自定义方块轮廓：总开关与色调/线宽子项。
-	public static final ConfigBoolean CUSTOM_BLOCK_OUTLINE = new ConfigBoolean(
-		"customBlockOutline", false).apply(GENERAL_KEY);
+	public static final ConfigBooleanHotkeyed CUSTOM_BLOCK_OUTLINE = new ConfigBooleanHotkeyed(
+		"customBlockOutline", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigDouble BLOCK_OUTLINE_WIDTH = new BlockOutlineWidthConfig(
 		TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD).apply(GENERAL_KEY);
 	public static final ConfigInteger BLOCK_OUTLINE_ANIMATION_SPEED = new ConfigInteger(
@@ -222,8 +305,15 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	public static final ConfigOptionList BLOCK_OUTLINE_COLOR_MODE = new ConfigOptionList(
 		"blockOutlineColorMode", BlockOutlineColorMode.PALETTE).apply(GENERAL_KEY);
 	// 更好的放置覆盖：可直接替换花、高草等植物。
-	public static final ConfigBoolean BETTER_BLOCK_PLACEMENT = new ConfigBoolean(
-		"betterBlockPlacement", false).apply(GENERAL_KEY);
+	public static final ConfigBooleanHotkeyed BETTER_BLOCK_PLACEMENT = new ConfigBooleanHotkeyed(
+		"betterBlockPlacement", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 更好的骨粉催熟：骨粉可催熟甘蔗与一格高的花。
+	public static final ConfigBooleanHotkeyed BETTER_BONE_MEAL = new ConfigBooleanHotkeyed(
+		"betterBoneMeal", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigBoolean BONE_MEAL_SUGAR_CANE = new ConfigBoolean(
+		"boneMealSugarCane", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean BONE_MEAL_FLOWERS = new ConfigBoolean(
+		"boneMealFlowers", true).apply(GENERAL_KEY);
 	// 更好的隐身子项。
 	public static final ConfigBoolean BETTER_INVISIBILITY_EFFECT_PARTICLES = new ConfigBoolean(
 		"betterInvisibilityEffectParticles", true).apply(GENERAL_KEY);
@@ -247,6 +337,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	public static final ConfigInteger DURABILITY_OVERLAY_LOW_THRESHOLD = new ConfigInteger(
 		"durabilityOverlayLowThreshold", TweakifyModConfig.MIN_DURABILITY_THRESHOLD,
 		TweakifyModConfig.MIN_DURABILITY_THRESHOLD, TweakifyModConfig.MAX_DURABILITY_THRESHOLD).apply(GENERAL_KEY);
+	// 药水效果时间显示：在 HUD 效果图标下方叠加剩余时间。
+	public static final ConfigBooleanHotkeyed STATUS_EFFECT_DURATION_DISPLAY = new ConfigBooleanHotkeyed(
+		"statusEffectDurationDisplay", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	// 复制 ID 子项。
 	public static final ConfigOptionList COPY_ITEM_ID_FORMAT = new ConfigOptionList(
 		"copyItemIdFormat", CopyIdFormat.PLAIN).apply(GENERAL_KEY);
@@ -312,9 +405,56 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 生存模式中键取物：背包里有对应物品就切换到主手。
 	public static final ConfigBooleanHotkeyed SURVIVAL_PICK_BLOCK = new ConfigBooleanHotkeyed(
 		"survivalPickBlock", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 便捷焚烧：右键点击岩浆桶或打火石焚烧光标上的物品。
+	public static final ConfigBooleanHotkeyed QUICK_BURN_ITEM = new ConfigBooleanHotkeyed(
+		"quickBurnItem", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 不使用最后一根火把：只剩一根时不允许放置。
+	public static final ConfigBoolean KEEP_LAST_TORCH = new ConfigBoolean(
+		"keepLastTorch", false).apply(GENERAL_KEY);
+	// 如履平地：自动跨上 1 格高的方块。
+	public static final ConfigBooleanHotkeyed AUTO_STEP_UP = new ConfigBooleanHotkeyed(
+		"autoStepUp", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 更好的攀爬：攀爬方块相关的移动优化。
+	public static final ConfigBooleanHotkeyed BETTER_CLIMBING = new ConfigBooleanHotkeyed(
+		"betterClimbing", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigBoolean CLIMBING_FAST_DESCEND = new ConfigBoolean(
+		"climbingFastDescend", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CLIMBING_FASTER_ASCEND = new ConfigBoolean(
+		"climbingFasterAscend", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CLIMBING_JUMP_FROM_GROUND = new ConfigBoolean(
+		"climbingJumpFromGround", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean CLIMBING_CANCEL_COLLISION = new ConfigBoolean(
+		"climbingCancelCollision", true).apply(GENERAL_KEY);
+	// 主动爬行：总开关 + 按住键（子项）进入爬行姿态。
+	public static final ConfigBooleanHotkeyed FORCE_CRAWL = new ConfigBooleanHotkeyed(
+		"forceCrawl", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// allowEmpty = false：未绑定按键时 isKeybindHeld() 不会返回 true，避免默认全员爬行。
+	public static final ConfigHotkey FORCE_CRAWL_KEY = new ConfigHotkey(
+		"forceCrawlKey", "", KeybindSettings.PRESS_ALLOWEXTRA).apply(GENERAL_KEY);
+	// 经过可攀爬方块不减速：蹭到梯子/藤蔓边缘时不再夹紧水平速度。
+	public static final ConfigBoolean CLIMBABLE_PASS_NO_SLOWDOWN = new ConfigBoolean(
+		"climbablePassNoSlowdown", false).apply(GENERAL_KEY);
+	// 可见交易显示：村民/流浪商人头顶显示交易结果物品。
+	public static final ConfigBoolean VISIBLE_TRADERS = new ConfigBoolean(
+		"visibleTraders", false).apply(GENERAL_KEY);
+	// 防猪灵装备切换：附近有猪灵时把背包里的金制装备换到身上，猪灵离开后换回。
+	public static final ConfigBooleanHotkeyed PIGLIN_GOLD_ARMOR_SWAP = new ConfigBooleanHotkeyed(
+		"piglinGoldArmorSwap", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 替换部位：自动（有哪个金装备就穿一件）或指定单部位。
+	public static final ConfigOptionList PIGLIN_GOLD_ARMOR_SWAP_MODE = new ConfigOptionList(
+		"piglinGoldArmorSwapMode", PiglinArmorSwapMode.AUTO).apply(GENERAL_KEY);
+	// 聊天框内容记忆：关闭聊天框后保留未发送的输入内容。
+	public static final ConfigBooleanHotkeyed CHAT_INPUT_MEMORY = new ConfigBooleanHotkeyed(
+		"chatInputMemory", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	// 强制关闭加载屏幕：加载世界时立即关闭加载界面。
 	public static final ConfigBoolean FORCE_CLOSE_LOADING_SCREEN = new ConfigBoolean(
 		"forceCloseLoadingScreen", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean FORCE_CLOSE_LOADING_SCREEN_INSTANT = new ConfigBoolean(
+		"forceCloseLoadingScreenInstant", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean FORCE_CLOSE_LOADING_SCREEN_KEEP_FIRST = new ConfigBoolean(
+		"forceCloseLoadingScreenKeepFirst", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean FORCE_CLOSE_LOADING_SCREEN_SKIP_RESOURCE_PACK_FADE = new ConfigBoolean(
+		"forceCloseLoadingScreenSkipResourcePackFade", true).apply(GENERAL_KEY);
 	// 关闭资源包兼容性提示：不显示不兼容标记，也不弹确认框。
 	public static final ConfigBoolean DISABLE_RESOURCE_PACK_COMPATIBILITY_CHECK = new ConfigBoolean(
 		"disableResourcePackCompatibilityCheck", false).apply(GENERAL_KEY);
@@ -353,6 +493,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"endGatewayTeleportBlacklist", ImmutableList.of()).apply(LISTS_KEY);
 	public static final ConfigStringList ATTACK_RANGE_ENTITIES = new EntityIdConfigStringList(
 		"attackRangeEntities", ImmutableList.of()).apply(LISTS_KEY);
+	public static final ConfigStringList DISABLED_SPAWN_ENTITIES = new EntityIdConfigStringList(
+		"disabledSpawnEntities", ImmutableList.of()).apply(GENERAL_KEY);
+	public static final ConfigStringList PEACEFUL_MODE_MONSTER_ENTITIES = new EntityIdConfigStringList(
+		"peacefulModeMonsterEntities", ImmutableList.of()).apply(GENERAL_KEY);
 	public static final ConfigStringList RESTRICTED_OFFHAND_ITEMS = new ItemIdConfigStringList(
 		"restrictedOffhandItems",
 		ImmutableList.copyOf(TweakifyModConfig.defaultLightSourceItemIds())).apply(LISTS_KEY);
@@ -364,10 +508,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		ImmutableList.copyOf(TweakifyModConfig.defaultInteractableItemIds())).apply(LISTS_KEY);
 
 	// 双向同步进行中时为 true：屏蔽值变更回调，避免递归与重复写盘。
-	private static boolean syncing = false;
+	private static boolean syncing;
 
 	// 三个预设互斥：开启一个时关闭其他两个，被关闭项的回调不再重复保存。
-	private static boolean enforcingPresetExclusivity = false;
+	private static boolean enforcingPresetExclusivity;
 
 	private static final ImmutableList<ConfigBoolean> HIGHLIGHT_PRESETS = ImmutableList.of(
 		HIGHLIGHT_PRESET_1, HIGHLIGHT_PRESET_2, HIGHLIGHT_PRESET_3);
@@ -400,6 +544,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		for (Field field : TweakifyModConfigOptions.class.getDeclaredFields()) {
 			if (!Modifier.isStatic(field.getModifiers())
 				|| !IConfigBase.class.isAssignableFrom(field.getType())) {
+				continue;
+			}
+			// 仅界面使用的操作项不参与配置字段/目录校验。
+			if (field.getName().equals("PROFILE_EDITOR")) {
 				continue;
 			}
 			try {
@@ -449,14 +597,14 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static void registerValueChangeCallback(IConfigBase option) {
 		if (option instanceof ConfigBase base) {
-			base.setValueChangeCallback(config -> syncAndSave(option));
+			base.setValueChangeCallback(ignored -> syncAndSave(option));
 		}
 	}
 
 	// 三个预设互斥：开启一个时关闭其他两个，再统一同步并保存。
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static void registerPresetCallback(ConfigBoolean preset) {
-		((ConfigBase) preset).setValueChangeCallback(config -> onHighlightPresetChanged(preset));
+		((ConfigBase) preset).setValueChangeCallback(ignored -> onHighlightPresetChanged(preset));
 	}
 
 	// 高亮分组的 prettyName 使用 highlight 前缀：按目录中的分组结构判断，不再手写一份名单。
@@ -552,6 +700,7 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		} finally {
 			syncing = previousSyncing;
 		}
+		resetChatMemoryIfDisabled();
 	}
 
 	// 把配置对象的值写进 MaLiLib 选项（含可选快捷键）。
@@ -616,15 +765,117 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 
 	@Override
 	public void save() {
-		// 有尚未写盘的修改时先提交，再统一等待排空：save() 返回即代表已落盘。
+		// 有尚未写盘的修改时先提交；随后把完整快照排到同一串行队列。
 		if (savePending) {
 			flushPendingSaveNow();
 		}
-		AsyncFileWriter.drain(2000L);
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && !config.save()) {
-			TweakifyMod.LOGGER.error("Failed to save Tweakify Mod configuration");
+		if (config == null) {
+			return;
 		}
+		long covered;
+		AsyncFileWriter.WriteHandle handle;
+		synchronized (config) {
+			covered = WRITE_SEQUENCE.get();
+			handle = config.prepareSaveHandle();
+			if (handle != null) {
+				// 完整快照已包含当前节流修改，不用再单独写一遍。
+				savePending = false;
+				pendingSnapshot = null;
+			}
+		}
+		if (handle == null) {
+			TweakifyMod.LOGGER.error("Failed to submit Tweakify Mod configuration save");
+			// 写盘队列已关闭：直接同步写当前内存，避免修改只留在内存里。
+			Boolean sync = config.writeSynchronously();
+			if (!Boolean.TRUE.equals(sync)) {
+				TweakifyMod.LOGGER.error("Failed to save Tweakify Mod configuration synchronously");
+			}
+			return;
+		}
+		long previousSynced = lastSyncedSequence.get();
+		long advancedSynced = lastSyncedSequence.accumulateAndGet(covered, Math::max);
+		// 完整快照已提交：先乐观标记覆盖本次提交前的所有异步写。
+		boolean callbackQueued = AsyncFileWriter.execute(() -> {
+			Boolean written = AsyncFileWriter.await(handle, SAVE_CALLBACK_WAIT_MILLIS, true);
+			if (Boolean.TRUE.equals(written)) {
+				discardDeferredUpTo(advancedSynced);
+				return;
+			}
+			TweakifyMod.LOGGER.error("Failed to save Tweakify Mod configuration");
+			handleSaveFailure(config, advancedSynced, previousSynced);
+		});
+		if (!callbackQueued) {
+			// 执行器已关闭，失败回调不会执行：先确认整份写是否已经成功，
+			// 避免把可能已落盘的新值在内存中回滚（内存旧值/磁盘新值的反向不一致）。
+			Boolean written = AsyncFileWriter.await(handle, SAVE_CALLBACK_WAIT_MILLIS, false);
+			if (Boolean.TRUE.equals(written)) {
+				discardDeferredUpTo(advancedSynced);
+				return;
+			}
+			if (written == null) {
+				TweakifyMod.LOGGER.warn("Unable to confirm the final config write before shutdown; keeping the in-memory state");
+				return;
+			}
+			// 明确失败：同步兜底；成功则丢弃被覆盖的延迟结果，仍失败才回退并重放。
+			// 锁超时（null）不触发回退：竞争者可能正在写当前内存快照，回退会造成反向漂移。
+			Boolean sync = config.writeSynchronously();
+			handleSaveFailure(sync, advancedSynced, previousSynced);
+		}
+	}
+
+	// 整份保存失败后的收敛：提交兜底写并等它的真实结果（不是“已入队”）；
+	// 执行器已关闭时同步写；两者都失败才回退乐观推进的序号。
+	static void handleSaveFailure(TweakifyModConfig config, long advancedSequence, long previousSequence) {
+		AsyncFileWriter.WriteHandle fallback = config.submitSaveAsyncHandle();
+		if (fallback == null) {
+			Boolean sync = config.writeSynchronously();
+			handleSaveFailure(sync, advancedSequence, previousSequence);
+			return;
+		}
+		// 回调排在兜底写之后，await 立即返回，不会自等待。
+		boolean callbackQueued = AsyncFileWriter.execute(() -> {
+			Boolean written = AsyncFileWriter.await(fallback, SAVE_CALLBACK_WAIT_MILLIS, false);
+			handleSaveFailure(Boolean.TRUE.equals(written), advancedSequence, previousSequence);
+		});
+		if (!callbackQueued) {
+			Boolean written = AsyncFileWriter.await(fallback, SAVE_CALLBACK_WAIT_MILLIS, false);
+			handleSaveFailure(Boolean.TRUE.equals(written), advancedSequence, previousSequence);
+		}
+	}
+
+	// 包私有：decision + CAS 回退 + 重放被跳过的失败，测试可直接驱动。
+	static void handleSaveFailure(boolean fallbackWritten, long advancedSequence, long previousSequence) {
+		handleSaveFailure(Boolean.valueOf(fallbackWritten), advancedSequence, previousSequence);
+	}
+
+	// Boolean：true=写成功，false=写失败，null=锁超时/无法确认（不回退，避免反向漂移）。
+	static void handleSaveFailure(Boolean fallbackWritten, long advancedSequence, long previousSequence) {
+		if (Boolean.TRUE.equals(fallbackWritten)) {
+			discardDeferredUpTo(advancedSequence);
+			return;
+		}
+		if (fallbackWritten == null) {
+			TweakifyMod.LOGGER.warn("Timed out waiting for the config write lock; keeping the optimistic sequence");
+			return;
+		}
+		if (rollbackSyncedSequence(advancedSequence, previousSequence)) {
+			replayDeferredFailures(previousSequence, advancedSequence);
+		}
+	}
+
+	// 只回退本次乐观推进；若已有更新的成功推进，CAS 失败即保留新值。
+	static boolean rollbackSyncedSequence(long advancedSequence, long previousSequence) {
+		return lastSyncedSequence.compareAndSet(advancedSequence, previousSequence);
+	}
+
+	// 包私有：测试直接检查序号推进/回退。
+	static void setSyncedSequenceForTest(long value) {
+		lastSyncedSequence.set(value);
+	}
+
+	static long syncedSequenceForTest() {
+		return lastSyncedSequence.get();
 	}
 
 	@Override
@@ -635,20 +886,34 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 写盘节流：滑块拖动等高频修改会连续触发几十次回调，
 	// 这里合并成最多每 MIN_SAVE_INTERVAL_MS 写一次；客户端 tick 与配置保存入口负责兜底刷出。
 	private static final long MIN_SAVE_INTERVAL_MS = 250L;
-	private static boolean savePending = false;
-	private static long lastSaveAtMillis = 0L;
+	// 异步保存回调等待上限：回调排在本份写盘之后，正常应瞬时返回。
+	private static final long SAVE_CALLBACK_WAIT_MILLIS = 1000L;
+	private static boolean savePending;
+	private static long lastSaveAtMillis;
 	private static TweakifyModConfig.Snapshot pendingSnapshot;
 
 	// 异步写盘：序列化留在客户端线程（有锁、亚毫秒级），只有磁盘 IO 交给后台线程。
-	// PENDING_WRITE 持“最新一份待写内容”：后台尚未取走时，新写入直接顶替它完成合并。
-	private static final AtomicReference<PendingWrite> PENDING_WRITE = new AtomicReference<>();
-	private static final AtomicBoolean WRITE_SCHEDULED = new AtomicBoolean();
+	// 每次 flush 都在配置锁内完成「序列化 + 提交到全局串行队列」，因此队列顺序等于快照
+	// 新旧顺序；即使磁盘慢、前面还有旧写未完成，也不会出现旧快照晚于新快照落盘。
 	private static final Queue<SaveResult> SAVE_RESULTS = new ConcurrentLinkedQueue<>();
+	// 被乐观推进跳过的失败结果：整份保存失败并回退序号后，按序号重放，重新参与回滚判定。
+	private static final Queue<SaveResult> DEFERRED_RESULTS = new ConcurrentLinkedQueue<>();
+	private static final int MAX_DEFERRED_RESULTS = 8;
 
-	private record PendingWrite(String json, TweakifyModConfig.Snapshot snapshot) {
-	}
+	// 写盘序号：每次 flush 提交 +1。Options.save() 提交完整快照时会乐观推进 lastSyncedSequence
+	//（覆盖本次提交前已入队的异步写），用于识别“结果入队时已被更晚的整份保存覆盖”的过期失败，
+	// 避免旧失败结果反向回滚新值。整份保存失败且无任何兜底写时，会用 CAS 回退这次推进。
+	private static final AtomicLong WRITE_SEQUENCE = new AtomicLong();
+	private static final AtomicLong lastSyncedSequence = new AtomicLong();
 
-	private record SaveResult(boolean success, TweakifyModConfig.Snapshot snapshot) {
+	// 节流 flush 的在途上限：磁盘慢（网盘/杀软/机械盘）时，生产速度可能高于消费速度，
+	// 超过上限就保留待写标记，等下一个节流窗口再提交，避免每 250ms 一份全量 JSON 无上限堆积。
+	// 注意：显式保存（save/applyAndSave/退出兜底）不受此限制，必须入队或同步写。
+	private static final int MAX_IN_FLIGHT_FLUSHES = 4;
+	private static final AtomicInteger IN_FLIGHT_FLUSHES = new AtomicInteger();
+
+	private record SaveResult(boolean success, TweakifyModConfig.Snapshot snapshot,
+						 TweakifyModConfig.Snapshot afterSnapshot, long sequence) {
 	}
 
 	// 单配置项变化：只同步这一项，避免每次切换开关都清洗 8 个列表并重建缓存。
@@ -661,6 +926,7 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		try {
 			markPending(config);
 			applyToConfig(config, changed);
+			resetChatMemoryIfDisabled();
 			savePending = true;
 		} finally {
 			syncing = false;
@@ -680,11 +946,19 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 			for (IConfigBase option : ALL_OPTIONS) {
 				applyToConfig(config, option);
 			}
+			resetChatMemoryIfDisabled();
 			savePending = true;
 		} finally {
 			syncing = false;
 		}
 		flushPendingSave();
+	}
+
+	// 关闭聊天输入记忆时立即清空草稿，再次开启后从空开始。
+	private static void resetChatMemoryIfDisabled() {
+		if (!CHAT_INPUT_MEMORY.getBooleanValue()) {
+			ChatInputMemoryState.reset();
+		}
 	}
 
 	// 本批修改开始前才拍快照：同一批高频变化（如拖动滑块）共用一份回滚快照。
@@ -702,64 +976,79 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	}
 
 	// 立即写盘：序列化在客户端线程完成，磁盘 IO 交给后台线程，避免拖动滑块时掉帧。
+	// 「序列化 + 提交」必须在同一把配置锁内完成，保证提交顺序就是快照新旧顺序：
+	// 否则另一个线程的同步保存可能先提交，而这里的旧快照稍后才入队，把新内容覆盖掉。
 	static void flushPendingSaveNow() {
 		if (!savePending) {
 			return;
 		}
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		TweakifyModConfig.Snapshot snapshot = pendingSnapshot;
-		savePending = false;
-		pendingSnapshot = null;
-		lastSaveAtMillis = System.currentTimeMillis();
 		if (config == null) {
+			savePending = false;
+			pendingSnapshot = null;
 			return;
 		}
-
-		String json;
-		try {
-			json = config.toJson();
-		} catch (RuntimeException e) {
-			// 序列化失败等同于写盘失败：直接在客户端线程回滚，不进入后台队列。
-			TweakifyMod.LOGGER.error("Failed to serialize Tweakify Mod configuration", e);
-			config.restoreSnapshot(snapshot);
-			syncFromConfig();
-			return;
-		}
-
-		// 覆盖式合并：后台尚未取走上一份时，这一份直接顶替，只写最新状态。
-		PENDING_WRITE.set(new PendingWrite(json, snapshot));
-		scheduleWrite();
-	}
-
-	// 后台写盘循环：一直取到没有新的待写内容为止，天然完成高频修改的合并。
-	private static void scheduleWrite() {
-		if (!WRITE_SCHEDULED.compareAndSet(false, true)) {
-			return;
-		}
-		AsyncFileWriter.execute(() -> {
+		TweakifyModConfig.Snapshot snapshot = pendingSnapshot;
+		boolean serializationFailed = false;
+		synchronized (config) {
+			if (IN_FLIGHT_FLUSHES.get() >= MAX_IN_FLIGHT_FLUSHES) {
+				// 队列积压：保留本批修改与回滚快照，等下一个节流窗口再提交。
+				lastSaveAtMillis = System.currentTimeMillis();
+				return;
+			}
+			String serialized = null;
+			TweakifyModConfig.Snapshot after = null;
 			try {
-				PendingWrite write;
-				while ((write = PENDING_WRITE.getAndSet(null)) != null) {
-					boolean success;
+				serialized = config.toJson();
+				after = config.snapshot();
+			} catch (RuntimeException e) {
+				TweakifyMod.LOGGER.error("Failed to serialize Tweakify Mod configuration", e);
+				serializationFailed = true;
+			}
+			savePending = false;
+			pendingSnapshot = null;
+			lastSaveAtMillis = System.currentTimeMillis();
+			if (!serializationFailed) {
+				String json = serialized;
+				TweakifyModConfig.Snapshot afterSnapshot = after;
+				long sequence = WRITE_SEQUENCE.incrementAndGet();
+				// 落盘序号在提交时分配：任务延迟执行时不能覆盖更晚提交的写。
+				long writeSequence = config.allocateWriteSequence();
+				IN_FLIGHT_FLUSHES.incrementAndGet();
+				// 只入队、不等待：队列由后台线程按提交顺序串行执行。
+				// 入队失败（执行器已关闭）时立即退回计数，避免永久占掉一个名额。
+				if (!AsyncFileWriter.execute(() -> {
 					try {
-						TweakifyModConfig config = TweakifyMod.CONFIG;
-						success = config != null && config.writeJson(write.json());
-					} catch (RuntimeException e) {
-						// 非 IOException 的写盘异常（路径非法、安全策略等）也必须产出失败结果：
-						// 否则 pollSaveResults 永远收不到这次结果，回滚与日志会一起静默丢失。
-						TweakifyMod.LOGGER.error("Unexpected error while writing Tweakify Mod configuration", e);
-						success = false;
+						writeConfig(json, snapshot, afterSnapshot, sequence, writeSequence);
+					} finally {
+						IN_FLIGHT_FLUSHES.decrementAndGet();
 					}
-					SAVE_RESULTS.add(new SaveResult(success, write.snapshot()));
-				}
-			} finally {
-				WRITE_SCHEDULED.set(false);
-				// 收尾竞态：本轮结束与新一次提交同时发生时，这里补一次调度，避免任务挂起。
-				if (PENDING_WRITE.get() != null) {
-					scheduleWrite();
+				})) {
+					IN_FLIGHT_FLUSHES.decrementAndGet();
 				}
 			}
-		});
+		}
+		if (serializationFailed) {
+			// 序列化失败等同于写盘失败：在客户端线程回滚，不进入后台队列。
+			config.restoreSnapshot(snapshot);
+			syncFromConfig();
+		}
+	}
+
+	// 后台写盘任务：只写已序列化好的文本，不访问配置字段，因此不会与配置锁互相阻塞。
+	private static void writeConfig(String json, TweakifyModConfig.Snapshot snapshot,
+								 TweakifyModConfig.Snapshot afterSnapshot, long sequence, long writeSequence) {
+		boolean success;
+		try {
+			TweakifyModConfig config = TweakifyMod.CONFIG;
+			success = config != null && config.writeJson(json, writeSequence);
+		} catch (RuntimeException e) {
+			// 非 IOException 的写盘异常（路径非法、安全策略等）也必须产出失败结果：
+			// 否则 pollSaveResults 永远收不到这次结果，回滚与日志会一起静默丢失。
+			TweakifyMod.LOGGER.error("Unexpected error while writing Tweakify Mod configuration", e);
+			success = false;
+		}
+		SAVE_RESULTS.add(new SaveResult(success, snapshot, afterSnapshot, sequence));
 	}
 
 	// 客户端 tick 调用：把后台写盘结果取回客户端线程处理。
@@ -770,28 +1059,109 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 				continue;
 			}
 			TweakifyMod.LOGGER.error("Failed to save Tweakify Mod configuration");
-			// 已经又有新修改在排队时不回滚：回滚会把用户刚输入的值一起冲掉。
-			if (PENDING_WRITE.get() != null) {
+			// 这份失败写已被更晚成功的整份同步写覆盖：转存到延迟队列，
+			// 若该整份保存随后失败并回退序号，这些结果会被重新放回并回滚内存。
+			if (result.sequence() <= lastSyncedSequence.get()) {
+				deferFailure(result);
+				continue;
+			}
+			// 之后已提交了新修改（可能尚未写盘）：不回滚，避免把更新的值一起冲掉。
+			if (result.sequence() < WRITE_SEQUENCE.get()) {
 				continue;
 			}
 			TweakifyModConfig config = TweakifyMod.CONFIG;
 			if (config != null) {
-				config.restoreSnapshot(result.snapshot());
-				syncFromConfig();
+				applyFailedWriteRollback(config, result.snapshot(), result.afterSnapshot());
 			}
 		}
 	}
 
-	// 客户端退出：先排空后台队列，再同步写一次最终状态。
-	// 顺序不能反：后台正在写的旧内容可能在同步写之后落盘，把新内容覆盖掉。
+	// 异步写盘失败后的统一收敛：字段级回滚 + 刷新待写快照 + 兜底写当前内存。
+	// 刷新 pendingSnapshot 很关键：否则下一批 flush 仍以“含回滚前值”的旧快照为 before，
+	// 会把刚回滚的字段再次当成“本次修改”写回磁盘（静默复活）。
+	static void applyFailedWriteRollback(TweakifyModConfig config, TweakifyModConfig.Snapshot before,
+										 TweakifyModConfig.Snapshot after) {
+		config.rollbackChangedFieldsIfUnchanged(before, after);
+		syncFromConfig();
+		if (savePending) {
+			pendingSnapshot = config.snapshot();
+		}
+		config.submitSaveAsync();
+	}
+
+	// 包私有：测试模拟“一批修改尚未写盘”。
+	static void setPendingForTest(TweakifyModConfig.Snapshot snapshot) {
+		savePending = true;
+		pendingSnapshot = snapshot;
+	}
+
+	// 包私有：测试确认 pending 快照已经与当前内存一致。
+	static boolean pendingMatchesForTest(TweakifyModConfig config) {
+		return pendingSnapshot != null && pendingSnapshot.hasSameValuesAs(config.snapshot());
+	}
+
+	// 包私有：测试注入一条写盘结果，验证序号守卫与回滚路径。
+	static void enqueueSaveResultForTest(boolean success, TweakifyModConfig.Snapshot snapshot,
+										 TweakifyModConfig.Snapshot afterSnapshot, long sequence) {
+		SAVE_RESULTS.add(new SaveResult(success, snapshot, afterSnapshot, sequence));
+	}
+
+	// 整份保存期间被跳过的失败结果不能直接丢弃；有界保留，回退序号后重放。
+	private static void deferFailure(SaveResult result) {
+		DEFERRED_RESULTS.add(result);
+		while (DEFERRED_RESULTS.size() > MAX_DEFERRED_RESULTS) {
+			DEFERRED_RESULTS.poll();
+			TweakifyMod.LOGGER.warn("Deferred save-result queue overflow; dropping the oldest failure");
+		}
+	}
+
+	// 整份保存成功覆盖到 sequence：延迟结果已无回滚价值，丢弃。
+	private static void discardDeferredUpTo(long sequence) {
+		DEFERRED_RESULTS.removeIf(result -> result.sequence() <= sequence);
+	}
+
+	// 回退序号后重放本次推进覆盖的失败结果，让后续 poll 能重新回滚内存。
+	private static void replayDeferredFailures(long previousSequence, long advancedSequence) {
+		for (SaveResult result : DEFERRED_RESULTS) {
+			if (result.sequence() > previousSequence && result.sequence() <= advancedSequence
+				&& DEFERRED_RESULTS.remove(result)) {
+				SAVE_RESULTS.add(result);
+			}
+		}
+	}
+
+	// 包私有：测试之间清理写盘节流与序号状态，避免跨测试互相影响。
+	static void resetForTest() {
+		savePending = false;
+		pendingSnapshot = null;
+		lastSaveAtMillis = 0L;
+		WRITE_SEQUENCE.set(0L);
+		lastSyncedSequence.set(0L);
+		IN_FLIGHT_FLUSHES.set(0);
+		SAVE_RESULTS.clear();
+		DEFERRED_RESULTS.clear();
+	}
+
+	// 客户端退出：saveForShutdown 会把这次写盘排在同一串行队列并等待；超时也不取消任务。
+	// 若等待仍失败，随后的 shutdown 可能 shutdownNow 丢弃排队任务，因此在关闭线程
+	// 直接同步写一份最终快照，保证最后一次修改不丢。
 	static void flushOnShutdown() {
-		PENDING_WRITE.set(null);
-		AsyncFileWriter.drain(2000L);
 		savePending = false;
 		pendingSnapshot = null;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && !config.save()) {
-			TweakifyMod.LOGGER.error("Failed to save Tweakify Mod configuration on shutdown");
+		if (config == null) {
+			return;
+		}
+		if (config.saveForShutdown()) {
+			return;
+		}
+		// 先停止写盘线程（等待/丢弃），再同步写，避免旧任务在同步写之后覆盖新内容。
+		if (!AsyncFileWriter.shutdown(2000L)) {
+			TweakifyMod.LOGGER.warn("File writer did not terminate before the synchronous fallback write");
+		}
+		Boolean sync = config.writeSynchronously();
+		if (!Boolean.TRUE.equals(sync)) {
+			TweakifyMod.LOGGER.error("Failed to write Tweakify Mod configuration synchronously on shutdown");
 		}
 	}
 }

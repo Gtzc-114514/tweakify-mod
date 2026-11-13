@@ -70,6 +70,15 @@ class ConfigProfilesTest {
 	}
 
 	@Test
+	void namesPreserveInsertionOrder() {
+		Path path = profilesPath();
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "first", newConfig()).result());
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "second", newConfig()).result());
+		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "third", newConfig()).result());
+		assertEquals(List.of("first", "second", "third"), ConfigProfiles.names(path).names());
+	}
+
+	@Test
 	void deleteRemovesOnlyThatProfile() {
 		Path path = profilesPath();
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "A", newConfig()).result());

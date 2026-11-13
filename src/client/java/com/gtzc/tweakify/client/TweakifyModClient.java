@@ -17,8 +17,13 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.world.inventory.MerchantMenu;
 
 import java.util.Locale;
 
@@ -33,6 +38,11 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		InitializationHandler.getInstance().registerInitializationHandler(this);
 		// 各状态机合并到同一个 tick 监听：执行顺序固定，也省掉多监听器的分发开销。
 		ClientTickEvents.START_CLIENT_TICK.register(TweakifyModClient::onStartTick);
+		// 聊天草稿属于当前世界/服务器会话：断线或切换世界后丢弃，避免跨存档/跨服泄漏。
+		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
+			ChatInputMemoryState.beginSession());
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+			ChatInputMemoryState.endSession());
 		// 配置写盘节流后的兜底：tick 结束时提交尚未写盘的修改，并把后台写盘结果取回客户端线程；
 		// 命令改值后也在这里把 MaLiLib 选项同步一次（服务端线程 → 客户端线程）。
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -47,9 +57,11 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 
 		// 退出前排空后台写盘队列并同步落盘：
 		// MaLiLib 只在世界加载完成时保存配置，客户端关闭时不会调用 IConfigHandler.save()。
+		// 顺序：先让滚动记忆在同一队列中写完，再让配置写最终快照；
+		// 配置超时兜底会关闭写盘线程并同步写，因此必须放在滚动记忆提交之后。
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
-			TweakifyModConfigOptions.flushOnShutdown();
 			ScrollMemory.flushOnShutdown();
+			TweakifyModConfigOptions.flushOnShutdown();
 			AsyncFileWriter.shutdown(2000L);
 		});
 
@@ -70,6 +82,18 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		// 反射检查 handler 方法无效，因为 handler 合并成功并不代表注入成功。
 		TweakifyMod.LOGGER.info("Item despawn hook uses a behavior probe; watch for "
 			+ "'Mixin hook active: itemDespawnTick' after the first item tick");
+
+		// 可见交易：注册锁定交易包，并在交易界面打开时把数据合并进 MerchantMenu。
+		PayloadTypeRegistry.clientboundPlay().register(LockedTradesPayload.TYPE, LockedTradesPayload.CODEC);
+		ClientPlayNetworking.registerGlobalReceiver(LockedTradesPayload.TYPE, (payload, context) ->
+			context.client().execute(() -> {
+				Minecraft client = Minecraft.getInstance();
+				if (client.gui.screen() instanceof MerchantScreen screen
+					&& screen.getMenu() instanceof MerchantMenu menu
+					&& menu instanceof MerchantMenuAccess access) {
+					access.tweakify$setLockedOffers(payload.offers().orElse(null));
+				}
+			}));
 	}
 
 	// 每 tick 按固定顺序驱动各状态机。
@@ -80,9 +104,12 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		MiningCooldownState.tick(client);
 		UseCooldownState.tick(client);
 		FlightDriftState.tick(client);
+		// 主动爬行：先把按键状态采样成快照，姿态注入在客户端/集成服务端共用。
+		ForceCrawlState.tick(client);
 		// 基岩高亮与屏障可见共用一次方块扫描。
 		BlockMarkerScanner.tick(client);
 		ElytraFireworkState.tick(client);
+		PiglinArmorSwapState.tick(client);
 		AttackRangeState.tick(client);
 		// 设备就绪后记录一次渲染后端，便于排查 Vulkan/OpenGL 差异。
 		logRenderBackendOnce();
@@ -101,7 +128,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		}
 		remoteServerLogged = true;
 		TweakifyMod.LOGGER.warn("Connected to a remote server: server-side features (anvil, shovel snow, item despawn, "
-			+ "slime spawn, farmland, pick block, smithing, iron golem minecart) only work in single player or on a LAN host");
+			+ "slime spawn, farmland, pick block, smithing, iron golem minecart, bone meal, active crawling, "
+			+ "thrown spawn eggs) only work in single player or on a LAN host");
 	}
 
 	private static void logRenderBackendOnce() {

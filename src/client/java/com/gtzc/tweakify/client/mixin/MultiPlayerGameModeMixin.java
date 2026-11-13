@@ -4,6 +4,7 @@ import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.MiningCooldownState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -14,7 +15,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -43,24 +43,26 @@ public class MultiPlayerGameModeMixin {
 
 	// 仅在方块真正被挖下（destroyBlock 返回 true）时标记：领地保护、基岩、
 	// 权限不足等失败分支返回 false，不能算作本次左键已经挖到方块。
-	@Inject(method = "destroyBlock", at = @At("RETURN"), require = 0)
-	private void tweakify$markBlockMined(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+	@ModifyReturnValue(method = "destroyBlock", at = @At("RETURN"), require = 0)
+	private boolean tweakify$markBlockMined(boolean original, BlockPos pos) {
 		HookProbe.markOnce(TWEAKIFY$DESTROY_BLOCK_PROBE, "miningCooldownDestroyBlock");
-		if (cir.getReturnValueZ()) {
+		if (original) {
 			MiningCooldownState.markBlockMined();
 		}
+		return original;
 	}
 
 	// 切换物品不打断挖掘：原版 sameDestroyTarget 同时比较位置与手持物品，
 	// 切换物品时返回 false，continueDestroyBlock 会重新 startDestroyBlock 并清空进度。
 	// 开关开启时只比较位置，保留当前破坏进度。
-	@Inject(method = "sameDestroyTarget", at = @At("HEAD"), cancellable = true, require = 0)
-	private void tweakify$keepMiningProgress(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+	@ModifyReturnValue(method = "sameDestroyTarget", at = @At("RETURN"), require = 0)
+	private boolean tweakify$keepMiningProgress(boolean original, BlockPos pos) {
 		HookProbe.markOnce(TWEAKIFY$SAME_TARGET_PROBE, "keepMiningProgressOnItemSwitch");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && config.keepMiningProgressOnItemSwitch) {
-			cir.setReturnValue(pos.equals(this.destroyBlockPos));
+			return pos.equals(this.destroyBlockPos);
 		}
+		return original;
 	}
 
 	// 攻击实体也受“一次左键一次”限制：与挖方块共用同一个按住周期。

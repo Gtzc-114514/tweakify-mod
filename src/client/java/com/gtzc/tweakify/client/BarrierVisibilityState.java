@@ -42,7 +42,7 @@ public final class BarrierVisibilityState {
 		return markers;
 	}
 
-	// 纯判定：水logged 的屏障仍是屏障方块本身。
+	// 纯判定：含水的屏障仍是屏障方块本身。
 	public static boolean isBarrier(BlockState state) {
 		return state.is(Blocks.BARRIER);
 	}

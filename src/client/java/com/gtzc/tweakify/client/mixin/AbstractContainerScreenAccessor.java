@@ -12,4 +12,10 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface AbstractContainerScreenAccessor {
 	@Accessor("hoveredSlot")
 	Slot tweakify$getHoveredSlot();
+
+	@Accessor("leftPos")
+	int tweakify$getLeftPos();
+
+	@Accessor("topPos")
+	int tweakify$getTopPos();
 }

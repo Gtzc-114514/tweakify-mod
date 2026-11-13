@@ -1,4 +1,4 @@
-    package com.gtzc.tweakify.client;
+package com.gtzc.tweakify.client;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,5 +73,21 @@ class ScrollMemoryTest {
 		try (Stream<Path> files = Files.list(tempDir)) {
 			assertEquals(1, files.count(), "失败后临时文件必须被清理");
 		}
+	}
+
+	// 退出兜底写使用更大的序号：排队的旧快照即使晚于它执行，也不能覆盖新快照。
+	@Test
+	void staleSnapshotDoesNotOverwriteNewerSnapshot() throws IOException {
+		Path target = tempDir.resolve("scroll-order.json");
+		long staleSequence = ScrollMemory.nextWriteSequence();
+		long newerSequence = ScrollMemory.nextWriteSequence();
+
+		assertTrue(ScrollMemory.saveSnapshotTo(target, Map.of("modmenu", 2), newerSequence));
+		assertTrue(ScrollMemory.saveSnapshotTo(target, Map.of("modmenu", 1), staleSequence),
+			"a stale snapshot should report success because a newer snapshot already covered it");
+
+		String json = Files.readString(target);
+		assertTrue(json.contains("\"modmenu\""));
+		assertTrue(json.contains("2"), "a stale snapshot must not overwrite newer content");
 	}
 }

@@ -48,13 +48,15 @@ public class ItemEntityMixin {
 		}
 	}
 
-	@Redirect(method = "tick", at = @At(value = "INVOKE", target = "discard()V"), require = 0)
+	@Redirect(method = "tick", at = @At(value = "INVOKE",
+		target = "Lnet/minecraft/world/entity/item/ItemEntity;discard()V"), require = 0)
 	private void tweakify$guardVanillaDespawn(ItemEntity self) {
 		HookProbe.markOnce(TWEAKIFY$GUARD_PROBE, "itemDespawnGuard");
-		if (self.getAge() < tweakify$configuredLifetime(self)) {
-			return;
+		// tick 开头对空物品实体也会调用 discard：这一处与寿命无关，必须照常丢弃。
+		// 空物品分支在原版 tick 里会先 return，age 不会增长；若拦截这一处，空物品实体会永不消失。
+		if (self.getItem().isEmpty() || self.getAge() >= tweakify$configuredLifetime(self)) {
+			self.discard();
 		}
-		self.discard();
 	}
 
 	private static int tweakify$configuredLifetime(ItemEntity self) {

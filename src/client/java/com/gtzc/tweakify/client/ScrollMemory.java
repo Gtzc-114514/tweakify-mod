@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 滚动列表记忆：记住列表滚到了哪里，关闭界面再打开时回到该位置。
@@ -45,6 +46,15 @@ public final class ScrollMemory {
 	private static volatile boolean dirty;
 	private static int flushTicks;
 	private static Path cachedPath;
+
+	// 提交序号：与配置写相同，防止排队的旧快照在退出同步兜底写之后覆盖新快照。
+	private static final AtomicLong WRITE_SEQUENCE = new AtomicLong();
+	private static final AtomicLong LAST_WRITTEN_SEQUENCE = new AtomicLong();
+	private static final Object WRITE_LOCK = new Object();
+
+	static long nextWriteSequence() {
+		return WRITE_SEQUENCE.incrementAndGet();
+	}
 
 	private ScrollMemory() {
 	}
@@ -112,12 +122,13 @@ public final class ScrollMemory {
 	}
 
 	// 写盘搬到后台线程：滚动位置可能在界面渲染路径上变化，不能同步占主线程做磁盘 IO。
-	// 传出去的是不可变快照，后台线程不再触碰 POSITIONS。
+	// 传出去的是不可变快照，后台线程不再触碰 POSITIONS；序号在提交时分配。
 	private static void submitAsyncFlush(Path path) {
 		Map<String, Integer> snapshot = Map.copyOf(POSITIONS);
+		long sequence = WRITE_SEQUENCE.incrementAndGet();
 		dirty = false;
 		AsyncFileWriter.execute(() -> {
-			if (!saveSnapshotTo(path, snapshot)) {
+			if (!saveSnapshotTo(path, snapshot, sequence)) {
 				// 失败保留待写标记：客户端 tick 或下一次界面关闭时重试。
 				dirty = true;
 			}
@@ -133,20 +144,55 @@ public final class ScrollMemory {
 		return true;
 	}
 
-	// 客户端退出：先排空后台队列，再同步写最终位置。
-	// 顺序不能反：队列里可能还排着更早的快照，它会在 shutdown() 时落盘并覆盖新内容。
+	// 客户端退出：把最终位置提交到与异步写相同的串行队列并等待。
+	// 提交序号保证：若等待超时、改为同步兜底写（更大序号），排队中的旧快照之后执行时会被跳过。
 	public static void flushOnShutdown() {
-		AsyncFileWriter.drain(2000L);
 		if (!dirty || !persistEnabled()) {
 			return;
 		}
 		ensureLoaded();
-		flushTo(storagePath());
+		Path path = storagePath();
+		Map<String, Integer> snapshot = Map.copyOf(POSITIONS);
+		long sequence = WRITE_SEQUENCE.incrementAndGet();
+		// 退出路径不取消超时任务：由随后的 AsyncFileWriter.shutdown 等待队列排空，
+		// 避免慢磁盘下丢掉最后一次滚动位置。
+		Boolean written = AsyncFileWriter.submitAndWait(
+			() -> saveSnapshotTo(path, snapshot, sequence), 2000L, false);
+		if (Boolean.TRUE.equals(written)) {
+			dirty = false;
+		} else {
+			// 队列可能已被关闭/丢弃：用更大的序号同步写；旧快照稍后执行时会被跳过。
+			long fallbackSequence = WRITE_SEQUENCE.incrementAndGet();
+			if (saveSnapshotTo(path, snapshot, fallbackSequence)) {
+				dirty = false;
+			} else {
+				TweakifyMod.LOGGER.warn("Failed to save scroll memory on shutdown");
+			}
+		}
 	}
 
-	// 包私有：把给定快照写成 JSON，先写临时文件再原子替换。
-	// 快照不可变，因此可以在后台线程调用。
+	// 包私有：把给定快照写成 JSON，自动分配序号（测试/同步调用）。
 	static boolean saveSnapshotTo(Path path, Map<String, Integer> snapshot) {
+		return saveSnapshotTo(path, snapshot, WRITE_SEQUENCE.incrementAndGet());
+	}
+
+	// 带提交序号的落盘：序号小于已写成功的最新序号时跳过并返回 true
+	//（语义：更晚提交的完整快照已经覆盖了这份内容）。
+	static boolean saveSnapshotTo(Path path, Map<String, Integer> snapshot, long sequence) {
+		synchronized (WRITE_LOCK) {
+			if (sequence < LAST_WRITTEN_SEQUENCE.get()) {
+				return true;
+			}
+			boolean written = writeSnapshotUnlocked(path, snapshot);
+			if (written) {
+				LAST_WRITTEN_SEQUENCE.accumulateAndGet(sequence, Math::max);
+			}
+			return written;
+		}
+	}
+
+	// 快照不可变，写盘本身不需要额外同步。
+	private static boolean writeSnapshotUnlocked(Path path, Map<String, Integer> snapshot) {
 		Path temporaryPath = null;
 		try {
 			Path directory = path.toAbsolutePath().getParent();
@@ -202,7 +248,8 @@ public final class ScrollMemory {
 		try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
 			Map<String, Integer> values = GSON.fromJson(reader, FILE_TYPE);
 			if (values != null) {
-				POSITIONS.putAll(values);
+				// 内存中的位置更新（可能是开关打开前记录的），不能被磁盘旧值覆盖。
+				values.forEach(POSITIONS::putIfAbsent);
 			}
 		} catch (IOException | JsonParseException e) {
 			TweakifyMod.LOGGER.warn("Failed to read scroll memory: {}", e.getMessage());

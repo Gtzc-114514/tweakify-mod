@@ -25,10 +25,12 @@ public final class BetterBlockPlacementState {
 			return false;
 		}
 		// 只处理植物类方块；有碰撞的（如甜浆果丛）保持原样，避免误拆交互方块。
-		if (!(state.getBlock() instanceof VegetationBlock) || state.isSolid()) {
+		// 26.3 的 BlockStateBase.isSolid() 已标记为 legacy，改用碰撞形状判断。
+		if (!(state.getBlock() instanceof VegetationBlock)
+			|| !state.getCollisionShape(context.getLevel(), context.getClickedPos()).isEmpty()) {
 			return false;
 		}
-		// 水草、海带等水logged 植物不处理，避免在水下把整株植物顶掉。
+		// 水草、海带等含水植物不处理，避免在水下把整株植物顶掉。
 		if (!state.getFluidState().isEmpty()) {
 			return false;
 		}

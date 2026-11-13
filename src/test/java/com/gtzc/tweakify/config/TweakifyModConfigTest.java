@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.config;
 
+import com.gtzc.tweakify.util.AsyncFileWriter;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -11,6 +13,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import net.minecraft.SharedConstants;
@@ -25,8 +31,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class TweakifyModConfigTest {
 	@BeforeAll
@@ -93,7 +101,6 @@ class TweakifyModConfigTest {
 		assertEquals("", config.hotkeySurvivalPickBlock);
 		assertEquals("", config.hotkeyDisableOverlayEffects);
 		assertEquals("", config.hotkeyDisableFlightDrift);
-		assertEquals("", config.hotkeyFlightDriftVertical);
 		List<String> items = config.getRestrictedOffhandItems();
 		assertTrue(items.contains("minecraft:torch"), "default list should contain torch");
 		assertEquals(items.size(), items.stream().distinct().count(), "default list must not contain duplicates");
@@ -111,6 +118,53 @@ class TweakifyModConfigTest {
 		assertEquals(TweakifyModConfig.CURRENT_CONFIG_VERSION, config.configVersion);
 		assertTrue(Files.readString(path).contains("\"configVersion\""),
 			"upgraded version should be written back");
+	}
+
+	// 旧版“运动相机横移倾斜 / 创造物品栏条目合并”字段已移除，读取时必须迁移到新开关与快捷键。
+	@Test
+	void loadMigratesLegacyCameraAndItemGroupKeys() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, """
+			{
+			  "configVersion": 2,
+			  "motionCameraTilt": true,
+			  "hotkeyMotionCameraTilt": "K",
+			  "mergeCreativeItemEntries": true,
+			  "hotkeyMergeCreativeItemEntries": "L"
+			}
+			""");
+
+		TweakifyModConfig config = TweakifyModConfig.load(path);
+
+		assertTrue(config.cameraMotion, "legacy motionCameraTilt should migrate to cameraMotion");
+		assertEquals("K", config.hotkeyCameraMotion);
+		assertTrue(config.itemGroups, "legacy mergeCreativeItemEntries should migrate to itemGroups");
+		assertEquals("L", config.hotkeyItemGroups);
+		assertEquals(TweakifyModConfig.CURRENT_CONFIG_VERSION, config.configVersion);
+		String rewritten = Files.readString(path);
+		assertTrue(rewritten.contains("\"cameraMotion\": true"), "migrated value should be written back");
+		assertTrue(rewritten.contains("\"itemGroups\": true"));
+		assertTrue(rewritten.contains("\"hotkeyCameraMotion\": \"K\""));
+		assertTrue(rewritten.contains("\"hotkeyItemGroups\": \"L\""));
+	}
+
+	@Test
+	void loadIgnoresRemovedMiniHudHotkey() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, """
+			{
+			  "configVersion": 3,
+			  "miniHudFpsOptimization": true,
+			  "hotkeyMiniHudFpsOptimization": "M"
+			}
+			""");
+
+		TweakifyModConfig config = TweakifyModConfig.load(path);
+
+		assertTrue(config.miniHudFpsOptimization, "optimization switch should still load");
+		String rewritten = Files.readString(path);
+		assertFalse(rewritten.contains("hotkeyMiniHudFpsOptimization"),
+			"obsolete hotkey field should be removed on the next save");
 	}
 
 	@Test
@@ -338,6 +392,35 @@ class TweakifyModConfigTest {
 		assertFalse(rewritten.contains("9999"), "clamped values should be rewritten to disk");
 	}
 
+	// 新功能开关的默认值与快捷键默认值。
+	@Test
+	void loadDefaultsNewFeatureFields() {
+		TweakifyModConfig config = TweakifyModConfig.load(configPath());
+
+		assertFalse(config.piglinGoldArmorSwap);
+		assertEquals(TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO, config.piglinGoldArmorSwapMode);
+		assertFalse(config.chatInputMemory);
+		assertTrue(config.disabledSpawnAllowPlayerSpawn, "player spawning should be allowed by default");
+		assertEquals("", config.hotkeyPiglinGoldArmorSwap);
+		assertEquals("", config.hotkeyChatInputMemory);
+	}
+
+	// 新功能的枚举字段同样需要清洗：非法模式回退。
+	@Test
+	void loadSanitizesNewFeatureFields() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, """
+			{
+			  "piglinGoldArmorSwapMode": "not-a-mode"
+			}
+			""");
+
+		TweakifyModConfig config = TweakifyModConfig.load(path);
+
+		assertEquals(TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO, config.piglinGoldArmorSwapMode,
+			"unsupported mode should fall back to auto");
+	}
+
 	@Test
 	void loadKeepsExistingFileOnReadError() throws IOException {
 		// 把配置路径指向一个目录：读取会抛 IOException，原路径必须原样保留。
@@ -368,6 +451,91 @@ class TweakifyModConfigTest {
 		assertFalse(reloaded.interceptBlockInteraction);
 		assertTrue(reloaded.interceptEntityInteraction);
 		assertEquals(List.of("minecraft:torch"), reloaded.getRestrictedOffhandItems());
+	}
+
+	// 退出兜底：不经过写盘队列，直接同步写当前内存快照。
+	@Test
+	void writeSynchronouslyWritesCurrentSnapshot() {
+		Path path = configPath();
+		TweakifyModConfig config = new TweakifyModConfig(path);
+		config.blockOffhandFallback = false;
+		config.hotkeyOpenConfigGui = "H,J";
+
+		assertEquals(Boolean.TRUE, config.writeSynchronously());
+
+		TweakifyModConfig reloaded = TweakifyModConfig.load(path);
+		assertFalse(reloaded.blockOffhandFallback);
+		assertEquals("H,J", reloaded.hotkeyOpenConfigGui);
+	}
+
+	// 退出同步兜底写分配更晚的落盘序号：真正入队但延迟执行的旧任务必须被跳过，
+	// 不能在同步写之后把磁盘覆盖回旧快照。
+	@Test
+	void writeSynchronouslyWinsOverStaleQueuedWrite() throws Exception {
+		Path path = configPath();
+		TweakifyModConfig config = new TweakifyModConfig(path);
+		config.blockOffhandFallback = false;
+
+		CountDownLatch blocked = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		AsyncFileWriter.execute(() -> {
+			blocked.countDown();
+			try {
+				release.await();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		assertTrue(blocked.await(5, TimeUnit.SECONDS), "the writer should be blocked");
+
+		try {
+			// 真正入队：序号必须在 prepareSaveHandle 提交时分配；
+			// 若改成执行期分配，旧任务会在同步写之后拿到更大序号并把磁盘覆盖回旧值。
+			AsyncFileWriter.WriteHandle stale = config.prepareSaveHandle();
+			assertTrue(stale != null, "the stale snapshot should be queued");
+
+			config.blockOffhandFallback = true;
+			assertEquals(Boolean.TRUE, config.writeSynchronously());
+
+			release.countDown();
+			assertTrue(Boolean.TRUE.equals(AsyncFileWriter.await(stale, 5000L, false)),
+				"the stale queued task should be skipped as already covered");
+
+			assertTrue(TweakifyModConfig.load(path).blockOffhandFallback,
+				"the stale queued task must not overwrite the synchronous snapshot");
+		} finally {
+			release.countDown();
+			AsyncFileWriter.drain(5000L);
+		}
+	}
+
+	// 写锁被占用时必须区分“锁超时”（null）与“写盘失败”（false）。
+	@Test
+	void writeSynchronouslyReportsLockTimeout() throws Exception {
+		TweakifyModConfig config = new TweakifyModConfig(configPath());
+		ReentrantLock lock = ConfigStorage.writeLockForTest();
+		CountDownLatch locked = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		Thread holder = new Thread(() -> {
+			lock.lock();
+			try {
+				locked.countDown();
+				release.await();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			} finally {
+				lock.unlock();
+			}
+		});
+		holder.start();
+		try {
+			assertTrue(locked.await(5, TimeUnit.SECONDS), "the write lock should be held");
+			assertNull(config.writeSynchronously(),
+				"持有写锁时同步兜底应报告锁超时，而不是写盘失败");
+		} finally {
+			release.countDown();
+			holder.join(5000L);
+		}
 	}
 
 	@Test
@@ -422,6 +590,58 @@ class TweakifyModConfigTest {
 		assertEquals("H,J", config.hotkeyOpenConfigGui, "hotkeys must roll back to snapshot");
 	}
 
+	// 等待写盘时必须释放配置锁：慢盘场景下客户端 tick 的 setter 不能被 save() 阻塞。
+	@Test
+	void saveDoesNotHoldConfigLockWhileWaiting() throws Exception {
+		TweakifyModConfig config = new TweakifyModConfig(configPath());
+		CountDownLatch writerBusy = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		AsyncFileWriter.execute(() -> {
+			writerBusy.countDown();
+			try {
+				release.await();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		});
+		assertTrue(writerBusy.await(5, TimeUnit.SECONDS), "the blocking write should start");
+
+		AtomicBoolean saveResult = new AtomicBoolean();
+		Thread saver = new Thread(() -> saveResult.set(config.save()));
+		saver.start();
+
+		// 等到 save 真正进入 Future.get 的等待，而不是还没入队（避免假通过）。
+		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+		while (saver.getState() != Thread.State.TIMED_WAITING && System.nanoTime() < deadline) {
+			Thread.sleep(1L);
+		}
+		assertTrue(saver.getState() == Thread.State.TIMED_WAITING,
+			"save should be waiting for the writer thread");
+
+		// 1 秒后自动放行：若 save 仍持锁，setBoolean 会等它，耗时明显超过 500ms。
+		Thread releaser = new Thread(() -> {
+			try {
+				Thread.sleep(1000L);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+			release.countDown();
+		});
+		releaser.setDaemon(true);
+		releaser.start();
+
+		long start = System.nanoTime();
+		config.setBoolean("betterBold", true);
+		long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+		assertTrue(elapsedMillis < 500,
+			"save() must not hold the config lock while waiting (took " + elapsedMillis + " ms)");
+
+		release.countDown();
+		saver.join(5000L);
+		assertFalse(saver.isAlive(), "save should finish after the blocking write");
+		assertTrue(saveResult.get(), "save should succeed once the queue drains");
+	}
+
 	// 异步写盘路径：序列化与落盘分开后，两者组合必须与同步 save() 结果一致。
 	@Test
 	void toJsonAndWriteJsonRoundTripLikeSave() {
@@ -434,12 +654,39 @@ class TweakifyModConfigTest {
 		String json = config.toJson();
 		assertTrue(json.contains("\"blockOffhandFallback\": false"),
 			"toJson should serialize the current values");
-		assertTrue(config.writeJson(json), "writeJson should write the given text");
+		assertTrue(config.writeJson(json, config.allocateWriteSequence()),
+			"writeJson should write the given text");
 
 		TweakifyModConfig reloaded = TweakifyModConfig.load(path);
 		assertFalse(reloaded.blockOffhandFallback);
 		assertEquals("H,J", reloaded.hotkeyOpenConfigGui);
 		assertEquals(List.of("minecraft:apple"), reloaded.getMainHandUseCooldownItems());
+	}
+
+	// 保存失败/超时回滚后提交的兜底快照最终必须落盘（异步，不阻塞调用方）。
+	@Test
+	void submitSaveAsyncWritesCurrentSnapshot() throws IOException, InterruptedException {
+		Path path = configPath();
+		TweakifyModConfig config = new TweakifyModConfig(path);
+		config.blockOffhandFallback = false;
+		config.hotkeyOpenConfigGui = "H,J";
+
+		config.submitSaveAsync();
+
+		// 写盘排在全局队列中；轮询等待，不对后台线程调度时机做假设。
+		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+		String written = "";
+		while (System.nanoTime() < deadline) {
+			if (Files.exists(path)) {
+				written = Files.readString(path);
+				if (written.contains("\"blockOffhandFallback\": false")
+					&& written.contains("\"hotkeyOpenConfigGui\": \"H,J\"")) {
+					return;
+				}
+			}
+			Thread.sleep(10L);
+		}
+		fail("submitSaveAsync should write the current snapshot; last content: " + written);
 	}
 
 	// restoreSnapshot 只回滚内存：异步写盘失败时由客户端线程调用，不能又触发一次磁盘写入。
@@ -473,13 +720,12 @@ class TweakifyModConfigTest {
 		config.blockOffhandFallback = true;
 
 		assertEquals(TweakifyModConfig.ApplyResult.UNCHANGED,
-			config.applyAndSave(() -> null), "no change should skip writing");
+			config.applyAndSave(() -> false), "no change should skip writing");
 		assertTrue(config.blockOffhandFallback);
 
 		assertEquals(TweakifyModConfig.ApplyResult.SAVED, config.applyAndSave(() -> {
-			boolean previous = config.blockOffhandFallback;
 			config.setBoolean("blockOffhandFallback", false);
-			return () -> config.setBoolean("blockOffhandFallback", previous);
+			return true;
 		}));
 		assertFalse(config.blockOffhandFallback);
 		assertFalse(TweakifyModConfig.load(path).blockOffhandFallback, "saved value must reach disk");
@@ -498,14 +744,36 @@ class TweakifyModConfigTest {
 		config.disableHurtShake = true;
 
 		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> {
-			boolean previous = config.blockOffhandFallback;
 			config.setBoolean("blockOffhandFallback", false);
-			return () -> config.setBoolean("blockOffhandFallback", previous);
+			return true;
 		});
 
 		assertEquals(TweakifyModConfig.ApplyResult.SAVE_FAILED, result);
 		assertTrue(config.blockOffhandFallback, "the mutated field must roll back");
 		assertTrue(config.disableHurtShake, "unrelated fields must not be touched by the rollback");
+		// applyAndSave 失败后会异步提交兜底快照；等待它结束，避免临时文件残留影响 @TempDir 清理。
+		assertTrue(AsyncFileWriter.drain(5000L));
+	}
+
+	// 写盘等待期间被其它线程改过的字段不能被回滚覆盖：只有仍未变的字段回到 before。
+	@Test
+	void rollbackChangedFieldsKeepsConcurrentEdits() {
+		TweakifyModConfig config = new TweakifyModConfig(configPath());
+		config.blockOffhandFallback = true;
+		config.disableHurtShake = false;
+		TweakifyModConfig.Snapshot before = config.snapshot();
+
+		config.blockOffhandFallback = false;
+		config.disableHurtShake = true;
+		TweakifyModConfig.Snapshot after = config.snapshot();
+
+		// 模拟等待期间另一线程把 blockOffhandFallback 改回 true（当前值 != after）。
+		config.blockOffhandFallback = true;
+
+		config.rollbackChangedFieldsIfUnchanged(before, after);
+
+		assertTrue(config.blockOffhandFallback, "concurrent edit must be preserved, not rolled back");
+		assertFalse(config.disableHurtShake, "unchanged field should roll back to the before snapshot");
 	}
 
 	// 档案加载只覆盖档案里存在的字段：旧档案缺少的新字段保持当前值，

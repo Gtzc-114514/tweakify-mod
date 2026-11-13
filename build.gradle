@@ -13,6 +13,13 @@ repositories {
 		name = "Terraformers"
 		url = "https://maven.terraformersmc.com/"
 	}
+	maven {
+		name = "Masa"
+		url = "https://masa.dy.fi/maven/sakura-ryoko"
+		content {
+			includeGroupAndSubgroups("fi.dy.masa")
+		}
+	}
 	exclusiveContent {
 		forRepository {
 			maven {
@@ -61,6 +68,11 @@ dependencies {
 
 	// MaLiLib provides the Tweakeroo-style configuration GUI and widgets.
 	implementation "maven.modrinth:GcWjdA9I:${project.malilib_version}"
+	
+	// MiniHUD is optional: only used by the optional MiniHUD mixin config.
+	compileOnly("fi.dy.masa.minihud:minihud-fabric-26.3:${project.minihud_version}") {
+		transitive = false
+	}
 
 	// Unit tests (Loom adds the Minecraft dependencies to the test source set automatically).
 	testImplementation "org.junit.jupiter:junit-jupiter:5.13.4"
@@ -87,6 +99,8 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 25
+	// -classfile 关闭第三方 jar 的类文件警告（gson/guava/joml 缺注解类），项目源码警告保持开启。
+	it.options.compilerArgs += ['-Xlint:all,-processing,-serial,-this-escape,-classfile']
 }
 
 java {

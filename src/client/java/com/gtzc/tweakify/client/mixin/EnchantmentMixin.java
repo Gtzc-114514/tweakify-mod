@@ -1,13 +1,12 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * 附魔等级阿拉伯数字：原版 getFullname 使用罗马数字（I、II...），
@@ -15,13 +14,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(Enchantment.class)
 public class EnchantmentMixin {
-	@Inject(method = "getFullname", at = @At("HEAD"), cancellable = true)
-	private static void tweakify$arabicLevel(Holder<Enchantment> enchantment, int level,
-											 CallbackInfoReturnable<Component> cir) {
+	@ModifyReturnValue(method = "getFullname", at = @At("RETURN"))
+	private static Component tweakify$arabicLevel(Component original, Holder<Enchantment> enchantment, int level) {
 		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.enchantmentLevelArabic || level <= 0) {
-			return;
+			return original;
 		}
-		cir.setReturnValue(enchantment.value().description().copy()
-			.append(" ").append(Component.literal(Integer.toString(level))));
+		return enchantment.value().description().copy()
+			.append(" ").append(Component.literal(Integer.toString(level)));
 	}
 }

@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.gtzc.tweakify.util.AsyncFileWriter;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
@@ -25,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -50,7 +52,10 @@ public class TweakifyModConfig {
 	}
 
 	// 配置文件版本：字段语义发生变化时递增，并在 load() 里按旧版本做迁移。
-	public static final int CURRENT_CONFIG_VERSION = 2;
+	public static final int CURRENT_CONFIG_VERSION = 3;
+
+	// 同步保存等待写盘完成的最长时间：超时后任务仍会按队列顺序继续执行，不会取消。
+	private static final long SAVE_TIMEOUT_MILLIS = 2000L;
 
 	// 模组界面支持的语言代码，与 assets/tweakify-mod/lang 下的文件名一致。
 	public static final List<String> SUPPORTED_LANGUAGES = List.of("zh_cn", "en_us", "ru_ru", "fr_fr");
@@ -121,6 +126,11 @@ public class TweakifyModConfig {
 		sanitizers.add(FieldSanitizer.of("blockOutlineColorMode", TweakifyModConfig::sanitizeBlockOutlineColorMode));
 		sanitizers.add(FieldSanitizer.of("blockOutlineAnimationSpeed",
 			TweakifyModConfig::sanitizeBlockOutlineAnimationSpeed));
+		sanitizers.add(FieldSanitizer.of("piglinGoldArmorSwapMode",
+			TweakifyModConfig::sanitizePiglinArmorSwapMode));
+		sanitizers.add(FieldSanitizer.of("itemGroupsSort", TweakifyModConfig::sanitizeItemGroupsSort));
+		sanitizers.add(FieldSanitizer.of("cameraMotionIntensity",
+			TweakifyModConfig::sanitizeCameraMotionIntensity));
 		assertSanitizersCoverAllFields(sanitizers);
 		return List.copyOf(sanitizers);
 	}
@@ -248,6 +258,27 @@ public class TweakifyModConfig {
 	public static final List<String> SUPPORTED_BLOCK_PLACEMENT_MODES = List.of(
 		BLOCK_PLACEMENT_FLOWERS, BLOCK_PLACEMENT_CROPS, BLOCK_PLACEMENT_ALL);
 
+	// 防猪灵装备切换的替换部位：auto 表示从背包里选一件金制装备换上（有哪个用哪个）。
+	public static final String PIGLIN_ARMOR_SWAP_AUTO = "auto";
+	public static final String PIGLIN_ARMOR_SWAP_HELMET = "helmet";
+	public static final String PIGLIN_ARMOR_SWAP_CHESTPLATE = "chestplate";
+	public static final String PIGLIN_ARMOR_SWAP_LEGGINGS = "leggings";
+	public static final String PIGLIN_ARMOR_SWAP_BOOTS = "boots";
+	public static final List<String> SUPPORTED_PIGLIN_ARMOR_SWAP_MODES = List.of(
+		PIGLIN_ARMOR_SWAP_AUTO, PIGLIN_ARMOR_SWAP_HELMET, PIGLIN_ARMOR_SWAP_CHESTPLATE,
+		PIGLIN_ARMOR_SWAP_LEGGINGS, PIGLIN_ARMOR_SWAP_BOOTS);
+
+	// 物品分组：排序方式（保持物品栏原顺序 / 按物品 ID 字母序）。
+	public static final String ITEM_GROUP_SORT_DEFAULT = "default";
+	public static final String ITEM_GROUP_SORT_ALPHABETICAL = "alphabetical";
+	public static final List<String> SUPPORTED_ITEM_GROUP_SORTS = List.of(
+		ITEM_GROUP_SORT_DEFAULT, ITEM_GROUP_SORT_ALPHABETICAL);
+
+	// 相机运动强度：百分比，100 为参考模组的默认强度。
+	public static final int MIN_CAMERA_MOTION_INTENSITY = 0;
+	public static final int MAX_CAMERA_MOTION_INTENSITY = 200;
+	public static final int DEFAULT_CAMERA_MOTION_INTENSITY = 100;
+
 	// 复制 ID 的输出格式：纯 ID / 带类型前缀 / 带数量。
 	public static final String COPY_ID_FORMAT_PLAIN = "plain";
 	public static final String COPY_ID_FORMAT_TYPED = "typed";
@@ -305,7 +336,8 @@ public class TweakifyModConfig {
 		this.configPath = null;
 	}
 
-	TweakifyModConfig(Path configPath) {
+	// 指定路径的构造器：测试与需要显式路径的调用方使用；常规启动走 load()。
+	public TweakifyModConfig(Path configPath) {
 		this.configPath = configPath;
 	}
 
@@ -402,6 +434,15 @@ public class TweakifyModConfig {
 	// 只拦截玩家的维度传送，其他实体仍可正常穿过传送门。
 	public volatile boolean dimensionTeleportPlayersOnly = false;
 
+	// 地狱门传送延迟：调整玩家通过下界传送门的等待时间。
+	public volatile boolean netherPortalTeleportDelay = false;
+
+	// 子开关：生存/冒险模式玩家进入地狱门立即传送（与创造模式一致）。
+	public volatile boolean netherPortalSurvivalInstantTeleport = false;
+
+	// 子开关：创造模式玩家进入地狱门也等待生存模式的延迟，不再秒传。
+	public volatile boolean netherPortalCreativeDelayedTeleport = false;
+
 	// 禁用地狱门传送：总开关开启时，阻止实体通过下界传送门。
 	public volatile boolean disableNetherPortalTeleport = true;
 
@@ -429,6 +470,12 @@ public class TweakifyModConfig {
 	// 禁用附魔过于昂贵：铁砧花费达到 40 级时仍可取出结果（仅单人/局域网生效）。
 	public volatile boolean disableTooExpensive = false;
 
+	// 移除附魔冲突：铁砧合并装备时忽略附魔互斥限制，互斥附魔可以合到同一件装备上。
+	public volatile boolean removeEnchantmentConflicts = false;
+
+	// 附魔描述：在物品提示中为每个附魔追加一行描述。
+	public volatile boolean enchantmentDescriptions = false;
+
 	// 锹单层铲雪：手持锹破坏多层雪层时一次只减少一层，而非整块移除。
 	public volatile boolean disableShovelSnowFullBreak = false;
 
@@ -440,6 +487,57 @@ public class TweakifyModConfig {
 
 	// 草径卡船修复：土径对船的碰撞按满方块处理，消除土径与完整方块之间的 1/16 台阶。
 	public volatile boolean fixBoatStuckOnDirtPath = false;
+
+	// 鹦鹉肩膀跳舞：唱片机播放音乐时，站在玩家肩膀上的鹦鹉也会跳舞（与基岩版一致）。
+	public volatile boolean parrotDanceOnShoulder = false;
+
+	// 更好的粗体：把粗体偏移从原版 1.0 改为 0.5（与 MCPatcher/OptiFine 一致）。
+	public volatile boolean betterBold = false;
+
+	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算造成的掉帧。
+	public volatile boolean miniHudFpsOptimization = false;
+
+	// 第三人称自身名字：第三/第二人称显示玩家自己的名字。
+	public volatile boolean thirdPersonPlayerName = false;
+
+	// 雪傀儡不受群系影响：温暖/干燥群系不再让雪傀儡因群系属性融化。
+	// 雨、水和熔岩伤害仍按原版；判定在服务端执行，仅单人/局域网生效。
+	public volatile boolean snowGolemBiomeImmunity = false;
+
+	// 相机运动：参考 CameraOverhaul 的转向/横移/俯仰/静止晃动与屏幕震动。
+	public volatile boolean cameraMotion = false;
+	public volatile String hotkeyCameraMotion = "";
+	public volatile int cameraMotionIntensity = DEFAULT_CAMERA_MOTION_INTENSITY;
+	public volatile boolean cameraMotionTurningRoll = true;
+	public volatile boolean cameraMotionStrafingRoll = true;
+	public volatile boolean cameraMotionForwardPitch = true;
+	public volatile boolean cameraMotionVerticalPitch = true;
+	public volatile boolean cameraMotionIdleSway = true;
+	public volatile boolean cameraMotionScreenShake = true;
+	public volatile boolean cameraMotionMouseSmoothing = false;
+	public volatile boolean cameraMotionFirstPerson = false;
+	public volatile boolean cameraMotionThirdPerson = true;
+
+	// 物品分组：同一分类里把楼梯、台阶、羊毛等成组物品折叠成组图标。
+	public volatile boolean itemGroups = false;
+	public volatile String hotkeyItemGroups = "";
+	public volatile String itemGroupsSort = ITEM_GROUP_SORT_DEFAULT;
+
+	// 关闭指定生物生成：列表中的生物不会通过自然/结构/巡逻/增援/刷怪笼等世界生成出现。
+	// 玩家主动生成默认放行；关闭 disabledSpawnAllowPlayerSpawn 后刷怪蛋、命令、繁殖等也会被拦截。
+	public volatile boolean disableSpecifiedMobSpawn = false;
+	private volatile List<String> disabledSpawnEntities = new ArrayList<>();
+	public volatile boolean disabledSpawnAllowPlayerSpawn = true;
+
+	// 和平模式怪物：允许列表中的怪物在和平难度下生成/保留，并可设置为不攻击玩家。
+	public volatile boolean peacefulModeMonsters = false;
+	private volatile List<String> peacefulModeMonsterEntities = new ArrayList<>();
+	public volatile boolean peacefulModeMonsterSpawn = true;
+	public volatile boolean peacefulModeMonsterNoAttack = true;
+
+	// 刷怪蛋投掷：像鸡蛋/雪球一样投掷刷怪蛋，命中后生成生物。
+	public volatile boolean throwSpawnEgg = false;
+	public volatile String hotkeyThrowSpawnEgg = "";
 
 	// 鞘翅烟花使用限制：滑翔中使用烟花后，等烟花加速结束才能再次使用。
 	public volatile boolean elytraFireworkCooldown = false;
@@ -476,6 +574,15 @@ public class TweakifyModConfig {
 
 	// 松开鼠标时自动复制选中文字。
 	public volatile boolean chatSelectionAutoCopy = false;
+
+	// 防猪灵装备切换：附近有猪灵时换上一件金制护甲，猪灵离开后换回。
+	public volatile boolean piglinGoldArmorSwap = false;
+
+	// 切换模式：auto（有哪个金制就换哪个）/ helmet / chestplate / leggings / boots。
+	public volatile String piglinGoldArmorSwapMode = PIGLIN_ARMOR_SWAP_AUTO;
+
+	// 聊天框内容记忆：关闭聊天框后保留未发送的输入内容，再次打开时恢复。
+	public volatile boolean chatInputMemory = false;
 
 	// 生物攻击范围显示：以生物为中心画半透明蓝色范围，列表为空时作用于全部生物与玩家。
 	public volatile boolean attackRangeDisplay = false;
@@ -549,6 +656,15 @@ public class TweakifyModConfig {
 	// 可覆盖的植物范围：flowers（仅花草）/ crops（含作物）/ all（全部植物）。
 	public volatile String betterBlockPlacementMode = BLOCK_PLACEMENT_FLOWERS;
 
+	// 更好的骨粉催熟：让骨粉像基岩版一样作用于甘蔗与一格高的花。
+	public volatile boolean betterBoneMeal = false;
+
+	// 子开关：骨粉把整株甘蔗一次催到最高 3 格，只消耗 1 个骨粉。
+	public volatile boolean boneMealSugarCane = true;
+
+	// 子开关：骨粉在一格高的花周围长出一片相同的花（凋零玫瑰除外）。
+	public volatile boolean boneMealFlowers = true;
+
 	// 禁用屏幕覆盖层（细雪/岩浆/水下）的总开关。
 	public volatile boolean disableOverlayEffects = false;
 
@@ -600,8 +716,50 @@ public class TweakifyModConfig {
 	// 生存模式中键取物：准星指向方块/液体/实体时，背包里有对应物品就切换到主手。
 	public volatile boolean survivalPickBlock = false;
 
-	// 强制关闭加载屏幕：加载世界时立即关掉“正在加载地形”界面。
+	// 便捷焚烧：背包/容器里拿着物品，右键点击岩浆桶或打火石即焚烧该物品。
+	public volatile boolean quickBurnItem = false;
+
+	// 不使用最后一根火把：包里只剩一根火把时不允许放置，避免把最后的火把用掉。
+	public volatile boolean keepLastTorch = false;
+
+	// 如履平地：自动跨上 1 格高的方块（像马一样）。
+	public volatile boolean autoStepUp = false;
+
+	// 更好的攀爬：攀爬方块相关的移动优化（子开关见下）。
+	public volatile boolean betterClimbing = false;
+
+	// 子开关：向下看时加速下降。
+	public volatile boolean climbingFastDescend = true;
+
+	// 子开关：攀爬上升更快。
+	public volatile boolean climbingFasterAscend = true;
+
+	// 子开关：攀爬方块中可从地面起跳。
+	public volatile boolean climbingJumpFromGround = true;
+
+	// 子开关：攀爬时无移动输入不触发碰撞减速。
+	public volatile boolean climbingCancelCollision = true;
+
+	// 主动爬行：按住绑定的爬行键时强制进入爬行姿态。
+	public volatile boolean forceCrawl = false;
+
+	// 经过可攀爬方块不减速：蹭到梯子/藤蔓边缘时不再被原版夹紧水平速度。
+	public volatile boolean climbablePassNoSlowdown = false;
+
+	// 可见交易显示：在村民交易界面显示未来等级（锁定）的交易。
+	public volatile boolean visibleTraders = false;
+
+	// 强制关闭加载屏幕：跳过世界/资源包加载屏幕的渲染，世界仍在后台加载。
 	public volatile boolean forceCloseLoadingScreen = false;
+
+	// 子开关：直接关闭加载界面（完全跳过，可能短暂掉入世界）。
+	public volatile boolean forceCloseLoadingScreenInstant = false;
+
+	// 子开关：保留加载界面的文字与进度（不跳过渲染）。
+	public volatile boolean forceCloseLoadingScreenKeepFirst = false;
+
+	// 子开关：资源包加载屏加速（去淡入、立即淡出、移除覆盖层）。
+	public volatile boolean forceCloseLoadingScreenSkipResourcePackFade = true;
 
 	// 关闭资源包兼容性提示：资源包界面不显示不兼容标记，也不弹确认框（仅资源包）。
 	public volatile boolean disableResourcePackCompatibilityCheck = false;
@@ -620,6 +778,9 @@ public class TweakifyModConfig {
 
 	// 只在剩余耐久不高于该百分比时显示（0 = 不限制）。
 	public volatile int durabilityOverlayLowThreshold = MIN_DURABILITY_THRESHOLD;
+
+	// 药水效果时间显示：在 HUD 的效果图标下方显示剩余时间。
+	public volatile boolean statusEffectDurationDisplay = false;
 
 	// 滚动列表记忆：关闭界面时记住列表滚动位置，下次打开直接回到该位置。
 	public volatile boolean scrollListMemory = true;
@@ -641,7 +802,6 @@ public class TweakifyModConfig {
 	public volatile String hotkeyMiningCooldown = "";
 	public volatile String hotkeyUseCooldown = "";
 	public volatile String hotkeyDisableFlightDrift = "";
-	public volatile String hotkeyFlightDriftVertical = "";
 	public volatile String hotkeyHighlightSingleLayerBedrock = "";
 	public volatile String hotkeyDisableShovelSnowFullBreak = "";
 	public volatile String hotkeyBarrierVisibility = "";
@@ -653,7 +813,22 @@ public class TweakifyModConfig {
 	public volatile String hotkeySwordCutThroughPlants = "";
 	public volatile String hotkeyPickFluidBucket = "";
 	public volatile String hotkeySurvivalPickBlock = "";
+	public volatile String hotkeyQuickBurnItem = "";
+	public volatile String hotkeyCustomBlockOutline = "";
+	public volatile String hotkeyBetterBlockPlacement = "";
+	public volatile String hotkeyAutoStepUp = "";
+	public volatile String hotkeyBetterClimbing = "";
+	public volatile String hotkeyForceCrawl = "";
+	// 主动爬行的按住键：未绑定时不应触发爬行，因此使用 allowEmpty = false 的按键设置。
+	public volatile String hotkeyForceCrawlKey = "";
+	public volatile String hotkeyBetterBoneMeal = "";
 	public volatile String hotkeyDisableOverlayEffects = "";
+	public volatile String hotkeyPiglinGoldArmorSwap = "";
+	public volatile String hotkeyChatInputMemory = "";
+	public volatile String hotkeyStatusEffectDurationDisplay = "";
+	public volatile String hotkeyNetherPortalTeleportDelay = "";
+	public volatile String hotkeyDisableSpecifiedMobSpawn = "";
+	public volatile String hotkeyPeacefulModeMonsters = "";
 
 	// 主手使用冷却的物品 ID 列表，默认是所有可交互物品。
 	private volatile List<String> mainHandUseCooldownItems = new ArrayList<>();
@@ -700,6 +875,8 @@ public class TweakifyModConfig {
 	private transient volatile Set<String> endPortalBlacklistCache;
 	private transient volatile Set<String> endGatewayBlacklistCache;
 	private transient volatile Set<String> attackRangeEntitiesCache;
+	private transient volatile Set<String> disabledSpawnEntitiesCache;
+	private transient volatile Set<String> peacefulModeMonsterEntitiesCache;
 	private transient volatile Set<String> useItemSlowdownExceptionCache;
 
 	// 缓存是否已过期：一次配置同步会连续写 8 个列表，延迟到下次查询时只重建一次。
@@ -741,6 +918,7 @@ public class TweakifyModConfig {
 				// 前置迁移：只处理版本号与缺失键，不做字段值校验。
 				boolean corrected = config.sanitizeConfigVersion(root.has("configVersion"))
 					| config.migrateScrollListMemoryDefault(loadedVersion)
+					| config.migrateLegacyFeatureKeys(root)
 					| config.applyMissingListDefaults(root);
 				// 字段级校验：表驱动，新增数值/枚举字段未登记校验器时类加载期就失败。
 				corrected |= config.sanitizeAllFields();
@@ -774,9 +952,79 @@ public class TweakifyModConfig {
 		return config;
 	}
 
-	// 写盘时序列化整个对象：与写操作共用同一把锁，避免边改边写产生半新半旧的 JSON。
-	public synchronized boolean save() {
-		return ConfigStorage.save(this, configPathOrDefault());
+	// 写盘时序列化整个对象：序列化在配置锁内完成，得到不可变 JSON 字符串；
+	// 磁盘 IO 在写盘线程上通过 ConfigStorage 的写锁串行执行，等待在配置锁外进行
+	//（见 save/applyAndSave），因此慢盘不会在持有配置锁时阻塞客户端 tick 或其它线程。
+	// 超时视为失败：尚未开始的任务会被取消；已经开始的任务会延长等待一次。
+	// 仍超时则由 applyAndSave 字段级回滚后提交一份兜底快照，保证磁盘最终与内存一致。
+	public boolean save() {
+		AsyncFileWriter.WriteHandle handle = prepareSaveHandle();
+		return Boolean.TRUE.equals(AsyncFileWriter.await(handle, SAVE_TIMEOUT_MILLIS, true));
+	}
+
+	// 退出路径：超时不取消任务，交给 AsyncFileWriter.shutdown 等待队列排空，
+	// 保证慢磁盘下最后一次保存不会因为超时被静默丢弃。
+	public boolean saveForShutdown() {
+		AsyncFileWriter.WriteHandle handle = prepareSaveHandle();
+		return Boolean.TRUE.equals(AsyncFileWriter.await(handle, SAVE_TIMEOUT_MILLIS, false));
+	}
+
+	// 锁内完成「序列化 + 入队」，返回可在锁外等待的句柄。
+	// 调用方若需要与其它写盘任务保持提交顺序（Options.save 的检查点），应在外层持锁调用。
+	public AsyncFileWriter.WriteHandle prepareSaveHandle() {
+		synchronized (this) {
+			String json = ConfigStorage.toJson(this);
+			Path path = configPathOrDefault();
+			long sequence = ConfigStorage.nextWriteSequence();
+			return AsyncFileWriter.submit(() -> ConfigStorage.writeAtomically(json, path, sequence));
+		}
+	}
+
+	// 为一次后台写盘分配提交序号；调用方应在配置锁内调用，使提交顺序等于序号顺序。
+	// 退出兜底写会分配更晚的序号，因此更早提交的任务即使延迟执行也会被落盘层跳过。
+	public long allocateWriteSequence() {
+		return ConfigStorage.nextWriteSequence();
+	}
+
+	// 退出最后兜底：不经过写盘队列，在当前线程同步写一份完整快照。
+	// 序号在锁内分配，晚于所有已提交的写任务；写锁限时等待，避免旧任务卡在
+	// 不可中断的 I/O 段时让客户端无限期卡在退出界面。
+	// 返回 true=已写入，false=写盘失败，null=写锁超时（无法确认，未写）。
+	public Boolean writeSynchronously() {
+		String json;
+		long sequence;
+		synchronized (this) {
+			json = ConfigStorage.toJson(this);
+			sequence = ConfigStorage.nextWriteSequence();
+		}
+		return ConfigStorage.tryWriteAtomically(
+			json, configPathOrDefault(), sequence, SAVE_TIMEOUT_MILLIS);
+	}
+
+	// 异步提交当前内存快照（不等待）：保存失败/超时回滚后用它兜底重写。
+	// 返回是否成功入队；执行器已关闭时返回 false，调用方需要走同步兜底或回滚。
+	public synchronized boolean submitSaveAsync() {
+		AsyncFileWriter.WriteHandle handle = submitSaveAsyncHandle();
+		if (handle == null) {
+			LOGGER.error("Fallback config write could not be queued; the writer is already shut down");
+			return false;
+		}
+		return true;
+	}
+
+	// 提交兜底快照并返回可等待句柄；执行器已关闭时返回 null。
+	// 调用方可在后续任务中 await 这个句柄，拿到真实的写盘结果（而不是只看“已入队”）。
+	public synchronized AsyncFileWriter.WriteHandle submitSaveAsyncHandle() {
+		String json = ConfigStorage.toJson(this);
+		Path path = configPathOrDefault();
+		long sequence = ConfigStorage.nextWriteSequence();
+		return AsyncFileWriter.submit(() -> {
+			boolean written = ConfigStorage.writeAtomically(json, path, sequence);
+			if (!written) {
+				LOGGER.error("Fallback config write also failed; the config on disk may be out of sync with memory");
+			}
+			return written;
+		});
 	}
 
 	// 在客户端线程完成序列化：synchronized 保证读到一致的字段状态，
@@ -791,8 +1039,9 @@ public class TweakifyModConfig {
 	}
 
 	// 只落盘，不读写字段：供后台写盘线程调用（不能在这里同步整个对象）。
-	public boolean writeJson(String json) {
-		return ConfigStorage.writeAtomically(json, configPathOrDefault());
+	// 序号必须在提交时分配（prepareSaveHandle / flushPendingSaveNow），不能用执行期序号。
+	public boolean writeJson(String json, long sequence) {
+		return ConfigStorage.writeAtomically(json, configPathOrDefault(), sequence);
 	}
 
 	// 修正配置版本：旧文件（缺少该字段）按 0 处理并升级到当前版本。
@@ -815,6 +1064,50 @@ public class TweakifyModConfig {
 		LOGGER.info("Enabling scrollListMemory for configs older than version 2");
 		scrollListMemory = true;
 		return true;
+	}
+
+	// 版本 3：相机运动与物品分组取代旧的“运动相机横移倾斜”与“创造物品栏条目合并”。
+	// 旧字段已从配置类移除，Gson 会忽略它们，因此需要从原始 JSON 里读出旧值迁移。
+	private boolean migrateLegacyFeatureKeys(JsonObject root) {
+		boolean changed = false;
+		if (!root.has("cameraMotion") && root.has("motionCameraTilt")) {
+			cameraMotion = legacyBoolean(root, "motionCameraTilt");
+			changed = true;
+		}
+		if (!root.has("hotkeyCameraMotion") && root.has("hotkeyMotionCameraTilt")) {
+			hotkeyCameraMotion = legacyString(root, "hotkeyMotionCameraTilt");
+			changed = true;
+		}
+		if (!root.has("itemGroups") && root.has("mergeCreativeItemEntries")) {
+			itemGroups = legacyBoolean(root, "mergeCreativeItemEntries");
+			changed = true;
+		}
+		if (!root.has("hotkeyItemGroups") && root.has("hotkeyMergeCreativeItemEntries")) {
+			hotkeyItemGroups = legacyString(root, "hotkeyMergeCreativeItemEntries");
+			changed = true;
+		}
+		// 优化标签已移除快捷键：旧文件里的字段没有对应配置字段，Gson 会忽略；
+		// 这里标记一次修正，让下一次写盘把旧键清掉。
+		if (root.has("hotkeyMiniHudFpsOptimization")) {
+			LOGGER.info("Removing obsolete config hotkey: hotkeyMiniHudFpsOptimization");
+			changed = true;
+		}
+		if (changed) {
+			LOGGER.info("Migrating legacy config keys");
+		}
+		return changed;
+	}
+
+	private static boolean legacyBoolean(JsonObject root, String key) {
+		JsonElement value = root.get(key);
+		return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean()
+			&& value.getAsBoolean();
+	}
+
+	private static String legacyString(JsonObject root, String key) {
+		JsonElement value = root.get(key);
+		return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
+			? value.getAsString() : "";
 	}
 
 	// 旧配置文件缺少物品列表键时补回默认值。
@@ -1140,6 +1433,38 @@ public class TweakifyModConfig {
 		return true;
 	}
 
+	// 修正不合法的猪灵装备切换模式。
+	private boolean sanitizePiglinArmorSwapMode() {
+		if (isSupportedValue(SUPPORTED_PIGLIN_ARMOR_SWAP_MODES, piglinGoldArmorSwapMode)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported piglin armor swap mode: {}", piglinGoldArmorSwapMode);
+		piglinGoldArmorSwapMode = PIGLIN_ARMOR_SWAP_AUTO;
+		return true;
+	}
+
+	// 修正物品分组的排序方式。
+	private boolean sanitizeItemGroupsSort() {
+		if (isSupportedValue(SUPPORTED_ITEM_GROUP_SORTS, itemGroupsSort)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported item group sort: {}", itemGroupsSort);
+		itemGroupsSort = ITEM_GROUP_SORT_DEFAULT;
+		return true;
+	}
+
+	// 修正相机运动强度。
+	private boolean sanitizeCameraMotionIntensity() {
+		int clamped = Math.max(MIN_CAMERA_MOTION_INTENSITY,
+			Math.min(MAX_CAMERA_MOTION_INTENSITY, cameraMotionIntensity));
+		if (clamped == cameraMotionIntensity) {
+			return false;
+		}
+		LOGGER.warn("Clamping cameraMotionIntensity from {} to {}", cameraMotionIntensity, clamped);
+		cameraMotionIntensity = clamped;
+		return true;
+	}
+
 	// 配置字符串为 null 时 List.of(...).contains(null) 会抛 NPE，统一用这个入口判断。
 	private static boolean isSupportedValue(List<String> supported, String value) {
 		return value != null && supported.contains(value);
@@ -1185,6 +1510,8 @@ public class TweakifyModConfig {
 		endPortalBlacklistCache = new HashSet<>(endPortalTeleportBlacklist);
 		endGatewayBlacklistCache = new HashSet<>(endGatewayTeleportBlacklist);
 		attackRangeEntitiesCache = new HashSet<>(attackRangeEntities);
+		disabledSpawnEntitiesCache = new HashSet<>(disabledSpawnEntities);
+		peacefulModeMonsterEntitiesCache = new HashSet<>(peacefulModeMonsterEntities);
 		useItemSlowdownExceptionCache = new HashSet<>(useItemSlowdownExceptions);
 		cacheDirty = false;
 		entityHighlightCache = null;
@@ -1437,6 +1764,26 @@ public class TweakifyModConfig {
 		return id != null && attackRangeEntitiesCache.contains(id.toString());
 	}
 
+	// 关闭指定生物生成：列表为空时不生效。
+	public boolean isSpawnDisabled(EntityType<?> type) {
+		ensureCache();
+		if (disabledSpawnEntitiesCache.isEmpty()) {
+			return false;
+		}
+		Identifier id = entityTypeId(type);
+		return id != null && disabledSpawnEntitiesCache.contains(id.toString());
+	}
+
+	// 和平模式怪物：列表为空时不生效。
+	public boolean isPeacefulModeMonster(EntityType<?> type) {
+		ensureCache();
+		if (peacefulModeMonsterEntitiesCache.isEmpty()) {
+			return false;
+		}
+		Identifier id = entityTypeId(type);
+		return id != null && peacefulModeMonsterEntitiesCache.contains(id.toString());
+	}
+
 	// 使用物品减速的例外：命中列表的物品保持原版减速。
 	public boolean isUseItemSlowdownException(Item item) {
 		if (item == null || item == Items.AIR) {
@@ -1503,21 +1850,51 @@ public class TweakifyModConfig {
 		cacheDirty = true;
 	}
 
-	// 命令专用：把「读旧值 → 改值 → 写盘 → 失败回滚」全部压在同一个锁内。
-	// 客户端线程的 setter 也持有这把锁，因此不会出现“快照与回滚之间被插入修改”的窗口；
-	// 回滚范围也只有本次命令改动的那一个字段，不会覆盖其它字段的并发修改。
-	// mutation 返回回滚动作；返回 null 表示字段没有真正变化，此时不写盘。
-	public synchronized ApplyResult applyAndSave(Supplier<Runnable> mutation) {
-		Runnable rollback = mutation.get();
-		if (rollback == null) {
-			return ApplyResult.UNCHANGED;
+	// 命令专用：mutation 返回是否真的发生改动；改动、快照与提交在锁内完成，等待在锁外。
+	// 失败时按 before/after 差异做字段级回滚（只回滚仍等于本次写入值的字段），
+	// 不会覆盖等待期间其它线程的并发修改。
+	public ApplyResult applyAndSave(Supplier<Boolean> mutation) {
+		Snapshot before;
+		Snapshot after;
+		AsyncFileWriter.WriteHandle handle;
+		synchronized (this) {
+			before = snapshot();
+			if (!mutation.get()) {
+				return ApplyResult.UNCHANGED;
+			}
+			after = snapshot();
+			handle = prepareSaveHandle();
 		}
-		if (ConfigStorage.save(this, configPathOrDefault())) {
+		if (Boolean.TRUE.equals(AsyncFileWriter.await(handle, SAVE_TIMEOUT_MILLIS, true))) {
 			return ApplyResult.SAVED;
 		}
-		rollback.run();
-		cacheDirty = true;
+		synchronized (this) {
+			rollbackChangedFieldsIfUnchanged(before, after);
+			cacheDirty = true;
+			// 超时的写任务可能已经开始执行并最终把新值写盘；回滚后再提交一份当前快照，
+			// 排在超时任务之后，保证磁盘最终与内存一致。
+			submitSaveAsync();
+		}
 		return ApplyResult.SAVE_FAILED;
+	}
+
+	// 只回滚本次确实改动、且当前值仍等于 after 的字段；等待期间被其它线程改过的字段保留。
+	// public：异步写盘失败结果处理与单元测试共用同一条回滚路径。
+	public synchronized void rollbackChangedFieldsIfUnchanged(Snapshot before, Snapshot after) {
+		for (Map.Entry<String, Object> entry : after.values.entrySet()) {
+			String name = entry.getKey();
+			Object afterValue = entry.getValue();
+			Object beforeValue = before.values.get(name);
+			if (beforeValue == null || Objects.equals(beforeValue, afterValue)) {
+				continue;
+			}
+			if (!Objects.equals(read(name), afterValue)) {
+				// 当前值已不是本次写入的值：并发修改优先，不能回滚覆盖。
+				continue;
+			}
+			write(name, beforeValue instanceof List<?> list ? new ArrayList<>(list) : beforeValue);
+		}
+		cacheDirty = true;
 	}
 
 	public enum ApplyResult {
@@ -1675,12 +2052,17 @@ public class TweakifyModConfig {
 		return DefaultItemLists.idOf(item);
 	}
 
-	// 不可变快照：仅用于写盘失败后的整体回滚，不对外暴露具体字段。
+	// 不可变快照：仅用于写盘失败后的回滚与一致性校验，不对外暴露具体字段。
 	public static final class Snapshot {
 		private final Map<String, Object> values;
 
 		private Snapshot(Map<String, Object> values) {
 			this.values = values;
+		}
+
+		// 按字段值比较两份快照：用于确认待写快照是否已经反映回滚后的内存状态。
+		public boolean hasSameValuesAs(Snapshot other) {
+			return other != null && this.values.equals(other.values);
 		}
 	}
 

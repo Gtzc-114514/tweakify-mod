@@ -22,6 +22,12 @@ public final class ConfigCatalog {
 	public enum Tab {
 		FUNCTION,
 		MODIFIED,
+		/** 修复类问题（草径卡船等）。 */
+		FIX,
+		/** 测试/开发辅助功能（档案编辑器等）。 */
+		TESTING,
+		/** 性能优化类（MiniHUD 掉帧优化等）。 */
+		OPTIMIZATION,
 		/** 同时归入“功能”与“通用”两个标签。 */
 		FUNCTION_AND_GENERAL
 	}
@@ -81,8 +87,21 @@ public final class ConfigCatalog {
 		entries.add(child("disableUseItemSlowdown", "useItemSlowdownExceptions"));
 		entries.add(modified("disableHurtShake", true));
 		entries.add(modified("disableHurtTint", true));
-		entries.add(modified("disableFlightDrift", true));
+		entries.add(function("disableFlightDrift", true));
 		entries.add(child("disableFlightDrift", "flightDriftVertical", true));
+		// 如履平地（功能标签）
+		entries.add(function("autoStepUp", true));
+		// 更好的攀爬（功能标签，子开关）
+		entries.add(function("betterClimbing", true));
+		entries.add(child("betterClimbing", "climbingFastDescend"));
+		entries.add(child("betterClimbing", "climbingFasterAscend"));
+		entries.add(child("betterClimbing", "climbingJumpFromGround"));
+		entries.add(child("betterClimbing", "climbingCancelCollision"));
+		// 主动爬行（功能标签，子项为按住键）
+		entries.add(function("forceCrawl", true));
+		entries.add(child("forceCrawl", "forceCrawlKey"));
+		// 经过可攀爬方块不减速（修改标签）
+		entries.add(modified("climbablePassNoSlowdown", true));
 		// 维度传送
 		entries.add(function("disableDimensionTeleport", true));
 		entries.add(child("disableDimensionTeleport", "dimensionTeleportPlayersOnly"));
@@ -92,6 +111,10 @@ public final class ConfigCatalog {
 		entries.add(child("disableEndPortalTeleport", "endPortalTeleportBlacklist"));
 		entries.add(child("disableDimensionTeleport", "disableEndGatewayTeleport", true));
 		entries.add(child("disableEndGatewayTeleport", "endGatewayTeleportBlacklist"));
+		// 地狱门传送延迟
+		entries.add(function("netherPortalTeleportDelay", true));
+		entries.add(child("netherPortalTeleportDelay", "netherPortalSurvivalInstantTeleport"));
+		entries.add(child("netherPortalTeleportDelay", "netherPortalCreativeDelayedTeleport"));
 		// 世界交互
 		entries.add(modified("disableUnderwaterMiningPenalty", true));
 		entries.add(modified("disableAirMiningPenalty", true));
@@ -104,15 +127,59 @@ public final class ConfigCatalog {
 		entries.add(function("pickFluidBucket", true));
 		// 生存模式中键取物（功能标签，独立功能）
 		entries.add(function("survivalPickBlock", true));
+		// 防猪灵装备切换（功能标签）
+		entries.add(function("piglinGoldArmorSwap", true));
+		entries.add(child("piglinGoldArmorSwap", "piglinGoldArmorSwapMode"));
+		// 聊天框内容记忆（功能标签）
+		entries.add(function("chatInputMemory", true));
 		entries.add(function("disableShovelSnowFullBreak", true));
 		entries.add(child("disableShovelSnowFullBreak", "shovelSnowDropSnowball"));
 		entries.add(child("disableShovelSnowFullBreak", "shovelSnowConsumeDurability"));
-		entries.add(modified("fixBoatStuckOnDirtPath", true));
+		// 不使用最后一根火把（修改标签）
+		entries.add(modified("keepLastTorch", true));
+		// 便捷焚烧（功能标签）
+		entries.add(function("quickBurnItem", true));
+		// 草径卡船修复（修复标签）
+		entries.add(fix("fixBoatStuckOnDirtPath", true));
+		// 鹦鹉肩膀跳舞（修复标签）
+		entries.add(fix("parrotDanceOnShoulder", true));
+		// 更好的粗体（修复标签）
+		entries.add(fix("betterBold", true));
+		// MiniHUD 掉帧优化（优化标签）
+		entries.add(optimization("miniHudFpsOptimization", true));
+		// 第三人称自身名字（修改标签）
+		entries.add(modified("thirdPersonPlayerName", true));
+		// 雪傀儡不受群系影响（修改标签）
+		entries.add(modified("snowGolemBiomeImmunity", true));
+		// 相机运动（功能标签，参考 CameraOverhaul：转向/横移/俯仰/晃动/震动/平滑）
+		entries.add(function("cameraMotion", true));
+		entries.add(child("cameraMotion", "cameraMotionIntensity"));
+		entries.add(child("cameraMotion", "cameraMotionTurningRoll"));
+		entries.add(child("cameraMotion", "cameraMotionStrafingRoll"));
+		entries.add(child("cameraMotion", "cameraMotionForwardPitch"));
+		entries.add(child("cameraMotion", "cameraMotionVerticalPitch"));
+		entries.add(child("cameraMotion", "cameraMotionIdleSway"));
+		entries.add(child("cameraMotion", "cameraMotionScreenShake"));
+		entries.add(child("cameraMotion", "cameraMotionMouseSmoothing"));
+		entries.add(child("cameraMotion", "cameraMotionFirstPerson"));
+		entries.add(child("cameraMotion", "cameraMotionThirdPerson"));
+		// 物品分组（功能标签，参考 Inventory Item Groups 的基岩版分组）
+		entries.add(function("itemGroups", true));
+		entries.add(child("itemGroups", "itemGroupsSort"));
 		// 强制关闭加载屏幕（修改标签）
 		entries.add(modified("forceCloseLoadingScreen", true));
+		entries.add(child("forceCloseLoadingScreen", "forceCloseLoadingScreenInstant"));
+		entries.add(child("forceCloseLoadingScreen", "forceCloseLoadingScreenKeepFirst"));
+		entries.add(child("forceCloseLoadingScreen", "forceCloseLoadingScreenSkipResourcePackFade"));
 		entries.add(modified("disableResourcePackCompatibilityCheck", true));
 		entries.add(modified("disableCurseEnchantmentRestriction", true));
 		entries.add(modified("disableTooExpensive", true));
+		// 移除附魔冲突（修改标签）
+		entries.add(modified("removeEnchantmentConflicts", true));
+		// 附魔描述（修改标签）
+		entries.add(modified("enchantmentDescriptions", true));
+		// 可见交易显示（修改标签）
+		entries.add(modified("visibleTraders", true));
 		// 实体高亮（prettyName 使用 highlight 前缀）
 		entries.add(function("entityHighlight", true));
 		entries.add(child("entityHighlight", "highlightPreset1", true));
@@ -129,10 +196,22 @@ public final class ConfigCatalog {
 		entries.add(child("durabilityOverlay", "durabilityDisplayMode"));
 		entries.add(child("durabilityOverlay", "durabilityOverlayHotbarOnly"));
 		entries.add(child("durabilityOverlay", "durabilityOverlayLowThreshold"));
-		entries.add(modified("elytraFireworkCooldown", true));
+		entries.add(function("statusEffectDurationDisplay", true));
+		entries.add(function("elytraFireworkCooldown", true));
 		entries.add(child("elytraFireworkCooldown", "elytraFireworkCooldownTicks"));
 		entries.add(modified("disableFlatWorldSlimeSpawn", true));
 		entries.add(child("disableFlatWorldSlimeSpawn", "flatWorldSlimeSpawnAllWorlds"));
+		// 关闭指定生物生成（功能标签）
+		entries.add(function("disableSpecifiedMobSpawn", true));
+		entries.add(child("disableSpecifiedMobSpawn", "disabledSpawnEntities"));
+		entries.add(child("disableSpecifiedMobSpawn", "disabledSpawnAllowPlayerSpawn"));
+		// 和平模式怪物（功能标签）
+		entries.add(function("peacefulModeMonsters", true));
+		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterEntities"));
+		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterSpawn"));
+		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterNoAttack"));
+		// 刷怪蛋投掷（功能标签）
+		entries.add(function("throwSpawnEgg", true));
 		entries.add(modified("betterInvisibility", true));
 		entries.add(child("betterInvisibility", "betterInvisibilityEffectParticles"));
 		entries.add(child("betterInvisibility", "betterInvisibilityLayers"));
@@ -163,13 +242,17 @@ public final class ConfigCatalog {
 		entries.add(modified("disableBedTooFar", true));
 		entries.add(modified("ironGolemRideMinecart", true));
 		entries.add(modified("connectedBlockOutline", true));
-		entries.add(modified("customBlockOutline", true));
+		entries.add(function("customBlockOutline", true));
 		entries.add(child("customBlockOutline", TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD));
 		entries.add(child("customBlockOutline", "blockOutlineAnimationSpeed"));
 		entries.add(child("customBlockOutline", "blockOutlinePalette"));
 		entries.add(child("customBlockOutline", "blockOutlineColorMode"));
-		entries.add(modified("betterBlockPlacement", true));
+		entries.add(function("betterBlockPlacement", true));
 		entries.add(child("betterBlockPlacement", "betterBlockPlacementMode"));
+		// 更好的骨粉催熟（功能标签）
+		entries.add(function("betterBoneMeal", true));
+		entries.add(child("betterBoneMeal", "boneMealSugarCane"));
+		entries.add(child("betterBoneMeal", "boneMealFlowers"));
 		// 屏幕覆盖层与 HUD
 		entries.add(modified("disableOverlayEffects", true));
 		entries.add(child("disableOverlayEffects", "disablePowderSnowOverlay"));
@@ -200,6 +283,8 @@ public final class ConfigCatalog {
 		return new Entry(name, null, Tab.FUNCTION, command);
 	}
 
+	// 双标签项的工厂方法：当前没有配置项使用，保留以保证分类能力完整。
+	@SuppressWarnings("unused")
 	private static Entry functionAndGeneral(String name, boolean command) {
 		return new Entry(name, null, Tab.FUNCTION_AND_GENERAL, command);
 	}
@@ -215,6 +300,16 @@ public final class ConfigCatalog {
 
 	private static Entry modified(String name, boolean command) {
 		return new Entry(name, null, Tab.MODIFIED, command);
+	}
+
+	// 修复标签的根节点（可带命令）。
+	private static Entry fix(String name, boolean command) {
+		return new Entry(name, null, Tab.FIX, command);
+	}
+
+	// 优化标签的根节点（可带命令）。
+	private static Entry optimization(String name, boolean command) {
+		return new Entry(name, null, Tab.OPTIMIZATION, command);
 	}
 
 	private static Entry child(String parent, String name) {

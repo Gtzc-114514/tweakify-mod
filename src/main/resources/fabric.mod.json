@@ -29,6 +29,10 @@
 		{
 			"config": "tweakify-mod.modmenu.mixins.json",
 			"environment": "client"
+		},
+		{
+			"config": "tweakify-mod.minihud.mixins.json",
+			"environment": "client"
 		}
 	],
 	"depends": {
@@ -39,6 +43,7 @@
 		"malilib": ">=0.30.2- <0.31.0-"
 	},
 	"suggests": {
-		"modmenu": "*"
+		"modmenu": "*",
+		"minihud": "*"
 	}
 }

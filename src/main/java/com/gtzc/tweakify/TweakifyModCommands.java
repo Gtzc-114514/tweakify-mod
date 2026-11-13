@@ -18,6 +18,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 
 import java.util.List;
@@ -65,10 +66,24 @@ public class TweakifyModCommands {
 		.map(entry -> BooleanCommand.of(entry.name()))
 		.toList();
 
+	// 命令权限：权限等级 ≥2（GAMEMASTERS；OP 满足）或单人世界房主放行。
+	// 单人未开作弊时房主不算 OP（isOp 还要求 allowCommands），必须单独放行；
+	// 局域网访客两者都不满足，保持拒绝。拆成两个布尔量便于单元测试覆盖三种场景。
+	static boolean canUseCommands(boolean hasGameMasterPermission, boolean singleplayerOwner) {
+		return hasGameMasterPermission || singleplayerOwner;
+	}
+
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess) {
-		// 不限制 OP 权限：这是纯客户端模组，命令只修改本地配置；
-		// 远程服务器的服务端没有本模组，命令本身就不会注册。
-		LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("tweakify");
+		// 纯客户端模组，但命令运行在集成服务端线程：按 README 限制为权限等级 2，
+		// 避免局域网访客修改房主进程里的本地配置。
+		// 单人未开启作弊时房主不算 OP（isOp 还要求 allowCommands），这里额外放行单人房主。
+		LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("tweakify")
+			.requires(source -> {
+				ServerPlayer player = source.getPlayer();
+				return canUseCommands(
+					Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(source),
+					player != null && source.getServer().isSingleplayerOwner(player.nameAndId()));
+			});
 
 		for (BooleanCommand command : BOOLEAN_COMMANDS) {
 			root.then(Commands.literal(command.name())
@@ -122,9 +137,8 @@ public class TweakifyModCommands {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		String name = command.name();
 		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> {
-			boolean previous = config.getBoolean(name);
 			config.setBoolean(name, value);
-			return () -> config.setBoolean(name, previous);
+			return true;
 		});
 		if (!ensureSaved(source, result)) {
 			return 0;
@@ -139,10 +153,7 @@ public class TweakifyModCommands {
 		Item item = itemFrom(context, "item");
 		String id = BuiltInRegistries.ITEM.getKey(item).toString();
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> {
-			List<String> previous = config.getRestrictedOffhandItems();
-			return config.addItem(id) ? () -> config.replaceRestrictedOffhandItems(previous) : null;
-		});
+		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> config.addItem(id));
 		if (result == TweakifyModConfig.ApplyResult.UNCHANGED) {
 			context.getSource().sendFailure(Component.translatable(ITEM_DUPLICATE, id));
 			return 0;
@@ -159,10 +170,7 @@ public class TweakifyModCommands {
 		Item item = itemFrom(context, "item");
 		String id = BuiltInRegistries.ITEM.getKey(item).toString();
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> {
-			List<String> previous = config.getRestrictedOffhandItems();
-			return config.removeItem(id) ? () -> config.replaceRestrictedOffhandItems(previous) : null;
-		});
+		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> config.removeItem(id));
 		if (result == TweakifyModConfig.ApplyResult.UNCHANGED) {
 			context.getSource().sendFailure(Component.translatable(ITEM_MISSING, id));
 			return 0;
@@ -195,9 +203,8 @@ public class TweakifyModCommands {
 	private static int resetItems(CommandSourceStack source) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> {
-			List<String> previous = config.getRestrictedOffhandItems();
 			config.resetToLightSources();
-			return () -> config.replaceRestrictedOffhandItems(previous);
+			return true;
 		});
 		if (!ensureSaved(source, result)) {
 			return 0;
@@ -253,7 +260,7 @@ public class TweakifyModCommands {
 					config.restoreSnapshot(previous);
 					throw e;
 				}
-				return () -> config.restoreSnapshot(previous);
+				return true;
 			});
 		} catch (RuntimeException e) {
 			TweakifyMod.LOGGER.error("Failed to apply config profile: {}", name, e);
@@ -336,6 +343,12 @@ public class TweakifyModCommands {
 			return true;
 		}
 		source.sendFailure(Component.translatable(SAVE_FAILED));
+		// 服务端已回滚（或兜底重写）：请求客户端界面同步回真实值，
+		// 否则关闭配置界面时 MaLiLib 会把界面里的失败值再次推回配置。
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (config != null) {
+			config.requestOptionSync();
+		}
 		return false;
 	}
 

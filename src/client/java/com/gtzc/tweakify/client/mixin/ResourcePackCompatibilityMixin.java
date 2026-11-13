@@ -5,6 +5,7 @@ import com.gtzc.tweakify.client.ResourcePackCompatibilityState;
 import com.gtzc.tweakify.client.ResourcePackCompatibilityTargets;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.packs.PackSelectionModel;
 import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
@@ -12,8 +13,6 @@ import net.minecraft.server.packs.repository.PackCompatibility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,28 +29,27 @@ public abstract class ResourcePackCompatibilityMixin {
 
 	// 用 require = 0 避免单个界面功能拖垮启动；目标缺失由启动自检输出 ERROR，
 	// 实际注入是否生效由 HookProbe 的 resourcePackCompatibility 日志确认。
-	@Inject(method = ResourcePackCompatibilityTargets.ENTRY_COMPATIBILITY_METHOD,
-		at = @At("RETURN"), cancellable = true, require = 0)
-	private void tweakify$hideIncompatible(CallbackInfoReturnable<PackCompatibility> cir) {
+	@ModifyReturnValue(method = ResourcePackCompatibilityTargets.ENTRY_COMPATIBILITY_METHOD,
+		at = @At("RETURN"), require = 0)
+	private PackCompatibility tweakify$hideIncompatible(PackCompatibility original) {
 		// 入口探针：即使开关关闭或资源包本身兼容，也能确认注入点活着。
 		HookProbe.markOnce(TWEAKIFY$REPORTED, "resourcePackCompatibility");
-		PackCompatibility original = cir.getReturnValue();
 		if (original == null || original == PackCompatibility.COMPATIBLE) {
-			return;
+			return original;
 		}
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null) {
-			return;
+			return original;
 		}
 		if (!(Minecraft.getInstance().gui.screen() instanceof PackSelectionScreen screen)) {
-			return;
+			return original;
 		}
 		Path packDirectory = ((PackSelectionScreenAccessor) screen).tweakify$getPackDir();
 		Path resourcePackDirectory = Minecraft.getInstance().getResourcePackDirectory();
 		if (!ResourcePackCompatibilityState.shouldHideCompatibility(
 			config.disableResourcePackCompatibilityCheck, packDirectory, resourcePackDirectory)) {
-			return;
+			return original;
 		}
-		cir.setReturnValue(PackCompatibility.COMPATIBLE);
+		return PackCompatibility.COMPATIBLE;
 	}
 }

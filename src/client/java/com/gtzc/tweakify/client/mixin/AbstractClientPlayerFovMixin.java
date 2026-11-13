@@ -2,12 +2,11 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * 禁用疾跑 FOV 变化：原版冲刺会附加 +30% 移速修饰符，
@@ -18,17 +17,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class AbstractClientPlayerFovMixin {
 	private static final float SPRINT_FOV_BONUS = 0.15f;
 
-	@Inject(method = "getFieldOfViewModifier", at = @At("RETURN"), cancellable = true)
-	private void tweakify$disableSprintFov(boolean firstPerson, float effectScale,
-										   CallbackInfoReturnable<Float> cir) {
+	@ModifyReturnValue(method = "getFieldOfViewModifier", at = @At("RETURN"))
+	private float tweakify$disableSprintFov(float original, boolean firstPerson, float effectScale) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
 		if (config == null || !config.disableSprintFov || !self.isSprinting() || self.isScoping()) {
-			return;
+			return original;
 		}
 		if (self.isUsingItem() && self.getUseItem().is(Items.BOW)) {
-			return;
+			return original;
 		}
-		cir.setReturnValue(Math.max(0.1f, cir.getReturnValueF() - effectScale * SPRINT_FOV_BONUS));
+		return Math.max(0.1f, original - effectScale * SPRINT_FOV_BONUS);
 	}
 }

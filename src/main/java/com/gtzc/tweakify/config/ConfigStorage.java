@@ -12,6 +12,11 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 配置文件的落盘层：原子替换写入、旧文件名迁移、损坏文件备份。
@@ -27,6 +32,23 @@ final class ConfigStorage {
 	static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	private ConfigStorage() {
+	}
+
+	// 所有落盘共享一把写锁：后台写盘线程与退出时的同步兜底写可能并发，
+	// 只有让「创建临时文件 + 原子替换」整体串行，后拿锁的那份内容才是最终磁盘状态。
+	// 用 ReentrantLock 而不是 synchronized：退出兜底写可以 tryLock 限时，
+	// 避免旧任务卡在不可中断的 I/O 段时让客户端无限期卡在退出界面。
+	private static final ReentrantLock WRITE_LOCK = new ReentrantLock();
+
+	// 提交序号：在任务提交时分配，而不是执行时分配。
+	// 落盘前在写锁内比较每个文件已写成功的最新序号：序号更小的旧任务直接跳过，
+	// 因此同步兜底写（最后分配序号）之后，任何延迟执行的旧任务都无法再覆盖最终快照。
+	// key 为绝对规范化路径；生产上只有主配置与档案文件两个固定路径，表不会随档案数量增长。
+	private static final AtomicLong WRITE_SEQUENCE = new AtomicLong();
+	private static final Map<Path, Long> LAST_WRITTEN_SEQUENCE = new HashMap<>();
+
+	static long nextWriteSequence() {
+		return WRITE_SEQUENCE.incrementAndGet();
 	}
 
 	static Path defaultPath() {
@@ -50,7 +72,8 @@ final class ConfigStorage {
 		}
 	}
 
-	// 序列化：纯 CPU 操作，由调用方在自己的线程完成（配置字段由调用方的锁保护）。
+	// 同步调度：写盘任务由 TweakifyModConfig 提交到全局串行队列（见 AsyncFileWriter），
+	// 这里只保留纯序列化与落盘，确保与后台写盘使用同一套原子替换逻辑。
 	static String toJson(TweakifyModConfig config) {
 		return GSON.toJson(config);
 	}
@@ -60,22 +83,69 @@ final class ConfigStorage {
 		return GSON.toJsonTree(config).getAsJsonObject();
 	}
 
-	// 同步写盘：序列化 + 原子替换。低频路径（启动期写默认值、命令改值）使用。
-	static boolean save(TweakifyModConfig config, Path configPath) {
-		return writeAtomically(toJson(config), configPath);
+	// 只负责落盘：先写临时文件再原子替换，避免写到一半崩溃时留下半截 JSON。
+	// 自动分配序号的同步写：仅供档案等“调用即执行”的同步路径（ConfigProfiles）使用；
+	// 异步写盘任务必须在提交时用带序号的版本，否则执行期序号会破坏新旧顺序。
+	static boolean writeAtomically(String json, Path configPath) {
+		return writeAtomically(json, configPath, nextWriteSequence());
 	}
 
-	// 只负责落盘：先写临时文件再原子替换，避免写到一半崩溃时留下半截 JSON。
-	// 不触碰配置对象，可在后台线程调用。
-	static boolean writeAtomically(String json, Path configPath) {
-		Path temporaryPath = null;
+	// 带提交序号的落盘：序号小于该文件已成功写盘的最新序号时直接跳过并返回 true
+	//（语义：更晚提交的写已经覆盖了这份内容，不能把旧内容再写回去）。
+	static boolean writeAtomically(String json, Path configPath, long sequence) {
+		WRITE_LOCK.lock();
 		try {
-			Path configDirectory = configPath.getParent();
-			if (configDirectory == null) {
-				// 没有父目录就无法建临时文件；直接返回失败而不是把 NPE 抛给后台线程。
-				LOGGER.error("Config path has no parent directory: {}", configPath);
-				return false;
-			}
+			return writeAtomicallyLocked(json, configPath, sequence);
+		} finally {
+			WRITE_LOCK.unlock();
+		}
+	}
+
+	// 退出同步兜底专用：拿不到写锁时在超时后放弃，返回 null（区别于写盘失败 false）；
+	// 此时排队任务仍在写，最终状态由它保证；宁可少写一次也不能让客户端无法退出。
+	static Boolean tryWriteAtomically(String json, Path configPath, long sequence, long timeoutMillis) {
+		boolean acquired;
+		try {
+			acquired = WRITE_LOCK.tryLock(timeoutMillis, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return null;
+		}
+		if (!acquired) {
+			LOGGER.warn("Timed out waiting for the config write lock; giving up the synchronous fallback");
+			return null;
+		}
+		try {
+			return writeAtomicallyLocked(json, configPath, sequence);
+		} finally {
+			WRITE_LOCK.unlock();
+		}
+	}
+
+	// 包私有：测试验证 tryWriteAtomically 的锁超时语义。
+	static ReentrantLock writeLockForTest() {
+		return WRITE_LOCK;
+	}
+
+	private static boolean writeAtomicallyLocked(String json, Path configPath, long sequence) {
+		// 路径校验必须在陈旧写比较之前：非法路径即使序号陈旧也必须报告失败，
+		// 不能因为“还有更新的写”就把它当成成功。
+		Path configDirectory = configPath.getParent();
+		if (configDirectory == null) {
+			// 没有父目录就无法建临时文件；直接返回失败而不是把 NPE 抛给后台线程。
+			LOGGER.error("Config path has no parent directory: {}", configPath);
+			return false;
+		}
+		Path key = configPath.toAbsolutePath().normalize();
+		Long lastWritten = LAST_WRITTEN_SEQUENCE.get(key);
+		if (lastWritten != null && sequence < lastWritten) {
+			LOGGER.debug("Skipping stale config write for {} (sequence {} < {})",
+				configPath, sequence, lastWritten);
+			return true;
+		}
+		Path temporaryPath = null;
+		boolean written = false;
+		try {
 			Files.createDirectories(configDirectory);
 			temporaryPath = Files.createTempFile(configDirectory, "tweakify-mod-", ".tmp");
 			Files.writeString(temporaryPath, json);
@@ -85,11 +155,15 @@ final class ConfigStorage {
 			} catch (AtomicMoveNotSupportedException e) {
 				Files.move(temporaryPath, configPath, StandardCopyOption.REPLACE_EXISTING);
 			}
+			written = true;
 			return true;
 		} catch (IOException e) {
 			LOGGER.error("Failed to write config", e);
 			return false;
 		} finally {
+			if (written) {
+				LAST_WRITTEN_SEQUENCE.put(key, sequence);
+			}
 			if (temporaryPath != null) {
 				try {
 					Files.deleteIfExists(temporaryPath);

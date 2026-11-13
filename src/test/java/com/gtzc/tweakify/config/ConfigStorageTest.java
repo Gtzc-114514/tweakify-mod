@@ -26,6 +26,36 @@ class ConfigStorageTest {
 		assertFalse(ConfigStorage.writeAtomically("{}", Path.of("no-parent.json")));
 	}
 
+	// 提交序号更小的旧任务即使晚于新任务执行，也不能覆盖新内容。
+	@Test
+	void staleWriteAfterNewerWriteIsSkipped() throws IOException {
+		Path path = tempDir.resolve("ordered.json");
+
+		assertTrue(ConfigStorage.writeAtomically("{\"v\":2}", path, 2L));
+		assertTrue(ConfigStorage.writeAtomically("{\"v\":1}", path, 1L),
+			"a stale write should report success because a newer write already covered it");
+
+		assertEquals("{\"v\":2}", Files.readString(path),
+			"a stale write must not overwrite newer content");
+	}
+
+	// 失败的写不能占用提交序号，否则更旧（但真正成功）的写会被错误跳过。
+	@Test
+	void failedWriteDoesNotOccupySequence() throws IOException {
+		Path blockedParent = tempDir.resolve("blocked-parent");
+		Files.writeString(blockedParent, "x");
+		Path path = blockedParent.resolve("config.json");
+
+		assertFalse(ConfigStorage.writeAtomically("{\"v\":2}", path, 5L));
+
+		Files.delete(blockedParent);
+		Files.createDirectories(blockedParent);
+
+		assertTrue(ConfigStorage.writeAtomically("{\"v\":1}", path, 4L),
+			"a failed write must not mark its sequence as written");
+		assertEquals("{\"v\":1}", Files.readString(path));
+	}
+
 	// 备份成功时返回备份路径：调用方据此告诉用户从哪里恢复旧内容。
 	@Test
 	void backupBrokenToReturnsBackupPath() throws IOException {

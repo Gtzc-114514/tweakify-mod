@@ -19,6 +19,9 @@ import fi.dy.masa.malilib.gui.widgets.WidgetLabel;
 import fi.dy.masa.malilib.gui.widgets.WidgetListConfigOptionsBase;
 import fi.dy.masa.malilib.gui.widgets.WidgetSlider;
 import fi.dy.masa.malilib.render.GuiContext;
+import fi.dy.masa.malilib.util.StringUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import org.joml.Matrix3x2fStack;
 
@@ -50,6 +53,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 	public static final int LABEL_OFFSET = EXPAND_BUTTON_WIDTH + EXPAND_BUTTON_GAP;
 
 	private final IConfigBase config;
+	private final int labelWidth;
 	private final int elementWidth;
 	private final int labelShift;
 
@@ -58,14 +62,17 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 									   IKeybindConfigGui host, WidgetListConfigOptionsBase<?, ?> parent) {
 		super(x, y, width, height, configWidth, elementWidth, wrapper, index, host, parent);
 		this.config = wrapper.getConfig();
+		this.labelWidth = configWidth;
 		this.elementWidth = elementWidth;
 		this.labelShift = this.computeLabelShift();
 		this.shiftNameLabel();
+		this.replaceNameLabel();
 		this.addExpandButton();
 		this.centerControls();
 		this.extendHoverArea();
 		this.addKeyLabel();
 		this.replaceStringListButton();
+		this.addProfileEditorButton();
 	}
 
 	// 线宽滑块使用自定义回调，把 MaLiLib 默认的四位小数显示改成一位小数。
@@ -153,12 +160,46 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		}
 	}
 
+	// “测试”标签的档案编辑器是界面操作项，用按钮替代普通配置控件。
+	private void addProfileEditorButton() {
+		if (this.config != TweakifyModConfigOptions.PROFILE_EDITOR) {
+			return;
+		}
+		// 视觉上只保留“打开”：移除 ConfigBoolean 自带的开关与重置按钮。
+		this.subWidgets.removeIf(widget -> widget instanceof ButtonBase);
+		int width = Math.max(80, this.elementWidth);
+		ButtonGeneric button = new ButtonGeneric(this.x + this.labelWidth + 10,
+			this.y + CONTROL_SHIFT, width, 20,
+			StringUtils.translate("tweakify-mod.gui.profile_editor.open"));
+		button.setActionListener((buttonBase, mouseButton) -> {
+			Screen parent = this.host instanceof Screen screen ? screen : null;
+			Minecraft.getInstance().setScreenAndShow(new ProfileEditorScreen(parent));
+		});
+		this.addWidget(button);
+	}
+
+	// 用可截断的小号标签替换父类名称标签：窄屏（4x/自动缩放）下避免长名称压到右侧按钮。
+	private void replaceNameLabel() {
+		if (this.config == null) {
+			return;
+		}
+		int maxWidth = Math.max(20, this.labelWidth - this.labelShift);
+		String text = truncateToWidth(this.config.getConfigGuiDisplayName(), maxWidth);
+		for (int i = 0; i < this.subWidgets.size(); i++) {
+			WidgetBase widget = this.subWidgets.get(i);
+			if (widget instanceof WidgetLabel) {
+				this.subWidgets.set(i, new NameLabel(widget.getX(), widget.getY(), text));
+				return;
+			}
+		}
+	}
+
 	// 在本地化名称下方追加小号灰色英文配置键。
 	private void addKeyLabel() {
 		if (this.config == null) {
 			return;
 		}
-		int maxUnscaledWidth = (int) ((this.elementWidth - KEY_MARGIN - this.labelShift) / KEY_SCALE);
+		int maxUnscaledWidth = (int) ((this.labelWidth - KEY_MARGIN - this.labelShift) / KEY_SCALE);
 		String key = truncateToWidth(this.config.getName(), maxUnscaledWidth);
 		this.addWidget(new ConfigKeyLabel(this.x + this.labelShift, this.y + KEY_LABEL_Y_OFFSET, key, KEY_COLOR));
 	}
@@ -197,6 +238,21 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		protected boolean onMouseClickedImpl(MouseButtonEvent event, boolean notHovering) {
 			this.onToggle.run();
 			return true;
+		}
+	}
+
+	// 本地化名称标签：与 WidgetLabel 相同的阴影文字样式，但文本已在构造时截断。
+	private static class NameLabel extends WidgetBase {
+		private final String text;
+
+		NameLabel(int x, int y, String text) {
+			super(x, y, 0, 9);
+			this.text = text;
+		}
+
+		@Override
+		public void render(GuiContext gui, int mouseX, int mouseY, boolean hovered) {
+			gui.text(this.textRenderer, this.text, this.x, this.y, 0xFFFFFFFF, true);
 		}
 	}
 

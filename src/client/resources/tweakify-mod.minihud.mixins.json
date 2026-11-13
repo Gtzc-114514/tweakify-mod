@@ -1,0 +1,12 @@
+{
+        "required": false,
+        "package": "com.gtzc.tweakify.client.mixin.minihud",
+        "compatibilityLevel": "JAVA_25",
+        "plugin": "com.gtzc.tweakify.client.mixin.minihud.MiniHudMixinPlugin",
+        "client": [
+                "MiniHudRenderHandlerMixin"
+        ],
+        "injectors": {
+                "defaultRequire": 1
+        }
+}
