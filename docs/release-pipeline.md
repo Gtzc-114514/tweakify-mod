@@ -3,7 +3,7 @@
 本文档说明 `.github/workflows/release.yml` 的触发条件、步骤顺序、失败语义与已知取舍，
 方便回看而不用翻提交记录与聊天记录。
 
-**基线**：本文档描述父提交 `40a98b0`（2026-11-14）时的 `release.yml`；该文件后续变动时以实际文件为准，
+**基线**：本文档描述提交 `11f6e9a`（2026-11-14，v1.0.2 发布后）时的 `release.yml`；该文件后续变动时以实际文件为准，
 步骤名与数量请以 `- name:` 原文重新核对。
 
 ## 触发条件
@@ -69,6 +69,29 @@
 - 发布后如需补充正文，用 `gh release edit <tag> --notes-file docs/release-notes/<tag>.md` 同步；
   注意重跑该标签的 workflow 会以 tag 提交中的 notes 覆盖线上正文，补充内容应以提交方式回写并重新打标签；
 - 详细约定见 `docs/release-notes/README.md`。
+
+## 验证记录：v1.0.2 首次真实发布
+
+版本一致性校验链与 notes 机制在 v1.0.2 的发布中首次完整生效：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `43526912662` |
+| 触发 | push tag `v1.0.2` |
+| 结论 | **success**，总耗时 39 秒（job 36 秒） |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面含 `Set up job` 共 12 项） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.0.2` 并写入 `$GITHUB_OUTPUT` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.0.2` 去前缀后与版本 `1.0.2` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.0.2` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.0.2.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.0.2` 开头（614 字符），含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.0.2.jar`（557,981 字节）、`tweakify-mod-1.0.2-sources.jar`（406,450 字节）。
 
 ## 已知但决定不改的点
 
