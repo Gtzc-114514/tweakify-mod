@@ -1,0 +1,55 @@
+# 推送 v* 标签时构建发布 jar，并创建对应的 GitHub Release。
+# 触发条件与 build.yml 的 main push 分开：普通分支 push 不会走到这里。
+
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: test
+        run: ./gradlew test
+      - name: build
+        run: ./gradlew build
+      - name: verify jar mod version
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | head -n 1)
+          if [ -z "$JAR" ]; then
+            echo "No main jar found in build/libs"
+            exit 1
+          fi
+          JAR_VERSION=$(unzip -p "$JAR" fabric.mod.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')
+          GRADLE_VERSION=$(sed -n 's/^version=//p' gradle.properties | head -n 1)
+          echo "jar=$JAR"
+          echo "jar_version=$JAR_VERSION"
+          echo "gradle_version=$GRADLE_VERSION"
+          if [ "$JAR_VERSION" != "$GRADLE_VERSION" ]; then
+            echo "Version mismatch: fabric.mod.json=$JAR_VERSION gradle.properties=$GRADLE_VERSION"
+            exit 1
+          fi
+      - name: create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/*.jar
+          generate_release_notes: true
+          fail_on_unmatched_files: true
