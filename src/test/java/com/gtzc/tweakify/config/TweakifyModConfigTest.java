@@ -734,10 +734,12 @@ class TweakifyModConfigTest {
 		// 直接读文件断言，不再轮询文件内容（轮询会引入与写盘时机无关的 flaky）。
 		assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS), "the queued write should finish");
 
+		// 写盘失败时文件不存在：先单独断言存在性，避免只抛一个没有上下文的 NoSuchFileException。
+		assertTrue(Files.exists(path), "submitSaveAsync should create the config file");
 		String written = Files.readString(path);
-		assertTrue(written.contains("\"blockOffhandFallback\": false"),
-			"submitSaveAsync should write the current snapshot");
-		assertTrue(written.contains("\"hotkeyOpenConfigGui\": \"H,J\""));
+		assertTrue(written.contains("\"blockOffhandFallback\": false")
+			&& written.contains("\"hotkeyOpenConfigGui\": \"H,J\""),
+			"submitSaveAsync should write the current snapshot; file content: " + written);
 	}
 
 	// restoreSnapshot 只回滚内存：异步写盘失败时由客户端线程调用，不能又触发一次磁盘写入。

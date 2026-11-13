@@ -96,8 +96,10 @@ class AsyncFileWriterTest {
 	// 任务已开始后超时：不能取消，必须再等一段拿到真实结果，
 	// 否则调用方会回滚内存，而磁盘稍后却被写成新值。
 	//
-	// 任务的完成时机由 release 闸门控制：只要任务已经在跑，延长等待就必然能等到结果，
-	// 不再依赖「任务能在多久内跑完」这种会被 CI 调度延迟打破的假设。
+	// 任务的完成时机由 release 闸门控制。这里刻意把超时窗口放到 3000ms，并从任务启动
+	// 算起等满一个窗口后放行：只要「提交→任务真正开始执行」的调度延迟小于 2800ms，
+	// 就必然走「首次超时 → 延长等待」这条路径，放行后也能落在延长窗口内返回 true。
+	// （原来的 200ms 超时 / 1000ms 窗口只留 800ms 余量，CI 上的调度停顿会改变结论。）
 	@Test
 	void submitAndWaitExtendsWaitForTaskThatAlreadyStarted() throws InterruptedException {
 		warmUpWriter();
@@ -108,14 +110,15 @@ class AsyncFileWriterTest {
 			started.countDown();
 			awaitQuietly(release, START_TIMEOUT_SECONDS);
 			return true;
-		}, 1000L))));
+		}, 3000L))));
 		caller.start();
 
 		assertTrue(started.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
 			"the write task should start before the timeout");
 		try {
-			// 任务被闸门挡住，必然活过第一次超时；等它进入延长等待后再放行。
-			Thread.sleep(1200L);
+			// 任务被闸门挡住，从它启动算起再等满一个超时窗口：首次等待必然已超时，
+			// 之后的放行落在延长等待的窗口内（任务完成时刻 ≈ 启动 + 3200ms < 提交 + 6000ms）。
+			Thread.sleep(3200L);
 		} finally {
 			// 断言失败也要放行：写盘线程是两个测试类共用的静态单线程，
 			// 卡在闸门上会把后续用例的等待窗口一起吃掉。
