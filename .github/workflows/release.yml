@@ -35,24 +35,32 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      # 标签名去掉 v 前缀后必须与 gradle.properties 的 version 完全一致。
-      # 现有 verify jar mod version 只比对 jar 与同一提交的 gradle.properties（两值恒等），
-      # 拦不住「标签与产物版本不一致」；两步合起来保证 标签 = gradle.properties = jar 三者一致。
-      # 放在 build 之前：标签写错时几秒内失败，不浪费构建时间。
-      - name: verify tag matches mod version
+      # 从 gradle.properties 解析版本，供下面两个校验步骤消费：去掉 CRLF 的 \r、允许行首与等号两侧空格、
+      # 重复键取最后一个（与 Properties 的「后覆盖前」一致）。放在 build 与 unzip 之前：
+      # 配置错误最先暴露，也避免两处复制同一段解析逻辑而漂移。
+      - name: resolve mod version
+        id: gv
         shell: bash
         run: |
           set -euo pipefail
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          # 提取规则与 Gradle 的 Properties 语义对齐：去掉 CRLF 的 \r、允许行首与等号两侧空格、
-          # 重复键取最后一个（后者覆盖前者）；解析不到时单独报错，避免被伪装成“版本不一致”。
           GRADLE_VERSION=$(tr -d '\r' < gradle.properties \
             | sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*//p' \
             | tail -n 1)
           if [ -z "$GRADLE_VERSION" ]; then
-            echo "::error::gradle.properties 中未找到 version= 行"
+            echo "::error::gradle.properties 中未解析到版本：仅支持形如 version=1.0.1 的单行写法，不支持 ':' 或空白分隔、空值、行续接"
             exit 1
           fi
+          echo "version=$GRADLE_VERSION" >> "$GITHUB_OUTPUT"
+      # 标签名去掉 v 前缀后必须与 gradle.properties 的 version 完全一致。
+      # 现有 verify jar mod version 只比对 jar 与同一提交的 gradle.properties（两值恒等），
+      # 拦不住「标签与产物版本不一致」；两步合起来保证 标签 = gradle.properties = jar 三者一致。
+      - name: verify tag matches mod version
+        shell: bash
+        env:
+          GRADLE_VERSION: ${{ steps.gv.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
           echo "tag_version=$TAG_VERSION"
           echo "gradle_version=$GRADLE_VERSION"
           if [ "$TAG_VERSION" != "$GRADLE_VERSION" ]; then
@@ -64,6 +72,8 @@ jobs:
         run: ./gradlew build
       - name: verify jar mod version
         shell: bash
+        env:
+          GRADLE_VERSION: ${{ steps.gv.outputs.version }}
         run: |
           set -euo pipefail
           JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | head -n1)
@@ -71,13 +81,10 @@ jobs:
             echo "::error::No main jar found in build/libs"
             exit 1
           fi
-          JAR_VERSION=$(unzip -p "$JAR" fabric.mod.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])')
-          # 与 verify tag matches mod version 用同一套提取规则，避免两处漂移。
-          GRADLE_VERSION=$(tr -d '\r' < gradle.properties \
-            | sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*//p' \
-            | tail -n 1)
-          if [ -z "$GRADLE_VERSION" ]; then
-            echo "::error::gradle.properties 中未找到 version= 行"
+          # 三种失败都要有注解：jar 内没有 fabric.mod.json、缺 version 字段、jar 损坏。
+          if ! JAR_VERSION=$(unzip -p "$JAR" fabric.mod.json 2>/dev/null \
+              | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])' 2>/dev/null); then
+            echo "::error::无法从 $JAR 读取 fabric.mod.json 的 version（文件缺失、jar 损坏或缺少 version 字段）"
             exit 1
           fi
           echo "jar=$JAR"
