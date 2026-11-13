@@ -15,6 +15,24 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AsyncFileWriterTest {
+	// CI 的共享 runner 可能在任务调度上停顿数百毫秒；等待上限放宽到 15 秒只影响失败场景的耗时，
+	// 正常路径仍然立即返回，因此不会拖慢测试。
+	private static final long DRAIN_TIMEOUT_MILLIS = 15_000L;
+	private static final long START_TIMEOUT_SECONDS = 10L;
+
+	// 预热：确保写盘线程已创建，避免首个任务的线程创建开销挤占后续用例的超时窗口。
+	private static void warmUpWriter() {
+		assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS), "the writer thread should start");
+	}
+
+	private static void awaitQuietly(CountDownLatch latch, long timeoutSeconds) {
+		try {
+			latch.await(timeoutSeconds, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
 	// drain 必须等到此前提交的任务全部执行完，供测试确认后台队列已清空。
 	@Test
 	void drainWaitsForSubmittedTasks() throws InterruptedException {
@@ -30,8 +48,8 @@ class AsyncFileWriterTest {
 			finished.set(true);
 		});
 
-		assertTrue(started.await(5, TimeUnit.SECONDS), "task should start on the writer thread");
-		assertTrue(AsyncFileWriter.drain(5000L), "drain should complete within the timeout");
+		assertTrue(started.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "task should start on the writer thread");
+		assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS), "drain should complete within the timeout");
 		assertTrue(finished.get(), "drain must not return before the task finishes");
 	}
 
@@ -50,7 +68,7 @@ class AsyncFileWriterTest {
 			});
 		}
 
-		assertTrue(AsyncFileWriter.drain(5000L), "drain should complete within the timeout");
+		assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS), "drain should complete within the timeout");
 		assertTrue(ordered.get(), "writer must execute tasks in submission order");
 		assertEquals(count, next.get(), "every submitted task must run exactly once");
 	}
@@ -59,11 +77,12 @@ class AsyncFileWriterTest {
 	// 否则后台旧写可能在同步保存之后落盘，把新内容反向覆盖。
 	@Test
 	void submitAndWaitRunsAfterPreviouslySubmittedTasks() {
+		warmUpWriter();
 		AtomicInteger order = new AtomicInteger();
 		AtomicBoolean asyncRanFirst = new AtomicBoolean();
 		AsyncFileWriter.execute(() -> asyncRanFirst.set(order.getAndIncrement() == 0));
 
-		Boolean result = AsyncFileWriter.submitAndWait(() -> order.getAndIncrement() == 1, 5000L);
+		Boolean result = AsyncFileWriter.submitAndWait(() -> order.getAndIncrement() == 1, DRAIN_TIMEOUT_MILLIS);
 
 		assertEquals(Boolean.TRUE, result, "submitAndWait should return the task result");
 		assertTrue(asyncRanFirst.get(), "the synchronous write must run after the queued async write");
@@ -72,55 +91,56 @@ class AsyncFileWriterTest {
 
 	// 任务已开始后超时：不能取消，必须再等一段拿到真实结果，
 	// 否则调用方会回滚内存，而磁盘稍后却被写成新值。
+	//
+	// 任务的完成时机由 release 闸门控制：只要任务已经在跑，延长等待就必然能等到结果，
+	// 不再依赖「任务能在多久内跑完」这种会被 CI 调度延迟打破的假设。
 	@Test
 	void submitAndWaitExtendsWaitForTaskThatAlreadyStarted() throws InterruptedException {
-		AtomicBoolean started = new AtomicBoolean();
+		warmUpWriter();
+		CountDownLatch started = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
 		AtomicBoolean result = new AtomicBoolean();
 		Thread caller = new Thread(() -> result.set(Boolean.TRUE.equals(AsyncFileWriter.submitAndWait(() -> {
-			started.set(true);
-			try {
-				Thread.sleep(300L);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				return false;
-			}
+			started.countDown();
+			awaitQuietly(release, START_TIMEOUT_SECONDS);
 			return true;
-		}, 200L))));
+		}, 1000L))));
 		caller.start();
 
-		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-		while (!started.get() && System.nanoTime() < deadline) {
-			Thread.sleep(1L);
-		}
-		assertTrue(started.get(), "the write task should start before the timeout");
-		caller.join(5000L);
+		assertTrue(started.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+			"the write task should start before the timeout");
+		// 任务被闸门挡住，必然活过第一次超时；等它进入延长等待后再放行。
+		Thread.sleep(1200L);
+		release.countDown();
+		caller.join(TimeUnit.SECONDS.toMillis(START_TIMEOUT_SECONDS));
 
 		assertFalse(caller.isAlive(), "submitAndWait should return after the extended wait");
 		assertTrue(result.get(), "an in-flight write must be awaited instead of reported as a timeout");
 	}
 
 	// 任务尚未开始就超时：取消它并返回超时，调用方回滚后不会再被旧任务写盘。
+	//
+	// 阻塞任务用闸门占住写盘线程，确保排队任务在超时窗口内一定不会被执行；
+	// 原先的固定 sleep 在 CI 调度延迟下可能提前结束，让被测任务直接跑完。
 	@Test
 	void submitAndWaitCancelsTaskThatHasNotStarted() throws InterruptedException {
 		CountDownLatch blockerStarted = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
 		AsyncFileWriter.execute(() -> {
 			blockerStarted.countDown();
-			try {
-				Thread.sleep(150L);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
+			awaitQuietly(release, START_TIMEOUT_SECONDS);
 		});
-		assertTrue(blockerStarted.await(5, TimeUnit.SECONDS), "the blocking task should start");
+		assertTrue(blockerStarted.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the blocking task should start");
 
 		AtomicBoolean ran = new AtomicBoolean();
 		Boolean result = AsyncFileWriter.submitAndWait(() -> {
 			ran.set(true);
 			return true;
-		}, 20L);
+		}, 50L);
 
 		assertNull(result, "a task that has not started should report a timeout");
-		assertTrue(AsyncFileWriter.drain(5000L));
+		release.countDown();
+		assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS));
 		assertFalse(ran.get(), "the cancelled task must not run");
 	}
 
@@ -140,7 +160,7 @@ class AsyncFileWriterTest {
 					Thread.currentThread().interrupt();
 				}
 			});
-			assertTrue(started.await(5, TimeUnit.SECONDS), "the blocking task should start");
+			assertTrue(started.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the blocking task should start");
 			executor.execute(() -> queuedRan.set(true));
 
 			assertFalse(AsyncFileWriter.shutdown(executor, 100L),

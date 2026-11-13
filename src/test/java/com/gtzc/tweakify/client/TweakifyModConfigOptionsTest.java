@@ -41,6 +41,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 两处默认值一旦漂移，“已修改”统计与重置行为就会出错。
  */
 class TweakifyModConfigOptionsTest {
+	// CI 的共享 runner 可能在后台写盘调度上停顿数百毫秒；等待上限放宽只影响失败场景的耗时，
+	// 正常路径仍然立即返回，不会拖慢测试。
+	private static final long DRAIN_TIMEOUT_MILLIS = 15_000L;
+	private static final long START_TIMEOUT_SECONDS = 10L;
+
 	@TempDir
 	Path tempDir;
 
@@ -164,7 +169,7 @@ class TweakifyModConfigOptionsTest {
 			// 再改一个字段并让下一批写盘也失败：失败回滚不能把已回滚的字段复活。
 			config.modified.disableHurtShake = true;
 			TweakifyModConfigOptions.flushPendingSaveNow();
-			assertTrue(AsyncFileWriter.drain(5000L));
+			assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS));
 			TweakifyModConfigOptions.pollSaveResults();
 
 			assertFalse(config.functions.blockOffhandFallback,
@@ -172,7 +177,7 @@ class TweakifyModConfigOptionsTest {
 			assertFalse(config.modified.disableHurtShake, "the later batch should roll back its own field");
 		} finally {
 			// 等待兜底异步写盘完成，避免后台任务在 @TempDir 清理时还持有临时目录。
-			AsyncFileWriter.drain(5000L);
+			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
 			TweakifyMod.CONFIG = null;
 		}
@@ -196,7 +201,7 @@ class TweakifyModConfigOptionsTest {
 				Thread.currentThread().interrupt();
 			}
 		});
-		assertTrue(blocked.await(5, TimeUnit.SECONDS), "the writer should be blocked");
+		assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the writer should be blocked");
 
 		try {
 			config.functions.blockOffhandFallback = false;
@@ -209,14 +214,14 @@ class TweakifyModConfigOptionsTest {
 			assertEquals(Boolean.TRUE, config.writeSynchronously());
 
 			release.countDown();
-			assertTrue(AsyncFileWriter.drain(5000L));
+			assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS));
 
 			String json = Files.readString(path);
 			assertTrue(json.contains("\"blockOffhandFallback\": true"),
 				"the stale queued flush must not overwrite the later synchronous snapshot");
 		} finally {
 			release.countDown();
-			AsyncFileWriter.drain(5000L);
+			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
 			TweakifyMod.CONFIG = null;
 		}
@@ -301,7 +306,7 @@ class TweakifyModConfigOptionsTest {
 			assertFalse(config.functions.blockOffhandFallback,
 				"回退后重放的失败结果应能把内存回滚到磁盘状态");
 		} finally {
-			AsyncFileWriter.drain(5000L);
+			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
 			TweakifyMod.CONFIG = null;
 		}
@@ -318,11 +323,11 @@ class TweakifyModConfigOptionsTest {
 		try {
 			TweakifyModConfigOptions.setSyncedSequenceForTest(10L);
 			TweakifyModConfigOptions.handleSaveFailure(config, 10L, 5L);
-			assertTrue(AsyncFileWriter.drain(5000L));
+			assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS));
 			assertEquals(5L, TweakifyModConfigOptions.syncedSequenceForTest(),
 				"兜底写自身失败时必须回退序号，让旧失败结果可以回滚");
 		} finally {
-			AsyncFileWriter.drain(5000L);
+			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
 			TweakifyMod.CONFIG = null;
 		}
@@ -336,11 +341,11 @@ class TweakifyModConfigOptionsTest {
 		try {
 			TweakifyModConfigOptions.setSyncedSequenceForTest(10L);
 			TweakifyModConfigOptions.handleSaveFailure(config, 10L, 5L);
-			assertTrue(AsyncFileWriter.drain(5000L));
+			assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS));
 			assertEquals(10L, TweakifyModConfigOptions.syncedSequenceForTest(),
 				"兜底写成功时不能回退序号");
 		} finally {
-			AsyncFileWriter.drain(5000L);
+			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
 			TweakifyMod.CONFIG = null;
 		}
@@ -383,7 +388,7 @@ class TweakifyModConfigOptionsTest {
 		} finally {
 			AsyncFileWriter.installExecutorForTest(original);
 			submitOnly.shutdownNow();
-			AsyncFileWriter.drain(5000L);
+			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
 			TweakifyMod.CONFIG = null;
 		}
