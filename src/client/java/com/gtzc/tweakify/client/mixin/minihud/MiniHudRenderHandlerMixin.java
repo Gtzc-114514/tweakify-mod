@@ -31,7 +31,7 @@ public class MiniHudRenderHandlerMixin {
 		target = "Lfi/dy/masa/minihud/event/RenderHandler;updateLines()V"))
 	private void tweakify$throttleLineUpdate(RenderHandler handler) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.miniHudFpsOptimization) {
+		if (config == null || !config.optimization.miniHudFpsOptimization) {
 			this.updateLines();
 			return;
 		}

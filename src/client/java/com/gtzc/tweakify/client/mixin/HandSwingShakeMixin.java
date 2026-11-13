@@ -28,11 +28,11 @@ public class HandSwingShakeMixin {
 			return original;
 		}
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.cameraMotion) {
+		if (config == null || !config.functions.cameraMotion) {
 			return original;
 		}
 		CameraMotion.notifyPlayerAction();
-		if (config.cameraMotionScreenShake) {
+		if (config.functions.cameraMotionScreenShake) {
 			CameraMotion.addHandSwingShake();
 		}
 		return original;

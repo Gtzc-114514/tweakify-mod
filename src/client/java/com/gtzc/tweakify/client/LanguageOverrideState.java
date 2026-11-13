@@ -41,10 +41,10 @@ public final class LanguageOverrideState {
 	// 返回覆盖文本；null 表示不覆盖，调用方继续使用原版翻译。
 	public static String translate(String key) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || config.followSystemLanguage || key == null || !key.startsWith(KEY_PREFIX)) {
+		if (config == null || config.general.followSystemLanguage || key == null || !key.startsWith(KEY_PREFIX)) {
 			return null;
 		}
-		String language = config.language;
+		String language = config.general.language;
 		LangTable cached = cachedTable;
 		if (cached == null || !language.equals(cached.language())) {
 			cached = new LangTable(language, translations().get(language));

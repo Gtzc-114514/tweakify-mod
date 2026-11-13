@@ -31,7 +31,7 @@ public class LevelLoadingScreenMixin {
 	@Inject(method = "tick", at = @At("HEAD"), require = 0)
 	private void tweakify$instantClose(CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.forceCloseLoadingScreen || !config.forceCloseLoadingScreenInstant) {
+		if (config == null || !config.modified.forceCloseLoadingScreen || !config.modified.forceCloseLoadingScreenInstant) {
 			return;
 		}
 		Minecraft client = Minecraft.getInstance();

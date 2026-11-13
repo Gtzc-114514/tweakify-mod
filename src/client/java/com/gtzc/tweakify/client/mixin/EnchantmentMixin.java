@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public class EnchantmentMixin {
 	@ModifyReturnValue(method = "getFullname", at = @At("RETURN"))
 	private static Component tweakify$arabicLevel(Component original, Holder<Enchantment> enchantment, int level) {
-		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.enchantmentLevelArabic || level <= 0) {
+		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.modified.enchantmentLevelArabic || level <= 0) {
 			return original;
 		}
 		return enchantment.value().description().copy()

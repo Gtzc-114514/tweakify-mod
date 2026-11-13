@@ -91,7 +91,7 @@ public final class PiglinArmorSwapState {
 			missedScans = 0;
 		}
 
-		boolean enabled = config != null && config.piglinGoldArmorSwap;
+		boolean enabled = config != null && config.functions.piglinGoldArmorSwap;
 		if (!enabled && SWAPPED.isEmpty()) {
 			SUPPRESSED.clear();
 			return;
@@ -142,7 +142,7 @@ public final class PiglinArmorSwapState {
 			}
 		}
 
-		PiglinArmorSwapMode mode = PiglinArmorSwapMode.fromCode(config.piglinGoldArmorSwapMode);
+		PiglinArmorSwapMode mode = PiglinArmorSwapMode.fromCode(config.functions.piglinGoldArmorSwapMode);
 		boolean survivalLike = gameMode == GameType.SURVIVAL || gameMode == GameType.ADVENTURE;
 		if (survivalLike && piglinNearby) {
 			if (tryEquipOne(client, player, mode)) {

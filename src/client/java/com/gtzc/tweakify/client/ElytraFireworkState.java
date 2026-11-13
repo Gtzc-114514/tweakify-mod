@@ -29,7 +29,7 @@ public final class ElytraFireworkState {
 
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.elytraFireworkCooldown
+		if (config == null || !config.functions.elytraFireworkCooldown
 			|| client.player == null || client.level == null || !client.player.isFallFlying()) {
 			reset();
 			return;
@@ -39,7 +39,7 @@ public final class ElytraFireworkState {
 		}
 		blockingTicks++;
 		// 配置了固定间隔时按 tick 解锁，不再等待烟花实体消失。
-		int fixedTicks = config.elytraFireworkCooldownTicks;
+		int fixedTicks = config.functions.elytraFireworkCooldownTicks;
 		if (fixedTicks > 0) {
 			if (blockingTicks >= fixedTicks) {
 				reset();

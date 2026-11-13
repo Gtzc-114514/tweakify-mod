@@ -46,10 +46,10 @@ public final class WorldOverlayRenderer {
 		// 数量上限在 AttackRangeState 按 attackRangeMaxTargets 统一截断，这里不再二次限制。
 		List<AttackRangeState.Entry> visibleRanges = ranges;
 		boolean sphere = TweakifyMod.CONFIG != null
-			&& TweakifyModConfig.ATTACK_RANGE_DISPLAY_SPHERE.equals(TweakifyMod.CONFIG.attackRangeDisplayMode);
+			&& TweakifyModConfig.ATTACK_RANGE_DISPLAY_SPHERE.equals(TweakifyMod.CONFIG.functions.attackRangeDisplayMode);
 		Vec3 camera = context.levelState().cameraRenderState.pos;
 		boolean filled = TweakifyMod.CONFIG != null
-			&& TweakifyModConfig.ATTACK_RANGE_RENDER_FILLED.equals(TweakifyMod.CONFIG.attackRangeRenderMode);
+			&& TweakifyModConfig.ATTACK_RANGE_RENDER_FILLED.equals(TweakifyMod.CONFIG.functions.attackRangeRenderMode);
 		if (filled) {
 			// 半透明实心模式：攻击范围与基岩高亮共用 debugFilledBox（有 OIT 固定开销）。
 			if (!bedrock.isEmpty() || !visibleRanges.isEmpty()) {

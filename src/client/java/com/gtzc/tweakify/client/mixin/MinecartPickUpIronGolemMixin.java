@@ -36,7 +36,7 @@ public class MinecartPickUpIronGolemMixin {
 		HookProbe.markOnce(TWEAKIFY$REPORTED, "ironGolemMinecart");
 		AbstractMinecart minecart = (AbstractMinecart) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (!IronGolemMinecartState.shouldPickUp(config != null && config.ironGolemRideMinecart,
+		if (!IronGolemMinecartState.shouldPickUp(config != null && config.modified.ironGolemRideMinecart,
 			minecart.level().isClientSide(), !minecart.getPassengers().isEmpty())) {
 			return;
 		}

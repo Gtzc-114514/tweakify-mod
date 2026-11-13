@@ -30,21 +30,21 @@ public class LevelRendererOutlineStyleMixin {
 	private int tweakify$customOutlineColor(int original) {
 		HookProbe.markOnce(TWEAKIFY$REPORTED, "customBlockOutline");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !BlockOutlineStyleState.shouldApplyCustomStyle(config.customBlockOutline,
+		if (config == null || !BlockOutlineStyleState.shouldApplyCustomStyle(config.functions.customBlockOutline,
 			Minecraft.getInstance().options.highContrastBlockOutline().get())) {
 			return original;
 		}
-		return BlockOutlineStyleState.color(config.blockOutlineColorMode, config.blockOutlinePalette,
-			config.blockOutlineAnimationSpeed, System.nanoTime() / 1_000_000L);
+		return BlockOutlineStyleState.color(config.functions.blockOutlineColorMode, config.functions.blockOutlinePalette,
+			config.functions.blockOutlineAnimationSpeed, System.nanoTime() / 1_000_000L);
 	}
 
 	@ModifyVariable(method = "submitHitOutline", at = @At("HEAD"), argsOnly = true, index = 6, require = 0)
 	private float tweakify$customOutlineWidth(float original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !BlockOutlineStyleState.shouldApplyCustomStyle(config.customBlockOutline,
+		if (config == null || !BlockOutlineStyleState.shouldApplyCustomStyle(config.functions.customBlockOutline,
 			Minecraft.getInstance().options.highContrastBlockOutline().get())) {
 			return original;
 		}
-		return BlockOutlineStyleState.width(config.blockOutlineWidth);
+		return BlockOutlineStyleState.width(config.functions.blockOutlineWidth);
 	}
 }

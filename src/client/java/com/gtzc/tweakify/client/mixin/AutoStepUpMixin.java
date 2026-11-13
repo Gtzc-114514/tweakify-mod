@@ -29,7 +29,7 @@ public abstract class AutoStepUpMixin {
 	private float tweakify$autoStepUp(float original) {
 		HookProbe.markOnce(TWEAKIFY$STEP_UP_PROBE, "autoStepUp");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.autoStepUp || !((Object) this instanceof LocalPlayer)) {
+		if (config == null || !config.functions.autoStepUp || !((Object) this instanceof LocalPlayer)) {
 			return original;
 		}
 		return Math.max(original, 1.0f);

@@ -32,7 +32,7 @@ public class SpawnEggItemThrowMixin {
 	@WrapMethod(method = "useOn")
 	private InteractionResult tweakify$throwSpawnEggAtBlock(UseOnContext context,
 			Operation<InteractionResult> original) {
-		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.throwSpawnEgg) {
+		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.functions.throwSpawnEgg) {
 			return original.call(context);
 		}
 		Player player = context.getPlayer();
@@ -52,7 +52,7 @@ public class SpawnEggItemThrowMixin {
 	@WrapMethod(method = "use")
 	private InteractionResult tweakify$throwSpawnEggInAir(Level level, Player player, InteractionHand hand,
 			Operation<InteractionResult> original) {
-		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.throwSpawnEgg) {
+		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.functions.throwSpawnEgg) {
 			return original.call(level, player, hand);
 		}
 		ItemStack stack = player.getItemInHand(hand);

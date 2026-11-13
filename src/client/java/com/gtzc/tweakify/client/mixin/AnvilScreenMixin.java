@@ -20,7 +20,7 @@ public class AnvilScreenMixin {
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;hasInfiniteMaterials()Z"))
 	private boolean tweakify$hideTooExpensiveText(LocalPlayer player, Operation<Boolean> original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		boolean enabled = config != null && config.disableTooExpensive;
+		boolean enabled = config != null && config.modified.disableTooExpensive;
 		if (enabled) {
 			HookProbe.markOnce("anvilScreenLabel");
 		}

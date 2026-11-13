@@ -20,7 +20,7 @@ public class EntityTypePeacefulSpawnMixin {
 	private static boolean tweakify$allowPeacefulSpawn(EntityType<?> type) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && SpawnFeatureState.shouldAllowPeacefulSpawn(
-			config.peacefulModeMonsters, config.peacefulModeMonsterSpawn,
+			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(type))) {
 			return true;
 		}

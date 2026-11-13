@@ -43,8 +43,8 @@ final class BlockMarkerScanner {
 	static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		boolean available = client.player != null && client.level != null;
-		boolean barrier = config != null && config.barrierVisibility && available;
-		boolean bedrock = config != null && config.highlightSingleLayerBedrock && available;
+		boolean barrier = config != null && config.functions.barrierVisibility && available;
+		boolean bedrock = config != null && config.functions.highlightSingleLayerBedrock && available;
 
 		tickCounter++;
 		if (tickCounter >= COUNTER_RESET_TICKS) {
@@ -172,7 +172,7 @@ final class BlockMarkerScanner {
 	private static int maxBedrockMarkers() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		int configured = config == null ? TweakifyModConfig.DEFAULT_BEDROCK_MARKERS
-			: config.highlightSingleLayerBedrockMaxMarkers;
+			: config.functions.highlightSingleLayerBedrockMaxMarkers;
 		return Math.max(TweakifyModConfig.MIN_BEDROCK_MARKERS,
 			Math.min(TweakifyModConfig.MAX_BEDROCK_MARKERS, configured));
 	}

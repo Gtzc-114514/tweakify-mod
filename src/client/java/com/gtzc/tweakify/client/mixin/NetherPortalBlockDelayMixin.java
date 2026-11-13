@@ -28,8 +28,8 @@ public class NetherPortalBlockDelayMixin {
 			return original;
 		}
 		int survivalDelay = level.getGameRules().get(GameRules.PLAYERS_NETHER_PORTAL_DEFAULT_DELAY);
-		int override = NetherPortalDelayState.overrideDelay(config.netherPortalTeleportDelay,
-			config.netherPortalSurvivalInstantTeleport, config.netherPortalCreativeDelayedTeleport,
+		int override = NetherPortalDelayState.overrideDelay(config.functions.netherPortalTeleportDelay,
+			config.functions.netherPortalSurvivalInstantTeleport, config.functions.netherPortalCreativeDelayedTeleport,
 			true, player.getAbilities().invulnerable, survivalDelay);
 		return override != NetherPortalDelayState.NO_OVERRIDE ? override : original;
 	}

@@ -21,8 +21,8 @@ public class ElytraWaterFlightMixin {
 		target = "Lnet/minecraft/world/entity/LivingEntity;shouldTravelInFluid(Lnet/minecraft/world/level/material/FluidState;)Z"))
 	private boolean tweakify$keepGlidingInWater(LivingEntity self, FluidState fluidState) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.elytraWaterFlight && self.isFallFlying()
-			&& (!config.elytraWaterFlightOnlyWater || fluidState.getType().isSame(Fluids.WATER))) {
+		if (config != null && config.modified.elytraWaterFlight && self.isFallFlying()
+			&& (!config.modified.elytraWaterFlightOnlyWater || fluidState.getType().isSame(Fluids.WATER))) {
 			return false;
 		}
 		// 原逻辑：处于液体、受流体影响且无法站在该流体上时才走流体移动。

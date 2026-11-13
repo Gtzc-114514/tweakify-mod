@@ -1,15 +1,17 @@
 package com.gtzc.tweakify.config;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.gtzc.tweakify.util.AsyncFileWriter;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import net.minecraft.SharedConstants;
@@ -29,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -60,47 +64,47 @@ class TweakifyModConfigTest {
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
 		assertTrue(Files.exists(path), "default config file should be created");
-		assertTrue(config.blockOffhandFallback);
-		assertEquals("zh_cn", config.language);
-		assertTrue(config.followSystemLanguage);
-		assertFalse(config.interceptBlockInteraction);
-		assertFalse(config.interceptEntityInteraction);
-		assertFalse(config.miningCooldown);
-		assertTrue(config.useCooldown);
-		assertFalse(config.mainHandUseCooldown);
-		assertFalse(config.offhandUseCooldown);
-		assertFalse(config.disableUseItemSlowdown);
-		assertFalse(config.disableHurtShake);
-		assertFalse(config.disableFlightDrift);
-		assertFalse(config.flightDriftVertical);
-		assertFalse(config.disableHurtTint);
-		assertFalse(config.disableDimensionTeleport);
-		assertTrue(config.disableNetherPortalTeleport);
-		assertTrue(config.disableEndPortalTeleport);
-		assertFalse(config.disableUnderwaterMiningPenalty);
-		assertFalse(config.disableAirMiningPenalty);
-		assertFalse(config.attackRangeDisplay);
-		assertEquals("flat", config.attackRangeDisplayMode);
-		assertEquals("wireframe", config.attackRangeRenderMode);
-		assertFalse(config.attackRangeIncludeSelf);
-		assertEquals(48, config.attackRangeMaxDistance);
-		assertEquals(64, config.attackRangeMaxTargets);
-		assertEquals(32, config.highlightSingleLayerBedrockMaxMarkers);
+		assertTrue(config.functions.blockOffhandFallback);
+		assertEquals("zh_cn", config.general.language);
+		assertTrue(config.general.followSystemLanguage);
+		assertFalse(config.functions.interceptBlockInteraction);
+		assertFalse(config.functions.interceptEntityInteraction);
+		assertFalse(config.functions.miningCooldown);
+		assertTrue(config.functions.useCooldown);
+		assertFalse(config.functions.mainHandUseCooldown);
+		assertFalse(config.functions.offhandUseCooldown);
+		assertFalse(config.modified.disableUseItemSlowdown);
+		assertFalse(config.modified.disableHurtShake);
+		assertFalse(config.functions.disableFlightDrift);
+		assertFalse(config.functions.flightDriftVertical);
+		assertFalse(config.modified.disableHurtTint);
+		assertFalse(config.functions.disableDimensionTeleport);
+		assertTrue(config.functions.disableNetherPortalTeleport);
+		assertTrue(config.functions.disableEndPortalTeleport);
+		assertFalse(config.modified.disableUnderwaterMiningPenalty);
+		assertFalse(config.modified.disableAirMiningPenalty);
+		assertFalse(config.functions.attackRangeDisplay);
+		assertEquals("flat", config.functions.attackRangeDisplayMode);
+		assertEquals("wireframe", config.functions.attackRangeRenderMode);
+		assertFalse(config.functions.attackRangeIncludeSelf);
+		assertEquals(48, config.functions.attackRangeMaxDistance);
+		assertEquals(64, config.functions.attackRangeMaxTargets);
+		assertEquals(32, config.functions.highlightSingleLayerBedrockMaxMarkers);
 		assertTrue(config.getAttackRangeEntities().isEmpty());
-		assertFalse(config.nightVisionFadeOut);
-		assertFalse(config.enchantmentLevelArabic);
-		assertFalse(config.fixBoatStuckOnDirtPath);
+		assertFalse(config.modified.nightVisionFadeOut);
+		assertFalse(config.modified.enchantmentLevelArabic);
+		assertFalse(config.fix.fixBoatStuckOnDirtPath);
 		assertTrue(config.getNetherPortalTeleportBlacklist().isEmpty());
 		assertTrue(config.getEndPortalTeleportBlacklist().isEmpty());
 		assertTrue(config.getEndGatewayTeleportBlacklist().isEmpty());
-		assertTrue(config.disableEndGatewayTeleport, "end gateway teleport is blocked by default");
-		assertEquals("G,C", config.hotkeyOpenConfigGui, "open config hotkey should default to G + C");
-		assertEquals("", config.hotkeyMiningCooldown, "toggle hotkeys should default to unset");
-		assertEquals("", config.hotkeyUseCooldown);
-		assertEquals("", config.hotkeyPickFluidBucket);
-		assertEquals("", config.hotkeySurvivalPickBlock);
-		assertEquals("", config.hotkeyDisableOverlayEffects);
-		assertEquals("", config.hotkeyDisableFlightDrift);
+		assertTrue(config.functions.disableEndGatewayTeleport, "end gateway teleport is blocked by default");
+		assertEquals("G,C", config.general.hotkeyOpenConfigGui, "open config hotkey should default to G + C");
+		assertEquals("", config.functions.hotkeyMiningCooldown, "toggle hotkeys should default to unset");
+		assertEquals("", config.functions.hotkeyUseCooldown);
+		assertEquals("", config.functions.hotkeyPickFluidBucket);
+		assertEquals("", config.functions.hotkeySurvivalPickBlock);
+		assertEquals("", config.modified.hotkeyDisableOverlayEffects);
+		assertEquals("", config.functions.hotkeyDisableFlightDrift);
 		List<String> items = config.getRestrictedOffhandItems();
 		assertTrue(items.contains("minecraft:torch"), "default list should contain torch");
 		assertEquals(items.size(), items.stream().distinct().count(), "default list must not contain duplicates");
@@ -136,10 +140,10 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertTrue(config.cameraMotion, "legacy motionCameraTilt should migrate to cameraMotion");
-		assertEquals("K", config.hotkeyCameraMotion);
-		assertTrue(config.itemGroups, "legacy mergeCreativeItemEntries should migrate to itemGroups");
-		assertEquals("L", config.hotkeyItemGroups);
+		assertTrue(config.functions.cameraMotion, "legacy motionCameraTilt should migrate to cameraMotion");
+		assertEquals("K", config.functions.hotkeyCameraMotion);
+		assertTrue(config.functions.itemGroups, "legacy mergeCreativeItemEntries should migrate to itemGroups");
+		assertEquals("L", config.functions.hotkeyItemGroups);
 		assertEquals(TweakifyModConfig.CURRENT_CONFIG_VERSION, config.configVersion);
 		String rewritten = Files.readString(path);
 		assertTrue(rewritten.contains("\"cameraMotion\": true"), "migrated value should be written back");
@@ -161,7 +165,7 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertTrue(config.miniHudFpsOptimization, "optimization switch should still load");
+		assertTrue(config.optimization.miniHudFpsOptimization, "optimization switch should still load");
 		String rewritten = Files.readString(path);
 		assertFalse(rewritten.contains("hotkeyMiniHudFpsOptimization"),
 			"obsolete hotkey field should be removed on the next save");
@@ -181,9 +185,9 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertFalse(config.blockOffhandFallback);
-		assertFalse(config.interceptBlockInteraction);
-		assertTrue(config.interceptEntityInteraction);
+		assertFalse(config.functions.blockOffhandFallback);
+		assertFalse(config.functions.interceptBlockInteraction);
+		assertTrue(config.functions.interceptEntityInteraction);
 		assertEquals(List.of("minecraft:torch", "minecraft:lantern"), config.getRestrictedOffhandItems());
 	}
 
@@ -198,12 +202,12 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertFalse(config.interceptBlockInteraction, "block interaction interception should default to off");
-		assertFalse(config.interceptEntityInteraction, "entity interaction interception should default to off");
-		assertEquals("G,C", config.hotkeyOpenConfigGui, "open config hotkey should default to G + C");
-		assertEquals("", config.hotkeyUseCooldown, "toggle hotkeys should default to unset");
-		assertEquals("", config.hotkeyMiningCooldown);
-		assertEquals("", config.hotkeySurvivalPickBlock);
+		assertFalse(config.functions.interceptBlockInteraction, "block interaction interception should default to off");
+		assertFalse(config.functions.interceptEntityInteraction, "entity interaction interception should default to off");
+		assertEquals("G,C", config.general.hotkeyOpenConfigGui, "open config hotkey should default to G + C");
+		assertEquals("", config.functions.hotkeyUseCooldown, "toggle hotkeys should default to unset");
+		assertEquals("", config.functions.hotkeyMiningCooldown);
+		assertEquals("", config.functions.hotkeySurvivalPickBlock);
 	}
 
 	// 旧配置缺少物品列表键：必须补回默认值，
@@ -266,16 +270,16 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertEquals("X", config.hotkeyMiningCooldown);
-		assertEquals("Y", config.hotkeyUseCooldown);
-		assertEquals("Z", config.hotkeySurvivalPickBlock);
-		assertEquals("G,C", config.hotkeyOpenConfigGui);
+		assertEquals("X", config.functions.hotkeyMiningCooldown);
+		assertEquals("Y", config.functions.hotkeyUseCooldown);
+		assertEquals("Z", config.functions.hotkeySurvivalPickBlock);
+		assertEquals("G,C", config.general.hotkeyOpenConfigGui);
 
-		config.hotkeyOpenConfigGui = "H,J";
+		config.general.hotkeyOpenConfigGui = "H,J";
 		assertTrue(config.save());
 		TweakifyModConfig reloaded = TweakifyModConfig.load(path);
-		assertEquals("H,J", reloaded.hotkeyOpenConfigGui);
-		assertEquals("X", reloaded.hotkeyMiningCooldown);
+		assertEquals("H,J", reloaded.general.hotkeyOpenConfigGui);
+		assertEquals("X", reloaded.functions.hotkeyMiningCooldown);
 	}
 
 	@Test
@@ -285,13 +289,29 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertTrue(config.blockOffhandFallback, "fallback defaults should apply");
+		assertTrue(config.functions.blockOffhandFallback, "fallback defaults should apply");
 		assertTrue(Files.exists(path), "a new default config should be written");
 		try (Stream<Path> backups = Files.list(tempDir)) {
 			long backupCount = backups
 				.filter(p -> p.getFileName().toString().startsWith("tweakify-mod.json.broken-"))
 				.count();
 			assertEquals(1, backupCount, "broken config should be backed up exactly once");
+		}
+	}
+
+	// 列表里混入数字/布尔元素时，旧版 Gson 会按 List<String> 泛型把它们转成字符串再清洗；
+	// 拆分后必须保持同样行为，不能因为元素类型不匹配把整份配置判定为损坏。
+	@Test
+	void loadCoercesNonStringListElements() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, "{\"restrictedOffhandItems\": [1, true]}");
+
+		TweakifyModConfig config = TweakifyModConfig.load(path);
+
+		assertEquals(List.of("minecraft:1", "minecraft:true"), config.getRestrictedOffhandItems());
+		try (Stream<Path> files = Files.list(tempDir)) {
+			assertFalse(files.anyMatch(file -> file.getFileName().toString().contains(".broken-")),
+				"non-string list elements must not be treated as a broken config");
 		}
 	}
 
@@ -329,8 +349,8 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertEquals("", config.hotkeyOpenConfigGui, "null hotkey should load as an empty binding");
-		assertEquals("", config.hotkeyMiningCooldown);
+		assertEquals("", config.general.hotkeyOpenConfigGui, "null hotkey should load as an empty binding");
+		assertEquals("", config.functions.hotkeyMiningCooldown);
 		String rewritten = Files.readString(path);
 		assertTrue(rewritten.contains("\"hotkeyOpenConfigGui\": \"\""),
 			"null hotkey should be rewritten as an empty string");
@@ -364,7 +384,7 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertTrue(config.blockOffhandFallback);
+		assertTrue(config.functions.blockOffhandFallback);
 		assertTrue(Files.exists(path));
 	}
 
@@ -384,9 +404,9 @@ class TweakifyModConfigTest {
 
 		assertEquals(List.of("minecraft:torch"), config.getRestrictedOffhandItems(),
 			"ids should be normalized, de-duplicated and invalid entries dropped");
-		assertEquals(128, config.attackRangeMaxDistance, "attack range distance should be clamped");
-		assertEquals(8, config.attackRangeMaxTargets, "attack range target count should be clamped");
-		assertEquals(256, config.highlightSingleLayerBedrockMaxMarkers, "bedrock marker count should be clamped");
+		assertEquals(128, config.functions.attackRangeMaxDistance, "attack range distance should be clamped");
+		assertEquals(8, config.functions.attackRangeMaxTargets, "attack range target count should be clamped");
+		assertEquals(256, config.functions.highlightSingleLayerBedrockMaxMarkers, "bedrock marker count should be clamped");
 		String rewritten = Files.readString(path);
 		assertFalse(rewritten.contains("not a valid id"), "corrected config should be rewritten to disk");
 		assertFalse(rewritten.contains("9999"), "clamped values should be rewritten to disk");
@@ -397,12 +417,12 @@ class TweakifyModConfigTest {
 	void loadDefaultsNewFeatureFields() {
 		TweakifyModConfig config = TweakifyModConfig.load(configPath());
 
-		assertFalse(config.piglinGoldArmorSwap);
-		assertEquals(TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO, config.piglinGoldArmorSwapMode);
-		assertFalse(config.chatInputMemory);
-		assertTrue(config.disabledSpawnAllowPlayerSpawn, "player spawning should be allowed by default");
-		assertEquals("", config.hotkeyPiglinGoldArmorSwap);
-		assertEquals("", config.hotkeyChatInputMemory);
+		assertFalse(config.functions.piglinGoldArmorSwap);
+		assertEquals(TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO, config.functions.piglinGoldArmorSwapMode);
+		assertFalse(config.functions.chatInputMemory);
+		assertTrue(config.functions.disabledSpawnAllowPlayerSpawn, "player spawning should be allowed by default");
+		assertEquals("", config.functions.hotkeyPiglinGoldArmorSwap);
+		assertEquals("", config.functions.hotkeyChatInputMemory);
 	}
 
 	// 新功能的枚举字段同样需要清洗：非法模式回退。
@@ -417,7 +437,7 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertEquals(TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO, config.piglinGoldArmorSwapMode,
+		assertEquals(TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO, config.functions.piglinGoldArmorSwapMode,
 			"unsupported mode should fall back to auto");
 	}
 
@@ -429,7 +449,7 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(dir);
 
-		assertTrue(config.blockOffhandFallback, "in-memory defaults should still apply");
+		assertTrue(config.functions.blockOffhandFallback, "in-memory defaults should still apply");
 		assertTrue(Files.isDirectory(dir), "existing path must not be replaced or backed up");
 	}
 
@@ -439,17 +459,17 @@ class TweakifyModConfigTest {
 	void saveWritesReadableConfig() {
 		Path path = configPath();
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		config.blockOffhandFallback = false;
-		config.interceptBlockInteraction = false;
-		config.interceptEntityInteraction = true;
+		config.functions.blockOffhandFallback = false;
+		config.functions.interceptBlockInteraction = false;
+		config.functions.interceptEntityInteraction = true;
 		config.replaceRestrictedOffhandItems(List.of("minecraft:torch"));
 
 		assertTrue(config.save());
 
 		TweakifyModConfig reloaded = TweakifyModConfig.load(path);
-		assertFalse(reloaded.blockOffhandFallback);
-		assertFalse(reloaded.interceptBlockInteraction);
-		assertTrue(reloaded.interceptEntityInteraction);
+		assertFalse(reloaded.functions.blockOffhandFallback);
+		assertFalse(reloaded.functions.interceptBlockInteraction);
+		assertTrue(reloaded.functions.interceptEntityInteraction);
 		assertEquals(List.of("minecraft:torch"), reloaded.getRestrictedOffhandItems());
 	}
 
@@ -458,14 +478,14 @@ class TweakifyModConfigTest {
 	void writeSynchronouslyWritesCurrentSnapshot() {
 		Path path = configPath();
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		config.blockOffhandFallback = false;
-		config.hotkeyOpenConfigGui = "H,J";
+		config.functions.blockOffhandFallback = false;
+		config.general.hotkeyOpenConfigGui = "H,J";
 
 		assertEquals(Boolean.TRUE, config.writeSynchronously());
 
 		TweakifyModConfig reloaded = TweakifyModConfig.load(path);
-		assertFalse(reloaded.blockOffhandFallback);
-		assertEquals("H,J", reloaded.hotkeyOpenConfigGui);
+		assertFalse(reloaded.functions.blockOffhandFallback);
+		assertEquals("H,J", reloaded.general.hotkeyOpenConfigGui);
 	}
 
 	// 退出同步兜底写分配更晚的落盘序号：真正入队但延迟执行的旧任务必须被跳过，
@@ -474,7 +494,7 @@ class TweakifyModConfigTest {
 	void writeSynchronouslyWinsOverStaleQueuedWrite() throws Exception {
 		Path path = configPath();
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		config.blockOffhandFallback = false;
+		config.functions.blockOffhandFallback = false;
 
 		CountDownLatch blocked = new CountDownLatch(1);
 		CountDownLatch release = new CountDownLatch(1);
@@ -494,14 +514,14 @@ class TweakifyModConfigTest {
 			AsyncFileWriter.WriteHandle stale = config.prepareSaveHandle();
 			assertTrue(stale != null, "the stale snapshot should be queued");
 
-			config.blockOffhandFallback = true;
+			config.functions.blockOffhandFallback = true;
 			assertEquals(Boolean.TRUE, config.writeSynchronously());
 
 			release.countDown();
 			assertTrue(Boolean.TRUE.equals(AsyncFileWriter.await(stale, 5000L, false)),
 				"the stale queued task should be skipped as already covered");
 
-			assertTrue(TweakifyModConfig.load(path).blockOffhandFallback,
+			assertTrue(TweakifyModConfig.load(path).functions.blockOffhandFallback,
 				"the stale queued task must not overwrite the synchronous snapshot");
 		} finally {
 			release.countDown();
@@ -546,48 +566,48 @@ class TweakifyModConfigTest {
 		Files.writeString(dir.resolve("occupied"), "x");
 
 		TweakifyModConfig config = new TweakifyModConfig(dir);
-		config.blockOffhandFallback = false;
-		config.interceptBlockInteraction = false;
-		config.hotkeyOpenConfigGui = "H,J";
+		config.functions.blockOffhandFallback = false;
+		config.functions.interceptBlockInteraction = false;
+		config.general.hotkeyOpenConfigGui = "H,J";
 		TweakifyModConfig.Snapshot snapshot = config.snapshot();
-		config.blockOffhandFallback = true;
-		config.interceptBlockInteraction = true;
-		config.hotkeyOpenConfigGui = "X,Y";
-		config.language = "ru_ru";
-		config.followSystemLanguage = false;
-		config.disableUseItemSlowdown = true;
-		config.disableHurtShake = true;
-		config.disableFlightDrift = true;
-		config.flightDriftVertical = true;
-		config.disableHurtTint = true;
-		config.disableDimensionTeleport = true;
-		config.disableNetherPortalTeleport = false;
-		config.disableEndPortalTeleport = false;
-		config.disableUnderwaterMiningPenalty = true;
-		config.disableAirMiningPenalty = true;
+		config.functions.blockOffhandFallback = true;
+		config.functions.interceptBlockInteraction = true;
+		config.general.hotkeyOpenConfigGui = "X,Y";
+		config.general.language = "ru_ru";
+		config.general.followSystemLanguage = false;
+		config.modified.disableUseItemSlowdown = true;
+		config.modified.disableHurtShake = true;
+		config.functions.disableFlightDrift = true;
+		config.functions.flightDriftVertical = true;
+		config.modified.disableHurtTint = true;
+		config.functions.disableDimensionTeleport = true;
+		config.functions.disableNetherPortalTeleport = false;
+		config.functions.disableEndPortalTeleport = false;
+		config.modified.disableUnderwaterMiningPenalty = true;
+		config.modified.disableAirMiningPenalty = true;
 		config.replaceNetherPortalTeleportBlacklist(List.of("minecraft:zombie"));
 		config.replaceEndPortalTeleportBlacklist(List.of("minecraft:item"));
 
 		assertFalse(config.save(), "writing to a directory must fail");
 		config.restoreSnapshot(snapshot);
-		assertFalse(config.blockOffhandFallback, "state must roll back to snapshot");
-		assertFalse(config.interceptBlockInteraction, "block interaction switch must roll back to snapshot");
-		assertFalse(config.interceptEntityInteraction);
-		assertFalse(config.disableUseItemSlowdown, "new switches must roll back to snapshot");
-		assertFalse(config.disableHurtShake);
-		assertFalse(config.disableFlightDrift);
-		assertFalse(config.flightDriftVertical);
-		assertFalse(config.disableHurtTint);
-		assertFalse(config.disableDimensionTeleport);
-		assertTrue(config.disableNetherPortalTeleport);
-		assertTrue(config.disableEndPortalTeleport);
-		assertFalse(config.disableUnderwaterMiningPenalty);
-		assertFalse(config.disableAirMiningPenalty);
+		assertFalse(config.functions.blockOffhandFallback, "state must roll back to snapshot");
+		assertFalse(config.functions.interceptBlockInteraction, "block interaction switch must roll back to snapshot");
+		assertFalse(config.functions.interceptEntityInteraction);
+		assertFalse(config.modified.disableUseItemSlowdown, "new switches must roll back to snapshot");
+		assertFalse(config.modified.disableHurtShake);
+		assertFalse(config.functions.disableFlightDrift);
+		assertFalse(config.functions.flightDriftVertical);
+		assertFalse(config.modified.disableHurtTint);
+		assertFalse(config.functions.disableDimensionTeleport);
+		assertTrue(config.functions.disableNetherPortalTeleport);
+		assertTrue(config.functions.disableEndPortalTeleport);
+		assertFalse(config.modified.disableUnderwaterMiningPenalty);
+		assertFalse(config.modified.disableAirMiningPenalty);
 		assertTrue(config.getNetherPortalTeleportBlacklist().isEmpty());
 		assertTrue(config.getEndPortalTeleportBlacklist().isEmpty());
-		assertEquals("zh_cn", config.language);
-		assertTrue(config.followSystemLanguage);
-		assertEquals("H,J", config.hotkeyOpenConfigGui, "hotkeys must roll back to snapshot");
+		assertEquals("zh_cn", config.general.language);
+		assertTrue(config.general.followSystemLanguage);
+		assertEquals("H,J", config.general.hotkeyOpenConfigGui, "hotkeys must roll back to snapshot");
 	}
 
 	// 等待写盘时必须释放配置锁：慢盘场景下客户端 tick 的 setter 不能被 save() 阻塞。
@@ -647,8 +667,8 @@ class TweakifyModConfigTest {
 	void toJsonAndWriteJsonRoundTripLikeSave() {
 		Path path = configPath();
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		config.blockOffhandFallback = false;
-		config.hotkeyOpenConfigGui = "H,J";
+		config.functions.blockOffhandFallback = false;
+		config.general.hotkeyOpenConfigGui = "H,J";
 		config.replaceMainHandUseCooldownItems(List.of("minecraft:apple"));
 
 		String json = config.toJson();
@@ -658,8 +678,8 @@ class TweakifyModConfigTest {
 			"writeJson should write the given text");
 
 		TweakifyModConfig reloaded = TweakifyModConfig.load(path);
-		assertFalse(reloaded.blockOffhandFallback);
-		assertEquals("H,J", reloaded.hotkeyOpenConfigGui);
+		assertFalse(reloaded.functions.blockOffhandFallback);
+		assertEquals("H,J", reloaded.general.hotkeyOpenConfigGui);
 		assertEquals(List.of("minecraft:apple"), reloaded.getMainHandUseCooldownItems());
 	}
 
@@ -668,8 +688,8 @@ class TweakifyModConfigTest {
 	void submitSaveAsyncWritesCurrentSnapshot() throws IOException, InterruptedException {
 		Path path = configPath();
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		config.blockOffhandFallback = false;
-		config.hotkeyOpenConfigGui = "H,J";
+		config.functions.blockOffhandFallback = false;
+		config.general.hotkeyOpenConfigGui = "H,J";
 
 		config.submitSaveAsync();
 
@@ -694,20 +714,20 @@ class TweakifyModConfigTest {
 	void restoreSnapshotRollsBackMemoryWithoutWritingDisk() throws IOException {
 		Path path = configPath();
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		config.blockOffhandFallback = true;
+		config.functions.blockOffhandFallback = true;
 		config.replaceRestrictedOffhandItems(List.of("minecraft:torch"));
 		assertTrue(config.save());
 		String onDisk = Files.readString(path);
 
 		TweakifyModConfig.Snapshot snapshot = config.snapshot();
-		config.blockOffhandFallback = false;
-		config.hotkeyOpenConfigGui = "X,Y";
+		config.functions.blockOffhandFallback = false;
+		config.general.hotkeyOpenConfigGui = "X,Y";
 		config.replaceRestrictedOffhandItems(List.of("minecraft:lantern"));
 
 		config.restoreSnapshot(snapshot);
 
-		assertTrue(config.blockOffhandFallback, "restoreSnapshot must roll back in-memory values");
-		assertEquals("G,C", config.hotkeyOpenConfigGui);
+		assertTrue(config.functions.blockOffhandFallback, "restoreSnapshot must roll back in-memory values");
+		assertEquals("G,C", config.general.hotkeyOpenConfigGui);
 		assertEquals(List.of("minecraft:torch"), config.getRestrictedOffhandItems());
 		assertEquals(onDisk, Files.readString(path), "restoreSnapshot must not touch the config file");
 	}
@@ -717,18 +737,18 @@ class TweakifyModConfigTest {
 	void applyAndSaveReportsUnchangedWithoutWriting() {
 		Path path = configPath();
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		config.blockOffhandFallback = true;
+		config.functions.blockOffhandFallback = true;
 
 		assertEquals(TweakifyModConfig.ApplyResult.UNCHANGED,
 			config.applyAndSave(() -> false), "no change should skip writing");
-		assertTrue(config.blockOffhandFallback);
+		assertTrue(config.functions.blockOffhandFallback);
 
 		assertEquals(TweakifyModConfig.ApplyResult.SAVED, config.applyAndSave(() -> {
 			config.setBoolean("blockOffhandFallback", false);
 			return true;
 		}));
-		assertFalse(config.blockOffhandFallback);
-		assertFalse(TweakifyModConfig.load(path).blockOffhandFallback, "saved value must reach disk");
+		assertFalse(config.functions.blockOffhandFallback);
+		assertFalse(TweakifyModConfig.load(path).functions.blockOffhandFallback, "saved value must reach disk");
 	}
 
 	// 写盘失败时只回滚命令改动的那个字段，其它字段保持调用方设置的值。
@@ -740,8 +760,8 @@ class TweakifyModConfigTest {
 		Files.writeString(dir.resolve("occupied"), "x");
 
 		TweakifyModConfig config = new TweakifyModConfig(dir);
-		config.blockOffhandFallback = true;
-		config.disableHurtShake = true;
+		config.functions.blockOffhandFallback = true;
+		config.modified.disableHurtShake = true;
 
 		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> {
 			config.setBoolean("blockOffhandFallback", false);
@@ -749,8 +769,8 @@ class TweakifyModConfigTest {
 		});
 
 		assertEquals(TweakifyModConfig.ApplyResult.SAVE_FAILED, result);
-		assertTrue(config.blockOffhandFallback, "the mutated field must roll back");
-		assertTrue(config.disableHurtShake, "unrelated fields must not be touched by the rollback");
+		assertTrue(config.functions.blockOffhandFallback, "the mutated field must roll back");
+		assertTrue(config.modified.disableHurtShake, "unrelated fields must not be touched by the rollback");
 		// applyAndSave 失败后会异步提交兜底快照；等待它结束，避免临时文件残留影响 @TempDir 清理。
 		assertTrue(AsyncFileWriter.drain(5000L));
 	}
@@ -759,21 +779,21 @@ class TweakifyModConfigTest {
 	@Test
 	void rollbackChangedFieldsKeepsConcurrentEdits() {
 		TweakifyModConfig config = new TweakifyModConfig(configPath());
-		config.blockOffhandFallback = true;
-		config.disableHurtShake = false;
+		config.functions.blockOffhandFallback = true;
+		config.modified.disableHurtShake = false;
 		TweakifyModConfig.Snapshot before = config.snapshot();
 
-		config.blockOffhandFallback = false;
-		config.disableHurtShake = true;
+		config.functions.blockOffhandFallback = false;
+		config.modified.disableHurtShake = true;
 		TweakifyModConfig.Snapshot after = config.snapshot();
 
 		// 模拟等待期间另一线程把 blockOffhandFallback 改回 true（当前值 != after）。
-		config.blockOffhandFallback = true;
+		config.functions.blockOffhandFallback = true;
 
 		config.rollbackChangedFieldsIfUnchanged(before, after);
 
-		assertTrue(config.blockOffhandFallback, "concurrent edit must be preserved, not rolled back");
-		assertFalse(config.disableHurtShake, "unchanged field should roll back to the before snapshot");
+		assertTrue(config.functions.blockOffhandFallback, "concurrent edit must be preserved, not rolled back");
+		assertFalse(config.modified.disableHurtShake, "unchanged field should roll back to the before snapshot");
 	}
 
 	// 档案加载只覆盖档案里存在的字段：旧档案缺少的新字段保持当前值，
@@ -781,16 +801,16 @@ class TweakifyModConfigTest {
 	@Test
 	void applyFromOnlyOverridesFieldsPresentInProfile() {
 		TweakifyModConfig current = new TweakifyModConfig(configPath());
-		current.miningCooldown = true;
-		current.disableHurtShake = true;
+		current.functions.miningCooldown = true;
+		current.modified.disableHurtShake = true;
 
 		TweakifyModConfig profile = new TweakifyModConfig(configPath());
-		profile.disableHurtShake = false;
+		profile.modified.disableHurtShake = false;
 
 		current.applyFrom(profile, Set.of("disableHurtShake", "configVersion", "noSuchField"));
 
-		assertFalse(current.disableHurtShake, "field present in profile must be overridden");
-		assertTrue(current.miningCooldown, "field missing from profile must keep current value");
+		assertFalse(current.modified.disableHurtShake, "field present in profile must be overridden");
+		assertTrue(current.functions.miningCooldown, "field missing from profile must keep current value");
 	}
 
 	// 档案里列表写成 null 时，applyFrom 必须保持当前值而不是写入 null：
@@ -802,13 +822,13 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig profile = new TweakifyModConfig(configPath());
 		setRawField(profile, "restrictedOffhandItems", null);
-		profile.language = null;
+		profile.general.language = null;
 
 		current.applyFrom(profile, Set.of("restrictedOffhandItems", "language"));
 
 		assertEquals(List.of("minecraft:torch"), current.getRestrictedOffhandItems(),
 			"null list in profile must not overwrite the current list");
-		assertEquals("zh_cn", current.language,
+		assertEquals("zh_cn", current.general.language,
 			"null string in profile must not clear the current value");
 	}
 
@@ -828,15 +848,27 @@ class TweakifyModConfigTest {
 		assertEquals(List.of("minecraft:torch"), current.getRestrictedOffhandItems());
 	}
 
-	// 直接按字段名写入原始值：模拟 Gson 把 JSON null / 非法内容赋给私有字段的结果。
-	private static void setRawField(TweakifyModConfig config, String name, Object value) {
-		try {
-			Field field = TweakifyModConfig.class.getDeclaredField(name);
-			field.setAccessible(true);
-			field.set(config, value);
-		} catch (ReflectiveOperationException e) {
-			throw new IllegalStateException("Cannot set config field " + name, e);
+	// 序列化必须保持扁平：字段拆进分区对象后 JSON 键仍等于字段名，不允许出现嵌套对象。
+	@Test
+	void jsonStaysFlatAndCoversEveryNonNullField() {
+		TweakifyModConfig config = new TweakifyModConfig(configPath());
+
+		JsonObject json = JsonParser.parseString(config.toJson()).getAsJsonObject();
+
+		Set<String> expected = TweakifyModConfig.fieldRefs().entrySet().stream()
+			.filter(entry -> entry.getValue().get(config) != null)
+			.map(Map.Entry::getKey)
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+		assertEquals(expected, json.keySet(), "JSON keys must match the flat field table");
+		for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+			assertFalse(entry.getValue().isJsonObject(),
+				"nested JSON object found for field: " + entry.getKey());
 		}
+	}
+
+	// 直接按字段名写入原始值：模拟 Gson 把 JSON null / 非法内容赋给字段的结果。
+	private static void setRawField(TweakifyModConfig config, String name, Object value) {
+		config.setFieldRaw(name, value);
 	}
 
 	// 档案里数值越界时，applyFrom 必须复用 load() 的夹紧逻辑。
@@ -844,13 +876,60 @@ class TweakifyModConfigTest {
 	void applyFromClampsOutOfRangeNumbers() {
 		TweakifyModConfig current = new TweakifyModConfig(configPath());
 		TweakifyModConfig profile = new TweakifyModConfig(configPath());
-		profile.attackRangeMaxDistance = 9999;
-		profile.attackRangeMaxTargets = 1;
+		profile.functions.attackRangeMaxDistance = 9999;
+		profile.functions.attackRangeMaxTargets = 1;
 
 		current.applyFrom(profile, Set.of("attackRangeMaxDistance", "attackRangeMaxTargets"));
 
-		assertEquals(TweakifyModConfig.MAX_ATTACK_RANGE_DISTANCE, current.attackRangeMaxDistance);
-		assertEquals(TweakifyModConfig.MIN_ATTACK_RANGE_TARGETS, current.attackRangeMaxTargets);
+		assertEquals(TweakifyModConfig.MAX_ATTACK_RANGE_DISTANCE, current.functions.attackRangeMaxDistance);
+		assertEquals(TweakifyModConfig.MIN_ATTACK_RANGE_TARGETS, current.functions.attackRangeMaxTargets);
+	}
+
+	// --- 分区校验器覆盖断言 ---
+
+	// 测试用分区：只声明一个数值字段，构造期执行覆盖断言。
+	private static final class ProbeSection extends ConfigSection {
+		volatile int value = 0;
+
+		ProbeSection(List<String> sanitizedFieldNames) {
+			assertSanitizerCoverage(sanitizedFieldNames);
+		}
+	}
+
+	// 登记了不存在的字段名（拼错或跨分区）时必须启动失败，而不是静默跳过。
+	@Test
+	void sanitizerRegisteredForUnknownFieldFailsAtConstruction() {
+		IllegalStateException error = assertThrows(IllegalStateException.class,
+			() -> new ProbeSection(List.of("valeu")));
+
+		assertTrue(error.getMessage().contains("unknown config field"),
+			"拼错的字段名必须被识别为未知字段：" + error.getMessage());
+	}
+
+	// 同一字段被重复登记时必须启动失败，避免 sanitize() 静默执行两遍。
+	@Test
+	void duplicateSanitizerRegistrationFailsAtConstruction() {
+		IllegalStateException error = assertThrows(IllegalStateException.class,
+			() -> new ProbeSection(List.of("value", "value")));
+
+		assertTrue(error.getMessage().contains("more than one sanitizer"),
+			"重复登记必须被识别：" + error.getMessage());
+	}
+
+	// 数值字段漏登记校验器时必须启动失败。
+	@Test
+	void missingSanitizerFailsAtConstruction() {
+		IllegalStateException error = assertThrows(IllegalStateException.class,
+			() -> new ProbeSection(List.of()));
+
+		assertTrue(error.getMessage().contains("without sanitizer"),
+			"漏登记的数值字段必须被识别：" + error.getMessage());
+	}
+
+	// 正常登记时构造成功：守卫断言本身不能误报。
+	@Test
+	void sanitizerCoverageAcceptsValidRegistration() {
+		assertDoesNotThrow(() -> new ProbeSection(List.of("value")));
 	}
 
 	// --- 清洗 / 增删 ---
@@ -883,7 +962,7 @@ class TweakifyModConfigTest {
 
 	// 快照必须覆盖所有可持久化字段：新增字段后若回滚漏存，这里会直接失败。
 	@Test
-	void snapshotRestoresEveryPersistentField() throws IOException, IllegalAccessException {
+	void snapshotRestoresEveryPersistentField() throws IOException {
 		// 目标是带内容的目录：原子移动会失败，从而触发回滚分支。
 		Path dir = tempDir.resolve("rollback-target");
 		Files.createDirectories(dir);
@@ -891,39 +970,35 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = new TweakifyModConfig(dir);
 		Map<String, Object> before = new LinkedHashMap<>();
-		List<Field> fields = new ArrayList<>();
-		for (Field field : TweakifyModConfig.class.getDeclaredFields()) {
-			int modifiers = field.getModifiers();
-			if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) {
-				continue;
-			}
-			field.setAccessible(true);
-			fields.add(field);
-			Object value = field.get(config);
-			before.put(field.getName(), value instanceof List<?> list ? List.copyOf(list) : value);
+		// 用扁平字段表而不是 getDeclaredFields()：字段拆进分区对象后，
+		// 后者只能看到分区字段本身，这条测试会静默失去判别力。
+		Map<String, ConfigFieldRef> fields = TweakifyModConfig.fieldRefs();
+		for (Map.Entry<String, ConfigFieldRef> entry : fields.entrySet()) {
+			Object value = entry.getValue().get(config);
+			before.put(entry.getKey(), value instanceof List<?> list ? List.copyOf(list) : value);
 		}
 
 		TweakifyModConfig.Snapshot snapshot = config.snapshot();
-		for (Field field : fields) {
-			Object value = field.get(config);
+		for (ConfigFieldRef ref : fields.values()) {
+			Object value = ref.get(config);
 			if (value instanceof Boolean bool) {
-				field.set(config, !bool);
+				ref.set(config, !bool);
 			} else if (value instanceof String text) {
-				field.set(config, text + "-changed");
+				ref.set(config, text + "-changed");
 			} else if (value instanceof Integer number) {
-				field.set(config, number + 1);
+				ref.set(config, number + 1);
 			} else if (value instanceof Double number) {
-				field.set(config, number + 0.5);
+				ref.set(config, number + 0.5);
 			} else if (value instanceof List<?>) {
-				field.set(config, new ArrayList<>(List.of("minecraft:stone")));
+				ref.set(config, new ArrayList<>(List.of("minecraft:stone")));
 			}
 		}
 
 		assertFalse(config.save(), "writing to a directory must fail");
 		config.restoreSnapshot(snapshot);
-		for (Field field : fields) {
-			assertEquals(before.get(field.getName()), field.get(config),
-				field.getName() + " must roll back to the snapshot value");
+		for (Map.Entry<String, ConfigFieldRef> entry : fields.entrySet()) {
+			assertEquals(before.get(entry.getKey()), entry.getValue().get(config),
+				entry.getKey() + " must roll back to the snapshot value");
 		}
 	}
 
@@ -967,21 +1042,21 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertEquals(TweakifyModConfig.MAX_BLOCK_OUTLINE_WIDTH, config.blockOutlineWidth);
-		assertEquals(TweakifyModConfig.MAX_BLOCK_OUTLINE_ANIMATION_SPEED, config.blockOutlineAnimationSpeed);
-		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_PALETTE_WHITE, config.blockOutlinePalette);
-		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_MODE_PALETTE, config.blockOutlineColorMode);
+		assertEquals(TweakifyModConfig.MAX_BLOCK_OUTLINE_WIDTH, config.functions.blockOutlineWidth);
+		assertEquals(TweakifyModConfig.MAX_BLOCK_OUTLINE_ANIMATION_SPEED, config.functions.blockOutlineAnimationSpeed);
+		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_PALETTE_WHITE, config.functions.blockOutlinePalette);
+		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_MODE_PALETTE, config.functions.blockOutlineColorMode);
 		assertTrue(Files.readString(path).contains(
 			"\"blockOutlineWidth\": " + TweakifyModConfig.MAX_BLOCK_OUTLINE_WIDTH));
 
 		Files.writeString(path, "{\"blockOutlineWidth\": -5, \"blockOutlineAnimationSpeed\": 1}");
 		TweakifyModConfig low = TweakifyModConfig.load(path);
-		assertEquals(TweakifyModConfig.MIN_BLOCK_OUTLINE_WIDTH, low.blockOutlineWidth);
-		assertEquals(TweakifyModConfig.MIN_BLOCK_OUTLINE_ANIMATION_SPEED, low.blockOutlineAnimationSpeed);
+		assertEquals(TweakifyModConfig.MIN_BLOCK_OUTLINE_WIDTH, low.functions.blockOutlineWidth);
+		assertEquals(TweakifyModConfig.MIN_BLOCK_OUTLINE_ANIMATION_SPEED, low.functions.blockOutlineAnimationSpeed);
 
 		Files.writeString(path, "{\"blockOutlineWidth\": 2.3}");
 		TweakifyModConfig rounded = TweakifyModConfig.load(path);
-		assertEquals(2.5, rounded.blockOutlineWidth, 1.0e-6);
+		assertEquals(2.5, rounded.functions.blockOutlineWidth, 1.0e-6);
 	}
 
 	@Test
@@ -989,22 +1064,22 @@ class TweakifyModConfigTest {
 		TweakifyModConfig config = new TweakifyModConfig(configPath());
 
 		config.setDouble(TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD, 2.3);
-		assertEquals(2.5, config.blockOutlineWidth, 1.0e-6);
+		assertEquals(2.5, config.functions.blockOutlineWidth, 1.0e-6);
 
 		config.setDouble(TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD, 2.2);
-		assertEquals(TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH, config.blockOutlineWidth, 1.0e-6);
+		assertEquals(TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH, config.functions.blockOutlineWidth, 1.0e-6);
 
 		config.setDouble(TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD, 99.0);
-		assertEquals(TweakifyModConfig.MAX_BLOCK_OUTLINE_WIDTH, config.blockOutlineWidth, 1.0e-6);
+		assertEquals(TweakifyModConfig.MAX_BLOCK_OUTLINE_WIDTH, config.functions.blockOutlineWidth, 1.0e-6);
 
 		config.setDouble(TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD, -5.0);
-		assertEquals(TweakifyModConfig.MIN_BLOCK_OUTLINE_WIDTH, config.blockOutlineWidth, 1.0e-6);
+		assertEquals(TweakifyModConfig.MIN_BLOCK_OUTLINE_WIDTH, config.functions.blockOutlineWidth, 1.0e-6);
 
 		config.setDouble(TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD, Double.NaN);
-		assertEquals(TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH, config.blockOutlineWidth, 1.0e-6);
+		assertEquals(TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH, config.functions.blockOutlineWidth, 1.0e-6);
 
 		config.setDouble(TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD, Double.POSITIVE_INFINITY);
-		assertEquals(TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH, config.blockOutlineWidth, 1.0e-6);
+		assertEquals(TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH, config.functions.blockOutlineWidth, 1.0e-6);
 	}
 
 	@Test
@@ -1054,9 +1129,9 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_PALETTE_WHITE, config.blockOutlinePalette);
-		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_MODE_PALETTE, config.blockOutlineColorMode);
-		assertEquals(2.5, config.blockOutlineWidth, 1.0e-6);
+		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_PALETTE_WHITE, config.functions.blockOutlinePalette);
+		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_MODE_PALETTE, config.functions.blockOutlineColorMode);
+		assertEquals(2.5, config.functions.blockOutlineWidth, 1.0e-6);
 		try (Stream<Path> files = Files.list(tempDir)) {
 			assertFalse(files.anyMatch(file -> file.getFileName().toString().contains(".broken-")),
 				"null enum values must not be treated as a broken config");
@@ -1106,12 +1181,12 @@ class TweakifyModConfigTest {
 
 		TweakifyModConfig config = TweakifyModConfig.load(path);
 
-		assertTrue(config.miningCooldown);
-		assertTrue(config.useCooldown);
-		assertFalse(config.mainHandUseCooldown);
-		assertFalse(config.offhandUseCooldown);
-		assertEquals("X", config.hotkeyMiningCooldown);
-		assertEquals("Y", config.hotkeyUseCooldown);
+		assertTrue(config.functions.miningCooldown);
+		assertTrue(config.functions.useCooldown);
+		assertFalse(config.functions.mainHandUseCooldown);
+		assertFalse(config.functions.offhandUseCooldown);
+		assertEquals("X", config.functions.hotkeyMiningCooldown);
+		assertEquals("Y", config.functions.hotkeyUseCooldown);
 		assertEquals(List.of("minecraft:apple"), config.getMainHandUseCooldownItems());
 		assertEquals(List.of("minecraft:stone"), config.getOffhandUseCooldownItems());
 	}
@@ -1173,23 +1248,23 @@ class TweakifyModConfigTest {
 		config.replaceHighlightPreset1Entities(List.of("minecraft:item"));
 
 		assertFalse(config.shouldHighlightEntity(EntityTypes.ITEM), "master switch is off by default");
-		config.entityHighlight = true;
+		config.functions.entityHighlight = true;
 		assertFalse(config.shouldHighlightEntity(EntityTypes.ITEM), "no preset is enabled");
 
-		config.highlightPreset1 = true;
+		config.functions.highlightPreset1 = true;
 		assertTrue(config.shouldHighlightEntity(EntityTypes.ITEM), "dropped item entity should match");
 		assertFalse(config.shouldHighlightEntity(EntityTypes.ZOMBIE), "unlisted entity should not match");
 
-		config.highlightPreset1 = false;
+		config.functions.highlightPreset1 = false;
 		assertFalse(config.shouldHighlightEntity(EntityTypes.ITEM), "disabling the preset stops highlighting");
 	}
 
 	@Test
 	void highlightUsesFirstEnabledPresetWhenConfigIsMalformed() {
 		TweakifyModConfig config = new TweakifyModConfig(configPath());
-		config.entityHighlight = true;
-		config.highlightPreset1 = true;
-		config.highlightPreset2 = true;
+		config.functions.entityHighlight = true;
+		config.functions.highlightPreset1 = true;
+		config.functions.highlightPreset2 = true;
 		config.replaceHighlightPreset1Entities(List.of("minecraft:item"));
 		config.replaceHighlightPreset2Entities(List.of("minecraft:zombie"));
 

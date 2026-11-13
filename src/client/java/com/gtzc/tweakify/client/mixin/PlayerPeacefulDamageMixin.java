@@ -29,7 +29,7 @@ public class PlayerPeacefulDamageMixin {
 		if (config != null && level.getDifficulty() == Difficulty.PEACEFUL) {
 			Entity attacker = source.getEntity();
 			if (attacker instanceof Mob mob && SpawnFeatureState.shouldAllowPeacefulAggression(
-				config.peacefulModeMonsters, config.peacefulModeMonsterNoAttack, true,
+				config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterNoAttack, true,
 				config.isPeacefulModeMonster(mob.getType()))) {
 				return Difficulty.NORMAL;
 			}

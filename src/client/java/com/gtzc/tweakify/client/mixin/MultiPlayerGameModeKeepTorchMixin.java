@@ -36,7 +36,7 @@ public class MultiPlayerGameModeKeepTorchMixin {
 		Operation<InteractionResult> original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		Player player = context.getPlayer();
-		if (config != null && config.keepLastTorch && player != null && !player.isCreative()) {
+		if (config != null && config.modified.keepLastTorch && player != null && !player.isCreative()) {
 			HookProbe.markOnce(TWEAKIFY$KEEP_TORCH_CLIENT_PROBE, "keepLastTorchClient");
 			if (KeepLastTorchFeature.shouldBlockPlacement(
 				stack.getItem(), KeepLastTorchFeature.countTorches(player, stack.getItem()))) {

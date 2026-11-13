@@ -16,6 +16,6 @@ public final class LevelLoadingState {
 	// 是否跳过加载界面的渲染：功能开启且没有勾选“保留加载界面”。
 	public static boolean shouldHide() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.forceCloseLoadingScreen && !config.forceCloseLoadingScreenKeepFirst;
+		return config != null && config.modified.forceCloseLoadingScreen && !config.modified.forceCloseLoadingScreenKeepFirst;
 	}
 }

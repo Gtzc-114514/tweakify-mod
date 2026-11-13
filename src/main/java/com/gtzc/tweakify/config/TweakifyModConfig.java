@@ -36,19 +36,47 @@ public class TweakifyModConfig {
 
 	// 反射字段表（字段名 == JSON 键名）：按名字读写配置，使命令注册、MaLiLib 双向同步与
 	// 写盘回滚共用同一份字段清单，新增开关时无需再同步修改多处拷贝清单。
-	private static final Map<String, Field> CONFIG_FIELDS = indexConfigFields();
+	// 字段可以声明在本类上，也可以声明在 facade 持有的分区对象里：索引只保存 Field 引用，
+	// 读写时按分区字段解引用 owner，因此分区拆分不改变字段表的键与相对顺序。
+	private static final Map<String, ConfigFieldRef> CONFIG_FIELDS = indexConfigFields();
 
-	private static Map<String, Field> indexConfigFields() {
-		Map<String, Field> fields = new LinkedHashMap<>();
+	private static Map<String, ConfigFieldRef> indexConfigFields() {
+		Map<String, ConfigFieldRef> fields = new LinkedHashMap<>();
 		for (Field field : TweakifyModConfig.class.getDeclaredFields()) {
-			int modifiers = field.getModifiers();
-			if (Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) {
+			if (isIndexSkipped(field)) {
 				continue;
 			}
-			field.setAccessible(true);
-			fields.put(field.getName(), field);
+			if (ConfigSection.class.isAssignableFrom(field.getType())) {
+				indexSection(field.getType(), field, fields);
+			} else {
+				addConfigField(fields, new ConfigFieldRef(field.getName(), null, field));
+			}
 		}
 		return Collections.unmodifiableMap(fields);
+	}
+
+	// 仅索引一层分区：分区不嵌套，避免字段归属难以追踪。
+	private static void indexSection(Class<?> type, Field sectionField, Map<String, ConfigFieldRef> fields) {
+		sectionField.setAccessible(true);
+		for (Field field : type.getDeclaredFields()) {
+			if (isIndexSkipped(field)) {
+				continue;
+			}
+			addConfigField(fields, new ConfigFieldRef(field.getName(), sectionField, field));
+		}
+	}
+
+	private static boolean isIndexSkipped(Field field) {
+		int modifiers = field.getModifiers();
+		return Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers) || field.isSynthetic();
+	}
+
+	// 重名直接让类初始化失败：否则后注册的字段会静默覆盖前一个，配置文件与界面一起丢项。
+	private static void addConfigField(Map<String, ConfigFieldRef> fields, ConfigFieldRef ref) {
+		ref.valueField().setAccessible(true);
+		if (fields.putIfAbsent(ref.name(), ref) != null) {
+			throw new IllegalStateException("Duplicate config field: " + ref.name());
+		}
 	}
 
 	// 配置文件版本：字段语义发生变化时递增，并在 load() 里按旧版本做迁移。
@@ -75,90 +103,8 @@ public class TweakifyModConfig {
 	// 这些字段的修正在 load() 的前置迁移步骤完成，不要求登记字段级校验器。
 	private static final Set<String> MIGRATION_FIELDS = Set.of(CONFIG_VERSION_FIELD);
 
-	// 字段级校验器：每个需要清洗的数值/枚举字段都必须登记，
-	// 启动期由 assertSanitizersCoverAllFields() 断言覆盖度，
-	// 新增字段忘记登记时直接让类初始化失败，而不是静默接受越界或非法的值。
-	// 未绑定方法引用（TweakifyModConfig::sanitizeXxx）把接收者作为唯一参数，
-	// 因此校验器本身仍可保留为实例方法。
-	private static final List<FieldSanitizer> FIELD_SANITIZERS = buildFieldSanitizers();
-
-	@FunctionalInterface
-	private interface FieldSanitizerAction {
-		boolean sanitize(TweakifyModConfig config);
-	}
-
-	// 一个校验器可以负责多个字段：攻击范围的距离与数量需要一起夹紧。
-	private record FieldSanitizer(List<String> fields, FieldSanitizerAction action) {
-		static FieldSanitizer of(String field, FieldSanitizerAction action) {
-			return new FieldSanitizer(List.of(field), action);
-		}
-	}
-
-	private static List<FieldSanitizer> buildFieldSanitizers() {
-		List<FieldSanitizer> sanitizers = new ArrayList<>();
-		sanitizers.add(FieldSanitizer.of("language", TweakifyModConfig::sanitizeLanguage));
-		sanitizers.add(FieldSanitizer.of("itemDespawnTime", TweakifyModConfig::sanitizeItemDespawnTime));
-		sanitizers.add(FieldSanitizer.of("itemDespawnTimeXpOrbs", TweakifyModConfig::sanitizeXpOrbDespawnTime));
-		sanitizers.add(FieldSanitizer.of("durabilityOverlayLowThreshold",
-			TweakifyModConfig::sanitizeDurabilityThreshold));
-		sanitizers.add(FieldSanitizer.of("nightVisionFadeOutDuration",
-			TweakifyModConfig::sanitizeNightVisionFadeDuration));
-		sanitizers.add(FieldSanitizer.of("betterBlockPlacementMode", TweakifyModConfig::sanitizeBlockPlacementMode));
-		sanitizers.add(FieldSanitizer.of("copyItemIdFormat", TweakifyModConfig::sanitizeCopyIdFormat));
-		sanitizers.add(FieldSanitizer.of("chatSelectionColor", TweakifyModConfig::sanitizeChatSelectionColor));
-		sanitizers.add(FieldSanitizer.of("durabilityDisplayMode", TweakifyModConfig::sanitizeDurabilityDisplayMode));
-		sanitizers.add(FieldSanitizer.of("attackRangeDisplayMode",
-			TweakifyModConfig::sanitizeAttackRangeDisplayMode));
-		sanitizers.add(new FieldSanitizer(
-			List.of("attackRangeMaxDistance", "attackRangeMaxTargets"),
-			TweakifyModConfig::sanitizeAttackRangeLimits));
-		sanitizers.add(FieldSanitizer.of("attackRangeRenderMode",
-			TweakifyModConfig::sanitizeAttackRangeRenderMode));
-		sanitizers.add(FieldSanitizer.of("highlightSingleLayerBedrockMaxMarkers",
-			TweakifyModConfig::sanitizeBedrockMarkerLimit));
-		sanitizers.add(FieldSanitizer.of("cutThroughItems", TweakifyModConfig::sanitizeCutThroughItems));
-		sanitizers.add(FieldSanitizer.of("cutThroughPlants", TweakifyModConfig::sanitizeCutThroughPlants));
-		sanitizers.add(FieldSanitizer.of("nightVisionFadeOutCurve", TweakifyModConfig::sanitizeNightVisionCurve));
-		sanitizers.add(FieldSanitizer.of("elytraFireworkCooldownTicks",
-			TweakifyModConfig::sanitizeElytraFireworkTicks));
-		sanitizers.add(FieldSanitizer.of("blockOutlineWidth", TweakifyModConfig::sanitizeBlockOutlineWidth));
-		sanitizers.add(FieldSanitizer.of("blockOutlinePalette", TweakifyModConfig::sanitizeBlockOutlinePalette));
-		sanitizers.add(FieldSanitizer.of("blockOutlineColorMode", TweakifyModConfig::sanitizeBlockOutlineColorMode));
-		sanitizers.add(FieldSanitizer.of("blockOutlineAnimationSpeed",
-			TweakifyModConfig::sanitizeBlockOutlineAnimationSpeed));
-		sanitizers.add(FieldSanitizer.of("piglinGoldArmorSwapMode",
-			TweakifyModConfig::sanitizePiglinArmorSwapMode));
-		sanitizers.add(FieldSanitizer.of("itemGroupsSort", TweakifyModConfig::sanitizeItemGroupsSort));
-		sanitizers.add(FieldSanitizer.of("cameraMotionIntensity",
-			TweakifyModConfig::sanitizeCameraMotionIntensity));
-		assertSanitizersCoverAllFields(sanitizers);
-		return List.copyOf(sanitizers);
-	}
-
-	// 启动期断言（类加载期执行）：每个数值/枚举字段都必须登记校验器。
-	// 四类问题都会在这里直接失败：字段名拼错、重复登记、新增字段未登记、字段改名后表未跟着改。
-	private static void assertSanitizersCoverAllFields(List<FieldSanitizer> sanitizers) {
-		Set<String> covered = new LinkedHashSet<>();
-		for (FieldSanitizer sanitizer : sanitizers) {
-			for (String fieldName : sanitizer.fields()) {
-				if (!CONFIG_FIELDS.containsKey(fieldName)) {
-					throw new IllegalStateException("Sanitizer registered for unknown config field: " + fieldName);
-				}
-				if (!covered.add(fieldName)) {
-					throw new IllegalStateException("Config field has more than one sanitizer: " + fieldName);
-				}
-			}
-		}
-		for (Map.Entry<String, Field> entry : CONFIG_FIELDS.entrySet()) {
-			String name = entry.getKey();
-			if (MIGRATION_FIELDS.contains(name) || isImplicitlySanitized(name, entry.getValue().getType())) {
-				continue;
-			}
-			if (!covered.contains(name)) {
-				throw new IllegalStateException("Config field without sanitizer: " + name);
-			}
-		}
-	}
+	// 字段级校验器已随字段搬到各分区（见 ConfigSection 与各 XxxConfig），
+	// 每个分区在构造时自行断言覆盖度，facade 不再维护校验器表。
 
 	// 布尔开关的值域天然安全；列表与热键分别由 sanitizeAllItems / sanitizeHotkeys 统一清洗。
 	private static boolean isImplicitlySanitized(String name, Class<?> type) {
@@ -348,519 +294,12 @@ public class TweakifyModConfig {
 	// 配置文件版本号：读取旧文件（缺少该字段时为 0）后自动升级到当前版本。
 	public volatile int configVersion = CURRENT_CONFIG_VERSION;
 
-	// 模组界面语言代码（zh_cn / en_us / ru_ru / fr_fr）；跟随系统语言时忽略。
-	public volatile String language = "zh_cn";
-
-	// 跟随系统语言：开启时使用游戏当前语言，忽略 language 设置。
-	public volatile boolean followSystemLanguage = true;
-
-	// 掉落物消失时间（tick）：默认 6000 = 原版 5 分钟。超出范围的配置在读取时会被夹紧。
-	public volatile int itemDespawnTime = DEFAULT_ITEM_DESPAWN_TICKS;
-
-	// 仅对玩家丢弃的掉落物使用上面的时间；其它来源保持原版 6000。
-	public volatile boolean itemDespawnPlayerDroppedOnly = false;
-
-	// 经验球消失时间（tick），默认 6000 = 原版 5 分钟。
-	public volatile int itemDespawnTimeXpOrbs = DEFAULT_ITEM_DESPAWN_TICKS;
-
-	// 复制物体 ID：开启后用“复制目标 ID”快捷键对着方块、实体或容器内悬停的物品复制其 ID。
-	public volatile boolean copyItemId = false;
-	// 复制物体 ID 的切换快捷键，以及真正执行复制的快捷键（子设置）。
-	public volatile String hotkeyCopyItemId = "";
-	public volatile String hotkeyCopyTargetId = "";
-
-	// 复制格式：plain（纯 ID）/ typed（带 block/entity/item 前缀）/ counted（带数量）。
-	public volatile String copyItemIdFormat = COPY_ID_FORMAT_PLAIN;
-
-	// 复制后自动关闭容器界面。
-	public volatile boolean copyItemIdCloseContainer = false;
-
-	// 复制后在聊天栏显示提示。
-	public volatile boolean copyItemIdChatMessage = true;
-
-	// 是否拦截“主手物品用完、右键还没松开时副手自动接手”的原版回退行为。
-	// true = 开启拦截（模组功能生效），false = 保持原版行为。
-	public volatile boolean blockOffhandFallback = true;
-
-	// 仅当 blockOffhandFallback 为 true 时生效：命中方块时是否也取消本次使用。
-	// 默认 false：放行门、拉杆等可交互方块的交互，但仍拦截副手方块物品的放置，
-	// 保证主手用完瞬间副手不会把方块放出去（副手回推效果不丢）。
-	// true = 所有方块交互一并拦截。
-	public volatile boolean interceptBlockInteraction = false;
-
-	// 仅当 blockOffhandFallback 为 true 时生效：命中实体时是否也取消本次使用。
-	// 默认 false（更保守）：保留实体交互手感。
-	// true = 实体交互也拦截。
-	public volatile boolean interceptEntityInteraction = false;
-
-	// 左键交互冷却：一次左键只挖一个方块（按住左键连续挖掘被禁用，需松开再按）。
-	// true = 开启，false = 关闭。
-	public volatile boolean miningCooldown = false;
-
-	// 攻击实体也受“一次左键一次”限制（与挖方块共用按住周期）。
-	public volatile boolean miningCooldownAttacks = false;
-
-	// 右键交互冷却总开关（主闸）：关闭时主/副手使用冷却全部失效。
-	public volatile boolean useCooldown = true;
-
-	// 主手使用冷却：总开关开启时，主手物品一次右键只使用一次。
-	public volatile boolean mainHandUseCooldown = false;
-
-	// 副手使用冷却：总开关开启时，副手物品一次右键只使用一次。
-	public volatile boolean offhandUseCooldown = false;
-
-	// 禁用使用物品减速：进食、拉弓、举盾等使用物品期间不再降低移动速度。
-	public volatile boolean disableUseItemSlowdown = false;
-
-	// 这些物品仍保留原版的使用减速（物品 ID 列表）。
-	private volatile List<String> useItemSlowdownExceptions = new ArrayList<>();
-
-	// 禁用受伤抖动：受到伤害时不再产生视角抖动。
-	public volatile boolean disableHurtShake = false;
-
-	// 移除飞行漂移：创造/旁观飞行时松开方向键立即停止水平移动，
-	// 消除原版空气摩擦带来的惯性滑行。
-	public volatile boolean disableFlightDrift = false;
-
-	// 垂直飞行影响：开启移除飞行漂移时，松开跳跃/潜行键后也立即停止升降。
-	public volatile boolean flightDriftVertical = false;
-
-	// 禁用受伤变红：受伤时不再为生物叠加红色 overlay（死亡变红保留）。
-	public volatile boolean disableHurtTint = false;
-
-	// 禁用维度传送：总开关，阻止实体通过传送门切换维度。
-	public volatile boolean disableDimensionTeleport = false;
-
-	// 只拦截玩家的维度传送，其他实体仍可正常穿过传送门。
-	public volatile boolean dimensionTeleportPlayersOnly = false;
-
-	// 地狱门传送延迟：调整玩家通过下界传送门的等待时间。
-	public volatile boolean netherPortalTeleportDelay = false;
-
-	// 子开关：生存/冒险模式玩家进入地狱门立即传送（与创造模式一致）。
-	public volatile boolean netherPortalSurvivalInstantTeleport = false;
-
-	// 子开关：创造模式玩家进入地狱门也等待生存模式的延迟，不再秒传。
-	public volatile boolean netherPortalCreativeDelayedTeleport = false;
-
-	// 禁用地狱门传送：总开关开启时，阻止实体通过下界传送门。
-	public volatile boolean disableNetherPortalTeleport = true;
-
-	// 禁用末地门传送：总开关开启时，阻止实体通过要塞末地传送门。
-	public volatile boolean disableEndPortalTeleport = true;
-
-	// 禁用末地折跃门传送：总开关开启时，阻止实体通过末地折跃门。
-	public volatile boolean disableEndGatewayTeleport = true;
-
-	// 禁用水下挖掘惩罚：水下挖掘不再按 SUBMERGED_MINING_SPEED 属性减速。
-	public volatile boolean disableUnderwaterMiningPenalty = false;
-
-	// 禁用空中挖掘惩罚：离地挖掘不再额外降低速度。
-	public volatile boolean disableAirMiningPenalty = false;
-
-	// 高亮单层基岩：描出周围上下都不是基岩的基岩（下界顶棚的可击穿薄弱点）。
-	public volatile boolean highlightSingleLayerBedrock = false;
-
-	// 单层基岩单次最多显示的标记数量（超出时保留最近的）。
-	public volatile int highlightSingleLayerBedrockMaxMarkers = DEFAULT_BEDROCK_MARKERS;
-
-	// 诅咒附魔可移除：砂轮可以去除诅咒附魔（原版会保留诅咒）。
-	public volatile boolean disableCurseEnchantmentRestriction = false;
-
-	// 禁用附魔过于昂贵：铁砧花费达到 40 级时仍可取出结果（仅单人/局域网生效）。
-	public volatile boolean disableTooExpensive = false;
-
-	// 移除附魔冲突：铁砧合并装备时忽略附魔互斥限制，互斥附魔可以合到同一件装备上。
-	public volatile boolean removeEnchantmentConflicts = false;
-
-	// 附魔描述：在物品提示中为每个附魔追加一行描述。
-	public volatile boolean enchantmentDescriptions = false;
-
-	// 锹单层铲雪：手持锹破坏多层雪层时一次只减少一层，而非整块移除。
-	public volatile boolean disableShovelSnowFullBreak = false;
-
-	// 铲雪时掉落雪球。
-	public volatile boolean shovelSnowDropSnowball = true;
-
-	// 铲雪时消耗锹的耐久。
-	public volatile boolean shovelSnowConsumeDurability = true;
-
-	// 草径卡船修复：土径对船的碰撞按满方块处理，消除土径与完整方块之间的 1/16 台阶。
-	public volatile boolean fixBoatStuckOnDirtPath = false;
-
-	// 鹦鹉肩膀跳舞：唱片机播放音乐时，站在玩家肩膀上的鹦鹉也会跳舞（与基岩版一致）。
-	public volatile boolean parrotDanceOnShoulder = false;
-
-	// 更好的粗体：把粗体偏移从原版 1.0 改为 0.5（与 MCPatcher/OptiFine 一致）。
-	public volatile boolean betterBold = false;
-
-	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算造成的掉帧。
-	public volatile boolean miniHudFpsOptimization = false;
-
-	// 第三人称自身名字：第三/第二人称显示玩家自己的名字。
-	public volatile boolean thirdPersonPlayerName = false;
-
-	// 雪傀儡不受群系影响：温暖/干燥群系不再让雪傀儡因群系属性融化。
-	// 雨、水和熔岩伤害仍按原版；判定在服务端执行，仅单人/局域网生效。
-	public volatile boolean snowGolemBiomeImmunity = false;
-
-	// 相机运动：参考 CameraOverhaul 的转向/横移/俯仰/静止晃动与屏幕震动。
-	public volatile boolean cameraMotion = false;
-	public volatile String hotkeyCameraMotion = "";
-	public volatile int cameraMotionIntensity = DEFAULT_CAMERA_MOTION_INTENSITY;
-	public volatile boolean cameraMotionTurningRoll = true;
-	public volatile boolean cameraMotionStrafingRoll = true;
-	public volatile boolean cameraMotionForwardPitch = true;
-	public volatile boolean cameraMotionVerticalPitch = true;
-	public volatile boolean cameraMotionIdleSway = true;
-	public volatile boolean cameraMotionScreenShake = true;
-	public volatile boolean cameraMotionMouseSmoothing = false;
-	public volatile boolean cameraMotionFirstPerson = false;
-	public volatile boolean cameraMotionThirdPerson = true;
-
-	// 物品分组：同一分类里把楼梯、台阶、羊毛等成组物品折叠成组图标。
-	public volatile boolean itemGroups = false;
-	public volatile String hotkeyItemGroups = "";
-	public volatile String itemGroupsSort = ITEM_GROUP_SORT_DEFAULT;
-
-	// 关闭指定生物生成：列表中的生物不会通过自然/结构/巡逻/增援/刷怪笼等世界生成出现。
-	// 玩家主动生成默认放行；关闭 disabledSpawnAllowPlayerSpawn 后刷怪蛋、命令、繁殖等也会被拦截。
-	public volatile boolean disableSpecifiedMobSpawn = false;
-	private volatile List<String> disabledSpawnEntities = new ArrayList<>();
-	public volatile boolean disabledSpawnAllowPlayerSpawn = true;
-
-	// 和平模式怪物：允许列表中的怪物在和平难度下生成/保留，并可设置为不攻击玩家。
-	public volatile boolean peacefulModeMonsters = false;
-	private volatile List<String> peacefulModeMonsterEntities = new ArrayList<>();
-	public volatile boolean peacefulModeMonsterSpawn = true;
-	public volatile boolean peacefulModeMonsterNoAttack = true;
-
-	// 刷怪蛋投掷：像鸡蛋/雪球一样投掷刷怪蛋，命中后生成生物。
-	public volatile boolean throwSpawnEgg = false;
-	public volatile String hotkeyThrowSpawnEgg = "";
-
-	// 鞘翅烟花使用限制：滑翔中使用烟花后，等烟花加速结束才能再次使用。
-	public volatile boolean elytraFireworkCooldown = false;
-
-	// 两次烟花之间的最短间隔（tick）；0 = 等本次加速结束（原行为）。
-	public volatile int elytraFireworkCooldownTicks = MIN_ELYTRA_FIREWORK_TICKS;
-
-	// 超平坦无史莱姆：超平坦世界中不再生成史莱姆。
-	public volatile boolean disableFlatWorldSlimeSpawn = false;
-
-	// 对所有世界类型生效（不再只限超平坦）。
-	public volatile boolean flatWorldSlimeSpawnAllWorlds = false;
-
-	// 更好的隐身：隐身时隐藏药水粒子、装备与第三人称手持物品。
-	public volatile boolean betterInvisibility = false;
-
-	// 子开关：隐藏隐身实体的药水效果粒子。
-	public volatile boolean betterInvisibilityEffectParticles = true;
-
-	// 子开关：隐藏隐身实体的装备、披风与手持物品。
-	public volatile boolean betterInvisibilityLayers = true;
-
-	// 子开关：羊驼隐身时，背上的地毯也一起隐藏。
-	public volatile boolean betterInvisibilityLlamaCarpet = true;
-
-	// 锻造模板不消耗：锻造台取出成品时保留模板槽物品。
-	public volatile boolean disableSmithingTemplateConsumption = false;
-
-	// 聊天框文字框选：在聊天界面拖动鼠标选择消息文字，Ctrl+C 复制。
-	public volatile boolean chatTextSelection = false;
-
-	// 框选颜色：blue / green / orange / purple / gray。
-	public volatile String chatSelectionColor = CHAT_SELECTION_BLUE;
-
-	// 松开鼠标时自动复制选中文字。
-	public volatile boolean chatSelectionAutoCopy = false;
-
-	// 防猪灵装备切换：附近有猪灵时换上一件金制护甲，猪灵离开后换回。
-	public volatile boolean piglinGoldArmorSwap = false;
-
-	// 切换模式：auto（有哪个金制就换哪个）/ helmet / chestplate / leggings / boots。
-	public volatile String piglinGoldArmorSwapMode = PIGLIN_ARMOR_SWAP_AUTO;
-
-	// 聊天框内容记忆：关闭聊天框后保留未发送的输入内容，再次打开时恢复。
-	public volatile boolean chatInputMemory = false;
-
-	// 生物攻击范围显示：以生物为中心画半透明蓝色范围，列表为空时作用于全部生物与玩家。
-	public volatile boolean attackRangeDisplay = false;
-	public volatile List<String> attackRangeEntities = new ArrayList<>();
-
-	// 是否显示本地玩家自己的攻击范围（默认关闭，避免球体包住自身）。
-	public volatile boolean attackRangeIncludeSelf = false;
-
-	// 收集范围（格）与单次最多显示的目标数量。
-	public volatile int attackRangeMaxDistance = DEFAULT_ATTACK_RANGE_DISTANCE;
-	public volatile int attackRangeMaxTargets = DEFAULT_ATTACK_RANGE_TARGETS;
-
-	// 攻击范围显示方式：flat（脚下平面圆环）/ sphere（经纬线框球体）。
-	public volatile String attackRangeDisplayMode = ATTACK_RANGE_DISPLAY_FLAT;
-
-	// 攻击范围渲染方式：wireframe（蓝色线框，性能更好）/ filled（半透明实心，可能掉帧）。
-	public volatile String attackRangeRenderMode = ATTACK_RANGE_RENDER_WIREFRAME;
-
-	// 夜视淡出：夜视效果结束前平滑淡出，不再闪烁。
-	public volatile boolean nightVisionFadeOut = false;
-
-	// 夜视淡出曲线：smooth（平滑）/ linear（线性）。
-	public volatile String nightVisionFadeOutCurve = NIGHT_VISION_CURVE_SMOOTH;
-
-	// 夜视淡出时长（tick）：剩余时间进入该窗口后开始淡出。
-	public volatile int nightVisionFadeOutDuration = DEFAULT_NIGHT_VISION_FADE_TICKS;
-
-	// 附魔等级使用阿拉伯数字（1、2、3...）代替罗马数字。
-	public volatile boolean enchantmentLevelArabic = false;
-
-	// 疣块分解：合成格里单独放下界疣块时，结果槽产出 9 个下界疣（仅单人/局域网生效）。
-	public volatile boolean wartBlockDecomposition = false;
-
-	// 鞘翅水中飞行：滑翔时不再被流体移动逻辑接管，可在水中保持滑翔。
-	public volatile boolean elytraWaterFlight = false;
-
-	// 只在水中保持滑翔；岩浆中仍按原版下沉。
-	public volatile boolean elytraWaterFlightOnlyWater = false;
-
-	// 禁用地狱门特效：进入下界传送门时不再显示紫色覆盖层、镜头旋转与传送门音效。
-	public volatile boolean disableNetherPortalEffect = false;
-
-	// 子开关：隐藏紫色传送门覆盖层。
-	public volatile boolean disableNetherPortalOverlay = true;
-
-	// 子开关：关闭传送门的镜头旋转。
-	public volatile boolean disableNetherPortalCamera = true;
-
-	// 子开关：静音传送门的呼啸音效。
-	public volatile boolean disableNetherPortalSound = true;
-
-	// 禁用床太远：离床太远时也能直接入睡（仅单人/局域网生效）。
-	public volatile boolean disableBedTooFar = false;
-
-	// 铁傀儡进矿车：空矿车碰到铁傀儡时让铁傀儡坐进矿车（仅单人/局域网生效）。
-	public volatile boolean ironGolemRideMinecart = false;
-
-	// 连接方块轮廓：准星对准门、床、双箱等连接方块时显示整体轮廓（类似基岩版）。
-	public volatile boolean connectedBlockOutline = false;
-
-	// 自定义方块轮廓：总开关、线宽、调色板与彩色模式。
-	public volatile boolean customBlockOutline = false;
-	public volatile double blockOutlineWidth = DEFAULT_BLOCK_OUTLINE_WIDTH;
-	public volatile int blockOutlineAnimationSpeed = DEFAULT_BLOCK_OUTLINE_ANIMATION_SPEED;
-	public volatile String blockOutlinePalette = BLOCK_OUTLINE_PALETTE_WHITE;
-	public volatile String blockOutlineColorMode = BLOCK_OUTLINE_MODE_PALETTE;
-
-	// 更好的放置覆盖：手持方块右键时可直接替换花、高草等植物（仅单人/局域网生效）。
-	public volatile boolean betterBlockPlacement = false;
-
-	// 可覆盖的植物范围：flowers（仅花草）/ crops（含作物）/ all（全部植物）。
-	public volatile String betterBlockPlacementMode = BLOCK_PLACEMENT_FLOWERS;
-
-	// 更好的骨粉催熟：让骨粉像基岩版一样作用于甘蔗与一格高的花。
-	public volatile boolean betterBoneMeal = false;
-
-	// 子开关：骨粉把整株甘蔗一次催到最高 3 格，只消耗 1 个骨粉。
-	public volatile boolean boneMealSugarCane = true;
-
-	// 子开关：骨粉在一格高的花周围长出一片相同的花（凋零玫瑰除外）。
-	public volatile boolean boneMealFlowers = true;
-
-	// 禁用屏幕覆盖层（细雪/岩浆/水下）的总开关。
-	public volatile boolean disableOverlayEffects = false;
-
-	// 子开关：禁用细雪冰冻的白色描边覆盖层。
-	public volatile boolean disablePowderSnowOverlay = true;
-
-	// 子开关：禁用水下雾（26.3 的雾是独立系统，不是覆盖层）。
-	public volatile boolean disableWaterFog = true;
-
-	// 子开关：禁用岩浆雾。
-	public volatile boolean disableLavaFog = true;
-
-	// 子开关：禁用细雪雾。
-	public volatile boolean disablePowderSnowFog = true;
-
-	// 子开关：禁用岩浆的橙色覆盖层。
-	public volatile boolean disableLavaOverlay = true;
-
-	// 子开关：禁用水下的蓝色覆盖层。
-	public volatile boolean disableWaterOverlay = true;
-
-	// 禁用疾跑 FOV 变化：疾跑时不再拉大视野。
-	public volatile boolean disableSprintFov = false;
-
-	// 禁用耕地踩踏：从高处落到耕地上不会把耕地踩回泥土（仅单人/局域网生效）。
-	public volatile boolean disableFarmlandTrampling = false;
-
-	// 只保护不被玩家踩坏；动物与村民仍会踩坏耕地。
-	public volatile boolean farmlandTramplingPlayerOnly = false;
-
-	// 切换物品不打断挖掘：挖掘中切换手持物品时保留当前破坏进度（像基岩版）。
-	public volatile boolean keepMiningProgressOnItemSwitch = false;
-
-	// 剑穿草打生物：主手持剑时跳过花草，直接选中后方的生物。
-	public volatile boolean swordCutThroughPlants = false;
-
-	// 生效物品范围：sword（仅剑）/ sword_and_axe（剑与斧）/ any（任意物品）。
-	public volatile String cutThroughItems = CUT_THROUGH_ITEMS_SWORD;
-
-	// 植物范围：flowers（花草）/ crops（含作物）/ all（全部无碰撞植物）。
-	public volatile String cutThroughPlants = CUT_THROUGH_PLANTS_ALL;
-
-	// 潜行时恢复原版：左键先把植物打掉，而不是穿过去。
-	public volatile boolean cutThroughSneakBypass = true;
-
-	// 中键获得液体桶：准星指向水/岩浆时，中键得到对应的液体桶（仅创造模式）。
-	public volatile boolean pickFluidBucket = false;
-
-	// 生存模式中键取物：准星指向方块/液体/实体时，背包里有对应物品就切换到主手。
-	public volatile boolean survivalPickBlock = false;
-
-	// 便捷焚烧：背包/容器里拿着物品，右键点击岩浆桶或打火石即焚烧该物品。
-	public volatile boolean quickBurnItem = false;
-
-	// 不使用最后一根火把：包里只剩一根火把时不允许放置，避免把最后的火把用掉。
-	public volatile boolean keepLastTorch = false;
-
-	// 如履平地：自动跨上 1 格高的方块（像马一样）。
-	public volatile boolean autoStepUp = false;
-
-	// 更好的攀爬：攀爬方块相关的移动优化（子开关见下）。
-	public volatile boolean betterClimbing = false;
-
-	// 子开关：向下看时加速下降。
-	public volatile boolean climbingFastDescend = true;
-
-	// 子开关：攀爬上升更快。
-	public volatile boolean climbingFasterAscend = true;
-
-	// 子开关：攀爬方块中可从地面起跳。
-	public volatile boolean climbingJumpFromGround = true;
-
-	// 子开关：攀爬时无移动输入不触发碰撞减速。
-	public volatile boolean climbingCancelCollision = true;
-
-	// 主动爬行：按住绑定的爬行键时强制进入爬行姿态。
-	public volatile boolean forceCrawl = false;
-
-	// 经过可攀爬方块不减速：蹭到梯子/藤蔓边缘时不再被原版夹紧水平速度。
-	public volatile boolean climbablePassNoSlowdown = false;
-
-	// 可见交易显示：在村民交易界面显示未来等级（锁定）的交易。
-	public volatile boolean visibleTraders = false;
-
-	// 强制关闭加载屏幕：跳过世界/资源包加载屏幕的渲染，世界仍在后台加载。
-	public volatile boolean forceCloseLoadingScreen = false;
-
-	// 子开关：直接关闭加载界面（完全跳过，可能短暂掉入世界）。
-	public volatile boolean forceCloseLoadingScreenInstant = false;
-
-	// 子开关：保留加载界面的文字与进度（不跳过渲染）。
-	public volatile boolean forceCloseLoadingScreenKeepFirst = false;
-
-	// 子开关：资源包加载屏加速（去淡入、立即淡出、移除覆盖层）。
-	public volatile boolean forceCloseLoadingScreenSkipResourcePackFade = true;
-
-	// 关闭资源包兼容性提示：资源包界面不显示不兼容标记，也不弹确认框（仅资源包）。
-	public volatile boolean disableResourcePackCompatibilityCheck = false;
-
-	// 屏障可见：开启后在周围屏障方块中心显示红色标记，未手持屏障物品也能看到。
-	public volatile boolean barrierVisibility = false;
-
-	// 装备耐久显示：在物品栏耐久条上方叠加耐久文字，满耐久时不显示。
-	public volatile boolean durabilityOverlay = false;
-
-	// 耐久文字内容：percent（耐久百分比）/ value（剩余耐久数值）。
-	public volatile String durabilityDisplayMode = DURABILITY_DISPLAY_PERCENT;
-
-	// 仅在 HUD 快捷栏显示耐久文字（打开任意界面时不显示）。
-	public volatile boolean durabilityOverlayHotbarOnly = false;
-
-	// 只在剩余耐久不高于该百分比时显示（0 = 不限制）。
-	public volatile int durabilityOverlayLowThreshold = MIN_DURABILITY_THRESHOLD;
-
-	// 药水效果时间显示：在 HUD 的效果图标下方显示剩余时间。
-	public volatile boolean statusEffectDurationDisplay = false;
-
-	// 滚动列表记忆：关闭界面时记住列表滚动位置，下次打开直接回到该位置。
-	public volatile boolean scrollListMemory = true;
-
-	// 跨重启记忆：把位置写入配置文件，下次启动仍生效。
-	public volatile boolean scrollListMemoryPersist = false;
-
-	// 子开关：记忆 MaLiLib 配置界面的滚动位置。
-	public volatile boolean malilibScrollMemory = true;
-
-	// 子开关：记忆 Mod Menu 模组列表的滚动位置。
-	public volatile boolean modMenuScrollMemory = true;
-
-	// 标签记忆：记住上次选择的分类标签，下次打开配置界面直接停在该标签。
-	public volatile boolean rememberSelectedTab = false;
-
-	// 各功能根开关的切换快捷键，默认无快捷键（空字符串）。
-	// 功能标签只给根功能提供快捷键，子设置不占快捷键栏。
-	public volatile String hotkeyMiningCooldown = "";
-	public volatile String hotkeyUseCooldown = "";
-	public volatile String hotkeyDisableFlightDrift = "";
-	public volatile String hotkeyHighlightSingleLayerBedrock = "";
-	public volatile String hotkeyDisableShovelSnowFullBreak = "";
-	public volatile String hotkeyBarrierVisibility = "";
-	public volatile String hotkeyDurabilityOverlay = "";
-	public volatile String hotkeyElytraFireworkCooldown = "";
-	public volatile String hotkeyAttackRangeDisplay = "";
-	public volatile String hotkeyDisableDimensionTeleport = "";
-	public volatile String hotkeyChatTextSelection = "";
-	public volatile String hotkeySwordCutThroughPlants = "";
-	public volatile String hotkeyPickFluidBucket = "";
-	public volatile String hotkeySurvivalPickBlock = "";
-	public volatile String hotkeyQuickBurnItem = "";
-	public volatile String hotkeyCustomBlockOutline = "";
-	public volatile String hotkeyBetterBlockPlacement = "";
-	public volatile String hotkeyAutoStepUp = "";
-	public volatile String hotkeyBetterClimbing = "";
-	public volatile String hotkeyForceCrawl = "";
-	// 主动爬行的按住键：未绑定时不应触发爬行，因此使用 allowEmpty = false 的按键设置。
-	public volatile String hotkeyForceCrawlKey = "";
-	public volatile String hotkeyBetterBoneMeal = "";
-	public volatile String hotkeyDisableOverlayEffects = "";
-	public volatile String hotkeyPiglinGoldArmorSwap = "";
-	public volatile String hotkeyChatInputMemory = "";
-	public volatile String hotkeyStatusEffectDurationDisplay = "";
-	public volatile String hotkeyNetherPortalTeleportDelay = "";
-	public volatile String hotkeyDisableSpecifiedMobSpawn = "";
-	public volatile String hotkeyPeacefulModeMonsters = "";
-
-	// 主手使用冷却的物品 ID 列表，默认是所有可交互物品。
-	private volatile List<String> mainHandUseCooldownItems = new ArrayList<>();
-
-	// 副手使用冷却的物品 ID 列表，默认是所有可交互物品。
-	private volatile List<String> offhandUseCooldownItems = new ArrayList<>();
-
-	// 受限的副手物品 ID 列表（namespace:path）。默认是所有光源物品。
-	// 仅当副手物品命中该列表时，主手用完瞬间才会拦截副手接手；可手动增删。
-	private volatile List<String> restrictedOffhandItems = new ArrayList<>();
-
-	// 打开配置界面的快捷键，默认 G + C。
-	public volatile String hotkeyOpenConfigGui = "G,C";
-
-	// 实体高亮总开关：开启后按当前启用的预设列表显示发光描边。
-	public volatile boolean entityHighlight = false;
-	public volatile String hotkeyEntityHighlight = "";
-
-	// 三个互斥的高亮预设：开启一个会自动关闭其他两个。
-	public volatile boolean highlightPreset1 = false;
-	public volatile boolean highlightPreset2 = false;
-	public volatile boolean highlightPreset3 = false;
-
-	// 各预设需要高亮的实体 ID 列表（如 minecraft:item 表示掉落物）。
-	public volatile List<String> highlightPreset1Entities = new ArrayList<>();
-	public volatile List<String> highlightPreset2Entities = new ArrayList<>();
-	public volatile List<String> highlightPreset3Entities = new ArrayList<>();
-
-	// 传送门黑名单：对应门开关开启时，命中名单的实体不允许通过该门传送；名单为空则拦截全部实体。
-	public volatile List<String> netherPortalTeleportBlacklist = new ArrayList<>();
-	public volatile List<String> endPortalTeleportBlacklist = new ArrayList<>();
-	public volatile List<String> endGatewayTeleportBlacklist = new ArrayList<>();
+	// 分区实例：字段按界面标签分组，字段表按它们递归索引，JSON 键仍是扁平字段名。
+	public final GeneralConfig general = new GeneralConfig();
+	public final FunctionConfig functions = new FunctionConfig();
+	public final ModifiedConfig modified = new ModifiedConfig();
+	public final FixConfig fix = new FixConfig();
+	public final OptimizationConfig optimization = new OptimizationConfig();
 
 	// 运行期加速用的缓存集合，不参与序列化。
 	// volatile：命令写入发生在集成服务端线程，判定读发生在客户端线程，
@@ -909,7 +348,7 @@ public class TweakifyModConfig {
 					throw new JsonParseException("Config root must be a JSON object");
 				}
 				JsonObject root = parsed.getAsJsonObject();
-				TweakifyModConfig config = ConfigStorage.GSON.fromJson(root, TweakifyModConfig.class);
+				TweakifyModConfig config = ConfigStorage.fromJsonTree(root);
 				if (config == null) {
 					throw new JsonParseException("Config root cannot be null");
 				}
@@ -952,7 +391,7 @@ public class TweakifyModConfig {
 		return config;
 	}
 
-	// 写盘时序列化整个对象：序列化在配置锁内完成，得到不可变 JSON 字符串；
+	// 写盘时按扁平字段表序列化全部配置项：序列化在配置锁内完成，得到不可变 JSON 字符串；
 	// 磁盘 IO 在写盘线程上通过 ConfigStorage 的写锁串行执行，等待在配置锁外进行
 	//（见 save/applyAndSave），因此慢盘不会在持有配置锁时阻塞客户端 tick 或其它线程。
 	// 超时视为失败：尚未开始的任务会被取消；已经开始的任务会延长等待一次。
@@ -1058,11 +497,11 @@ public class TweakifyModConfig {
 	// 版本 2：滚动列表记忆默认改为开启。版本 1 里该开关默认关闭，
 	// 统一升级为开，避免旧配置文件一直停在关闭状态。
 	private boolean migrateScrollListMemoryDefault(int loadedVersion) {
-		if (loadedVersion >= 2 || scrollListMemory) {
+		if (loadedVersion >= 2 || general.scrollListMemory) {
 			return false;
 		}
 		LOGGER.info("Enabling scrollListMemory for configs older than version 2");
-		scrollListMemory = true;
+		general.scrollListMemory = true;
 		return true;
 	}
 
@@ -1071,19 +510,19 @@ public class TweakifyModConfig {
 	private boolean migrateLegacyFeatureKeys(JsonObject root) {
 		boolean changed = false;
 		if (!root.has("cameraMotion") && root.has("motionCameraTilt")) {
-			cameraMotion = legacyBoolean(root, "motionCameraTilt");
+			functions.cameraMotion = legacyBoolean(root, "motionCameraTilt");
 			changed = true;
 		}
 		if (!root.has("hotkeyCameraMotion") && root.has("hotkeyMotionCameraTilt")) {
-			hotkeyCameraMotion = legacyString(root, "hotkeyMotionCameraTilt");
+			functions.hotkeyCameraMotion = legacyString(root, "hotkeyMotionCameraTilt");
 			changed = true;
 		}
 		if (!root.has("itemGroups") && root.has("mergeCreativeItemEntries")) {
-			itemGroups = legacyBoolean(root, "mergeCreativeItemEntries");
+			functions.itemGroups = legacyBoolean(root, "mergeCreativeItemEntries");
 			changed = true;
 		}
 		if (!root.has("hotkeyItemGroups") && root.has("hotkeyMergeCreativeItemEntries")) {
-			hotkeyItemGroups = legacyString(root, "hotkeyMergeCreativeItemEntries");
+			functions.hotkeyItemGroups = legacyString(root, "hotkeyMergeCreativeItemEntries");
 			changed = true;
 		}
 		// 优化标签已移除快捷键：旧文件里的字段没有对应配置字段，Gson 会忽略；
@@ -1142,29 +581,28 @@ public class TweakifyModConfig {
 	}
 
 	// 按表驱动执行所有字段级校验：返回是否修正了值。
+	// 校验器已随字段搬到各分区，这里只汇总。
 	private boolean sanitizeAllFields() {
-		boolean changed = false;
-		for (FieldSanitizer sanitizer : FIELD_SANITIZERS) {
-			changed |= sanitizer.action().sanitize(this);
-		}
-		return changed;
+		return general.sanitize() | functions.sanitize() | modified.sanitize()
+			| fix.sanitize() | optimization.sanitize();
 	}
 
 	// 包私有：已登记字段级校验器的字段名，供测试校验覆盖度。
 	List<String> sanitizedFieldNames() {
-		List<String> names = new ArrayList<>();
-		for (FieldSanitizer sanitizer : FIELD_SANITIZERS) {
-			names.addAll(sanitizer.fields());
-		}
+		List<String> names = new ArrayList<>(general.sanitizedFieldNames());
+		names.addAll(functions.sanitizedFieldNames());
+		names.addAll(modified.sanitizedFieldNames());
+		names.addAll(fix.sanitizedFieldNames());
+		names.addAll(optimization.sanitizedFieldNames());
 		return names;
 	}
 
 	// 包私有：按类型规则推出“必须登记校验器”的字段名，供测试校验覆盖度。
 	static List<String> fieldsRequiringSanitizer() {
 		List<String> names = new ArrayList<>();
-		for (Map.Entry<String, Field> entry : CONFIG_FIELDS.entrySet()) {
+		for (Map.Entry<String, ConfigFieldRef> entry : CONFIG_FIELDS.entrySet()) {
 			String name = entry.getKey();
-			if (!MIGRATION_FIELDS.contains(name) && !isImplicitlySanitized(name, entry.getValue().getType())) {
+			if (!MIGRATION_FIELDS.contains(name) && !isImplicitlySanitized(name, entry.getValue().type())) {
 				names.add(name);
 			}
 		}
@@ -1174,9 +612,8 @@ public class TweakifyModConfig {
 	// 清洗所有 List<String> 配置字段（物品/实体 ID 列表）：新增列表字段时自动覆盖，不再手工维护。
 	private boolean sanitizeAllItems() {
 		boolean changed = false;
-		for (Map.Entry<String, Field> entry : CONFIG_FIELDS.entrySet()) {
-			Field field = entry.getValue();
-			if (!List.class.isAssignableFrom(field.getType())) {
+		for (Map.Entry<String, ConfigFieldRef> entry : CONFIG_FIELDS.entrySet()) {
+			if (!List.class.isAssignableFrom(entry.getValue().type())) {
 				continue;
 			}
 			// 配置里写成 null 时 Gson 会直接置空字段：此时“空列表 == 空列表”不会触发回写，
@@ -1197,9 +634,9 @@ public class TweakifyModConfig {
 	// 导致进游戏或打开配置界面直接崩溃。快捷键的“未绑定”表示是空字符串，这里统一回写。
 	private boolean sanitizeHotkeys() {
 		boolean changed = false;
-		for (Map.Entry<String, Field> entry : CONFIG_FIELDS.entrySet()) {
+		for (Map.Entry<String, ConfigFieldRef> entry : CONFIG_FIELDS.entrySet()) {
 			if (!entry.getKey().startsWith(HOTKEY_FIELD_PREFIX)
-				|| entry.getValue().getType() != String.class) {
+				|| entry.getValue().type() != String.class) {
 				continue;
 			}
 			if (read(entry.getKey()) == null) {
@@ -1211,273 +648,10 @@ public class TweakifyModConfig {
 		return changed;
 	}
 
-	// 修正掉落物消失时间：手工改坏配置时夹回允许范围。
-	private boolean sanitizeItemDespawnTime() {
-		int clamped = Math.max(MIN_ITEM_DESPAWN_TICKS, Math.min(MAX_ITEM_DESPAWN_TICKS, itemDespawnTime));
-		if (clamped == itemDespawnTime) {
-			return false;
-		}
-		LOGGER.warn("Clamping itemDespawnTime from {} to {}", itemDespawnTime, clamped);
-		itemDespawnTime = clamped;
-		return true;
-	}
-
-	// 修正不合法的耐久显示内容，回退到百分比。
-	private boolean sanitizeDurabilityDisplayMode() {
-		if (isSupportedValue(SUPPORTED_DURABILITY_DISPLAYS, durabilityDisplayMode)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported durability display mode in config: {}", durabilityDisplayMode);
-		durabilityDisplayMode = DURABILITY_DISPLAY_PERCENT;
-		return true;
-	}
-
-	// 修正不合法的攻击范围显示方式，回退到平面圆环。
-	private boolean sanitizeAttackRangeDisplayMode() {
-		if (isSupportedValue(SUPPORTED_ATTACK_RANGE_DISPLAY_MODES, attackRangeDisplayMode)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported attack range display mode in config: {}", attackRangeDisplayMode);
-		attackRangeDisplayMode = ATTACK_RANGE_DISPLAY_FLAT;
-		return true;
-	}
-
-	// 修正不合法的攻击范围渲染方式，回退到线框。
-	private boolean sanitizeAttackRangeRenderMode() {
-		if (isSupportedValue(SUPPORTED_ATTACK_RANGE_RENDER_MODES, attackRangeRenderMode)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported attack range render mode in config: {}", attackRangeRenderMode);
-		attackRangeRenderMode = ATTACK_RANGE_RENDER_WIREFRAME;
-		return true;
-	}
-
-	// 修正攻击范围的收集距离与目标数量，手工改坏配置时夹回允许范围。
-	private boolean sanitizeAttackRangeLimits() {
-		int distance = Math.max(MIN_ATTACK_RANGE_DISTANCE,
-			Math.min(MAX_ATTACK_RANGE_DISTANCE, attackRangeMaxDistance));
-		int targets = Math.max(MIN_ATTACK_RANGE_TARGETS,
-			Math.min(MAX_ATTACK_RANGE_TARGETS, attackRangeMaxTargets));
-		if (distance == attackRangeMaxDistance && targets == attackRangeMaxTargets) {
-			return false;
-		}
-		LOGGER.warn("Clamping attack range limits: distance {} -> {}, targets {} -> {}",
-			attackRangeMaxDistance, distance, attackRangeMaxTargets, targets);
-		attackRangeMaxDistance = distance;
-		attackRangeMaxTargets = targets;
-		return true;
-	}
-
-	// 修正经验球消失时间，手工改坏配置时夹回允许范围。
-	private boolean sanitizeXpOrbDespawnTime() {
-		int clamped = Math.max(MIN_ITEM_DESPAWN_TICKS, Math.min(MAX_ITEM_DESPAWN_TICKS, itemDespawnTimeXpOrbs));
-		if (clamped == itemDespawnTimeXpOrbs) {
-			return false;
-		}
-		LOGGER.warn("Clamping itemDespawnTimeXpOrbs from {} to {}", itemDespawnTimeXpOrbs, clamped);
-		itemDespawnTimeXpOrbs = clamped;
-		return true;
-	}
-
-	// 修正耐久文字低阈值。
-	private boolean sanitizeDurabilityThreshold() {
-		int clamped = Math.max(MIN_DURABILITY_THRESHOLD,
-			Math.min(MAX_DURABILITY_THRESHOLD, durabilityOverlayLowThreshold));
-		if (clamped == durabilityOverlayLowThreshold) {
-			return false;
-		}
-		LOGGER.warn("Clamping durabilityOverlayLowThreshold from {} to {}",
-			durabilityOverlayLowThreshold, clamped);
-		durabilityOverlayLowThreshold = clamped;
-		return true;
-	}
-
-	// 修正夜视淡出时长。
-	private boolean sanitizeNightVisionFadeDuration() {
-		int clamped = Math.max(MIN_NIGHT_VISION_FADE_TICKS,
-			Math.min(MAX_NIGHT_VISION_FADE_TICKS, nightVisionFadeOutDuration));
-		if (clamped == nightVisionFadeOutDuration) {
-			return false;
-		}
-		LOGGER.warn("Clamping nightVisionFadeOutDuration from {} to {}",
-			nightVisionFadeOutDuration, clamped);
-		nightVisionFadeOutDuration = clamped;
-		return true;
-	}
-
-	// 修正不合法的放置覆盖模式。
-	private boolean sanitizeBlockPlacementMode() {
-		if (isSupportedValue(SUPPORTED_BLOCK_PLACEMENT_MODES, betterBlockPlacementMode)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported block placement mode: {}", betterBlockPlacementMode);
-		betterBlockPlacementMode = BLOCK_PLACEMENT_FLOWERS;
-		return true;
-	}
-
-	// 修正不合法的复制格式。
-	private boolean sanitizeCopyIdFormat() {
-		if (isSupportedValue(SUPPORTED_COPY_ID_FORMATS, copyItemIdFormat)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported copy ID format: {}", copyItemIdFormat);
-		copyItemIdFormat = COPY_ID_FORMAT_PLAIN;
-		return true;
-	}
-
-	// 修正不合法的框选颜色。
-	private boolean sanitizeChatSelectionColor() {
-		if (isSupportedValue(SUPPORTED_CHAT_SELECTION_COLORS, chatSelectionColor)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported chat selection color: {}", chatSelectionColor);
-		chatSelectionColor = CHAT_SELECTION_BLUE;
-		return true;
-	}
-
-	// 修正剑穿草打生物的生效物品范围。
-	private boolean sanitizeCutThroughItems() {
-		if (isSupportedValue(SUPPORTED_CUT_THROUGH_ITEMS, cutThroughItems)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported cut through item scope: {}", cutThroughItems);
-		cutThroughItems = CUT_THROUGH_ITEMS_SWORD;
-		return true;
-	}
-
-	// 修正剑穿草打生物的植物范围。
-	private boolean sanitizeCutThroughPlants() {
-		if (isSupportedValue(SUPPORTED_CUT_THROUGH_PLANTS, cutThroughPlants)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported cut through plant scope: {}", cutThroughPlants);
-		cutThroughPlants = CUT_THROUGH_PLANTS_ALL;
-		return true;
-	}
-
-	// 修正夜视淡出曲线。
-	private boolean sanitizeNightVisionCurve() {
-		if (isSupportedValue(SUPPORTED_NIGHT_VISION_CURVES, nightVisionFadeOutCurve)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported night vision curve: {}", nightVisionFadeOutCurve);
-		nightVisionFadeOutCurve = NIGHT_VISION_CURVE_SMOOTH;
-		return true;
-	}
-
-	// 修正鞘翅烟花最短间隔。
-	private boolean sanitizeElytraFireworkTicks() {
-		int clamped = Math.max(MIN_ELYTRA_FIREWORK_TICKS,
-			Math.min(MAX_ELYTRA_FIREWORK_TICKS, elytraFireworkCooldownTicks));
-		if (clamped == elytraFireworkCooldownTicks) {
-			return false;
-		}
-		LOGGER.warn("Clamping elytraFireworkCooldownTicks from {} to {}", elytraFireworkCooldownTicks, clamped);
-		elytraFireworkCooldownTicks = clamped;
-		return true;
-	}
-
-	// 修正单层基岩标记数量，手工改坏配置时夹回允许范围。
-	private boolean sanitizeBedrockMarkerLimit() {
-		int clamped = Math.max(MIN_BEDROCK_MARKERS,
-			Math.min(MAX_BEDROCK_MARKERS, highlightSingleLayerBedrockMaxMarkers));
-		if (clamped == highlightSingleLayerBedrockMaxMarkers) {
-			return false;
-		}
-		LOGGER.warn("Clamping highlightSingleLayerBedrockMaxMarkers from {} to {}",
-			highlightSingleLayerBedrockMaxMarkers, clamped);
-		highlightSingleLayerBedrockMaxMarkers = clamped;
-		return true;
-	}
-
-	// 修正自定义轮廓线宽：统一走 0.5 步进与范围夹紧工具。
-	private boolean sanitizeBlockOutlineWidth() {
-		double clamped = clampBlockOutlineWidth(blockOutlineWidth);
-		if (Double.compare(clamped, blockOutlineWidth) == 0) {
-			return false;
-		}
-		LOGGER.warn("Correcting blockOutlineWidth from {} to {}", blockOutlineWidth, clamped);
-		blockOutlineWidth = clamped;
-		return true;
-	}
-
-	// 修正彩虹/呼吸动画速度。
-	private boolean sanitizeBlockOutlineAnimationSpeed() {
-		int clamped = Math.max(MIN_BLOCK_OUTLINE_ANIMATION_SPEED,
-			Math.min(MAX_BLOCK_OUTLINE_ANIMATION_SPEED, blockOutlineAnimationSpeed));
-		if (clamped == blockOutlineAnimationSpeed) {
-			return false;
-		}
-		LOGGER.warn("Clamping blockOutlineAnimationSpeed from {} to {}", blockOutlineAnimationSpeed, clamped);
-		blockOutlineAnimationSpeed = clamped;
-		return true;
-	}
-
-	// 修正不合法的轮廓调色板。
-	private boolean sanitizeBlockOutlinePalette() {
-		if (isSupportedValue(SUPPORTED_BLOCK_OUTLINE_PALETTES, blockOutlinePalette)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported block outline palette: {}", blockOutlinePalette);
-		blockOutlinePalette = BLOCK_OUTLINE_PALETTE_WHITE;
-		return true;
-	}
-
-	// 修正不合法的轮廓彩色模式。
-	private boolean sanitizeBlockOutlineColorMode() {
-		if (isSupportedValue(SUPPORTED_BLOCK_OUTLINE_COLOR_MODES, blockOutlineColorMode)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported block outline color mode: {}", blockOutlineColorMode);
-		blockOutlineColorMode = BLOCK_OUTLINE_MODE_PALETTE;
-		return true;
-	}
-
-	// 修正不合法的猪灵装备切换模式。
-	private boolean sanitizePiglinArmorSwapMode() {
-		if (isSupportedValue(SUPPORTED_PIGLIN_ARMOR_SWAP_MODES, piglinGoldArmorSwapMode)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported piglin armor swap mode: {}", piglinGoldArmorSwapMode);
-		piglinGoldArmorSwapMode = PIGLIN_ARMOR_SWAP_AUTO;
-		return true;
-	}
-
-	// 修正物品分组的排序方式。
-	private boolean sanitizeItemGroupsSort() {
-		if (isSupportedValue(SUPPORTED_ITEM_GROUP_SORTS, itemGroupsSort)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported item group sort: {}", itemGroupsSort);
-		itemGroupsSort = ITEM_GROUP_SORT_DEFAULT;
-		return true;
-	}
-
-	// 修正相机运动强度。
-	private boolean sanitizeCameraMotionIntensity() {
-		int clamped = Math.max(MIN_CAMERA_MOTION_INTENSITY,
-			Math.min(MAX_CAMERA_MOTION_INTENSITY, cameraMotionIntensity));
-		if (clamped == cameraMotionIntensity) {
-			return false;
-		}
-		LOGGER.warn("Clamping cameraMotionIntensity from {} to {}", cameraMotionIntensity, clamped);
-		cameraMotionIntensity = clamped;
-		return true;
-	}
-
 	// 配置字符串为 null 时 List.of(...).contains(null) 会抛 NPE，统一用这个入口判断。
-	private static boolean isSupportedValue(List<String> supported, String value) {
+	// 分区（如 GeneralConfig）的校验器复用这个入口。
+	static boolean isSupportedValue(List<String> supported, String value) {
 		return value != null && supported.contains(value);
-	}
-
-	// 修正不合法的语言代码，回退到中文。
-	private boolean sanitizeLanguage() {
-		if (isSupportedValue(SUPPORTED_LANGUAGES, language)) {
-			return false;
-		}
-		LOGGER.warn("Ignoring unsupported language in config: {}", language);
-		language = "zh_cn";
-		return true;
 	}
 
 	// 清洗单个 ID 列表（物品或实体）：补全命名空间、去重、丢弃非法条目，返回新列表。
@@ -1500,19 +674,19 @@ public class TweakifyModConfig {
 	}
 
 	private void rebuildCache() {
-		restrictedCache = new HashSet<>(restrictedOffhandItems);
-		mainHandItemsCache = new HashSet<>(mainHandUseCooldownItems);
-		offhandItemsCache = new HashSet<>(offhandUseCooldownItems);
-		preset1EntitiesCache = new HashSet<>(highlightPreset1Entities);
-		preset2EntitiesCache = new HashSet<>(highlightPreset2Entities);
-		preset3EntitiesCache = new HashSet<>(highlightPreset3Entities);
-		netherPortalBlacklistCache = new HashSet<>(netherPortalTeleportBlacklist);
-		endPortalBlacklistCache = new HashSet<>(endPortalTeleportBlacklist);
-		endGatewayBlacklistCache = new HashSet<>(endGatewayTeleportBlacklist);
-		attackRangeEntitiesCache = new HashSet<>(attackRangeEntities);
-		disabledSpawnEntitiesCache = new HashSet<>(disabledSpawnEntities);
-		peacefulModeMonsterEntitiesCache = new HashSet<>(peacefulModeMonsterEntities);
-		useItemSlowdownExceptionCache = new HashSet<>(useItemSlowdownExceptions);
+		restrictedCache = new HashSet<>(functions.restrictedOffhandItems);
+		mainHandItemsCache = new HashSet<>(functions.mainHandUseCooldownItems);
+		offhandItemsCache = new HashSet<>(functions.offhandUseCooldownItems);
+		preset1EntitiesCache = new HashSet<>(functions.highlightPreset1Entities);
+		preset2EntitiesCache = new HashSet<>(functions.highlightPreset2Entities);
+		preset3EntitiesCache = new HashSet<>(functions.highlightPreset3Entities);
+		netherPortalBlacklistCache = new HashSet<>(functions.netherPortalTeleportBlacklist);
+		endPortalBlacklistCache = new HashSet<>(functions.endPortalTeleportBlacklist);
+		endGatewayBlacklistCache = new HashSet<>(functions.endGatewayTeleportBlacklist);
+		attackRangeEntitiesCache = new HashSet<>(functions.attackRangeEntities);
+		disabledSpawnEntitiesCache = new HashSet<>(functions.disabledSpawnEntities);
+		peacefulModeMonsterEntitiesCache = new HashSet<>(functions.peacefulModeMonsterEntities);
+		useItemSlowdownExceptionCache = new HashSet<>(modified.useItemSlowdownExceptions);
 		cacheDirty = false;
 		entityHighlightCache = null;
 	}
@@ -1597,40 +771,43 @@ public class TweakifyModConfig {
 		return List.copyOf(CONFIG_FIELDS.keySet());
 	}
 
+	// 包私有：扁平字段表（字段名 -> 定位信息），供序列化、快照与测试共用。
+	static Map<String, ConfigFieldRef> fieldRefs() {
+		return CONFIG_FIELDS;
+	}
+
+	// 包私有：按字段名写入未经清洗的原始值，模拟 Gson 把 JSON null / 非法内容
+	// 直接赋给字段的结果，仅供测试使用。
+	void setFieldRaw(String name, Object value) {
+		requireField(name).set(this, value);
+	}
+
 	// 字段是否为布尔开关：配置目录用它校验“命令项必须是开关”，避免注册出无法切换的命令。
 	public static boolean isBooleanField(String name) {
-		Field field = CONFIG_FIELDS.get(name);
-		return field != null && field.getType() == boolean.class;
+		ConfigFieldRef ref = CONFIG_FIELDS.get(name);
+		return ref != null && ref.type() == boolean.class;
 	}
 
 	private Object read(String name) {
-		return readField(requireField(name));
+		return requireField(name).get(this);
 	}
 
-	private Object readField(Field field) {
-		try {
-			return field.get(this);
-		} catch (IllegalAccessException e) {
-			throw new IllegalStateException("Cannot read config field " + field.getName(), e);
-		}
+	private Object readField(ConfigFieldRef ref) {
+		return ref.get(this);
 	}
 
 	private void write(String name, Object value) {
-		try {
-			requireField(name).set(this, value);
-		} catch (IllegalAccessException e) {
-			throw new IllegalStateException("Cannot write config field " + name, e);
-		}
+		requireField(name).set(this, value);
 		// 开关或列表变化都可能推翻高亮判定，按实体类型的缓存直接失效。
 		entityHighlightCache = null;
 	}
 
-	private static Field requireField(String name) {
-		Field field = CONFIG_FIELDS.get(name);
-		if (field == null) {
+	private static ConfigFieldRef requireField(String name) {
+		ConfigFieldRef ref = CONFIG_FIELDS.get(name);
+		if (ref == null) {
 			throw new IllegalArgumentException("Unknown config field: " + name);
 		}
-		return field;
+		return ref;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1801,8 +978,8 @@ public class TweakifyModConfig {
 	// 字段由反射枚举，新增开关无需再手工维护一份拷贝清单。
 	public synchronized Snapshot snapshot() {
 		Map<String, Object> values = new LinkedHashMap<>();
-		for (Map.Entry<String, Field> entry : CONFIG_FIELDS.entrySet()) {
-			// 字段表里已经缓存了 Field，直接读可以省掉 read(name) 的一次 Map 查找。
+		for (Map.Entry<String, ConfigFieldRef> entry : CONFIG_FIELDS.entrySet()) {
+			// 字段表里已经缓存了字段定位信息，直接读可以省掉 read(name) 的一次 Map 查找。
 			Object value = readField(entry.getValue());
 			values.put(entry.getKey(), value instanceof List<?> list ? List.copyOf(list) : value);
 		}
@@ -1948,7 +1125,7 @@ public class TweakifyModConfig {
 	// 实体是否应被自定义高亮：总开关开启、当前预设开启且实体 ID 命中列表。
 	public boolean shouldHighlightEntity(EntityType<?> type) {
 		invalidateHighlightCacheIfStateChanged();
-		if (!entityHighlight || type == null) {
+		if (!functions.entityHighlight || type == null) {
 			return false;
 		}
 		ensureCache();
@@ -1969,29 +1146,29 @@ public class TweakifyModConfig {
 
 	// 总开关或预设开关变化（包括直接赋值）时丢弃按实体类型的缓存。
 	private void invalidateHighlightCacheIfStateChanged() {
-		if (cachedEntityHighlight == entityHighlight
-			&& cachedHighlightPreset1 == highlightPreset1
-			&& cachedHighlightPreset2 == highlightPreset2
-			&& cachedHighlightPreset3 == highlightPreset3) {
+		if (cachedEntityHighlight == functions.entityHighlight
+			&& cachedHighlightPreset1 == functions.highlightPreset1
+			&& cachedHighlightPreset2 == functions.highlightPreset2
+			&& cachedHighlightPreset3 == functions.highlightPreset3) {
 			return;
 		}
-		cachedEntityHighlight = entityHighlight;
-		cachedHighlightPreset1 = highlightPreset1;
-		cachedHighlightPreset2 = highlightPreset2;
-		cachedHighlightPreset3 = highlightPreset3;
+		cachedEntityHighlight = functions.entityHighlight;
+		cachedHighlightPreset1 = functions.highlightPreset1;
+		cachedHighlightPreset2 = functions.highlightPreset2;
+		cachedHighlightPreset3 = functions.highlightPreset3;
 		entityHighlightCache = null;
 	}
 
 	// 互斥后最多只有一个预设开启；手工改坏配置时按 1→2→3 的优先级取第一个。
 	private Set<String> activeHighlightEntities() {
 		ensureCache();
-		if (highlightPreset1) {
+		if (functions.highlightPreset1) {
 			return preset1EntitiesCache;
 		}
-		if (highlightPreset2) {
+		if (functions.highlightPreset2) {
 			return preset2EntitiesCache;
 		}
-		if (highlightPreset3) {
+		if (functions.highlightPreset3) {
 			return preset3EntitiesCache;
 		}
 		return null;
@@ -2010,12 +1187,12 @@ public class TweakifyModConfig {
 	// 写时复制：列表整体替换为新实例，渲染线程不会遍历到被就地修改的旧列表。
 	public synchronized boolean addItem(String id) {
 		String normalized = normalize(id);
-		if (normalized == null || restrictedOffhandItems.contains(normalized)) {
+		if (normalized == null || functions.restrictedOffhandItems.contains(normalized)) {
 			return false;
 		}
-		List<String> updated = new ArrayList<>(restrictedOffhandItems);
+		List<String> updated = new ArrayList<>(functions.restrictedOffhandItems);
 		updated.add(normalized);
-		restrictedOffhandItems = List.copyOf(updated);
+		functions.restrictedOffhandItems = List.copyOf(updated);
 		cacheDirty = true;
 		return true;
 	}
@@ -2023,21 +1200,21 @@ public class TweakifyModConfig {
 	// 移除一个物品 ID，返回是否移除了。
 	public synchronized boolean removeItem(String id) {
 		String normalized = normalize(id);
-		if (normalized == null || !restrictedOffhandItems.contains(normalized)) {
+		if (normalized == null || !functions.restrictedOffhandItems.contains(normalized)) {
 			return false;
 		}
-		List<String> updated = new ArrayList<>(restrictedOffhandItems);
+		List<String> updated = new ArrayList<>(functions.restrictedOffhandItems);
 		updated.remove(normalized);
-		restrictedOffhandItems = List.copyOf(updated);
+		functions.restrictedOffhandItems = List.copyOf(updated);
 		cacheDirty = true;
 		return true;
 	}
 
 	// 重置为默认光源物品列表，返回数量。
 	public synchronized int resetToLightSources() {
-		restrictedOffhandItems = List.copyOf(defaultLightSourceItemIds());
+		functions.restrictedOffhandItems = List.copyOf(defaultLightSourceItemIds());
 		cacheDirty = true;
-		return restrictedOffhandItems.size();
+		return functions.restrictedOffhandItems.size();
 	}
 
 	private static String normalize(String id) {

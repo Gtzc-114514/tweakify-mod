@@ -84,8 +84,8 @@ class MiningCooldownStateTest {
 
 	private static TweakifyModConfig miningConfig(boolean miningCooldown, boolean miningCooldownAttacks) {
 		TweakifyModConfig config = new TweakifyModConfig();
-		config.miningCooldown = miningCooldown;
-		config.miningCooldownAttacks = miningCooldownAttacks;
+		config.functions.miningCooldown = miningCooldown;
+		config.functions.miningCooldownAttacks = miningCooldownAttacks;
 		return config;
 	}
 

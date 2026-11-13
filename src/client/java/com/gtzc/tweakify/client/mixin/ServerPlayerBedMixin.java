@@ -19,7 +19,7 @@ public class ServerPlayerBedMixin {
 		target = "Lnet/minecraft/server/level/ServerPlayer;bedInRange(Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;)Z"))
 	private boolean tweakify$ignoreBedDistance(ServerPlayer self, BlockPos pos, Direction direction) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.disableBedTooFar) {
+		if (config != null && config.modified.disableBedTooFar) {
 			return true;
 		}
 		return ((ServerPlayerAccessor) (Object) self).tweakify$bedInRange(pos, direction);

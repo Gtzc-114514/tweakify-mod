@@ -47,7 +47,7 @@ public class ServerGamePacketListenerImplPickMixin {
 		}
 		// 创造模式归“中键获得液体桶”；生存模式归“生存模式中键取物”。
 		boolean creative = this.player.hasInfiniteMaterials();
-		if (creative ? !config.pickFluidBucket : !config.survivalPickBlock) {
+		if (creative ? !config.functions.pickFluidBucket : !config.functions.survivalPickBlock) {
 			return cloneStack;
 		}
 		if (!(state.getBlock() instanceof LiquidBlock)) {

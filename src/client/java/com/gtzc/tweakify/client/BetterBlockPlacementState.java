@@ -21,7 +21,7 @@ public final class BetterBlockPlacementState {
 
 	public static boolean canReplacePlant(BlockState state, BlockPlaceContext context) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.betterBlockPlacement || state == null || context == null) {
+		if (config == null || !config.functions.betterBlockPlacement || state == null || context == null) {
 			return false;
 		}
 		// 只处理植物类方块；有碰撞的（如甜浆果丛）保持原样，避免误拆交互方块。
@@ -34,7 +34,7 @@ public final class BetterBlockPlacementState {
 		if (!state.getFluidState().isEmpty()) {
 			return false;
 		}
-		if (!isCoveredByMode(state, BlockPlacementMode.fromCode(config.betterBlockPlacementMode))) {
+		if (!isCoveredByMode(state, BlockPlacementMode.fromCode(config.functions.betterBlockPlacementMode))) {
 			return false;
 		}
 		ItemStack held = context.getItemInHand();

@@ -17,7 +17,7 @@ public final class FlightDriftState {
 
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.disableFlightDrift || client.player == null) {
+		if (config == null || !config.functions.disableFlightDrift || client.player == null) {
 			return;
 		}
 
@@ -30,7 +30,7 @@ public final class FlightDriftState {
 		boolean stopHorizontal = shouldStopHorizontalDrift(hasHorizontalInput(client),
 			movement.x != 0.0 || movement.z != 0.0);
 		boolean stopVertical = shouldStopVerticalDrift(hasVerticalInput(client),
-			config.flightDriftVertical, movement.y != 0.0);
+			config.functions.flightDriftVertical, movement.y != 0.0);
 		if (!stopHorizontal && !stopVertical) {
 			return;
 		}

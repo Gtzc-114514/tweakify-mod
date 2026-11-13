@@ -139,7 +139,7 @@ class OffhandFallbackStateTest {
 
 	private static TweakifyModConfig offhandConfig(boolean blockOffhandFallback) {
 		TweakifyModConfig config = new TweakifyModConfig();
-		config.blockOffhandFallback = blockOffhandFallback;
+		config.functions.blockOffhandFallback = blockOffhandFallback;
 		return config;
 	}
 

@@ -25,8 +25,8 @@ public class FarmlandBlockMixin {
 	private void tweakify$disableTrampling(FarmlandBlock self, Entity entity, BlockState state,
 										   Level level, BlockPos pos) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.disableFarmlandTrampling
-			&& (!config.farmlandTramplingPlayerOnly || entity instanceof Player)) {
+		if (config != null && config.modified.disableFarmlandTrampling
+			&& (!config.modified.farmlandTramplingPlayerOnly || entity instanceof Player)) {
 			return;
 		}
 		self.turnToBaseBlock(entity, state, level, pos);

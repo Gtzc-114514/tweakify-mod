@@ -40,7 +40,7 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 	// 标签记忆关闭时总是从“全部”开始。
 	private static ConfigTab initialTab() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.rememberSelectedTab ? rememberedTab : ConfigTab.ALL;
+		return config != null && config.general.rememberSelectedTab ? rememberedTab : ConfigTab.ALL;
 	}
 	private final List<Button> tabButtons = new ArrayList<>();
 

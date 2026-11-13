@@ -47,7 +47,7 @@ public class VillagerMixin {
 										 ResourceKey<TradeSet> tradeSet, Operation<Void> original) {
 		HookProbe.markOnce("visibleTradersUpdateTrades");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.visibleTraders) {
+		if (config == null || !config.modified.visibleTraders) {
 			original.call(villager, level, offers, tradeSet);
 			return;
 		}

@@ -31,8 +31,8 @@ class LanguageOverrideStateTest {
 	@Test
 	void overridesSelectedLanguage() {
 		TweakifyModConfig config = new TweakifyModConfig();
-		config.followSystemLanguage = false;
-		config.language = "en_us";
+		config.general.followSystemLanguage = false;
+		config.general.language = "en_us";
 		TweakifyMod.CONFIG = config;
 
 		assertEquals("Tweakify Mod Configs - %s",
@@ -42,14 +42,14 @@ class LanguageOverrideStateTest {
 	@Test
 	void overridesRussianAndFrench() {
 		TweakifyModConfig config = new TweakifyModConfig();
-		config.followSystemLanguage = false;
+		config.general.followSystemLanguage = false;
 		TweakifyMod.CONFIG = config;
 
-		config.language = "ru_ru";
+		config.general.language = "ru_ru";
 		assertEquals("Настройки Tweakify Mod - %s",
 			LanguageOverrideState.translate("tweakify-mod.gui.title.configs"));
 
-		config.language = "fr_fr";
+		config.general.language = "fr_fr";
 		assertEquals("Configuration Tweakify Mod - %s",
 			LanguageOverrideState.translate("tweakify-mod.gui.title.configs"));
 	}
@@ -57,8 +57,8 @@ class LanguageOverrideStateTest {
 	@Test
 	void ignoresOtherModsAndUnknownKeys() {
 		TweakifyModConfig config = new TweakifyModConfig();
-		config.followSystemLanguage = false;
-		config.language = "en_us";
+		config.general.followSystemLanguage = false;
+		config.general.language = "en_us";
 		TweakifyMod.CONFIG = config;
 
 		assertNull(LanguageOverrideState.translate("modmenu.descriptionTranslation.tweakify-mod"));

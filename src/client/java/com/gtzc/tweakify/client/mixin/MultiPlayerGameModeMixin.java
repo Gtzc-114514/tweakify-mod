@@ -59,7 +59,7 @@ public class MultiPlayerGameModeMixin {
 	private boolean tweakify$keepMiningProgress(boolean original, BlockPos pos) {
 		HookProbe.markOnce(TWEAKIFY$SAME_TARGET_PROBE, "keepMiningProgressOnItemSwitch");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.keepMiningProgressOnItemSwitch) {
+		if (config != null && config.modified.keepMiningProgressOnItemSwitch) {
 			return pos.equals(this.destroyBlockPos);
 		}
 		return original;

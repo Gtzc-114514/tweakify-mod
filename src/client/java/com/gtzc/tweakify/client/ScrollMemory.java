@@ -65,17 +65,17 @@ public final class ScrollMemory {
 
 	private static boolean persistEnabled() {
 		TweakifyModConfig config = config();
-		return config != null && config.scrollListMemoryPersist;
+		return config != null && config.general.scrollListMemoryPersist;
 	}
 
 	public static boolean isMaLiLibEnabled() {
 		TweakifyModConfig config = config();
-		return config != null && config.scrollListMemory && config.malilibScrollMemory;
+		return config != null && config.general.scrollListMemory && config.general.malilibScrollMemory;
 	}
 
 	public static boolean isModMenuEnabled() {
 		TweakifyModConfig config = config();
-		return config != null && config.scrollListMemory && config.modMenuScrollMemory;
+		return config != null && config.general.scrollListMemory && config.general.modMenuScrollMemory;
 	}
 
 	// 配置界面每次打开都是新实例，因此用界面类作键。

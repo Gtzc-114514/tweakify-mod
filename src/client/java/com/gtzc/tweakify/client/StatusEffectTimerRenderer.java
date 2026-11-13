@@ -52,7 +52,7 @@ public final class StatusEffectTimerRenderer {
 	// 由 Hud.extractEffects 末尾调用：此时背景与图标已经提交，文字会绘制在最上层。
 	public static void render(GuiGraphicsExtractor gui, Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.statusEffectDurationDisplay || client.player == null) {
+		if (config == null || !config.functions.statusEffectDurationDisplay || client.player == null) {
 			return;
 		}
 		Collection<MobEffectInstance> activeEffects = client.player.getActiveEffects();

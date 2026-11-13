@@ -43,7 +43,7 @@ public final class ChatSelectionState {
 	// 由 ChatScreen.mouseClicked 调用：只处理聊天消息区域，输入框区域交给原版。
 	public static void begin(double x, double y) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.chatTextSelection) {
+		if (config == null || !config.functions.chatTextSelection) {
 			clear();
 			return;
 		}
@@ -69,7 +69,7 @@ public final class ChatSelectionState {
 			selecting = false;
 			// 松开鼠标时自动复制选中文字（可选）。
 			TweakifyModConfig config = TweakifyMod.CONFIG;
-			if (config != null && config.chatSelectionAutoCopy) {
+			if (config != null && config.functions.chatSelectionAutoCopy) {
 				String text = selectedText(client);
 				if (!text.isEmpty()) {
 					client.keyboardHandler.setClipboard(text);
@@ -180,7 +180,7 @@ public final class ChatSelectionState {
 	private static int selectionColor() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		return config == null ? SELECTION_COLOR
-			: ChatSelectionColor.fromCode(config.chatSelectionColor).argb();
+			: ChatSelectionColor.fromCode(config.functions.chatSelectionColor).argb();
 	}
 
 	private record Layout(double scale, int bottom, double rowHeight, double textLeft) {

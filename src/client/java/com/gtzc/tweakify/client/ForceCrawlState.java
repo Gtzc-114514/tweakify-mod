@@ -25,14 +25,14 @@ public final class ForceCrawlState {
 	// 由客户端 tick 调用：总开关关闭或没有玩家时立即清除按住状态。
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		crawlKeyHeld = config != null && config.forceCrawl
+		crawlKeyHeld = config != null && config.functions.forceCrawl
 			&& client.player != null
 			&& TweakifyModConfigOptions.FORCE_CRAWL_KEY.getKeybind().isKeybindHeld();
 	}
 
 	public static boolean shouldForceCrawl(Player player) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.forceCrawl && crawlKeyHeld && isControlledPlayer(player);
+		return config != null && config.functions.forceCrawl && crawlKeyHeld && isControlledPlayer(player);
 	}
 
 	// 客户端只认本地玩家；服务端只认单人/局域网房主，避免 LAN 访客跟着房主的按键一起爬。

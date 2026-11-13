@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -58,32 +57,27 @@ class TweakifyModConfigOptionsTest {
 	}
 
 	@Test
-	void toggleDefaultsMatchConfigDefaults() throws IllegalAccessException {
+	void toggleDefaultsMatchConfigDefaults() {
 		TweakifyModConfig defaults = new TweakifyModConfig();
 		for (IConfigBoolean toggle : TweakifyModConfigOptions.TOGGLE_OPTIONS) {
-			Field field = fieldOf(toggle.getName());
-			assertEquals(field.getBoolean(defaults), toggle.getDefaultBooleanValue(),
+			assertEquals(defaults.getBoolean(toggle.getName()), toggle.getDefaultBooleanValue(),
 				"default value mismatch for " + toggle.getName());
 		}
 	}
 
 	@Test
-	void optionListAndIntegerDefaultsMatchConfigDefaults() throws IllegalAccessException {
+	void optionListAndIntegerDefaultsMatchConfigDefaults() {
 		TweakifyModConfig defaults = new TweakifyModConfig();
 		for (IConfigBase option : TweakifyModConfigOptions.ALL_OPTIONS) {
-			Field field = null;
 			if (option instanceof IConfigOptionList optionList) {
-				field = fieldOf(option.getName());
-				assertEquals((String) field.get(defaults),
+				assertEquals(defaults.getString(option.getName()),
 					optionList.getDefaultOptionListValue().getStringValue(),
 					"default option list value mismatch for " + option.getName());
 			} else if (option instanceof IConfigInteger integer) {
-				field = fieldOf(option.getName());
-				assertEquals(field.getInt(defaults), integer.getDefaultIntegerValue(),
+				assertEquals(defaults.getInteger(option.getName()), integer.getDefaultIntegerValue(),
 					"default integer value mismatch for " + option.getName());
 			} else if (option instanceof IConfigDouble doubleOption) {
-				field = fieldOf(option.getName());
-				assertEquals(field.getDouble(defaults), doubleOption.getDefaultDoubleValue(),
+				assertEquals(defaults.getDouble(option.getName()), doubleOption.getDefaultDoubleValue(),
 					"default double value mismatch for " + option.getName());
 			}
 		}
@@ -96,7 +90,8 @@ class TweakifyModConfigOptionsTest {
 			if (option instanceof IConfigBoolean || option instanceof IConfigStringList
 				|| option instanceof IConfigOptionList || option instanceof IConfigInteger
 				|| option instanceof IConfigDouble) {
-				fieldOf(option.getName());
+				assertTrue(TweakifyModConfig.hasField(option.getName()),
+					"missing config field for " + option.getName());
 			}
 			if (option instanceof IHotkey) {
 				assertTrue(TweakifyModConfig.hasField(hotkeyFieldName(option.getName())),
@@ -153,28 +148,28 @@ class TweakifyModConfigOptionsTest {
 		TweakifyModConfig config = new TweakifyModConfig(blocked);
 		TweakifyMod.CONFIG = config;
 		try {
-			config.blockOffhandFallback = false;
+			config.functions.blockOffhandFallback = false;
 			TweakifyModConfig.Snapshot before = config.snapshot();
-			config.blockOffhandFallback = true;
+			config.functions.blockOffhandFallback = true;
 			TweakifyModConfig.Snapshot after = config.snapshot();
 
 			// 模拟后续批次已经以“修改后”的值拍下了 before。
 			TweakifyModConfigOptions.setPendingForTest(config.snapshot());
 			TweakifyModConfigOptions.applyFailedWriteRollback(config, before, after);
 
-			assertFalse(config.blockOffhandFallback, "失败回滚应恢复字段");
+			assertFalse(config.functions.blockOffhandFallback, "失败回滚应恢复字段");
 			assertTrue(TweakifyModConfigOptions.pendingMatchesForTest(config),
 				"pendingSnapshot must be refreshed to the rolled-back memory state");
 
 			// 再改一个字段并让下一批写盘也失败：失败回滚不能把已回滚的字段复活。
-			config.disableHurtShake = true;
+			config.modified.disableHurtShake = true;
 			TweakifyModConfigOptions.flushPendingSaveNow();
 			assertTrue(AsyncFileWriter.drain(5000L));
 			TweakifyModConfigOptions.pollSaveResults();
 
-			assertFalse(config.blockOffhandFallback,
+			assertFalse(config.functions.blockOffhandFallback,
 				"a later failed batch must not revive the already rolled-back field");
-			assertFalse(config.disableHurtShake, "the later batch should roll back its own field");
+			assertFalse(config.modified.disableHurtShake, "the later batch should roll back its own field");
 		} finally {
 			// 等待兜底异步写盘完成，避免后台任务在 @TempDir 清理时还持有临时目录。
 			AsyncFileWriter.drain(5000L);
@@ -204,13 +199,13 @@ class TweakifyModConfigOptionsTest {
 		assertTrue(blocked.await(5, TimeUnit.SECONDS), "the writer should be blocked");
 
 		try {
-			config.blockOffhandFallback = false;
+			config.functions.blockOffhandFallback = false;
 			TweakifyModConfigOptions.setPendingForTest(config.snapshot());
 			// flush 序列化当前 false，并在提交时分配落盘序号。
 			TweakifyModConfigOptions.flushPendingSaveNow();
 
 			// 同步兜底写拿到更晚的序号，写的是 true。
-			config.blockOffhandFallback = true;
+			config.functions.blockOffhandFallback = true;
 			assertEquals(Boolean.TRUE, config.writeSynchronously());
 
 			release.countDown();
@@ -266,9 +261,9 @@ class TweakifyModConfigOptionsTest {
 		TweakifyModConfig config = new TweakifyModConfig(tempDir.resolve("covered.json"));
 		TweakifyMod.CONFIG = config;
 		try {
-			config.blockOffhandFallback = false;
+			config.functions.blockOffhandFallback = false;
 			TweakifyModConfig.Snapshot before = config.snapshot();
-			config.blockOffhandFallback = true;
+			config.functions.blockOffhandFallback = true;
 			TweakifyModConfig.Snapshot after = config.snapshot();
 
 			TweakifyModConfigOptions.setSyncedSequenceForTest(10L);
@@ -276,7 +271,7 @@ class TweakifyModConfigOptionsTest {
 
 			TweakifyModConfigOptions.pollSaveResults();
 
-			assertTrue(config.blockOffhandFallback,
+			assertTrue(config.functions.blockOffhandFallback,
 				"已被整份保存覆盖的失败结果不能回滚内存");
 		} finally {
 			TweakifyModConfigOptions.resetForTest();
@@ -290,20 +285,20 @@ class TweakifyModConfigOptionsTest {
 		TweakifyModConfig config = new TweakifyModConfig(tempDir.resolve("sequence-rollback.json"));
 		TweakifyMod.CONFIG = config;
 		try {
-			config.blockOffhandFallback = false;
+			config.functions.blockOffhandFallback = false;
 			TweakifyModConfig.Snapshot before = config.snapshot();
-			config.blockOffhandFallback = true;
+			config.functions.blockOffhandFallback = true;
 			TweakifyModConfig.Snapshot after = config.snapshot();
 
 			TweakifyModConfigOptions.setSyncedSequenceForTest(10L);
 			TweakifyModConfigOptions.enqueueSaveResultForTest(false, before, after, 5L);
 			TweakifyModConfigOptions.pollSaveResults();
-			assertTrue(config.blockOffhandFallback, "延迟期间内存应保持新值");
+			assertTrue(config.functions.blockOffhandFallback, "延迟期间内存应保持新值");
 
 			TweakifyModConfigOptions.handleSaveFailure(false, 10L, 0L);
 			TweakifyModConfigOptions.pollSaveResults();
 
-			assertFalse(config.blockOffhandFallback,
+			assertFalse(config.functions.blockOffhandFallback,
 				"回退后重放的失败结果应能把内存回滚到磁盘状态");
 		} finally {
 			AsyncFileWriter.drain(5000L);
@@ -441,16 +436,6 @@ class TweakifyModConfigOptionsTest {
 		@Override
 		public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
 			return delegate.awaitTermination(timeout, unit);
-		}
-	}
-
-	private static Field fieldOf(String name) {
-		try {
-			Field field = TweakifyModConfig.class.getDeclaredField(name);
-			field.setAccessible(true);
-			return field;
-		} catch (NoSuchFieldException e) {
-			throw new AssertionError("Missing TweakifyModConfig field: " + name, e);
 		}
 	}
 

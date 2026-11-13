@@ -23,7 +23,7 @@ public class ThrownEggSpawnEggMixin {
 		target = "Lnet/minecraft/util/RandomSource;nextInt(I)I", ordinal = 0))
 	private int tweakify$skipChickenForSpawnEgg(RandomSource random, int bound) {
 		ThrownEgg self = (ThrownEgg) (Object) this;
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.throwSpawnEgg
+		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.functions.throwSpawnEgg
 			&& self.getItem().getItem() instanceof SpawnEggItem) {
 			return 1;
 		}
@@ -32,7 +32,7 @@ public class ThrownEggSpawnEggMixin {
 
 	@Inject(method = "onHit", at = @At("TAIL"))
 	private void tweakify$spawnMobOnEggHit(HitResult result, CallbackInfo ci) {
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.throwSpawnEgg) {
+		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.functions.throwSpawnEgg) {
 			SpawnEggThrower.spawnMob((ThrownEgg) (Object) this, result);
 		}
 	}

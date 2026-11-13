@@ -24,8 +24,8 @@ public class LlamaDecorLayerMixin {
 	private void tweakify$hideCarpetWhenInvisible(PoseStack pose, SubmitNodeCollector collector, int light,
 												  LlamaRenderState state, float limbAngle, float limbDistance,
 												  CallbackInfo ci) {
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.betterInvisibility
-			&& TweakifyMod.CONFIG.betterInvisibilityLlamaCarpet && state.isInvisible) {
+		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.modified.betterInvisibility
+			&& TweakifyMod.CONFIG.modified.betterInvisibilityLlamaCarpet && state.isInvisible) {
 			ci.cancel();
 		}
 	}

@@ -47,7 +47,7 @@ public abstract class ResourcePackCompatibilityMixin {
 		Path packDirectory = ((PackSelectionScreenAccessor) screen).tweakify$getPackDir();
 		Path resourcePackDirectory = Minecraft.getInstance().getResourcePackDirectory();
 		if (!ResourcePackCompatibilityState.shouldHideCompatibility(
-			config.disableResourcePackCompatibilityCheck, packDirectory, resourcePackDirectory)) {
+			config.modified.disableResourcePackCompatibilityCheck, packDirectory, resourcePackDirectory)) {
 			return original;
 		}
 		return PackCompatibility.COMPATIBLE;

@@ -46,7 +46,7 @@ public class LoadingOverlayMixin {
 											 CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$REMOVE_OVERLAY_PROBE, "loadingScreenRemoveOverlay");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.forceCloseLoadingScreenSkipResourcePackFade && this.fadeOutStart != -1) {
+		if (config != null && config.modified.forceCloseLoadingScreenSkipResourcePackFade && this.fadeOutStart != -1) {
 			this.minecraft.gui.setOverlay(null);
 		}
 	}
@@ -56,7 +56,7 @@ public class LoadingOverlayMixin {
 	private boolean tweakify$noFadeIn(LoadingOverlay instance, Operation<Boolean> original) {
 		HookProbe.markOnce(TWEAKIFY$NO_FADE_IN_PROBE, "loadingScreenNoFadeIn");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.forceCloseLoadingScreenSkipResourcePackFade) {
+		if (config != null && config.modified.forceCloseLoadingScreenSkipResourcePackFade) {
 			return false;
 		}
 		return original.call(instance);
@@ -66,6 +66,6 @@ public class LoadingOverlayMixin {
 	private boolean tweakify$readyToFadeOut(boolean original) {
 		HookProbe.markOnce(TWEAKIFY$READY_TO_FADE_PROBE, "loadingScreenReadyToFadeOut");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.forceCloseLoadingScreenSkipResourcePackFade ? true : original;
+		return config != null && config.modified.forceCloseLoadingScreenSkipResourcePackFade ? true : original;
 	}
 }

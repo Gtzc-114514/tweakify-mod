@@ -31,7 +31,7 @@ public class DrownedPeacefulSpawnMixin {
 			return level.getDifficulty();
 		}
 		return SpawnFeatureState.peacefulSpawnDifficulty(level.getDifficulty(),
-			config.peacefulModeMonsters, config.peacefulModeMonsterSpawn,
+			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(type));
 	}
 }

@@ -24,11 +24,11 @@ public class SlimeSpawnMixin {
 	private static boolean tweakify$disableFlatWorldSlimeSpawn(boolean original, EntityType<?> type,
 			LevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.disableFlatWorldSlimeSpawn) {
+		if (config == null || !config.modified.disableFlatWorldSlimeSpawn) {
 			return original;
 		}
 		// 对所有世界类型生效。
-		if (config.flatWorldSlimeSpawnAllWorlds) {
+		if (config.modified.flatWorldSlimeSpawnAllWorlds) {
 			return false;
 		}
 		if (level instanceof ServerLevel serverLevel

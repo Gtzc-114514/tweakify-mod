@@ -31,7 +31,7 @@ public class NetherPortalBlockPeacefulMixin {
 			return current;
 		}
 		return SpawnFeatureState.peacefulSpawnDifficulty(current,
-			config.peacefulModeMonsters, config.peacefulModeMonsterSpawn,
+			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(EntityTypes.ZOMBIFIED_PIGLIN));
 	}
 
@@ -47,7 +47,7 @@ public class NetherPortalBlockPeacefulMixin {
 			return current;
 		}
 		return SpawnFeatureState.peacefulSpawnDifficulty(current,
-			config.peacefulModeMonsters, config.peacefulModeMonsterSpawn,
+			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(EntityTypes.ZOMBIFIED_PIGLIN));
 	}
 }

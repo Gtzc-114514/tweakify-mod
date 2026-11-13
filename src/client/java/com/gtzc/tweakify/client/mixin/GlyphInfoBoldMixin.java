@@ -16,6 +16,6 @@ public interface GlyphInfoBoldMixin {
 	@ModifyReturnValue(method = "getBoldOffset", at = @At("RETURN"))
 	default float tweakify$betterBold(float original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.betterBold ? 0.5F : original;
+		return config != null && config.fix.betterBold ? 0.5F : original;
 	}
 }

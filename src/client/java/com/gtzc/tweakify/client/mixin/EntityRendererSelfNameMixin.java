@@ -29,7 +29,7 @@ public class EntityRendererSelfNameMixin {
 													float partialTick, double nameTagDistance,
 													double belowNameDistance, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.thirdPersonPlayerName) {
+		if (config == null || !config.modified.thirdPersonPlayerName) {
 			return;
 		}
 
@@ -39,7 +39,7 @@ public class EntityRendererSelfNameMixin {
 		}
 
 		boolean showSelfName = SelfNameVisibility.shouldShowSelfName(
-			config.thirdPersonPlayerName, true,
+			config.modified.thirdPersonPlayerName, true,
 			client.options.getCameraType().isFirstPerson(), client.gui.hud.isHidden(),
 			entity.isInvisible(), entity.isSpectator());
 		if (!showSelfName) {

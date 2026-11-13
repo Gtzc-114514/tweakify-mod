@@ -32,7 +32,7 @@ public class SnowGolemBiomeImmunityMixin {
 	private Object tweakify$skipBiomeMelting(EnvironmentAttributeSystem system,
 			EnvironmentAttribute<?> attribute, Vec3 pos) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.snowGolemBiomeImmunity
+		if (config != null && config.modified.snowGolemBiomeImmunity
 				&& attribute == EnvironmentAttributes.SNOW_GOLEM_MELTS) {
 			return Boolean.FALSE;
 		}

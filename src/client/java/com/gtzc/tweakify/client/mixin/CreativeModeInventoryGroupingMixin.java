@@ -201,7 +201,7 @@ public abstract class CreativeModeInventoryGroupingMixin implements CreativeItem
 	@Unique
 	private boolean tweakify$isGroupingActive() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.itemGroups
+		return config != null && config.functions.itemGroups
 			&& selectedTab != null
 			&& selectedTab.getType() == CreativeModeTab.Type.CATEGORY;
 	}
@@ -209,7 +209,7 @@ public abstract class CreativeModeInventoryGroupingMixin implements CreativeItem
 	@Unique
 	private String tweakify$sortMode() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config == null ? CreativeItemGroups.SORT_DEFAULT : config.itemGroupsSort;
+		return config == null ? CreativeItemGroups.SORT_DEFAULT : config.functions.itemGroupsSort;
 	}
 
 	@Unique

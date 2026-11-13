@@ -21,18 +21,18 @@ public final class DimensionTeleportState {
 
 	public static boolean shouldBlockPortal(Portal portal, Entity entity) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.disableDimensionTeleport || entity == null) {
+		if (config == null || !config.functions.disableDimensionTeleport || entity == null) {
 			return false;
 		}
 
 		// 只拦玩家时，其他实体继续正常穿门。
-		if (config.dimensionTeleportPlayersOnly && !(entity instanceof Player)) {
+		if (config.functions.dimensionTeleportPlayersOnly && !(entity instanceof Player)) {
 			return false;
 		}
 
 		// 末地折跃门：独立的开关与黑名单。
 		if (portal instanceof EndGatewayBlock) {
-			return shouldBlockPortalWithBlacklist(config.disableEndGatewayTeleport,
+			return shouldBlockPortalWithBlacklist(config.functions.disableEndGatewayTeleport,
 				config.isEndGatewayTeleportBlacklistEmpty(),
 				config.isEndGatewayTeleportBlacklisted(entity.getType()));
 		}
@@ -49,7 +49,7 @@ public final class DimensionTeleportState {
 		boolean blacklistEmpty = isEndPortal
 			? config.isEndPortalTeleportBlacklistEmpty()
 			: config.isNetherPortalTeleportBlacklistEmpty();
-		return shouldBlock(config.disableEndPortalTeleport, config.disableNetherPortalTeleport,
+		return shouldBlock(config.functions.disableEndPortalTeleport, config.functions.disableNetherPortalTeleport,
 			isEndPortal, isNetherPortal, blacklistEmpty, blacklisted);
 	}
 

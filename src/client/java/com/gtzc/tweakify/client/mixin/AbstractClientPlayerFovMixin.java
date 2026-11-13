@@ -21,7 +21,7 @@ public class AbstractClientPlayerFovMixin {
 	private float tweakify$disableSprintFov(float original, boolean firstPerson, float effectScale) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
-		if (config == null || !config.disableSprintFov || !self.isSprinting() || self.isScoping()) {
+		if (config == null || !config.modified.disableSprintFov || !self.isSprinting() || self.isScoping()) {
 			return original;
 		}
 		if (self.isUsingItem() && self.getUseItem().is(Items.BOW)) {

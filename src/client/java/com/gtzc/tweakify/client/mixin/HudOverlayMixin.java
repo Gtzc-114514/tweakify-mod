@@ -27,7 +27,7 @@ public class HudOverlayMixin {
 	@Inject(method = "extractPortalOverlay", at = @At("HEAD"), cancellable = true)
 	private void tweakify$disablePortalOverlay(GuiGraphicsExtractor gui, float intensity, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.disableNetherPortalEffect && config.disableNetherPortalOverlay) {
+		if (config != null && config.modified.disableNetherPortalEffect && config.modified.disableNetherPortalOverlay) {
 			ci.cancel();
 		}
 	}
@@ -37,7 +37,7 @@ public class HudOverlayMixin {
 	private void tweakify$disablePowderSnowOverlay(GuiGraphicsExtractor gui, Identifier texture, float alpha,
 												   CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.disableOverlayEffects || !config.disablePowderSnowOverlay) {
+		if (config == null || !config.modified.disableOverlayEffects || !config.modified.disablePowderSnowOverlay) {
 			return;
 		}
 		if (POWDER_SNOW_OUTLINE_LOCATION.equals(texture)) {

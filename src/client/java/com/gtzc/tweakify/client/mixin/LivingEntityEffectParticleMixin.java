@@ -22,8 +22,8 @@ public class LivingEntityEffectParticleMixin {
 													   double dx, double dy, double dz) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		LivingEntity self = (LivingEntity) (Object) this;
-		if (config != null && config.betterInvisibility
-			&& config.betterInvisibilityEffectParticles && self.isInvisible()) {
+		if (config != null && config.modified.betterInvisibility
+			&& config.modified.betterInvisibilityEffectParticles && self.isInvisible()) {
 			return;
 		}
 		level.addParticle(particle, x, y, z, dx, dy, dz);

@@ -17,6 +17,6 @@ public class PowderedSnowFogEnvironmentMixin {
 	@ModifyReturnValue(method = "isApplicable", at = @At("RETURN"))
 	private boolean tweakify$disablePowderSnowFog(boolean original, FogType fogType, Entity entity) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.disableOverlayEffects && config.disablePowderSnowFog ? false : original;
+		return config != null && config.modified.disableOverlayEffects && config.modified.disablePowderSnowFog ? false : original;
 	}
 }

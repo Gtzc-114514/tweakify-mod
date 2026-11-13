@@ -51,7 +51,7 @@ public class MobPeacefulMixin {
 	private boolean tweakify$keepPeacefulMonster(EntityType<?> type) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && SpawnFeatureState.shouldStayInPeaceful(
-			config.peacefulModeMonsters, config.isPeacefulModeMonster(type))) {
+			config.functions.peacefulModeMonsters, config.isPeacefulModeMonster(type))) {
 			return true;
 		}
 		return type.isAllowedInPeaceful();
@@ -62,8 +62,8 @@ public class MobPeacefulMixin {
 		if (config == null || target == null) {
 			return false;
 		}
-		return SpawnFeatureState.shouldPreventAttack(config.peacefulModeMonsters,
-			config.peacefulModeMonsterNoAttack,
+		return SpawnFeatureState.shouldPreventAttack(config.functions.peacefulModeMonsters,
+			config.functions.peacefulModeMonsterNoAttack,
 			mob.level().getDifficulty() == Difficulty.PEACEFUL,
 			config.isPeacefulModeMonster(mob.getType()),
 			target instanceof Player);

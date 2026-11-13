@@ -28,7 +28,7 @@ public final class ShoulderParrotDanceState {
 
 	public static boolean shouldDance(AvatarRenderState playerState) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.parrotDanceOnShoulder || playerState == null) {
+		if (config == null || !config.fix.parrotDanceOnShoulder || playerState == null) {
 			return false;
 		}
 		ClientLevel level = Minecraft.getInstance().level;

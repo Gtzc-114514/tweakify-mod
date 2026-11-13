@@ -20,13 +20,13 @@ public class PlayerMiningPenaltyMixin {
 	private double tweakify$removeUnderwaterPenalty(AttributeInstance instance) {
 		double value = instance.getValue();
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.disableUnderwaterMiningPenalty ? Math.max(1.0, value) : value;
+		return config != null && config.modified.disableUnderwaterMiningPenalty ? Math.max(1.0, value) : value;
 	}
 
 	// 空中惩罚：离地时 getDestroySpeed 末尾固定除以 5，把该常量换成 1 即不再减速。
 	@ModifyConstant(method = "getDestroySpeed", constant = @Constant(floatValue = 5.0F))
 	private float tweakify$removeAirPenalty(float original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.disableAirMiningPenalty ? 1.0F : original;
+		return config != null && config.modified.disableAirMiningPenalty ? 1.0F : original;
 	}
 }

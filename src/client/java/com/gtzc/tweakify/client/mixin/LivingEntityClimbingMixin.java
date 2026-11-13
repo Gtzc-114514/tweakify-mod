@@ -60,7 +60,7 @@ public abstract class LivingEntityClimbingMixin {
 		HookProbe.markOnce(TWEAKIFY$NO_SLOWDOWN_PROBE, "climbablePassNoSlowdown");
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.climbablePassNoSlowdown
+		if (config != null && config.modified.climbablePassNoSlowdown
 			&& self instanceof LocalPlayer && self.level().isClientSide()) {
 			return speed;
 		}
@@ -74,7 +74,7 @@ public abstract class LivingEntityClimbingMixin {
 		HookProbe.markOnce(TWEAKIFY$FAST_DESCEND_PROBE, "climbingFastDescend");
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.betterClimbing && config.climbingFastDescend
+		if (config != null && config.functions.betterClimbing && config.functions.climbingFastDescend
 			&& self instanceof LocalPlayer && self.level().isClientSide()) {
 			double maxDown = Mth.clampedMap(self.getXRot(), 20.0f, 90.0f, downSpeed, -0.4);
 			if (maxDown < -0.15) {
@@ -115,18 +115,18 @@ public abstract class LivingEntityClimbingMixin {
 		HookProbe.markOnce(TWEAKIFY$FASTER_ASCEND_PROBE, "climbingFasterAscend");
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.betterClimbing || !self.level().isClientSide()
+		if (config == null || !config.functions.betterClimbing || !self.level().isClientSide()
 			|| !(self instanceof LocalPlayer) || !self.onClimbable()) {
 			return climbSpeed;
 		}
 		this.tweakify$climbingUpThisTick = true;
 		double speed = climbSpeed;
-		if (config.climbingFasterAscend) {
+		if (config.functions.climbingFasterAscend) {
 			double increased = climbSpeed * 1.25;
 			speed = Mth.clampedMap((double) this.tweakify$climbUpTicks, 0.0, 60.0,
 				increased, increased * 2.0);
 		}
-		if (config.climbingJumpFromGround) {
+		if (config.functions.climbingJumpFromGround) {
 			return Math.max(self.getDeltaMovement().y, speed);
 		}
 		return speed;
@@ -140,7 +140,7 @@ public abstract class LivingEntityClimbingMixin {
 		// 先走链上原操作取值：handler 内直接读字段会绕过其它模组对同一字段的包装。
 		boolean collision = original.call(entity);
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.betterClimbing && config.climbingCancelCollision
+		if (config != null && config.functions.betterClimbing && config.functions.climbingCancelCollision
 			&& entity.level().isClientSide() && entity instanceof LocalPlayer player) {
 			return collision && player.input.getMoveVector().length() > 0.0f;
 		}

@@ -17,6 +17,6 @@ public class LavaFogEnvironmentMixin {
 	@ModifyReturnValue(method = "isApplicable", at = @At("RETURN"))
 	private boolean tweakify$disableLavaFog(boolean original, FogType fogType, Entity entity) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.disableOverlayEffects && config.disableLavaFog ? false : original;
+		return config != null && config.modified.disableOverlayEffects && config.modified.disableLavaFog ? false : original;
 	}
 }

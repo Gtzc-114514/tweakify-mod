@@ -159,10 +159,7 @@ public final class ConfigProfiles {
 			return new ReadResult(null, Result.NOT_FOUND);
 		}
 		try {
-			TweakifyModConfig config = GSON.fromJson(json, TweakifyModConfig.class);
-			if (config == null) {
-				return new ReadResult(null, Result.BROKEN);
-			}
+			TweakifyModConfig config = ConfigStorage.fromJsonTree(json);
 			return new ReadResult(new Loaded(config, Set.copyOf(json.keySet())), Result.OK);
 		} catch (RuntimeException e) {
 			// 单份档案损坏只影响这一份，不能连带其它档案一起失效。

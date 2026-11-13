@@ -17,7 +17,7 @@ public class LightningBoltShakeMixin {
 	@Inject(method = "spawnFire", at = @At("RETURN"))
 	private void tweakify$addThunderShake(int num, CallbackInfo callback) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.cameraMotion || !config.cameraMotionScreenShake) {
+		if (config == null || !config.functions.cameraMotion || !config.functions.cameraMotionScreenShake) {
 			return;
 		}
 		LightningBolt bolt = (LightningBolt) (Object) this;

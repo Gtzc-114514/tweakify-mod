@@ -56,7 +56,7 @@ public abstract class MerchantMenuMixin implements MerchantMenuAccess {
 		// 每次都用最新的真实列表数量，避免补货/声望刷新后 originalCount 过时。
 		this.tweakify$originalCount = original.size();
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.visibleTraders
+		if (config == null || !config.modified.visibleTraders
 			|| this.tweakify$lockedOffers == null || this.tweakify$lockedOffers.isEmpty()) {
 			return original;
 		}

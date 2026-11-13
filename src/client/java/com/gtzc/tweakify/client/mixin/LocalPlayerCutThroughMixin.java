@@ -41,14 +41,14 @@ public class LocalPlayerCutThroughMixin {
 	private HitResult tweakify$cutThroughPlants(HitResult original, float partialTick, Entity camera) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		LocalPlayer self = (LocalPlayer) (Object) this;
-		if (config == null || !config.swordCutThroughPlants || self.level() == null) {
+		if (config == null || !config.functions.swordCutThroughPlants || self.level() == null) {
 			return original;
 		}
 		// 潜行时恢复原版：先把植物打掉，方便“先清理再攻击”。
-		if (config.cutThroughSneakBypass && self.isShiftKeyDown()) {
+		if (config.functions.cutThroughSneakBypass && self.isShiftKeyDown()) {
 			return original;
 		}
-		if (!isAllowedItem(self.getMainHandItem(), CutThroughItemMode.fromCode(config.cutThroughItems))) {
+		if (!isAllowedItem(self.getMainHandItem(), CutThroughItemMode.fromCode(config.functions.cutThroughItems))) {
 			return original;
 		}
 		if (!(original instanceof BlockHitResult blockHit)
@@ -57,7 +57,7 @@ public class LocalPlayerCutThroughMixin {
 		}
 		BlockState state = self.level().getBlockState(blockHit.getBlockPos());
 		if (!isCuttablePlant(state, self.level(), blockHit.getBlockPos(),
-			CutThroughPlantMode.fromCode(config.cutThroughPlants))) {
+			CutThroughPlantMode.fromCode(config.functions.cutThroughPlants))) {
 			return original;
 		}
 		// 真正需要穿草时才走后面的重算，顺便确认钩子活着（每会话只记一次）。

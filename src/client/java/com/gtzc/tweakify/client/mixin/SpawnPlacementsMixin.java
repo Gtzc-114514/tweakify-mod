@@ -28,7 +28,7 @@ public class SpawnPlacementsMixin {
 			ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && SpawnFeatureState.shouldBlockSpawn(
-			config.disableSpecifiedMobSpawn, config.disabledSpawnAllowPlayerSpawn,
+			config.functions.disableSpecifiedMobSpawn, config.functions.disabledSpawnAllowPlayerSpawn,
 			config.isSpawnDisabled(type), reason, type)) {
 			return false;
 		}
@@ -42,7 +42,7 @@ public class SpawnPlacementsMixin {
 	private static boolean tweakify$allowPeacefulSpawn(EntityType<?> type) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && SpawnFeatureState.shouldAllowPeacefulSpawn(
-			config.peacefulModeMonsters, config.peacefulModeMonsterSpawn,
+			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(type))) {
 			return true;
 		}

@@ -20,7 +20,7 @@ public class WitherBossPeacefulMixin {
 	private boolean tweakify$keepPeacefulWither(EntityType<?> type) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && SpawnFeatureState.shouldStayInPeaceful(
-			config.peacefulModeMonsters, config.isPeacefulModeMonster(type))) {
+			config.functions.peacefulModeMonsters, config.isPeacefulModeMonster(type))) {
 			return true;
 		}
 		return type.isAllowedInPeaceful();

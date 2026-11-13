@@ -29,7 +29,7 @@ public class TrialSpawnerPeacefulMixin {
 			boolean allListed = SpawnFeatureState.allSpawnPotentialsListed(
 				self.activeConfig().spawnPotentialsDefinition(), config::isPeacefulModeMonster);
 			if (SpawnFeatureState.shouldAllowPeacefulSpawner(
-				config.peacefulModeMonsters, config.peacefulModeMonsterSpawn, allListed)) {
+				config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn, allListed)) {
 				return Difficulty.NORMAL;
 			}
 		}

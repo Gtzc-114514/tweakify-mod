@@ -33,7 +33,7 @@ public class CraftingMenuWartDecompositionMixin {
 												   CraftingContainer container, ResultContainer result,
 												   RecipeHolder<CraftingRecipe> recipe, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.wartBlockDecomposition) {
+		if (config == null || !config.modified.wartBlockDecomposition) {
 			return;
 		}
 		// 原版已有产出时不覆盖（例如其它模组加了疣块配方）。

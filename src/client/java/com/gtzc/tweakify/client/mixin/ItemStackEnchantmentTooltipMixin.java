@@ -51,7 +51,7 @@ public class ItemStackEnchantmentTooltipMixin {
 	private List<Component> tweakify$appendEnchantmentDescriptions(List<Component> original,
 			Item.TooltipContext context, Player player, TooltipFlag flag) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.enchantmentDescriptions) {
+		if (config == null || !config.modified.enchantmentDescriptions) {
 			return original;
 		}
 		// hide_tooltip 分支返回空列表：不能在这里凭空造出提示。

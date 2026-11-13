@@ -32,7 +32,7 @@ public class EntityTypeSpawnBlockMixin {
 		}
 		EntityType<?> type = (EntityType<?>) (Object) this;
 		if (SpawnFeatureState.shouldBlockSpawn(
-			config.disableSpecifiedMobSpawn, config.disabledSpawnAllowPlayerSpawn,
+			config.functions.disableSpecifiedMobSpawn, config.functions.disabledSpawnAllowPlayerSpawn,
 			config.isSpawnDisabled(type), request.reason(), type)) {
 			return null;
 		}

@@ -48,11 +48,11 @@ public final class DurabilityOverlayRenderer {
 	// 由物品装饰绘制完成后调用：x/y 为物品槽左上角。
 	public static void render(GuiGraphicsExtractor gui, Font font, ItemStack stack, int x, int y) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.durabilityOverlay || stack == null) {
+		if (config == null || !config.functions.durabilityOverlay || stack == null) {
 			return;
 		}
 		// 仅在 HUD 快捷栏显示：打开任意界面（背包/容器）时不显示。
-		if (config.durabilityOverlayHotbarOnly && Minecraft.getInstance().gui.screen() != null) {
+		if (config.functions.durabilityOverlayHotbarOnly && Minecraft.getInstance().gui.screen() != null) {
 			return;
 		}
 		// 满耐久时原版耐久条本身不可见，这里同样不显示文字。
@@ -65,7 +65,7 @@ public final class DurabilityOverlayRenderer {
 		}
 		int remaining = Math.max(0, max - stack.getDamageValue());
 		// 低阈值模式：只在剩余耐久不高于该百分比时显示。
-		int threshold = config.durabilityOverlayLowThreshold;
+		int threshold = config.functions.durabilityOverlayLowThreshold;
 		if (threshold > 0 && remaining * 100 > max * threshold) {
 			return;
 		}
@@ -121,7 +121,7 @@ public final class DurabilityOverlayRenderer {
 	}
 
 	private static DurabilityDisplayMode modeFor(TweakifyModConfig config) {
-		String code = config.durabilityDisplayMode;
+		String code = config.functions.durabilityDisplayMode;
 		if (!Objects.equals(code, cachedModeCode)) {
 			cachedModeCode = code;
 			cachedMode = DurabilityDisplayMode.fromCode(code);

@@ -25,7 +25,7 @@ public class LivingEntityPeacefulAttackMixin {
 		if ((Object) this instanceof Mob mob) {
 			TweakifyModConfig config = TweakifyMod.CONFIG;
 			if (config != null && SpawnFeatureState.shouldAllowPeacefulAggression(
-				config.peacefulModeMonsters, config.peacefulModeMonsterNoAttack,
+				config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterNoAttack,
 				level.getDifficulty() == Difficulty.PEACEFUL, config.isPeacefulModeMonster(mob.getType()))) {
 				return Difficulty.NORMAL;
 			}

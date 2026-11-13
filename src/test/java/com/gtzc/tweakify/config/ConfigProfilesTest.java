@@ -38,8 +38,8 @@ class ConfigProfilesTest {
 	void saveAndReadRoundTrip() {
 		Path path = profilesPath();
 		TweakifyModConfig config = newConfig();
-		config.miningCooldown = true;
-		config.disableHurtShake = true;
+		config.functions.miningCooldown = true;
+		config.modified.disableHurtShake = true;
 
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "PvP", config).result());
 		assertEquals(List.of("PvP"), ConfigProfiles.names(path).names());
@@ -47,8 +47,8 @@ class ConfigProfilesTest {
 		ConfigProfiles.ReadResult read = ConfigProfiles.read(path, "PvP");
 		assertTrue(read.ok());
 		assertEquals(ConfigProfiles.Result.OK, read.status());
-		assertTrue(read.profile().config().miningCooldown);
-		assertTrue(read.profile().config().disableHurtShake);
+		assertTrue(read.profile().config().functions.miningCooldown);
+		assertTrue(read.profile().config().modified.disableHurtShake);
 		assertTrue(read.profile().fieldNames().contains("miningCooldown"));
 		// 版本号会被记录在档案里，但 applyFrom 会跳过它
 		assertTrue(read.profile().fieldNames().contains("configVersion"));
@@ -58,15 +58,15 @@ class ConfigProfilesTest {
 	void saveOverwritesExistingProfile() {
 		Path path = profilesPath();
 		TweakifyModConfig first = newConfig();
-		first.miningCooldown = true;
+		first.functions.miningCooldown = true;
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "P", first).result());
 
 		TweakifyModConfig second = newConfig();
-		second.miningCooldown = false;
+		second.functions.miningCooldown = false;
 		assertEquals(ConfigProfiles.Result.OK, ConfigProfiles.save(path, "P", second).result());
 
 		assertEquals(List.of("P"), ConfigProfiles.names(path).names());
-		assertFalse(ConfigProfiles.read(path, "P").profile().config().miningCooldown);
+		assertFalse(ConfigProfiles.read(path, "P").profile().config().functions.miningCooldown);
 	}
 
 	@Test

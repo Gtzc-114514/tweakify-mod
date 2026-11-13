@@ -74,13 +74,47 @@ final class ConfigStorage {
 
 	// 同步调度：写盘任务由 TweakifyModConfig 提交到全局串行队列（见 AsyncFileWriter），
 	// 这里只保留纯序列化与落盘，确保与后台写盘使用同一套原子替换逻辑。
+	// 序列化以扁平字段表为唯一来源：字段拆进分区对象后，JSON 仍是「字段名 -> 值」的平铺结构，
+	// 键名与拆分前完全一致。
 	static String toJson(TweakifyModConfig config) {
-		return GSON.toJson(config);
+		return GSON.toJson(toJsonTree(config));
 	}
 
 	// 序列化成 JSON 树：供配置档案保存整套配置（调用方需在配置锁内调用）。
 	static JsonObject toJsonTree(TweakifyModConfig config) {
-		return GSON.toJsonTree(config).getAsJsonObject();
+		JsonObject root = new JsonObject();
+		for (Map.Entry<String, ConfigFieldRef> entry : TweakifyModConfig.fieldRefs().entrySet()) {
+			Object value = entry.getValue().get(config);
+			if (value == null) {
+				// 与 Gson 默认行为一致：null 字段不写出，读取时保留字段初始化器的默认值。
+				continue;
+			}
+			root.add(entry.getKey(), GSON.toJsonTree(value));
+		}
+		return root;
+	}
+
+	// 按扁平字段表逐项读取：缺键保留默认值，显式 null 原样写入（交给后续清洗），
+	// 类型不匹配抛 JsonSyntaxException，与拆分前直接交给 Gson 反序列化的行为一致。
+	static TweakifyModConfig fromJsonTree(JsonObject root) {
+		TweakifyModConfig config = new TweakifyModConfig();
+		for (Map.Entry<String, ConfigFieldRef> entry : TweakifyModConfig.fieldRefs().entrySet()) {
+			if (!root.has(entry.getKey())) {
+				continue;
+			}
+			// 用完整泛型类型而不是裸 List.class：后者会把元素退化为 Object，
+			// 非字符串元素（如 [1, true]）不再被 Gson 强制转换为字符串，
+			// 会在后续 sanitizeItemList 的 String 循环处抛 ClassCastException，
+			// 导致整份配置被误判为损坏并回退默认值。
+			Object value = GSON.fromJson(root.get(entry.getKey()), entry.getValue().genericType());
+			if (value == null && entry.getValue().type().isPrimitive()) {
+				// 与 Gson 反射绑定一致：原始类型字段收到 null 时保留默认值，而不是写入 null。
+				// （实测 Gson 2.14：boolean/int/double 字段的 JSON null 不会覆盖初始化器结果。）
+				continue;
+			}
+			entry.getValue().set(config, value);
+		}
+		return config;
 	}
 
 	// 只负责落盘：先写临时文件再原子替换，避免写到一半崩溃时留下半截 JSON。

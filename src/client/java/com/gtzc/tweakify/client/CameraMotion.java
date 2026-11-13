@@ -52,16 +52,16 @@ public final class CameraMotion {
 						   boolean firstPerson, boolean thirdPerson) {
 		public static Settings fromConfig(TweakifyModConfig config) {
 			return new Settings(
-				config.cameraMotionIntensity,
-				config.cameraMotionTurningRoll,
-				config.cameraMotionStrafingRoll,
-				config.cameraMotionForwardPitch,
-				config.cameraMotionVerticalPitch,
-				config.cameraMotionIdleSway,
-				config.cameraMotionScreenShake,
-				config.cameraMotionMouseSmoothing,
-				config.cameraMotionFirstPerson,
-				config.cameraMotionThirdPerson);
+				config.functions.cameraMotionIntensity,
+				config.functions.cameraMotionTurningRoll,
+				config.functions.cameraMotionStrafingRoll,
+				config.functions.cameraMotionForwardPitch,
+				config.functions.cameraMotionVerticalPitch,
+				config.functions.cameraMotionIdleSway,
+				config.functions.cameraMotionScreenShake,
+				config.functions.cameraMotionMouseSmoothing,
+				config.functions.cameraMotionFirstPerson,
+				config.functions.cameraMotionThirdPerson);
 		}
 
 		public double scale() {

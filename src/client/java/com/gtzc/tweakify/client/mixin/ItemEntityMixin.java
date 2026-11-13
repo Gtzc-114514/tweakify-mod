@@ -66,9 +66,9 @@ public class ItemEntityMixin {
 			return VANILLA_LIFETIME;
 		}
 		// 仅对玩家丢弃的掉落物生效：怪物掉落、方块掉落等保持原版时长。
-		if (config.itemDespawnPlayerDroppedOnly && !(self.getOwner() instanceof Player)) {
+		if (config.modified.itemDespawnPlayerDroppedOnly && !(self.getOwner() instanceof Player)) {
 			return VANILLA_LIFETIME;
 		}
-		return config.itemDespawnTime;
+		return config.modified.itemDespawnTime;
 	}
 }

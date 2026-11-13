@@ -18,7 +18,7 @@ public class EnderDragonRendererMixin {
 		at = @At("TAIL"))
 	private void tweakify$disableHurtTint(EnderDragon dragon, EnderDragonRenderState state,
 										 float partialTick, CallbackInfo ci) {
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.disableHurtTint) {
+		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.modified.disableHurtTint) {
 			state.hasRedOverlay = false;
 		}
 	}

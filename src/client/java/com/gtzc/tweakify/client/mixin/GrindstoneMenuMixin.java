@@ -22,7 +22,7 @@ public class GrindstoneMenuMixin {
 	@ModifyReturnValue(method = "removeNonCursesFrom", at = @At("RETURN"))
 	private ItemStack tweakify$removeAllEnchantments(ItemStack original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.disableCurseEnchantmentRestriction) {
+		if (config == null || !config.modified.disableCurseEnchantmentRestriction) {
 			return original;
 		}
 

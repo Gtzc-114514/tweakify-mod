@@ -36,7 +36,7 @@ public class LevelExtractorBlockOutlineMixin {
 	private void tweakify$mergeConnectedOutline(Camera camera, LevelRenderState levelRenderState, CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$REPORTED, "connectedBlockOutline");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.connectedBlockOutline) {
+		if (config == null || !config.modified.connectedBlockOutline) {
 			return;
 		}
 		BlockOutlineRenderState outline = levelRenderState.blockOutlineRenderState;

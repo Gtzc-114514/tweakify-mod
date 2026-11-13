@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class BoatStepHeightMixin {
 	@ModifyReturnValue(method = "maxUpStep", at = @At("RETURN"))
 	private float tweakify$boatStepHeight(float original) {
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.fixBoatStuckOnDirtPath
+		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.fix.fixBoatStuckOnDirtPath
 			&& (Object) this instanceof AbstractBoat) {
 			return BoatStepHeightState.stepHeight(true, original);
 		}

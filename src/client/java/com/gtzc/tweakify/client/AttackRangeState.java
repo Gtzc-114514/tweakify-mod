@@ -40,7 +40,7 @@ public final class AttackRangeState {
 
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.attackRangeDisplay || client.player == null || client.level == null) {
+		if (config == null || !config.functions.attackRangeDisplay || client.player == null || client.level == null) {
 			entries = List.of();
 			tickCounter = 0;
 			return;
@@ -49,14 +49,14 @@ public final class AttackRangeState {
 		if (++tickCounter % 2 != 0) {
 			return;
 		}
-		double maxDistance = Mth.clamp(config.attackRangeMaxDistance,
+		double maxDistance = Mth.clamp(config.functions.attackRangeMaxDistance,
 			TweakifyModConfig.MIN_ATTACK_RANGE_DISTANCE, TweakifyModConfig.MAX_ATTACK_RANGE_DISTANCE);
-		int maxTargets = Mth.clamp(config.attackRangeMaxTargets,
+		int maxTargets = Mth.clamp(config.functions.attackRangeMaxTargets,
 			TweakifyModConfig.MIN_ATTACK_RANGE_TARGETS, TweakifyModConfig.MAX_ATTACK_RANGE_TARGETS);
 		// 用范围查询代替遍历全部渲染实体，减少每 tick 的实体扫描量。
 		AABB searchBox = client.player.getBoundingBox().inflate(maxDistance);
 		List<LivingEntity> candidates = new ArrayList<>();
-		if (config.attackRangeIncludeSelf) {
+		if (config.functions.attackRangeIncludeSelf) {
 			candidates.add(client.player);
 		}
 		for (Entity entity : client.level.getEntities(client.player, searchBox,

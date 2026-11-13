@@ -26,17 +26,17 @@ public class LevelExtractorOverlayMixin {
 		if (config == null) {
 			return;
 		}
-		if (config.disableNetherPortalEffect && config.disableNetherPortalCamera) {
+		if (config.modified.disableNetherPortalEffect && config.modified.disableNetherPortalCamera) {
 			state.portalEffectIntensity = 0.0f;
 		}
-		if (!config.disableOverlayEffects) {
+		if (!config.modified.disableOverlayEffects) {
 			return;
 		}
-		if (config.disableWaterOverlay) {
+		if (config.modified.disableWaterOverlay) {
 			state.waterOverlay = null;
 		}
 		Minecraft client = Minecraft.getInstance();
-		if (config.disableLavaOverlay && client.player != null && client.player.isInLava()) {
+		if (config.modified.disableLavaOverlay && client.player != null && client.player.isInLava()) {
 			state.blockOverlay = null;
 		}
 	}
