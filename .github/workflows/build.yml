@@ -42,9 +42,13 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+      # 同时收集 HTML 报告与 JUnit XML：测试 JVM 异常退出时 build/reports/tests/ 可能不存在，
+      # 但 build/test-results/test/ 下的 XML 必定生成，保证失败时仍能定位到具体用例。
       - name: capture test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: Test reports
-          path: build/reports/tests/
+          path: |
+            build/reports/tests/
+            build/test-results/test/
