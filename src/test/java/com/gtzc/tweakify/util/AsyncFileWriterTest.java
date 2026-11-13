@@ -17,7 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AsyncFileWriterTest {
 	// CI 的共享 runner 可能在任务调度上停顿数百毫秒；等待上限放宽到 15 秒只影响失败场景的耗时，
 	// 正常路径仍然立即返回，因此不会拖慢测试。
+	// 屏障排空上限：drain / shutdown 这类「等队列清空」的等待。
 	private static final long DRAIN_TIMEOUT_MILLIS = 15_000L;
+	// 业务等待上限：submitAndWait 这类单次写任务的等待，保持与生产超时同量级，
+	// 避免把「排队异常慢」的回归掩盖成通过。
+	private static final long SUBMIT_TIMEOUT_MILLIS = 5_000L;
 	private static final long START_TIMEOUT_SECONDS = 10L;
 
 	// 预热：确保写盘线程已创建，避免首个任务的线程创建开销挤占后续用例的超时窗口。
@@ -82,7 +86,7 @@ class AsyncFileWriterTest {
 		AtomicBoolean asyncRanFirst = new AtomicBoolean();
 		AsyncFileWriter.execute(() -> asyncRanFirst.set(order.getAndIncrement() == 0));
 
-		Boolean result = AsyncFileWriter.submitAndWait(() -> order.getAndIncrement() == 1, DRAIN_TIMEOUT_MILLIS);
+		Boolean result = AsyncFileWriter.submitAndWait(() -> order.getAndIncrement() == 1, SUBMIT_TIMEOUT_MILLIS);
 
 		assertEquals(Boolean.TRUE, result, "submitAndWait should return the task result");
 		assertTrue(asyncRanFirst.get(), "the synchronous write must run after the queued async write");
@@ -109,9 +113,14 @@ class AsyncFileWriterTest {
 
 		assertTrue(started.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
 			"the write task should start before the timeout");
-		// 任务被闸门挡住，必然活过第一次超时；等它进入延长等待后再放行。
-		Thread.sleep(1200L);
-		release.countDown();
+		try {
+			// 任务被闸门挡住，必然活过第一次超时；等它进入延长等待后再放行。
+			Thread.sleep(1200L);
+		} finally {
+			// 断言失败也要放行：写盘线程是两个测试类共用的静态单线程，
+			// 卡在闸门上会把后续用例的等待窗口一起吃掉。
+			release.countDown();
+		}
 		caller.join(TimeUnit.SECONDS.toMillis(START_TIMEOUT_SECONDS));
 
 		assertFalse(caller.isAlive(), "submitAndWait should return after the extended wait");
@@ -138,8 +147,12 @@ class AsyncFileWriterTest {
 			return true;
 		}, 50L);
 
-		assertNull(result, "a task that has not started should report a timeout");
-		release.countDown();
+		try {
+			assertNull(result, "a task that has not started should report a timeout");
+		} finally {
+			// 断言失败也要放行阻塞任务，避免占住共用的写盘线程。
+			release.countDown();
+		}
 		assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS));
 		assertFalse(ran.get(), "the cancelled task must not run");
 	}

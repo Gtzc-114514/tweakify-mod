@@ -6,9 +6,12 @@ import com.google.gson.JsonParser;
 import com.gtzc.tweakify.util.AsyncFileWriter;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -44,6 +47,9 @@ class TweakifyModConfigTest {
 	// 正常路径仍然立即返回。
 	private static final long DRAIN_TIMEOUT_MILLIS = 15_000L;
 	private static final long START_TIMEOUT_SECONDS = 10L;
+	// 锁未被占用时 setter 应立即完成；上限取 1500ms（低于 save() 内部 2000ms 的等待超时），
+	// 保留对「有界持锁」的判别力。
+	private static final long PROBE_TIMEOUT_MILLIS = 1_500L;
 
 	private static void awaitQuietly(CountDownLatch latch) {
 		try {
@@ -61,6 +67,19 @@ class TweakifyModConfigTest {
 			Thread.sleep(5L);
 		}
 		return thread.getState() == state;
+	}
+
+	// 读取线程此刻持有的监视器列表：直接判定「等待期间是否持锁」，不依赖任何耗时阈值。
+	// ThreadMXBean 的三参重载只接受 id 数组，且 Thread.getId() 在 Java 19 起已废弃。
+	private static boolean holdsMonitor(Thread thread, Object monitor) {
+		ThreadInfo[] infos = ManagementFactory.getThreadMXBean()
+			.getThreadInfo(new long[] {thread.threadId()}, true, false);
+		if (infos == null || infos.length == 0 || infos[0] == null) {
+			return false;
+		}
+		int target = System.identityHashCode(monitor);
+		return Arrays.stream(infos[0].getLockedMonitors())
+			.anyMatch(locked -> locked.getIdentityHashCode() == target);
 	}
 
 	@BeforeAll
@@ -653,20 +672,28 @@ class TweakifyModConfigTest {
 		assertTrue(awaitThreadState(saver, Thread.State.TIMED_WAITING, START_TIMEOUT_SECONDS),
 			"save should be waiting for the writer thread");
 
-		// 写盘线程仍被占住时从另一个线程写配置：只要 setter 在 save 结束前完成，
-		// 就说明 save 等待期间没有持锁。不再断言「setter 用时小于 N 毫秒」，
-		// 那种写法会被 CI 上的 GC / 调度停顿打断，而这里的结果只取决于锁是否被持有。
+		// 核心契约：等待写盘期间不能持有配置监视器。
+		// 直接读线程转储里的 lockedMonitors，不依赖耗时阈值：
+		// 只要 await 被移进 synchronized 块，无论持锁多久都会在这里被捕获。
+		assertFalse(holdsMonitor(saver, config),
+			"save() must not hold the config monitor while waiting for the writer");
+
+		// 补充证据：另一个线程的 setter 必须能在有限时间内完成（锁未被占用）。
 		CountDownLatch probeDone = new CountDownLatch(1);
 		Thread probe = new Thread(() -> {
 			config.setBoolean("betterBold", true);
 			probeDone.countDown();
 		});
 		probe.start();
-		assertTrue(probeDone.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
-			"setBoolean must not block while save() is waiting for the writer");
-		assertTrue(saver.isAlive(), "save should still be waiting when the setter finishes");
-
-		release.countDown();
+		try {
+			assertTrue(probeDone.await(PROBE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
+				"setBoolean must not block while save() is waiting for the writer");
+			assertTrue(saver.isAlive(), "save should still be waiting when the setter finishes");
+		} finally {
+			// 断言失败也要放行：写盘线程是两个测试类共用的静态单线程，
+			// 卡在闸门上会把后续用例的等待窗口一起吃掉。
+			release.countDown();
+		}
 		saver.join(TimeUnit.SECONDS.toMillis(START_TIMEOUT_SECONDS));
 		assertFalse(saver.isAlive(), "save should finish after the blocking write");
 		assertTrue(saveResult.get(), "save should succeed once the queue drains");
