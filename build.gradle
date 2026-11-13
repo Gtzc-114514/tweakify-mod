@@ -84,7 +84,7 @@ test {
 	systemProperty "joml.nounsafe", "true"
 	testLogging {
 		events "passed", "skipped", "failed"
-		exceptionFormat "full"
+		exceptionFormat = "full"
 	}
 }
 
@@ -99,6 +99,8 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 25
+	// 显式固定源码编码：源码与语言文件含中文，避免构建者本地平台编码不同导致乱码。
+	it.options.encoding = 'UTF-8'
 	// -classfile 关闭第三方 jar 的类文件警告（gson/guava/joml 缺注解类），项目源码警告保持开启。
 	it.options.compilerArgs += ['-Xlint:all,-processing,-serial,-this-escape,-classfile']
 }

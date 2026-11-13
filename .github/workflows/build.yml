@@ -9,9 +9,16 @@ on:
     branches: [main]
   pull_request:
 
+# 同一分支/PR 的新提交取消仍在运行的旧构建，避免连续 push 排队占满 runner。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04
+    # 冷构建含 Minecraft/Fabric 依赖下载；超时即失败，不占用默认的 6 小时额度。
+    timeout-minutes: 30
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -22,10 +29,12 @@ jobs:
         with:
           java-version: '25'
           distribution: 'microsoft'
+      # 缓存 Gradle 发行版、依赖与构建缓存；Minecraft/Fabric 依赖体积大，是 CI 的主要耗时。
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v6
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: test
-        run: ./gradlew test
+      # build 已依赖 test：合并成一次调用，省掉一次 Gradle 启动与依赖解析。
       - name: build
         run: ./gradlew build
       - name: capture build artifacts
