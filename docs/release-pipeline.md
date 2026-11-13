@@ -3,7 +3,8 @@
 本文档说明 `.github/workflows/release.yml` 的触发条件、步骤顺序、失败语义与已知取舍，
 方便回看而不用翻提交记录与聊天记录。
 
-**基线**：截至 2026-11-14，`origin/main` 为 `40a98b0`；`release.yml` 若有后续变动，以实际文件为准。
+**基线**：本文档描述父提交 `40a98b0`（2026-11-14）时的 `release.yml`；该文件后续变动时以实际文件为准，
+步骤名与数量请以 `- name:` 原文重新核对。
 
 ## 触发条件
 
@@ -42,7 +43,8 @@
 ⇒ 传递结论：标签 = gradle.properties = jar
 ```
 
-- 第 6 步的提取规则与 Gradle 的 `Properties` 语义对齐：`tr -d '\r'` 去 CRLF、正则允许行首与等号两侧空格、`tail -n 1` 取末值（后覆盖前）；
+- 第 6 步的提取规则对齐 Gradle `Properties` 的常用写法（`tr -d '\r'` 去 CRLF、正则允许行首与等号两侧空格、`tail -n 1` 取末值/后覆盖前）；
+  不支持 `key: value`，也不裁剪值尾空白（错误文案已在注解中说明）；
 - 解析逻辑单点，两个校验步骤通过 `env: GRADLE_VERSION: ${{ steps.gv.outputs.version }}` 消费，不会漂移；
 - 解析提前到 build 与 unzip 之前：配置错误最先暴露，不用等完整构建。
 
@@ -74,8 +76,8 @@
 | --- | --- | --- | --- |
 | L1 | `release.yml` 的 `find` 行 | `find ... 2>/dev/null` 让 ENOENT（目录不存在）与 EACCES（权限）无法区分 | 只影响日志精细度；build 失败本身已足够醒目 |
 | L2 | `release.yml` 的 `JAR=$(printf ... \| head -n1)` | 保留了管道路径（可用 `${JAR_LIST%%$'\n'*}` 替代） | 已验证不会触发 141；仅「理论上更健壮」 |
-| L3 | `release.yml` 的三处注解 | `No main jar found` 为英文、其余中文；`"version": ""` 的 jar 会归因为 mismatch | 既有文案；空 version 的 jar 现实中不会出现 |
-| H1 | 8 个 Mixin | 既有的 8 个 `require = 0` 注入点仍无 `HookProbe` 探针（`LevelRendererOutlineStyleMixin`×1、`VillagerMixin`×6、`ModsScreenScrollMixin`×1） | 均为既有问题，不构成发布阻塞 |
+| L3 | `release.yml` 的 `No main jar found in build/libs` 与 `Version mismatch:` 两条注解 | `No main jar found` 为英文、其余中文；`"version": ""` 的 jar 会归因为 mismatch | 既有文案；空 version 的 jar 现实中不会出现 |
+| H1 | 3 个 Mixin 中的 8 个 `require = 0` 注入点 | 无 `HookProbe` 探针的注入点：`LevelRendererOutlineStyleMixin`×1、`VillagerMixin`×6、`mixin/modmenu/ModsScreenScrollMixin`×1 | 均为既有问题，不构成发布阻塞 |
 | H2 | `release.yml` 的 jar 读取分支 | 内容问题的三种原因（无清单/损坏/缺字段）合并为一条注解 | stderr 被刻意收敛；如需细分可改为落临时文件后 `cat` |
 
 ## 下次发布清单
@@ -84,7 +86,7 @@
 2. 在 `docs/release-notes/` 写好 `<新标签>.md`，**并先提交推送到 main**；
 3. 打 annotated 标签：`git tag -a vX.Y.Z -m "Tweakify Mod X.Y.Z"`；
 4. `git push origin vX.Y.Z`；
-5. 在 Actions 查看 release 运行：`resolve mod version` → `verify tag matches` → `build` → `verify jar mod version` → `resolve release notes` → `create GitHub Release` 全绿即完成。
+5. 在 Actions 查看 release 运行：`resolve mod version` → `verify tag matches mod version` → `build` → `verify jar mod version` → `resolve release notes` → `create GitHub Release` 全绿即完成。
 
 ## 相关文件
 
