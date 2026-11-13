@@ -34,20 +34,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Mixin(Villager.class)
 public class VillagerMixin {
 	@Unique
-	private static final AtomicBoolean TWEAKIFY$SAVE_REPORTED = new AtomicBoolean();
+	private static final AtomicBoolean TWEAKIFY$SAVE_PROBE = new AtomicBoolean();
 
 	@Unique
-	private static final AtomicBoolean TWEAKIFY$READ_REPORTED = new AtomicBoolean();
+	private static final AtomicBoolean TWEAKIFY$READ_PROBE = new AtomicBoolean();
 
 	@Inject(method = "addAdditionalSaveData", at = @At("TAIL"), require = 0)
 	private void tweakify$saveLockedTrades(ValueOutput output, CallbackInfo ci) {
-		HookProbe.markOnce(TWEAKIFY$SAVE_REPORTED, "visibleTradersSaveLocked");
+		HookProbe.markOnce(TWEAKIFY$SAVE_PROBE, "visibleTradersSaveLocked");
 		LockedTradeService.save((Villager) (Object) this, output);
 	}
 
 	@Inject(method = "readAdditionalSaveData", at = @At("TAIL"), require = 0)
 	private void tweakify$readLockedTrades(ValueInput input, CallbackInfo ci) {
-		HookProbe.markOnce(TWEAKIFY$READ_REPORTED, "visibleTradersReadLocked");
+		HookProbe.markOnce(TWEAKIFY$READ_PROBE, "visibleTradersReadLocked");
 		LockedTradeService.restore((Villager) (Object) this, input);
 	}
 
