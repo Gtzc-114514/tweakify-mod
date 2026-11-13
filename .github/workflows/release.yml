@@ -56,17 +56,20 @@ jobs:
             echo "Version mismatch: fabric.mod.json=$JAR_VERSION gradle.properties=$GRADLE_VERSION"
             exit 1
           fi
-      # 发布正文优先用 docs/release-notes/<tag>.md（纳入版本管理、可回溯）；
-      # 没有对应文件时回退到 GitHub 自动生成的 release notes。
+      # 发布正文优先用 docs/release-notes/<tag>.md（纳入版本管理、可回溯）。
+      # 该文件必须在打标签之前合入 main：tag 触发时 checkout 的是 tag 指向的提交，
+      # 晚于 tag 提交的 notes 不会被看到。
+      # 没有对应文件（或文件为空）时输出 warning 并回退到 GitHub 自动生成的 release notes。
       - name: resolve release notes
         id: notes
         shell: bash
         run: |
           NOTES="docs/release-notes/${GITHUB_REF_NAME}.md"
-          if [ -f "$NOTES" ]; then
+          if [ -s "$NOTES" ]; then
             echo "body_path=$NOTES" >> "$GITHUB_OUTPUT"
             echo "generate=false" >> "$GITHUB_OUTPUT"
           else
+            echo "::warning::未找到非空的 $NOTES，回退到自动生成的 release notes；notes 文件必须在打 tag 前提交"
             echo "body_path=" >> "$GITHUB_OUTPUT"
             echo "generate=true" >> "$GITHUB_OUTPUT"
           fi
