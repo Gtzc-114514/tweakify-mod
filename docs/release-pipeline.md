@@ -53,7 +53,7 @@
 | 类别 | 触发条件 | 注解 |
 | --- | --- | --- |
 | 工具链 | `find`/`head`/`unzip`/`python3` 任一缺失 | `runner 镜像缺少 <tool>，无法校验 jar 版本` |
-| 目录不存在 | `build/libs` 目录缺失（build 未产出） | `build/libs 不存在，build 步骤未产出` |
+| 目录不存在 | `build/libs` 缺失或不是目录 | `build/libs 不存在或不是目录（build 步骤未产出，或路径被同名文件占用）` |
 | 枚举失败 | 目录存在但 `find` 非零（权限/挂载异常） | `无法枚举 build/libs（目录存在但 find 失败，可能是权限或挂载问题）` |
 | 无匹配 jar | `find` 成功但零匹配 | `No main jar found in build/libs` |
 | 内容问题 | 无 `fabric.mod.json` / jar 损坏 / 缺 `version` | `无法从 <jar> 读取 fabric.mod.json 的 version（文件缺失、jar 损坏或缺少 version 字段）` |
@@ -98,7 +98,7 @@
 
 | # | 位置 | 内容 | 不修理由 |
 | --- | --- | --- | --- |
-| L1 | `release.yml` 的 `find` 行 | `find ... 2>/dev/null` 让 ENOENT（目录不存在）与 EACCES（权限）无法区分 | 只影响日志精细度；build 失败本身已足够醒目 |
+| L1 | `release.yml` 的 `find` 行 | ~~`find ... 2>/dev/null` 让 ENOENT 与 EACCES 无法区分~~ **已修（`c1d1a8c`）**：去掉 `2>/dev/null` 并新增 `[ ! -d ]` 预检，拆为「目录不存在」「枚举失败」两条注解 | 已完成，保留作历史记录 |
 | L2 | `release.yml` 的 `JAR=$(printf ... \| head -n1)` | 保留了管道路径（可用 `${JAR_LIST%%$'\n'*}` 替代） | 已验证不会触发 141；仅「理论上更健壮」 |
 | L3 | `release.yml` 的 `No main jar found in build/libs` 与 `Version mismatch:` 两条注解 | `No main jar found` 为英文、其余中文；`"version": ""` 的 jar 会归因为 mismatch | 既有文案；空 version 的 jar 现实中不会出现 |
 | H1 | 3 个 Mixin 中的 8 个 `require = 0` 注入点 | **已补齐（51/51）**：`LevelRendererOutlineStyleMixin`×1、`VillagerMixin`×6、`mixin/modmenu/ModsScreenScrollMixin`×1 均已配 `HookProbe` 探针，全仓 51 个注入点 1:1 覆盖 | 已完成，保留作历史记录 |
