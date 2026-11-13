@@ -61,7 +61,7 @@ Mixin hook active: <探针名>
 ```
 非注释 require = 0 注解 : 51
 HookProbe.markOnce 调用 : 51
-AtomicBoolean 探针字段  : 34（31 个 TWEAKIFY$XXX_PROBE + 3 个旧命名 TWEAKIFY$REPORTED，见 N1）
+AtomicBoolean 探针字段  : 34（全部为 TWEAKIFY$XXX_PROBE 命名）
 逐文件配平             : 28 个 mixin 文件全部 1:1，无遗漏
 ```
 
@@ -112,7 +112,7 @@ print("mixin 文件:", len(per_file),
 
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
-| N1 | `LevelExtractorBlockOutlineMixin`、`MinecartPickUpIronGolemMixin`、`ResourcePackCompatibilityMixin` | 这 3 个更早的探针字段仍用旧命名 `TWEAKIFY$REPORTED`（不是 `XXX_PROBE` 风格） | 纯命名一致性，不影响功能；未纳入 H1 范围 |
+| N1 | `LevelExtractorBlockOutlineMixin`、`MinecartPickUpIronGolemMixin`、`ResourcePackCompatibilityMixin` | **已统一**：3 个旧字段 `TWEAKIFY$REPORTED` 已改为 `CONNECTED_OUTLINE_PROBE` / `GOLEM_MINECART_PROBE` / `RESOURCE_PACK_PROBE`，全仓无 `_REPORTED` 残留 | 已完成，保留作历史记录 |
 | — | `docs/release-pipeline.md` 的 L1–L3 / H2 | CI 日志精细度与 jar 读取三合一注解 | 见该文档「已知但决定不改的点」 |
 
 > H1（3 个 Mixin 的 8 个注入点缺探针）已于 `56f1e07` 补齐，不再是待办项。
