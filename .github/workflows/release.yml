@@ -35,6 +35,22 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
+      # 标签名去掉 v 前缀后必须与 gradle.properties 的 version 完全一致。
+      # 现有 verify jar mod version 只比对 jar 与同一提交的 gradle.properties（两值恒等），
+      # 拦不住「标签与产物版本不一致」；两步合起来保证 标签 = gradle.properties = jar 三者一致。
+      # 放在 build 之前：标签写错时几秒内失败，不浪费构建时间。
+      - name: verify tag matches mod version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          GRADLE_VERSION=$(sed -n 's/^version=//p' gradle.properties | head -n 1)
+          echo "tag_version=$TAG_VERSION"
+          echo "gradle_version=$GRADLE_VERSION"
+          if [ "$TAG_VERSION" != "$GRADLE_VERSION" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} (version ${TAG_VERSION}) does not match gradle.properties version=${GRADLE_VERSION}"
+            exit 1
+          fi
       # build 已依赖 test：合并成一次调用，省掉一次 Gradle 启动与依赖解析。
       - name: build
         run: ./gradlew build
