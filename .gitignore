@@ -46,6 +46,9 @@ run/
 # 本地分析脚本（反编译 / 语言键校验 / Mixin 检查），不属于项目源码
 /*.py
 
+# python 缓存
+__pycache__/
+
 # java
 
 hs_err_*.log
