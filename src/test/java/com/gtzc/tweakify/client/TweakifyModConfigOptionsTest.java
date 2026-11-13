@@ -195,15 +195,16 @@ class TweakifyModConfigOptionsTest {
 		CountDownLatch release = new CountDownLatch(1);
 		AsyncFileWriter.execute(() -> {
 			blocked.countDown();
+			// 有界等待：即使断言在 try 前失败、release 未被调用，也不能永久占住共享写盘线程。
 			try {
-				release.await();
+				release.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
 		});
-		assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the writer should be blocked");
 
 		try {
+			assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the writer should be blocked");
 			config.functions.blockOffhandFallback = false;
 			TweakifyModConfigOptions.setPendingForTest(config.snapshot());
 			// flush 序列化当前 false，并在提交时分配落盘序号。
@@ -369,13 +370,14 @@ class TweakifyModConfigOptionsTest {
 		ExecutorService original = AsyncFileWriter.currentExecutorForTest();
 		ExecutorService submitOnly = new SubmitOnlyExecutor();
 		AsyncFileWriter.installExecutorForTest(submitOnly);
-
-		Path blocked = tempDir.resolve("callback-closed");
-		Files.createDirectories(blocked);
-		Files.writeString(blocked.resolve("occupied"), "x");
-		TweakifyModConfig config = new TweakifyModConfig(blocked);
-		TweakifyMod.CONFIG = config;
+		// 安装静态执行器后立即进 try：中间的 IO/构造一旦抛异常，finally 也能恢复执行器。
 		try {
+			Path blocked = tempDir.resolve("callback-closed");
+			Files.createDirectories(blocked);
+			Files.writeString(blocked.resolve("occupied"), "x");
+			TweakifyModConfig config = new TweakifyModConfig(blocked);
+			TweakifyMod.CONFIG = config;
+
 			// 产生一个早于整份保存的写批次，让 save 的 covered/advanced 非零。
 			TweakifyModConfigOptions.setPendingForTest(config.snapshot());
 			TweakifyModConfigOptions.flushPendingSaveNow();

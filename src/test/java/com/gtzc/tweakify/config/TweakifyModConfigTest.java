@@ -541,15 +541,11 @@ class TweakifyModConfigTest {
 		CountDownLatch release = new CountDownLatch(1);
 		AsyncFileWriter.execute(() -> {
 			blocked.countDown();
-			try {
-				release.await();
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
+			awaitQuietly(release);
 		});
-		assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the writer should be blocked");
 
 		try {
+			assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the writer should be blocked");
 			// 真正入队：序号必须在 prepareSaveHandle 提交时分配；
 			// 若改成执行期分配，旧任务会在同步写之后拿到更大序号并把磁盘覆盖回旧值。
 			AsyncFileWriter.WriteHandle stale = config.prepareSaveHandle();
@@ -581,7 +577,8 @@ class TweakifyModConfigTest {
 			lock.lock();
 			try {
 				locked.countDown();
-				release.await();
+				// 有界等待：即使 finally 前的异常导致 release 未被调用，也不能永久持住全局写锁。
+				release.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			} finally {
@@ -661,36 +658,36 @@ class TweakifyModConfigTest {
 			writerBusy.countDown();
 			awaitQuietly(release);
 		});
-		assertTrue(writerBusy.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
-			"the blocking write should start");
 
 		AtomicBoolean saveResult = new AtomicBoolean();
 		Thread saver = new Thread(() -> saveResult.set(config.save()));
 		saver.start();
-
-		// 等到 save 真正进入 Future.get 的等待，而不是还没入队（避免假通过）。
-		assertTrue(awaitThreadState(saver, Thread.State.TIMED_WAITING, START_TIMEOUT_SECONDS),
-			"save should be waiting for the writer thread");
-
-		// 核心契约：等待写盘期间不能持有配置监视器。
-		// 直接读线程转储里的 lockedMonitors，不依赖耗时阈值：
-		// 只要 await 被移进 synchronized 块，无论持锁多久都会在这里被捕获。
-		assertFalse(holdsMonitor(saver, config),
-			"save() must not hold the config monitor while waiting for the writer");
-
-		// 补充证据：另一个线程的 setter 必须能在有限时间内完成（锁未被占用）。
-		CountDownLatch probeDone = new CountDownLatch(1);
-		Thread probe = new Thread(() -> {
-			config.setBoolean("betterBold", true);
-			probeDone.countDown();
-		});
-		probe.start();
 		try {
+			assertTrue(writerBusy.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+				"the blocking write should start");
+
+			// 等到 save 真正进入 Future.get 的等待，而不是还没入队（避免假通过）。
+			assertTrue(awaitThreadState(saver, Thread.State.TIMED_WAITING, START_TIMEOUT_SECONDS),
+				"save should be waiting for the writer thread");
+
+			// 核心契约：等待写盘期间不能持有配置监视器。
+			// 直接读线程转储里的 lockedMonitors，不依赖耗时阈值：
+			// 只要 await 被移进 synchronized 块，无论持锁多久都会在这里被捕获。
+			assertFalse(holdsMonitor(saver, config),
+				"save() must not hold the config monitor while waiting for the writer");
+
+			// 补充证据：另一个线程的 setter 必须能在有限时间内完成（锁未被占用）。
+			CountDownLatch probeDone = new CountDownLatch(1);
+			Thread probe = new Thread(() -> {
+				config.setBoolean("betterBold", true);
+				probeDone.countDown();
+			});
+			probe.start();
 			assertTrue(probeDone.await(PROBE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS),
 				"setBoolean must not block while save() is waiting for the writer");
 			assertTrue(saver.isAlive(), "save should still be waiting when the setter finishes");
 		} finally {
-			// 断言失败也要放行：写盘线程是两个测试类共用的静态单线程，
+			// 任一断言失败也要放行：写盘线程是两个测试类共用的静态单线程，
 			// 卡在闸门上会把后续用例的等待窗口一起吃掉。
 			release.countDown();
 		}
