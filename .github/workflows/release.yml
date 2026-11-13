@@ -76,10 +76,18 @@ jobs:
           GRADLE_VERSION: ${{ steps.gv.outputs.version }}
         run: |
           set -euo pipefail
-          # 先确认工具链存在，避免把「镜像缺工具」误归因成「jar 内容问题」。
-          command -v unzip >/dev/null || { echo "::error::镜像缺少 unzip，无法读取 jar 内容"; exit 1; }
-          command -v python3 >/dev/null || { echo "::error::镜像缺少 python3，无法解析 fabric.mod.json"; exit 1; }
-          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | head -n1)
+          # 先确认工具链完整（find/head/unzip/python3），避免把「镜像缺工具」误归因成「jar 内容问题」。
+          for tool in find head unzip python3; do
+            command -v "$tool" >/dev/null \
+              || { echo "::error::runner 镜像缺少 $tool，无法校验 jar 版本"; exit 1; }
+          done
+          # find 失败通常意味着 build/libs 不存在（构建未产出），与「目录在但没有 jar」区分开。
+          if ! JAR_LIST=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' 2>/dev/null); then
+            echo "::error::无法枚举 build/libs（目录不存在或 find 失败）"
+            exit 1
+          fi
+          # head 从已捕获的字符串读取，避免生产者在管道内收到 SIGPIPE 导致 141 无注解中止。
+          JAR=$(printf '%s\n' "$JAR_LIST" | head -n1)
           if [ -z "$JAR" ]; then
             echo "::error::No main jar found in build/libs"
             exit 1
