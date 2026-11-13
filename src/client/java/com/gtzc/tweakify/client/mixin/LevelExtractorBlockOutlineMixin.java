@@ -30,11 +30,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Mixin(LevelExtractor.class)
 public class LevelExtractorBlockOutlineMixin {
 	@Unique
-	private static final AtomicBoolean TWEAKIFY$REPORTED = new AtomicBoolean();
+	private static final AtomicBoolean TWEAKIFY$CONNECTED_OUTLINE_PROBE = new AtomicBoolean();
 
 	@Inject(method = "extractBlockOutline", at = @At("TAIL"), require = 0)
 	private void tweakify$mergeConnectedOutline(Camera camera, LevelRenderState levelRenderState, CallbackInfo ci) {
-		HookProbe.markOnce(TWEAKIFY$REPORTED, "connectedBlockOutline");
+		HookProbe.markOnce(TWEAKIFY$CONNECTED_OUTLINE_PROBE, "connectedBlockOutline");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.modified.connectedBlockOutline) {
 			return;

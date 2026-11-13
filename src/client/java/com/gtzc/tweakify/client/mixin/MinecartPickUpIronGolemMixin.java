@@ -29,11 +29,11 @@ public class MinecartPickUpIronGolemMixin {
 	private int tweakify$pickupTicks;
 
 	@Unique
-	private static final AtomicBoolean TWEAKIFY$REPORTED = new AtomicBoolean();
+	private static final AtomicBoolean TWEAKIFY$GOLEM_MINECART_PROBE = new AtomicBoolean();
 
 	@Inject(method = "tick", at = @At("TAIL"), require = 0)
 	private void tweakify$pickUpIronGolem(CallbackInfo ci) {
-		HookProbe.markOnce(TWEAKIFY$REPORTED, "ironGolemMinecart");
+		HookProbe.markOnce(TWEAKIFY$GOLEM_MINECART_PROBE, "ironGolemMinecart");
 		AbstractMinecart minecart = (AbstractMinecart) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (!IronGolemMinecartState.shouldPickUp(config != null && config.modified.ironGolemRideMinecart,

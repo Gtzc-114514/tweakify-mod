@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Mixin(PackSelectionModel.EntryBase.class)
 public abstract class ResourcePackCompatibilityMixin {
 	@Unique
-	private static final AtomicBoolean TWEAKIFY$REPORTED = new AtomicBoolean();
+	private static final AtomicBoolean TWEAKIFY$RESOURCE_PACK_PROBE = new AtomicBoolean();
 
 	// 用 require = 0 避免单个界面功能拖垮启动；目标缺失由启动自检输出 ERROR，
 	// 实际注入是否生效由 HookProbe 的 resourcePackCompatibility 日志确认。
@@ -33,7 +33,7 @@ public abstract class ResourcePackCompatibilityMixin {
 		at = @At("RETURN"), require = 0)
 	private PackCompatibility tweakify$hideIncompatible(PackCompatibility original) {
 		// 入口探针：即使开关关闭或资源包本身兼容，也能确认注入点活着。
-		HookProbe.markOnce(TWEAKIFY$REPORTED, "resourcePackCompatibility");
+		HookProbe.markOnce(TWEAKIFY$RESOURCE_PACK_PROBE, "resourcePackCompatibility");
 		if (original == null || original == PackCompatibility.COMPATIBLE) {
 			return original;
 		}
