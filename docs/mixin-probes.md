@@ -2,7 +2,7 @@
 
 本文档说明 `require = 0` 注入点的 `HookProbe` 探针约定、覆盖情况与已知取舍。
 
-**基线**：本文档描述父提交 `604cd94`（2026-11-14）；新增或修改注入点时以实际代码为准。
+**基线**：本文档描述提交 `429e709`（2026-11-14，探针字段全部统一）之后的状态；新增或修改注入点时以实际代码为准。
 
 ## 为什么需要探针
 
@@ -112,7 +112,7 @@ print("mixin 文件:", len(per_file),
 
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
-| N1 | `LevelExtractorBlockOutlineMixin`、`MinecartPickUpIronGolemMixin`、`ResourcePackCompatibilityMixin` | **已统一**：3 个旧字段 `TWEAKIFY$REPORTED` 已改为 `CONNECTED_OUTLINE_PROBE` / `GOLEM_MINECART_PROBE` / `RESOURCE_PACK_PROBE`，全仓无 `_REPORTED` 残留 | 已完成，保留作历史记录 |
+| N1 | `LevelExtractorBlockOutlineMixin`、`MinecartPickUpIronGolemMixin`、`ResourcePackCompatibilityMixin` | **已统一**：3 个旧字段 `TWEAKIFY$REPORTED` 已改为 `CONNECTED_OUTLINE_PROBE` / `GOLEM_MINECART_PROBE` / `RESOURCE_PACK_PROBE`，`src` 下已无 `_REPORTED` 字段残留（本行文字为历史记录） | 已完成，保留作历史记录 |
 | — | `docs/release-pipeline.md` 的 L1–L3 / H2 | CI 日志精细度与 jar 读取三合一注解 | 见该文档「已知但决定不改的点」 |
 
 > H1（3 个 Mixin 的 8 个注入点缺探针）已于 `56f1e07` 补齐，不再是待办项。
