@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.client.MerchantMenuAccess;
+import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.world.inventory.MerchantMenu;
@@ -11,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 可见交易（客户端）：在每帧控件悬停判断里刷新交易按钮的锁定状态，
@@ -34,8 +36,13 @@ public class AbstractWidgetLockedTradeMixin {
 	@Unique
 	private static boolean tweakify$resolveFailed;
 
+	// isHoveredOrFocused 每帧对每个控件调用：用 AtomicBoolean 版本，标记后只剩一次 volatile 读。
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$LOCKED_TRADE_PROBE = new AtomicBoolean();
+
 	@Inject(method = "isHoveredOrFocused", at = @At("HEAD"), require = 0)
 	private void tweakify$updateLockedState(CallbackInfoReturnable<Boolean> cir) {
+		HookProbe.markOnce(TWEAKIFY$LOCKED_TRADE_PROBE, "visibleTradersHover");
 		AbstractWidget widget = (AbstractWidget) (Object) this;
 		if (tweakify$resolveFailed || !widget.getClass().getName().equals(TWEAKIFY$TRADE_BUTTON_CLASS)) {
 			return;

@@ -2,13 +2,18 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import com.gtzc.tweakify.util.HookProbe;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.world.entity.ExperienceOrb;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 经验球消失时间：与原版 ItemEntity 的处理方式一致。
@@ -23,22 +28,30 @@ public class ExperienceOrbDespawnMixin {
 	@Shadow
 	private int age;
 
+	// tick 每个经验球每 tick 执行一次：两处注入点都用 AtomicBoolean 版本，避免热路径上的集合哈希。
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$TICK_PROBE = new AtomicBoolean();
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$GUARD_PROBE = new AtomicBoolean();
+
 	// 两处都用 require = 0：其它模组整体重写 tick 时功能失效即可，不能让注入失败拖垮启动。
 	// 与 ItemEntityMixin 的处理保持一致（版本更新或模组冲突时优先降级而非崩溃）。
 	@Inject(method = "tick", at = @At("TAIL"), require = 0)
 	private void tweakify$expireWhenDue(CallbackInfo ci) {
+		HookProbe.markOnce(TWEAKIFY$TICK_PROBE, "xpOrbDespawnTick");
 		if (this.age >= tweakify$configuredLifetime()) {
 			((ExperienceOrb) (Object) this).discard();
 		}
 	}
 
-	@Redirect(method = "tick", require = 0, at = @At(value = "INVOKE",
+	@WrapOperation(method = "tick", require = 0, at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/entity/ExperienceOrb;discard()V"))
-	private void tweakify$guardVanillaDespawn(ExperienceOrb self) {
+	private void tweakify$guardVanillaDespawn(ExperienceOrb self, Operation<Void> original) {
+		HookProbe.markOnce(TWEAKIFY$GUARD_PROBE, "xpOrbDespawnGuard");
 		if (this.age < tweakify$configuredLifetime()) {
 			return;
 		}
-		self.discard();
+		original.call(self);
 	}
 
 	private static int tweakify$configuredLifetime() {

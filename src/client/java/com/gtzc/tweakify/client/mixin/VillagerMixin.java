@@ -4,6 +4,8 @@ import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.LockedTradeService;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +20,6 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Optional;
@@ -40,14 +41,14 @@ public class VillagerMixin {
 		LockedTradeService.restore((Villager) (Object) this, input);
 	}
 
-	@Redirect(method = "updateTrades", require = 0, at = @At(value = "INVOKE",
+	@WrapOperation(method = "updateTrades", require = 0, at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/entity/npc/villager/Villager;addOffersFromTradeSet(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/item/trading/MerchantOffers;Lnet/minecraft/resources/ResourceKey;)V"))
 	private void tweakify$useLockedGroup(Villager villager, ServerLevel level, MerchantOffers offers,
-										 ResourceKey<TradeSet> tradeSet) {
+										 ResourceKey<TradeSet> tradeSet, Operation<Void> original) {
 		HookProbe.markOnce("visibleTradersUpdateTrades");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.visibleTraders) {
-			((AbstractVillagerInvoker) villager).tweakify$addOffersFromTradeSet(level, offers, tradeSet);
+			original.call(villager, level, offers, tradeSet);
 			return;
 		}
 		// offers 为空表示首次惰性生成（当前等级交易），必须交给原版；
@@ -59,7 +60,7 @@ public class VillagerMixin {
 				return;
 			}
 		}
-		((AbstractVillagerInvoker) villager).tweakify$addOffersFromTradeSet(level, offers, tradeSet);
+		original.call(villager, level, offers, tradeSet);
 	}
 
 	@Inject(method = "die", at = @At("HEAD"), require = 0)

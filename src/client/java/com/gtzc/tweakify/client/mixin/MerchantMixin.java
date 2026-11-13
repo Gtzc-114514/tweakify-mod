@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.client.LockedTradeService;
+import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -18,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public interface MerchantMixin {
 	@Inject(method = "openTradingScreen", at = @At("TAIL"), require = 0)
 	private void tweakify$sendLockedTrades(Player player, Component title, int level, CallbackInfo ci) {
+		HookProbe.markOnce("visibleTradersSend");
 		if (!((Object) this instanceof Villager villager)) {
 			return;
 		}

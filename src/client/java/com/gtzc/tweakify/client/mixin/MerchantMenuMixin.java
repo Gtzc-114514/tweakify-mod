@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client.mixin;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.MerchantMenuAccess;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
@@ -13,6 +14,8 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 可见交易（客户端）：把服务端下发的锁定交易合并进 MerchantMenu.getOffers，
@@ -25,6 +28,12 @@ public abstract class MerchantMenuMixin implements MerchantMenuAccess {
 
 	@Unique
 	private int tweakify$originalCount;
+
+	// getOffers 在交易界面打开期间每帧被调用：用 AtomicBoolean 版本，标记后只剩一次 volatile 读。
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$COMBINE_PROBE = new AtomicBoolean();
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$CLEAR_PROBE = new AtomicBoolean();
 
 	@Override
 	public void tweakify$setLockedOffers(MerchantOffers offers) {
@@ -43,6 +52,7 @@ public abstract class MerchantMenuMixin implements MerchantMenuAccess {
 
 	@ModifyReturnValue(method = "getOffers", at = @At("RETURN"), require = 0)
 	private MerchantOffers tweakify$combineLockedOffers(MerchantOffers original) {
+		HookProbe.markOnce(TWEAKIFY$COMBINE_PROBE, "visibleTradersCombine");
 		// 每次都用最新的真实列表数量，避免补货/声望刷新后 originalCount 过时。
 		this.tweakify$originalCount = original.size();
 		TweakifyModConfig config = TweakifyMod.CONFIG;
@@ -58,6 +68,7 @@ public abstract class MerchantMenuMixin implements MerchantMenuAccess {
 
 	@Inject(method = "setOffers", at = @At("TAIL"), require = 0)
 	private void tweakify$clearLockedOnNewOffers(MerchantOffers offers, CallbackInfo ci) {
+		HookProbe.markOnce(TWEAKIFY$CLEAR_PROBE, "visibleTradersClear");
 		// 服务端菜单不会有锁定数据；短路也避免在服务端线程触碰客户端屏幕状态。
 		if (this.tweakify$lockedOffers == null) {
 			return;

@@ -2,6 +2,9 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import com.gtzc.tweakify.util.HookProbe;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -14,7 +17,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * 中键取物（服务端部分）：
@@ -30,24 +32,26 @@ public class ServerGamePacketListenerImplPickMixin {
 	@Shadow
 	public ServerPlayer player;
 
-	@Redirect(method = "handlePickItemFromBlock", require = 0,
+	@WrapOperation(method = "handlePickItemFromBlock", require = 0,
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;"
 			+ "getCloneItemStack(Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;Z)"
 			+ "Lnet/minecraft/world/item/ItemStack;"))
 	private ItemStack tweakify$fluidBucketInsteadOfAir(BlockState state, LevelReader level, BlockPos pos,
-													   boolean includeData) {
-		ItemStack original = state.getCloneItemStack(level, pos, includeData);
+													   boolean includeData, Operation<ItemStack> original) {
+		// 低频路径（仅中键取物包），用字符串版本即可；名字带 Server 后缀以区别于客户端同名探针。
+		HookProbe.markOnce("pickFluidBucketServer");
+		ItemStack cloneStack = original.call(state, level, pos, includeData);
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !original.isEmpty()) {
-			return original;
+		if (config == null || !cloneStack.isEmpty()) {
+			return cloneStack;
 		}
 		// 创造模式归“中键获得液体桶”；生存模式归“生存模式中键取物”。
 		boolean creative = this.player.hasInfiniteMaterials();
 		if (creative ? !config.pickFluidBucket : !config.survivalPickBlock) {
-			return original;
+			return cloneStack;
 		}
 		if (!(state.getBlock() instanceof LiquidBlock)) {
-			return original;
+			return cloneStack;
 		}
 		if (state.is(Blocks.WATER)) {
 			return new ItemStack(Items.WATER_BUCKET);
@@ -55,6 +59,6 @@ public class ServerGamePacketListenerImplPickMixin {
 		if (state.is(Blocks.LAVA)) {
 			return new ItemStack(Items.LAVA_BUCKET);
 		}
-		return original;
+		return cloneStack;
 	}
 }

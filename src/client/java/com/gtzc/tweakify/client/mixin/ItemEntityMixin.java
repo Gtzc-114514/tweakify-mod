@@ -3,13 +3,14 @@ package com.gtzc.tweakify.client.mixin;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,14 +49,14 @@ public class ItemEntityMixin {
 		}
 	}
 
-	@Redirect(method = "tick", at = @At(value = "INVOKE",
+	@WrapOperation(method = "tick", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/entity/item/ItemEntity;discard()V"), require = 0)
-	private void tweakify$guardVanillaDespawn(ItemEntity self) {
+	private void tweakify$guardVanillaDespawn(ItemEntity self, Operation<Void> original) {
 		HookProbe.markOnce(TWEAKIFY$GUARD_PROBE, "itemDespawnGuard");
 		// tick 开头对空物品实体也会调用 discard：这一处与寿命无关，必须照常丢弃。
 		// 空物品分支在原版 tick 里会先 return，age 不会增长；若拦截这一处，空物品实体会永不消失。
 		if (self.getItem().isEmpty() || self.getAge() >= tweakify$configuredLifetime(self)) {
-			self.discard();
+			original.call(self);
 		}
 	}
 

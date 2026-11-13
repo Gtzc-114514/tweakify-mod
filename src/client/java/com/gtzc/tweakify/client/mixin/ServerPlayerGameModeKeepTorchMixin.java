@@ -4,6 +4,8 @@ import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.KeepLastTorchFeature;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -12,7 +14,6 @@ import net.minecraft.world.item.context.UseOnContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,9 +31,10 @@ public class ServerPlayerGameModeKeepTorchMixin {
 	@Unique
 	private static final AtomicBoolean TWEAKIFY$KEEP_TORCH_PROBE = new AtomicBoolean();
 
-	@Redirect(method = "useItemOn", require = 0, at = @At(value = "INVOKE",
+	@WrapOperation(method = "useItemOn", require = 0, at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/item/ItemStack;useOn(Lnet/minecraft/world/item/context/UseOnContext;)Lnet/minecraft/world/InteractionResult;"))
-	private InteractionResult tweakify$skipLastTorchPlacement(ItemStack stack, UseOnContext context) {
+	private InteractionResult tweakify$skipLastTorchPlacement(ItemStack stack, UseOnContext context,
+		Operation<InteractionResult> original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		Player player = context.getPlayer();
 		if (config != null && config.keepLastTorch && player != null && !player.isCreative()) {
@@ -42,6 +44,6 @@ public class ServerPlayerGameModeKeepTorchMixin {
 				return InteractionResult.PASS;
 			}
 		}
-		return stack.useOn(context);
+		return original.call(stack, context);
 	}
 }
