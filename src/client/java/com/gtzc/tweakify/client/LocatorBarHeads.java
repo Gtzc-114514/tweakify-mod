@@ -105,10 +105,14 @@ public final class LocatorBarHeads {
 		String playerName = info.getProfile().name();
 
 		String filterMode = config.functions.locatorBarHeadFilter;
-		List<String> filterNames = TweakifyModConfig.LOCATOR_HEAD_FILTER_ALL.equals(filterMode)
-			? List.of()
-			: splitNames(config.getStringList(TweakifyModConfig.LOCATOR_HEAD_FILTER_NAMES_FIELD));
-		if (!LocatorHeadFilter.allows(filterMode, containsName(filterNames, playerName))) {
+		// 与参考实现一致：INCLUDE 只看包含名单，EXCLUDE 只看排除名单，ALL 不解析任何名单。
+		boolean inIncluded = TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE.equals(filterMode)
+			&& containsName(splitNames(config.getStringList(
+				TweakifyModConfig.LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD)), playerName);
+		boolean inExcluded = TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE.equals(filterMode)
+			&& containsName(splitNames(config.getStringList(
+				TweakifyModConfig.LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD)), playerName);
+		if (!LocatorHeadFilter.allows(filterMode, inIncluded, inExcluded)) {
 			// 参考实现：过滤命中时整条航点都不画，圆点一并隐藏。
 			return DotResult.HIDE;
 		}
@@ -165,7 +169,8 @@ public final class LocatorBarHeads {
 		int centerX = (x * POSE_UNIT + DOT_HALF_UNIT) - (scaledWidth / 2);
 		int centerY = (y * POSE_UNIT + DOT_HALF_UNIT) - (scaledHeight / 2);
 		if (borderRgb != NO_BORDER) {
-			int thickness = config.functions.locatorBarHeadBorderThickness * POSE_UNIT;
+			int thickness = (int) (TweakifyModConfig.locatorHeadBorderThicknessPixels(
+				config.functions.locatorBarHeadBorderThickness) * POSE_UNIT);
 			int argb = 0xFF000000 | borderRgb;
 			graphics.fill(centerX - thickness, centerY - thickness,
 				centerX + scaledWidth + thickness, centerY, argb);

@@ -193,6 +193,33 @@ class TweakifyModConfigTest {
 		assertTrue(rewritten.contains("\"hotkeyItemGroups\": \"L\""));
 	}
 
+	// 版本 4：定位栏单名单 + 模式迁移成 included/excluded 双名单，描边粗细数字迁移成四档代码。
+	@Test
+	void loadMigratesLocatorFilterNamesAndBorderThickness() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, """
+			{
+			  "configVersion": 3,
+			  "locatorBarHeadFilter": "exclude",
+			  "locatorBarHeadFilterNames": ["Notch", "jeb_"],
+			  "locatorBarHeadBorderThickness": 2
+			}
+			""");
+
+		TweakifyModConfig config = TweakifyModConfig.load(path);
+
+		assertEquals(List.of("Notch", "jeb_"), config.functions.locatorBarHeadExcludedPlayers,
+			"EXCLUDE 模式的旧名单应迁移到排除名单");
+		assertTrue(config.functions.locatorBarHeadIncludedPlayers.isEmpty());
+		assertEquals(TweakifyModConfig.LOCATOR_HEAD_BORDER_THICK,
+			config.functions.locatorBarHeadBorderThickness, "旧数字 2 应迁移为粗档");
+		assertEquals(TweakifyModConfig.CURRENT_CONFIG_VERSION, config.configVersion);
+		String rewritten = Files.readString(path);
+		assertFalse(rewritten.contains("locatorBarHeadFilterNames"), "旧键应在下次写盘时移除");
+		assertTrue(rewritten.contains("\"locatorBarHeadExcludedPlayers\""));
+		assertTrue(rewritten.contains("\"locatorBarHeadBorderThickness\": \"thick\""));
+	}
+
 	@Test
 	void loadIgnoresRemovedMiniHudHotkey() throws IOException {
 		Path path = configPath();

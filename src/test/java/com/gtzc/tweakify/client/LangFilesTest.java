@@ -184,7 +184,7 @@ class LangFilesTest {
 			"frostWalkerJumpFix", "locatorBarHeads", "locatorBarHeadScale",
 			"locatorBarHeadHatLayer", "locatorBarHeadBorder", "locatorBarHeadBorderThickness",
 			"locatorBarHeadBorderColor", "locatorBarHeadNames", "locatorBarHeadFilter",
-			"locatorBarHeadFilterNames", "locatorBarHeadNearbyOnly", "locatorBarCompass",
+			"locatorBarHeadIncludedPlayers", "locatorBarHeadExcludedPlayers", "locatorBarHeadNearbyOnly", "locatorBarCompass",
 			"locatorBarCompassColor", "locatorBarCompassShadow", "locatorBarCompassCoordinates",
 			"locatorBarAlwaysShowXp",
 			"signOpenContainer",
@@ -305,6 +305,10 @@ class LangFilesTest {
 			for (LocatorHeadColor color : LocatorHeadColor.values()) {
 				assertTrue(keys.contains(color.translationKey()),
 					"missing " + color.translationKey() + " in " + code);
+			}
+			for (LocatorHeadBorderThickness thickness : LocatorHeadBorderThickness.values()) {
+				assertTrue(keys.contains(thickness.translationKey()),
+					"missing " + thickness.translationKey() + " in " + code);
 			}
 		}
 	}

@@ -158,7 +158,8 @@ class TweakifyModConfigScreenTest {
 		assertTab("locatorBarHeadBorderColor", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarHeadNames", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarHeadFilter", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
-		assertTab("locatorBarHeadFilterNames", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadIncludedPlayers", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadExcludedPlayers", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarHeadNearbyOnly", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarCompass", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarCompassColor", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);

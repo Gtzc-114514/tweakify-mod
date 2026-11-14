@@ -10,6 +10,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.Entity;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
 /**
  * 定位栏指南针，逐行对齐 {@code Haage001/locator-heads} 的 {@code LocatorHeadsClient}：
  * 可视范围左右各 60 度、横向铺满 91 像素半宽、纵向固定 {@code screenHeight - 31}，
@@ -33,6 +36,10 @@ public final class LocatorCompass {
 	private static final int LABEL_X_OFFSET = -2;
 	private static final String[] CARDINALS = {"S", "W", "N", "E"};
 	private static final String[] COORDINATES = {"+Z", "-X", "-Z", "+X"};
+	// Flashback 回放检测：与参考实现一样用反射，未安装时视为否；只查找一次。
+	private static final String FLASHBACK_CLASS = "com.moulberry.flashback.Flashback";
+	private static Method flashbackReplayMethod;
+	private static boolean flashbackLookupDone;
 
 	private LocatorCompass() {
 	}
@@ -56,6 +63,10 @@ public final class LocatorCompass {
 		if (camera == null || client.level == null) {
 			return;
 		}
+		// 与参考实现一致：Flashback 回放时不画。
+		if (isInFlashbackReplay()) {
+			return;
+		}
 		float yaw = camera.getYRot();
 		int centerX = graphics.guiWidth() / 2;
 		int y = graphics.guiHeight() - COMPASS_Y_FROM_BOTTOM;
@@ -70,6 +81,29 @@ public final class LocatorCompass {
 			}
 			drawLabel(graphics, client, labels[index], x + LABEL_X_OFFSET, y,
 				labelAlpha(angleDiff), rgb, shadow);
+		}
+	}
+
+	// 与参考实现一致：回放时（Flashback）不画指南针；未安装时返回 false。
+	static boolean isInFlashbackReplay() {
+		if (!flashbackLookupDone) {
+			flashbackLookupDone = true;
+			try {
+				Method method = Class.forName(FLASHBACK_CLASS).getMethod("isInReplay");
+				if (Modifier.isStatic(method.getModifiers())) {
+					flashbackReplayMethod = method;
+				}
+			} catch (ReflectiveOperationException | LinkageError ignored) {
+				flashbackReplayMethod = null;
+			}
+		}
+		if (flashbackReplayMethod == null) {
+			return false;
+		}
+		try {
+			return Boolean.TRUE.equals(flashbackReplayMethod.invoke(null));
+		} catch (ReflectiveOperationException | LinkageError ignored) {
+			return false;
 		}
 	}
 

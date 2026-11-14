@@ -32,14 +32,39 @@ class LocatorBarHeadsTest {
 
 	@Test
 	void filtersFollowTheModeAndKeepEmptyListSemantics() {
-		assertTrue(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_ALL, false));
-		assertTrue(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE, true));
-		assertFalse(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE, false),
+		assertTrue(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_ALL, false, false));
+		assertTrue(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE, true, false));
+		assertFalse(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE, false, false),
 			"仅包含 + 空名单 = 全部隐藏（与参考实现一致）");
-		assertFalse(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE, true));
-		assertTrue(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE, false),
+		assertFalse(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE, false, true));
+		assertTrue(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE, false, false),
 			"排除 + 空名单 = 全部显示");
-		assertTrue(LocatorHeadFilter.allows("unknown", false), "未知取值回退成全部显示");
+		// 两份名单互不从属：INCLUDE 只看包含名单，EXCLUDE 只看排除名单。
+		assertTrue(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE, true, true));
+		assertFalse(LocatorHeadFilter.allows(TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE, true, true));
+		assertTrue(LocatorHeadFilter.allows("unknown", false, true), "未知取值回退成全部显示");
+	}
+
+	// 描边粗细必须与参考实现的四档表一致（0.3 / 0.5 / 1.0 / 2.0）。
+	@Test
+	void borderThicknessFollowsReferenceTable() {
+		assertEquals(0.3, TweakifyModConfig.locatorHeadBorderThicknessPixels(
+			TweakifyModConfig.LOCATOR_HEAD_BORDER_THIN));
+		assertEquals(0.5, TweakifyModConfig.locatorHeadBorderThicknessPixels(
+			TweakifyModConfig.LOCATOR_HEAD_BORDER_MEDIUM));
+		assertEquals(1.0, TweakifyModConfig.locatorHeadBorderThicknessPixels(
+			TweakifyModConfig.LOCATOR_HEAD_BORDER_NORMAL));
+		assertEquals(2.0, TweakifyModConfig.locatorHeadBorderThicknessPixels(
+			TweakifyModConfig.LOCATOR_HEAD_BORDER_THICK));
+		assertEquals(1.0, TweakifyModConfig.locatorHeadBorderThicknessPixels("unknown"), "未知取值回退 1.0");
+		assertEquals(TweakifyModConfig.LOCATOR_HEAD_BORDER_NORMAL,
+			TweakifyModConfig.DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS, "默认档位为标准 1.0");
+	}
+
+	// Flashback 不在测试类路径上：检测必须安全返回 false。
+	@Test
+	void flashbackReplayCheckIsSafeWithoutTheMod() {
+		assertFalse(LocatorCompass.isInFlashbackReplay(), "未安装 Flashback 时应返回 false");
 	}
 
 	@Test

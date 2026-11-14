@@ -80,7 +80,8 @@ public class TweakifyModConfig {
 	}
 
 	// 配置文件版本：字段语义发生变化时递增，并在 load() 里按旧版本做迁移。
-	public static final int CURRENT_CONFIG_VERSION = 3;
+	// 版本 4：定位栏单名单+模式改为 included/excluded 双名单，描边粗细改为四档代码。
+	public static final int CURRENT_CONFIG_VERSION = 4;
 
 	// 同步保存等待写盘完成的最长时间：超时后任务仍会按队列顺序继续执行，不会取消。
 	private static final long SAVE_TIMEOUT_MILLIS = 2000L;
@@ -101,8 +102,9 @@ public class TweakifyModConfig {
 	// 因此不参与物品 ID 规范化（否则整行会被当成非法 ID 丢掉）。
 	public static final String CUSTOM_ITEM_GROUPS_FIELD = "customItemGroups";
 
-	// 定位栏玩家过滤名单字段名：内容是玩家名（非物品 ID），客户端渲染前按分隔符拆开。
-	public static final String LOCATOR_HEAD_FILTER_NAMES_FIELD = "locatorBarHeadFilterNames";
+	// 定位栏玩家过滤名单字段名：与参考实现一致拆成“包含/排除”两个名单（内容是玩家名，非物品 ID）。
+	public static final String LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD = "locatorBarHeadIncludedPlayers";
+	public static final String LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD = "locatorBarHeadExcludedPlayers";
 
 	// 配置版本字段名：迁移步骤专用，档案加载时不复制（档案不应改写当前版本号）。
 	private static final String CONFIG_VERSION_FIELD = "configVersion";
@@ -245,10 +247,29 @@ public class TweakifyModConfig {
 	public static final List<String> SUPPORTED_LOCATOR_HEAD_BORDERS = List.of(
 		LOCATOR_HEAD_BORDER_OFF, LOCATOR_HEAD_BORDER_STATIC, LOCATOR_HEAD_BORDER_TEAM);
 
-	// 描边粗细（像素）。
-	public static final int MIN_LOCATOR_HEAD_BORDER_THICKNESS = 1;
-	public static final int MAX_LOCATOR_HEAD_BORDER_THICKNESS = 3;
-	public static final int DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS = 1;
+	// 描边粗细（与参考实现同一张表）：0.3 / 0.5 / 1.0 / 2.0 像素。
+	public static final String LOCATOR_HEAD_BORDER_THIN = "thin";
+	public static final String LOCATOR_HEAD_BORDER_MEDIUM = "medium";
+	public static final String LOCATOR_HEAD_BORDER_NORMAL = "normal";
+	public static final String LOCATOR_HEAD_BORDER_THICK = "thick";
+	public static final List<String> SUPPORTED_LOCATOR_HEAD_BORDER_THICKNESSES = List.of(
+		LOCATOR_HEAD_BORDER_THIN, LOCATOR_HEAD_BORDER_MEDIUM,
+		LOCATOR_HEAD_BORDER_NORMAL, LOCATOR_HEAD_BORDER_THICK);
+	public static final String DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS = LOCATOR_HEAD_BORDER_NORMAL;
+	
+	// 描边粗细代码 → 像素值（未知取值回退 1.0）。
+	public static double locatorHeadBorderThicknessPixels(String code) {
+		if (LOCATOR_HEAD_BORDER_THIN.equals(code)) {
+			return 0.3;
+		}
+		if (LOCATOR_HEAD_BORDER_MEDIUM.equals(code)) {
+			return 0.5;
+		}
+		if (LOCATOR_HEAD_BORDER_THICK.equals(code)) {
+			return 2.0;
+		}
+		return 1.0;
+	}
 
 	// 定位栏玩家名字显示时机：不显示 / 总是 / 仅注视时 / 仅玩家列表打开时。
 	public static final String LOCATOR_HEAD_NAMES_NEVER = "never";
@@ -415,6 +436,7 @@ public class TweakifyModConfig {
 				boolean corrected = config.sanitizeConfigVersion(root.has("configVersion"))
 					| config.migrateScrollListMemoryDefault(loadedVersion)
 					| config.migrateLegacyFeatureKeys(root)
+					| config.migrateLocatorHeadOptions(root)
 					| config.applyMissingListDefaults(root);
 				// 字段级校验：表驱动，新增数值/枚举字段未登记校验器时类加载期就失败。
 				corrected |= config.sanitizeAllFields();
@@ -594,6 +616,32 @@ public class TweakifyModConfig {
 		return changed;
 	}
 
+	// 版本 4：定位栏玩家过滤由“单名单 + 模式”改为“包含/排除”两个名单。
+	// 旧键不参与反序列化：从原始 JSON 读出后按当前模式写入对应名单，返回 true 让写盘时清掉旧键。
+	private boolean migrateLocatorHeadOptions(JsonObject root) {
+		JsonElement legacy = root.get("locatorBarHeadFilterNames");
+		if (legacy == null || !legacy.isJsonArray()) {
+			return false;
+		}
+		boolean exclude = LOCATOR_HEAD_FILTER_EXCLUDE.equals(functions.locatorBarHeadFilter);
+		List<String> target = exclude
+			? functions.locatorBarHeadExcludedPlayers
+			: functions.locatorBarHeadIncludedPlayers;
+		if (target.isEmpty()) {
+			for (JsonElement name : legacy.getAsJsonArray()) {
+				if (name.isJsonPrimitive() && name.getAsJsonPrimitive().isString()) {
+					String value = name.getAsString().trim();
+					if (!value.isEmpty()) {
+						target.add(value);
+					}
+				}
+			}
+		}
+		LOGGER.info("Migrating locator filter names into {}",
+			exclude ? LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD : LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD);
+		return true;
+	}
+
 	private static boolean legacyBoolean(JsonObject root, String key) {
 		JsonElement value = root.get(key);
 		return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean()
@@ -735,7 +783,9 @@ public class TweakifyModConfig {
 
 	// 自定义物品组定义等自由格式列表：整行内容不当作 ID 处理。
 	public static boolean isFreeFormListField(String name) {
-		return CUSTOM_ITEM_GROUPS_FIELD.equals(name);
+		return CUSTOM_ITEM_GROUPS_FIELD.equals(name)
+			|| LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD.equals(name)
+			|| LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD.equals(name);
 	}
 
 	private void rebuildCache() {

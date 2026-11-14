@@ -166,13 +166,14 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `locatorBarHeadScale` 头像尺寸 | 5 | 头像倍率档位（1 ~ 9）：0.5x / 0.6x / 0.7x / 0.8x / 1.0x / 1.1x / 1.2x / 1.3x / 1.5x；默认 5 = 原版圆点大小 |
 | `locatorBarHeadHatLayer` 显示帽子层 | 开 | 叠加玩家皮肤的第二层（帽子/头盔） |
 | `locatorBarHeadBorder` 头像描边 | `off` | `off` 不画 / `static` 固定颜色 / `team` 跟随计分板队伍颜色（无队伍时白色） |
-| `locatorBarHeadBorderThickness` 描边粗细 | 1 | 描边像素粗细（1 ~ 3） |
+| `locatorBarHeadBorderThickness` 描边粗细 | `normal` | 与参考实现同一张表：`thin` 0.3 / `medium` 0.5 / `normal` 1.0 / `thick` 2.0 像素 |
 | `locatorBarHeadBorderColor` 描边颜色 | `white` | 固定颜色描边使用的颜色；`team` 样式下忽略 |
 | `locatorBarHeadNames` 玩家名字 | `never` | `never` 从不 / `always` 总是 / `looking_at` 注视时（±20°）/ `player_list` 玩家列表打开时 |
-| `locatorBarHeadFilter` 玩家过滤 | `all` | `all` 全部 / `include` 仅名单内 / `exclude` 排除名单；名单为空时 `include` 全部隐藏、`exclude` 全部显示 |
-| `locatorBarHeadFilterNames` 过滤名单 | 空 | 玩家名，多个用逗号、分号、冒号或句点分隔，忽略大小写 |
+| `locatorBarHeadFilter` 玩家过滤 | `all` | `all` 全部 / `include` 仅包含名单 / `exclude` 排除名单；名单为空时 `include` 全部隐藏、`exclude` 全部显示 |
+| `locatorBarHeadIncludedPlayers` 包含名单 | 空 | 与参考实现一致：仅在 `include` 模式生效，名单内玩家保留头像；玩家名可写在条目中并用逗号、分号、冒号或句点分隔，忽略大小写 |
+| `locatorBarHeadExcludedPlayers` 排除名单 | 空 | 与参考实现一致：仅在 `exclude` 模式生效，名单内玩家隐藏；分隔符与包含名单相同 |
 | `locatorBarHeadNearbyOnly` 只显示附近玩家 | 关 | 只给当前已加载（在附近）的玩家画头像，远处航点整条隐藏（含圆点，与参考实现一致） |
-| `locatorBarCompass` 显示指南针 | 关 | 与参考实现同一套坐标与画法（固定 `高度 - 31`，字母左移 2 像素），边缘淡出；字母画在 HUD 最上层（条带底图、圆点、头像都在它下面）；开启时经验等级数字上移 6 像素避让（关闭时位置不变） |
+| `locatorBarCompass` 显示指南针 | 关 | 与参考实现同一套坐标与画法（固定 `高度 - 31`，字母左移 2 像素），边缘淡出；字母画在 HUD 最上层（条带底图、圆点、头像都在它下面）；开启时经验等级数字上移 6 像素避让；Flashback 回放时不显示 |
 | `locatorBarCompassColor` 指南针颜色 | `white` | 方位字母颜色 |
 | `locatorBarCompassShadow` 指南针描边 | 开 | 给方位字母加四向黑色描边，亮色天空下更清晰 |
 | `locatorBarCompassCoordinates` 坐标标记 | 关 | 用 `+Z` / `-X` / `-Z` / `+X` 代替 `S` / `W` / `N` / `E` |

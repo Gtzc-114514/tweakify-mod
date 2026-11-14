@@ -181,7 +181,8 @@ public final class ConfigCatalog {
 		entries.add(child("locatorBarHeads", "locatorBarHeadBorderColor"));
 		entries.add(child("locatorBarHeads", "locatorBarHeadNames"));
 		entries.add(child("locatorBarHeads", "locatorBarHeadFilter"));
-		entries.add(child("locatorBarHeads", "locatorBarHeadFilterNames"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadIncludedPlayers"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadExcludedPlayers"));
 		entries.add(child("locatorBarHeads", "locatorBarHeadNearbyOnly"));
 		entries.add(child("locatorBarHeads", "locatorBarCompass"));
 		entries.add(child("locatorBarHeads", "locatorBarCompassColor"));

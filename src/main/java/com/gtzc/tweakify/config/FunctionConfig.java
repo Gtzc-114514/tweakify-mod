@@ -180,15 +180,16 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile int locatorBarHeadScale = TweakifyModConfig.DEFAULT_LOCATOR_HEAD_SIZE;
 	public volatile boolean locatorBarHeadHatLayer = true;
 
-	// 描边：样式（关/固定色/队伍色）、粗细与固定颜色。
+	// 描边：样式（关/固定色/队伍色）、粗细（0.3/0.5/1.0/2.0 四档）与固定颜色。
 	public volatile String locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_OFF;
-	public volatile int locatorBarHeadBorderThickness = TweakifyModConfig.DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS;
+	public volatile String locatorBarHeadBorderThickness = TweakifyModConfig.DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS;
 	public volatile String locatorBarHeadBorderColor = TweakifyModConfig.LOCATOR_COLOR_WHITE;
 
-	// 玩家名字时机与玩家过滤（名单为空时 INCLUDE 全部隐藏、EXCLUDE 全部显示）。
+	// 玩家名字时机与玩家过滤（与参考实现一致：包含/排除各一份名单，名单为空时 INCLUDE 全部隐藏、EXCLUDE 全部显示）。
 	public volatile String locatorBarHeadNames = TweakifyModConfig.LOCATOR_HEAD_NAMES_NEVER;
 	public volatile String locatorBarHeadFilter = TweakifyModConfig.LOCATOR_HEAD_FILTER_ALL;
-	volatile List<String> locatorBarHeadFilterNames = new ArrayList<>();
+	volatile List<String> locatorBarHeadIncludedPlayers = new ArrayList<>();
+	volatile List<String> locatorBarHeadExcludedPlayers = new ArrayList<>();
 
 	// 只显示当前已加载的玩家（附近）。
 	public volatile boolean locatorBarHeadNearbyOnly = false;
@@ -637,16 +638,25 @@ public final class FunctionConfig extends ConfigSection {
 		return true;
 	}
 
-	// 修正描边粗细。
+	// 修正描边粗细：四档代码；旧版数字（1/2/3）按 1→normal、2 及以上→thick 迁移。
 	private boolean sanitizeLocatorHeadBorderThickness() {
-		int clamped = Math.max(TweakifyModConfig.MIN_LOCATOR_HEAD_BORDER_THICKNESS,
-			Math.min(TweakifyModConfig.MAX_LOCATOR_HEAD_BORDER_THICKNESS, locatorBarHeadBorderThickness));
-		if (clamped == locatorBarHeadBorderThickness) {
+		String value = locatorBarHeadBorderThickness;
+		String migrated = switch (value == null ? "" : value.trim()) {
+			case "1" -> TweakifyModConfig.LOCATOR_HEAD_BORDER_NORMAL;
+			case "2", "3" -> TweakifyModConfig.LOCATOR_HEAD_BORDER_THICK;
+			default -> value;
+		};
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_LOCATOR_HEAD_BORDER_THICKNESSES, migrated)) {
+			if (!migrated.equals(value)) {
+				LOGGER.info("Migrating locator head border thickness {} to {}", value, migrated);
+				locatorBarHeadBorderThickness = migrated;
+				return true;
+			}
 			return false;
 		}
-		LOGGER.warn("Clamping locatorBarHeadBorderThickness from {} to {}",
-			locatorBarHeadBorderThickness, clamped);
-		locatorBarHeadBorderThickness = clamped;
+		LOGGER.warn("Ignoring unsupported locator head border thickness: {}", value);
+		locatorBarHeadBorderThickness = TweakifyModConfig.DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS;
 		return true;
 	}
 

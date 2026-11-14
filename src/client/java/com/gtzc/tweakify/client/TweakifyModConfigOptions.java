@@ -234,10 +234,8 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 描边：样式（关/固定色/队伍色）、粗细与固定颜色。
 	public static final ConfigOptionList LOCATOR_BAR_HEAD_BORDER = new ConfigOptionList(
 		"locatorBarHeadBorder", LocatorHeadBorder.OFF).apply(GENERAL_KEY);
-	public static final ConfigInteger LOCATOR_BAR_HEAD_BORDER_THICKNESS = new ConfigInteger(
-		"locatorBarHeadBorderThickness", TweakifyModConfig.DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS,
-		TweakifyModConfig.MIN_LOCATOR_HEAD_BORDER_THICKNESS,
-		TweakifyModConfig.MAX_LOCATOR_HEAD_BORDER_THICKNESS).apply(GENERAL_KEY);
+	public static final ConfigOptionList LOCATOR_BAR_HEAD_BORDER_THICKNESS = new ConfigOptionList(
+		"locatorBarHeadBorderThickness", LocatorHeadBorderThickness.NORMAL).apply(GENERAL_KEY);
 	public static final ConfigOptionList LOCATOR_BAR_HEAD_BORDER_COLOR = new ConfigOptionList(
 		"locatorBarHeadBorderColor", LocatorHeadColor.WHITE).apply(GENERAL_KEY);
 	// 玩家名字时机与玩家过滤。
@@ -245,8 +243,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"locatorBarHeadNames", LocatorHeadNames.NEVER).apply(GENERAL_KEY);
 	public static final ConfigOptionList LOCATOR_BAR_HEAD_FILTER = new ConfigOptionList(
 		"locatorBarHeadFilter", LocatorHeadFilter.ALL).apply(GENERAL_KEY);
-	public static final ConfigStringList LOCATOR_BAR_HEAD_FILTER_NAMES = new ConfigStringList(
-		"locatorBarHeadFilterNames", ImmutableList.of()).apply(LISTS_KEY);
+	public static final ConfigStringList LOCATOR_BAR_HEAD_INCLUDED_PLAYERS = new ConfigStringList(
+		"locatorBarHeadIncludedPlayers", ImmutableList.of()).apply(LISTS_KEY);
+	public static final ConfigStringList LOCATOR_BAR_HEAD_EXCLUDED_PLAYERS = new ConfigStringList(
+		"locatorBarHeadExcludedPlayers", ImmutableList.of()).apply(LISTS_KEY);
 	public static final ConfigBoolean LOCATOR_BAR_HEAD_NEARBY_ONLY = new ConfigBoolean(
 		"locatorBarHeadNearbyOnly", false).apply(GENERAL_KEY);
 	// 指南针覆盖层：开关、颜色、文字阴影与坐标标记。

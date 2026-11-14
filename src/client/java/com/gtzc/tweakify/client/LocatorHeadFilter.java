@@ -43,12 +43,13 @@ public enum LocatorHeadFilter implements CodeOptionEntry {
 	}
 
 	// 名单为空时的语义与参考实现一致：INCLUDE 全部隐藏，EXCLUDE 全部显示。
-	public static boolean allows(String mode, boolean inList) {
+	// 与参考一致拆成 included / excluded 两份名单：INCLUDE 只看包含名单，EXCLUDE 只看排除名单。
+	public static boolean allows(String mode, boolean inIncluded, boolean inExcluded) {
 		if (TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE.equals(mode)) {
-			return inList;
+			return inIncluded;
 		}
 		if (TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE.equals(mode)) {
-			return !inList;
+			return !inExcluded;
 		}
 		return true;
 	}
