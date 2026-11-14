@@ -10,6 +10,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -22,6 +24,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -170,6 +173,34 @@ class CreativeItemGroupsTest {
 		assertTrue(weapons.matches("minecraft:trident"), "等价 ID 不参与包含匹配但能直接命中");
 	}
 
+	// 自定义组必须只在声明的标签页生效：否则 combat 页的 sword 组会在建筑页把剑也折叠起来。
+	@Test
+	void customGroupsOnlyApplyToTheirTab() {
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		ItemStack iron = stack(Items.IRON_SWORD);
+		ItemStack gold = stack(Items.GOLDEN_SWORD);
+		ItemStack diamond = stack(Items.DIAMOND_SWORD);
+
+		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+			"minecraft:building_blocks|楼梯|stair",
+			"minecraft:combat|剑|sword"));
+
+		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
+			CreativeModeTabs.BUILDING_BLOCKS));
+		List<ItemStack> stripped = CreativeItemGroups.stripMembers(
+			List.of(oak, stone, spruce, iron, gold, diamond));
+
+		assertEquals(4, stripped.size(), "当前页只应摘除楼梯成员，三把剑保持原样");
+		assertTrue(stripped.contains(iron));
+		assertTrue(stripped.contains(gold));
+		assertTrue(stripped.contains(diamond));
+		assertFalse(stripped.contains(stone), "楼梯成员已被摘除");
+		assertTrue(stripped.contains(oak), "组图标保留在列表中");
+	}
+
 	@Test
 	void toggleInsertsMembersAfterIconAndRemovesThem() {
 		ItemStack oak = stack(Items.OAK_STAIRS);
@@ -234,6 +265,63 @@ class CreativeItemGroupsTest {
 
 		CreativeItemGroups.installGroupsForTest(List.of(), List.of(oak, stone, spruce));
 		assertEquals(0, CreativeItemGroups.displayIndex(slots, 0), "基准变化后偏移必须失效重算");
+	}
+
+	// 创造模式列表滚动只更新槽位内容、不替换 slots 列表：偏移必须跟着重算，
+	// 否则滚动后组图标/成员标记与点击判定仍停留在第一页。
+	@Test
+	void displayIndexRecomputesAfterViewportScroll() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		ItemStack sand = stack(Items.SAND);
+		ItemStack gravel = stack(Items.GRAVEL);
+
+		SimpleContainer container = new SimpleContainer(3);
+		List<Slot> slots = List.of(
+			new Slot(container, 0, 0, 0), new Slot(container, 1, 0, 0), new Slot(container, 2, 0, 0));
+		container.setItem(0, dirt);
+		container.setItem(1, oak);
+		container.setItem(2, stone);
+
+		CreativeItemGroups.installGroupsForTest(List.of(), List.of(dirt, oak, stone, spruce, sand, gravel));
+		assertEquals(0, CreativeItemGroups.displayIndex(slots, 0));
+		assertEquals(2, CreativeItemGroups.displayIndex(slots, 2));
+
+		// 模拟滚动：slots 列表引用与槽位对象都不变，只换容器里的当前视图内容。
+		container.setItem(0, spruce);
+		container.setItem(1, sand);
+		container.setItem(2, gravel);
+
+		assertEquals(3, CreativeItemGroups.displayIndex(slots, 0), "滚动后必须重新计算偏移");
+		assertEquals(5, CreativeItemGroups.displayIndex(slots, 2));
+	}
+
+	// 配置变化只需重建分类页：快捷栏/背包页物品来自其他数据源，搜索页由搜索框维护。
+	@Test
+	void configChangeOnlyRefreshesCategoryContents() {
+		assertTrue(CreativeItemGroups.needsContentRefreshOnConfigChange(CreativeModeTab.Type.CATEGORY));
+		assertFalse(CreativeItemGroups.needsContentRefreshOnConfigChange(CreativeModeTab.Type.SEARCH));
+		assertFalse(CreativeItemGroups.needsContentRefreshOnConfigChange(CreativeModeTab.Type.HOTBAR));
+		assertFalse(CreativeItemGroups.needsContentRefreshOnConfigChange(CreativeModeTab.Type.INVENTORY));
+	}
+
+	// 轮播只用于展开的组：收起时图标固定为首个成员，关闭轮播时也不会返回替换图标。
+	@Test
+	void collapsedIconDoesNotRotate() {
+		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
+			Component.literal("Stairs"), List.of(
+				stack(Items.OAK_STAIRS), stack(Items.STONE_STAIRS), stack(Items.SPRUCE_STAIRS)));
+		TweakifyMod.CONFIG.functions.itemGroupsShowItems = true;
+
+		assertNull(CreativeItemGroups.rotatingIcon(group), "收起的组不轮播");
+
+		group.setVisible(true);
+		assertNotNull(CreativeItemGroups.rotatingIcon(group), "展开后开启显示组内物品才轮播");
+
+		TweakifyMod.CONFIG.functions.itemGroupsShowItems = false;
+		assertNull(CreativeItemGroups.rotatingIcon(group), "关闭显示组内物品后不轮播");
 	}
 
 	// 渲染快照：收起只标图标（可展开），展开时标图标 + 三个成员位（含图标物品自身）。

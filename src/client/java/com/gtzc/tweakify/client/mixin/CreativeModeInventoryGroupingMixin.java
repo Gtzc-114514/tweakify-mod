@@ -105,7 +105,9 @@ public class CreativeModeInventoryGroupingMixin {
 		CreativeItemGroups.clear();
 	}
 
-	// 配置变化（总开关/排序/轮播/默认组/自定义组）时重建当前页，避免必须重开界面。
+	// 配置变化（总开关/排序/默认组/自定义组）时重建当前页，避免必须重开界面。
+	// 只重建分类页：快捷栏/背包页的物品来自原版其他数据源，搜索页结果由搜索框维护，
+	// 用 getDisplayItems 重填会清空它们的预览内容。
 	@Inject(method = "containerTick", at = @At("TAIL"))
 	private void tweakify$refreshOnConfigChange(CallbackInfo ci) {
 		String signature = tweakify$configSignature();
@@ -117,6 +119,9 @@ public class CreativeModeInventoryGroupingMixin {
 			return;
 		}
 		CreativeItemGroups.beginTab(selectedTab);
+		if (!CreativeItemGroups.needsContentRefreshOnConfigChange(selectedTab.getType())) {
+			return;
+		}
 		this.refreshCurrentTabContents(selectedTab.getDisplayItems());
 	}
 
@@ -126,6 +131,7 @@ public class CreativeModeInventoryGroupingMixin {
 		return screen.getMenu() instanceof CreativeModeInventoryScreen.ItemPickerMenu picker ? picker : null;
 	}
 
+	// 轮播开关不参与签名：它只影响渲染，切换时不需要重建列表，已展开的组应保持展开。
 	@Unique
 	private static String tweakify$configSignature() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
@@ -134,7 +140,6 @@ public class CreativeModeInventoryGroupingMixin {
 		}
 		return config.functions.itemGroups + "|"
 			+ config.functions.itemGroupsSort + "|"
-			+ config.functions.itemGroupsShowItems + "|"
 			+ config.functions.itemGroupsAddAll + "|"
 			+ String.join("\n", config.getStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD));
 	}

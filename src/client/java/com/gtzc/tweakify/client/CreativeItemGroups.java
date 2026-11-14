@@ -88,10 +88,14 @@ public final class CreativeItemGroups {
 	// 当前标签页：切页时记录，物品列表重建时用它重建组定义。
 	private static CreativeModeTab currentTab;
 
-	// 槽位 → 显示索引的偏移：只取决于前两个槽位与基准列表，物品变化时一次性失效。
+	// 槽位 → 显示索引的偏移：只取决于前两个槽位与基准列表，物品变化时一次失效。
+	// 创造模式列表的滚动只改写槽位内容、不替换 slots 列表，因此除引用外还要比较前两个槽位的物品，
+	// 否则滚动后仍用第一页的偏移，图标/成员标记与点击判定会跟着错位。
 	private static int displayIndexOffset;
 	private static boolean displayIndexValid;
 	private static List<Slot> displayIndexSlots;
+	private static ItemStack displayIndexAnchor0 = ItemStack.EMPTY;
+	private static ItemStack displayIndexAnchor1 = ItemStack.EMPTY;
 
 	private CreativeItemGroups() {
 	}
@@ -308,12 +312,24 @@ public final class CreativeItemGroups {
 		if (currentTab == null || !isEnabled()) {
 			return;
 		}
+		String currentTabId = tabId(currentTab);
 		List<GroupDefinition> definitions = new ArrayList<>();
 		if (includeDefaultGroups()) {
-			definitions.addAll(definitionsFor(tabId(currentTab)));
+			definitions.addAll(definitionsFor(currentTabId));
 		}
-		definitions.addAll(parseCustomGroups(customGroupEntries()));
+		// 自定义组同样只在所属标签页生效：否则同一模式（如 log、sword）会在其他页误成组。
+		for (GroupDefinition definition : parseCustomGroups(customGroupEntries())) {
+			if (currentTabId.equals(definition.tabId())) {
+				definitions.add(definition);
+			}
+		}
 		GROUPS.addAll(create(definitions, displayItems));
+	}
+
+	// 配置变化时只重建分类页的物品列表：快捷栏/背包页的物品来自原版其他数据源，
+	// 用 getDisplayItems 重填会清空预览；搜索页结果由搜索框维护，也不应在配置变化时重建。
+	public static boolean needsContentRefreshOnConfigChange(CreativeModeTab.Type type) {
+		return type == CreativeModeTab.Type.CATEGORY;
 	}
 
 	// 参考实现的 setIndexes：收起时图标取基准列表里的首个位置、成员索引置 -1；
@@ -363,17 +379,27 @@ public final class CreativeItemGroups {
 	}
 
 	// 槽位 → 显示索引：渲染与点击判定共用。
-	// 偏移只取决于前两个槽位与基准列表，物品不变时可以一直复用。
+	// 偏移只取决于前两个槽位与基准列表：除了 slots 列表引用，还要看前两个槽位的物品，
+	// 因为滚动只更新槽位内容。物品相同（引用）时偏移必然相同，可以安全复用。
 	public static int displayIndex(List<Slot> slots, int slotIndex) {
 		if (slots.isEmpty()) {
 			return -1;
 		}
-		if (!displayIndexValid || displayIndexSlots != slots) {
+		ItemStack anchor0 = itemAt(slots, 0);
+		ItemStack anchor1 = itemAt(slots, 1);
+		if (!displayIndexValid || displayIndexSlots != slots
+			|| displayIndexAnchor0 != anchor0 || displayIndexAnchor1 != anchor1) {
 			displayIndexSlots = slots;
 			displayIndexOffset = offsetFor(slots, baseItems);
+			displayIndexAnchor0 = anchor0;
+			displayIndexAnchor1 = anchor1;
 			displayIndexValid = true;
 		}
 		return displayIndexOffset + slotIndex;
+	}
+
+	private static ItemStack itemAt(List<Slot> slots, int index) {
+		return index < slots.size() ? slots.get(index).getItem() : ItemStack.EMPTY;
 	}
 
 	// 参考实现用前两个槽位的物品反推基准偏移；取不到时归零。
@@ -450,6 +476,8 @@ public final class CreativeItemGroups {
 		groupByIconSlot = EMPTY_GROUPS;
 		displayIndexValid = false;
 		displayIndexSlots = null;
+		displayIndexAnchor0 = ItemStack.EMPTY;
+		displayIndexAnchor1 = ItemStack.EMPTY;
 	}
 
 	// 点击组图标：展开时把成员插到图标之后，收起时从同一位置移除，再按当前列表重建索引。
@@ -475,9 +503,9 @@ public final class CreativeItemGroups {
 		setIndexes();
 	}
 
-	// 组图标当前应显示的物品：关闭“显示组内物品”时返回 null（走原版图标）。
+	// 组图标当前应显示的物品：收起的组固定显示首个成员，只有展开且开启“显示组内物品”时才轮播。
 	public static ItemStack rotatingIcon(Group group) {
-		if (group == null || !showItemsInGroup() || group.items().isEmpty()) {
+		if (group == null || !group.visible() || !showItemsInGroup() || group.items().isEmpty()) {
 			return null;
 		}
 		int index = (int) ((Util.getMillis() / ICON_ROTATE_MILLIS) % group.items().size());
