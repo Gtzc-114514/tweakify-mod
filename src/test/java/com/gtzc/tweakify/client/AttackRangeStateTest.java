@@ -10,6 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 攻击范围的刷新频率与发布去重：内容未变时保留旧列表引用，
@@ -79,6 +80,18 @@ class AttackRangeStateTest {
 		AttackRangeState.publishEntries(new ArrayList<>(List.of(entry(0.0, 1.0f, 0.0))), 64);
 
 		assertEquals(1, AttackRangeState.entries().size(), "重置后应再次发布");
+	}
+
+	@Test
+	void emptyContentIsNotRepublished() {
+		AttackRangeState.publishEntries(new ArrayList<>(), 64);
+		List<AttackRangeState.Entry> first = AttackRangeState.entries();
+
+		// 空内容摘要恰为 0：与“尚未发布”的 null 必须区分，第二次应复用同一空列表。
+		AttackRangeState.publishEntries(new ArrayList<>(), 64);
+
+		assertSame(first, AttackRangeState.entries(), "摘要为 0 时也应视为已发布");
+		assertTrue(AttackRangeState.entries().isEmpty());
 	}
 
 	@Test
