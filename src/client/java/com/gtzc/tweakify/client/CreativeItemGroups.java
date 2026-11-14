@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -364,7 +365,8 @@ public final class CreativeItemGroups {
 		try {
 			tab = id == null || lookup == null ? null : lookup.apply(id);
 		} catch (RuntimeException e) {
-			// 契约：查找失败一律按未知处理，避免异常从切页/渲染路径向上冒。
+			// 契约：仅兜底 RuntimeException，Error（含 OOM/栈溢出）继续向上传播。
+			LOOKUP_FAILURES.incrementAndGet();
 			TweakifyMod.LOGGER.debug("Creative tab lookup failed for {}, treating as unknown", normalized, e);
 			return CustomTabWarning.UNKNOWN;
 		}
@@ -418,8 +420,8 @@ public final class CreativeItemGroups {
 
 	private static void warnInvalidCustomRows(List<String> entries) {
 		for (String entry : entries) {
-			if (entry == null || entry.isBlank()) {
-				// 整行空白视为未配置，与配置界面新增空行/尾随空白的行为一致。
+			if (isBlankRow(entry)) {
+				// 整行空白/不可见字符视为未配置。
 				continue;
 			}
 			String[] parts = entry.split(CUSTOM_FIELD_SEPARATOR, -1);
@@ -432,9 +434,20 @@ public final class CreativeItemGroups {
 		}
 	}
 
-	// 格式错误行的去重键：忽略大小写与首尾空白，同一行的写法变体只提示一次。
+	// 整行空白/不可见字符判定：isBlank() 不识别 NBSP/零宽/BOM，这里显式覆盖。
+	private static boolean isBlankRow(String entry) {
+		if (entry == null) {
+			return true;
+		}
+		return entry.codePoints().allMatch(cp ->
+			Character.isWhitespace(cp) || Character.isSpaceChar(cp)
+				|| cp == 0x200B || cp == 0xFEFF);
+	}
+
+	// 格式错误行的去重键：整行视觉空白已由 isBlankRow 跳过；这里只做 strip + 小写，
+	// 非空白行内部的 NBSP/零宽变体不参与归一化（仅影响重复提示次数，不影响分组）。
 	private static String invalidRowKey(String entry) {
-		return entry.trim().toLowerCase(Locale.ROOT);
+		return entry == null ? "" : entry.strip().toLowerCase(Locale.ROOT);
 	}
 
 	// 包私有：测试断言格式错误行只告警一次。
@@ -442,8 +455,21 @@ public final class CreativeItemGroups {
 		return WARNED_INVALID_ROWS.contains(invalidRowKey(entry));
 	}
 
+	// 包私有：测试断言异常降级确实发生（日志无法直接断言时的可观测计数）。
+	static int lookupFailureCountForTest() {
+		return LOOKUP_FAILURES.get();
+	}
+
+	// 包私有：测试断言归一化后的两行只登记一次（集合大小不增）。
+	static int warnedTabCountForTest() {
+		return WARNED_CUSTOM_TABS.size();
+	}
+
 	// 已告警过的标签页：避免每次列表重建都重复写日志（状态只在客户端主线程读写）。
 	private static final Set<String> WARNED_CUSTOM_TABS = new HashSet<>();
+
+	// 查找异常降级次数：纯诊断计数，不参与分组判定。
+	private static final AtomicInteger LOOKUP_FAILURES = new AtomicInteger();
 
 	// 配置变化时只重建分类页的物品列表：快捷栏/背包页的物品来自原版其他数据源，
 	// 用 getDisplayItems 重填会清空预览；搜索页结果由搜索框维护，也不应在配置变化时重建。
