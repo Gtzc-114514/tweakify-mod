@@ -113,6 +113,45 @@
 4. `git push origin vX.Y.Z`；
 5. 在 Actions 查看 release 运行：`resolve mod version` → `verify tag matches mod version` → `build` → `verify jar mod version` → `resolve release notes` → `create GitHub Release` 全绿即完成。
 
+## 发版前检查清单
+
+适用于 `a5dd88d` 之后的版本。逐项勾选后即可打标签；发现不适用或已失效的条目，顺手更新本节。
+
+### 一、版本与文档（打标签前完成）
+
+- [ ] `gradle.properties` 的 `version` 改为新版本号；
+- [ ] `README.md` 版本表同步（`| Tweakify Mod | X.Y.Z |`）；
+- [ ] `docs/release-notes/vX.Y.Z.md`：一句话概述 → 架构 / 兼容性 / 修复 / 构建与发布 → 末尾 `compare/v上一个...vX.Y.Z` 链接；
+- [ ] 若本次改了 Mixin 注入点：`docs/mixin-probes.md` 的覆盖数、字段数、基线一并同步。
+
+### 二、时序（最容易踩的坑）
+
+- [ ] notes 必须在**打标签之前**合入 main——tag 触发时 checkout 的是 tag 指向的提交，晚于 tag 的 notes 不会被看到；
+- [ ] 顺序：改版本号 + notes → 提交推送 main → 打 annotated 标签 → 推送标签 → 等 CI。
+
+### 三、CI 首次验证
+
+> `c1d1a8c` 之后的 CI 改动（6 类归因、参数展开取首行、无 head 预检）尚未被真实发布验证，下次发布是首次生效。
+
+- [ ] 6 类归因首次生效：正常构建下不会触发枚举失败分支，确认步骤名与顺序与本文档一致即可；
+- [ ] 参数展开取首行（`${JAR_LIST%%$'\n'*}`）与无 head 预检通过；
+- [ ] `verify tag matches mod version` 日志中 `tag_version` 与 `gradle_version` 一致；
+- [ ] `verify jar mod version` 日志中 `jar_version` 等于版本号。
+
+### 四、发布后核对
+
+- [ ] Release 正文以手写标题 `## Tweakify Mod X.Y.Z` 开头（非自动生成的 Full Changelog 单行）；
+- [ ] 产物：`tweakify-mod-X.Y.Z.jar` + `sources.jar`，文件名与版本一致；
+- [ ] 更新本文档：基线锚点 → 本次发布提交；「验证记录」追加本次 run 的 ID / 耗时 / 步骤结果 / 产物大小；
+- [ ] 若本次改动了 `release.yml`：核对 6 类表与注解文本；
+- [ ] 「已知不改」清单：L3/H2 仍在，若触及 jar 读取分支可顺带处理 H2。
+
+### 备注
+
+- 打标签用 annotated（`git tag -a`），消息格式 `Tweakify Mod X.Y.Z`；
+- 推送遇到 `Connection was reset` 时重试即可（本仓库多次出现，通常 2–3 次内成功）；
+- 提交信息文件用 Write 工具生成，避免 PowerShell `Set-Content -Encoding UTF8` 引入 BOM。
+
 ## 相关文件
 
 | 文件 | 作用 |
