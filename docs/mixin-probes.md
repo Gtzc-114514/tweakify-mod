@@ -124,3 +124,4 @@ print("mixin 文件:", len(per_file),
 | `src/main/java/com/gtzc/tweakify/util/HookProbe.java` | 探针实现（两种重载） |
 | `src/client/java/com/gtzc/tweakify/client/mixin/**` | 51 个 `require = 0` 注入点所在 |
 | `docs/release-pipeline.md` | 发布流水线说明与 L1–L3 / H2 取舍 |
+| `docs/tech-debt.md` | 技术债台账（测试覆盖缺口的评估结论） |

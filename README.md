@@ -364,6 +364,7 @@ Windows 下使用 `gradlew.bat`。需要环境变量 `JAVA_HOME` 指向 JDK 25�
 
 客户端 GameTest 已移除，`/tweakify` 的真实命令树权限不再有自动化覆盖。修改
 `TweakifyModCommands.canUseCommands` 或 `register` 中的 `requires` 后，请按本清单手动回归。
+测试覆盖缺口与相关取舍（如方块扫描 section 预筛）记录在 [`docs/tech-debt.md`](docs/tech-debt.md)。
 
 权限规则：**权限等级 ≥2（管理员；OP 默认等级 4 也满足）或单人世界房主放行**，其余玩家拒绝。该判定同时决定命令是否
 下发到客户端（补全列表里能否看到 `/tweakify`），因此“命令完全不出现”和“提示权限不足”
