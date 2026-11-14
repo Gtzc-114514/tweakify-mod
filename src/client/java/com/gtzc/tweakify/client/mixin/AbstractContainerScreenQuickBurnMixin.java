@@ -74,6 +74,9 @@ public class AbstractContainerScreenQuickBurnMixin {
 			return;
 		}
 		// 画在鼠标上方、物品 tooltip 之外，避免与 tooltip 重叠。
+		// 每次现建 Component：TranslatableContents 会按 Language 实例缓存解析结果，
+		// 而复用同一个 Component 会让模组语言覆盖（查询期逻辑，不替换 Language 实例）
+		// 在切换配置语言后不立即生效。这里每次悬停只建一个小对象，开销可忽略。
 		gui.text(screen.getFont(), Component.translatable("tweakify-mod.message.quick_burn.hint"),
 			mouseX + 8, mouseY - 24, 0xFFFF5555);
 	}
