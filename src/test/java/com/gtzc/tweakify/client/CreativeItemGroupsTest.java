@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -314,20 +315,30 @@ class CreativeItemGroupsTest {
 		assertEquals(3, stripped.size(), "无效标签页的自定义组不得摘除物品");
 	}
 
-	// ":" / "minecraft:"（空 path）端到端：配置行仍要留下一次告警，且不成组。
+	// ":" / "minecraft:"（空 path）端到端：两行归一化到同一键后只登记一次。
 	@Test
 	void emptyPathTabsWarnEndToEnd() {
 		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
-			":|空路径|stone",
-			"minecraft:|空路径2|stone"));
+		// 先只放第一行，确认登记一次。
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+			List.of(":|空路径|stone"));
 		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
 			CreativeModeTabs.BUILDING_BLOCKS));
 
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:"),
 			"空 path 的 tabId 必须告警");
-		assertFalse(CreativeItemGroups.warnUnsupportedCustomTab("minecraft:"),
-			"两行归一化后只告警一次");
+		int warnedAfterFirstRow = CreativeItemGroups.warnedTabCountForTest();
+		assertEquals(1, warnedAfterFirstRow, "第一行应登记一次");
+
+		// 追加归一化到同一键的第二行：去重集合不应增加。
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+			":|空路径|stone",
+			"minecraft:|空路径2|stone"));
+		CreativeItemGroups.warnUnsupportedCustomGroups();
+		assertEquals(warnedAfterFirstRow, CreativeItemGroups.warnedTabCountForTest(),
+			"两行归一化后只登记一次");
+		assertFalse(CreativeItemGroups.warnUnsupportedCustomTab("minecraft:"));
+
 		List<ItemStack> stripped = CreativeItemGroups.stripMembers(
 			List.of(stack(Items.STONE), stack(Items.STONE_BRICKS), stack(Items.SMOOTH_STONE)));
 		assertEquals(3, stripped.size(), "空 path 的自定义组不得摘除物品");
@@ -686,6 +697,17 @@ class CreativeItemGroupsTest {
 			CreativeItemGroups.customTabWarning("tweakify_test:boom", id -> {
 				throw new IllegalStateException("boom");
 			}), "查找异常按未知处理，不得冒泡");
+		int failuresBefore = CreativeItemGroups.lookupFailureCountForTest();
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning("tweakify_test:boom2", id -> {
+				throw new IllegalStateException("boom2");
+			}), "查找异常按未知处理，不得冒泡");
+		assertEquals(failuresBefore + 1, CreativeItemGroups.lookupFailureCountForTest(),
+			"异常降级必须留下诊断计数");
+		assertThrows(AssertionError.class,
+			() -> CreativeItemGroups.customTabWarning("tweakify_test:error", id -> {
+				throw new AssertionError("boom");
+			}), "Error 必须传播，不得被接缝吞掉");
 		CreativeModeTab search = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeModeTabs.SEARCH);
 		assertNotNull(search);
 		Map<Identifier, CreativeModeTab> searchTabs = Map.of(
@@ -747,6 +769,38 @@ class CreativeItemGroupsTest {
 			List.of(stack(Items.STONE), stack(Items.STONE_BRICKS), stack(Items.SMOOTH_STONE)));
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:search"),
 			"rebuildGroups 必须检查自定义组");
+	}
+
+	// clear() 必须同时清空组表与渲染快照，避免“图标在但点不动”。
+	@Test
+	void clearClearsGroupsAndRenderState() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
+			Component.literal("Stairs"), List.of(oak, stone, spruce));
+		CreativeItemGroups.installGroupsForTest(List.of(group), List.of(dirt, oak));
+		assertTrue(CreativeItemGroups.groupCountForTest() > 0);
+		assertNotNull(CreativeItemGroups.iconGroup(1));
+
+		CreativeItemGroups.clear();
+
+		assertEquals(0, CreativeItemGroups.groupCountForTest(), "clear 后组表必须清空");
+		assertNull(CreativeItemGroups.iconGroup(1), "clear 后渲染快照必须清空");
+	}
+
+	// 视觉空白行（空串/制表符/全角/NBSP/零宽/BOM）都视为未配置，不得刷格式错误告警。
+	@Test
+	void blankAndInvisibleRowsAreNotWarned() {
+		List<String> blankRows = List.of(
+			"", "   ", "\t", "\u3000", "\u00A0", "\u2007", "\u202F", "\u200B", "\uFEFF");
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, blankRows);
+		CreativeItemGroups.warnUnsupportedCustomGroups();
+		for (String row : blankRows) {
+			assertFalse(CreativeItemGroups.isInvalidRowWarnedForTest(row),
+				"空白/不可见行不得告警");
+		}
 	}
 
 	// 格式错误行（字段不足/空 tabId/空包含项）必须留下一次告警，合法行与空白行不得误报。
