@@ -50,4 +50,22 @@ class EffectDurationFormatterTest {
 	void clampsNegativeTicks() {
 		assertEquals("0", EffectDurationFormatter.format(-20));
 	}
+
+	// “固定按秒”选项：不使用分:秒与 h/d 缩写，但仍向上取整。
+	@Test
+	void alwaysSecondsModeKeepsRawSeconds() {
+		assertEquals("0", EffectDurationFormatter.formatSeconds(0));
+		assertEquals("1", EffectDurationFormatter.formatSeconds(1));
+		assertEquals("60", EffectDurationFormatter.formatSeconds(1200));
+		assertEquals("120", EffectDurationFormatter.formatSeconds(20 * 120));
+		assertEquals("86400", EffectDurationFormatter.formatSeconds(20 * 86400));
+	}
+
+	@Test
+	void formatFlagSelectsSecondsOnlyWhenEnabled() {
+		assertEquals("1:00", EffectDurationFormatter.format(1200, false));
+		assertEquals("60", EffectDurationFormatter.format(1200, true));
+		assertEquals("6h40", EffectDurationFormatter.format(20 * (400 * 60), false));
+		assertEquals("24000", EffectDurationFormatter.format(20 * (400 * 60), true));
+	}
 }

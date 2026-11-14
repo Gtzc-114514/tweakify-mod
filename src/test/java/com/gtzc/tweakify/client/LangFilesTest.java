@@ -193,7 +193,13 @@ class LangFilesTest {
 			"disableSlimeBlockSlowdown", "disableSlimeBlockBounce",
 			"disableHoneyBlockSlowdown", "disableHoneyBlockStick",
 			"debugInfoOverlay", "debugInfoShowPerformance", "debugInfoShowTarget",
-			"debugInfoShowHooks", "debugProbeReport");
+			"debugInfoShowBiome", "debugInfoShowSpeed", "debugInfoShowEntities",
+			"debugInfoShowConfigStats", "debugInfoShowEffects",
+			"debugInfoShowHooks", "debugProbeReport", "debugProbeReportCopy",
+			"debugEnabledFeaturesReport",
+			"barrierVisibilityMaxMarkers", "durabilityOverlayColorMode",
+			"copyItemIdNamespace", "statusEffectDurationAlwaysSeconds",
+			"attackRangeHostileOnly", "attackRangeIncludeInvisible");
 		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
 			Set<String> keys = keysOf(code);
 			for (String optionName : optionNames) {

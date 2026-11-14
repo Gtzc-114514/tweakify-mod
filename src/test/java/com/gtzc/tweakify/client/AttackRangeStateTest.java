@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +28,29 @@ class AttackRangeStateTest {
 	@Test
 	void refreshRateMatchesRequirement() {
 		assertEquals(12, AttackRangeState.REFRESHES_PER_SECOND, "攻击范围每秒刷新 12 次");
+	}
+
+	// 敌对/隐身两个子开关的真值表：默认保留原有“存活且可见”行为。
+	@Test
+	void isEligibleHonoursHostileAndInvisibleSwitches() {
+		assertTrue(AttackRangeState.isEligible(true, false, false, false, false, false, false),
+			"被动生物在默认配置下参与收集");
+		assertTrue(AttackRangeState.isEligible(true, false, false, false, true, false, false),
+			"敌对生物在默认配置下参与收集");
+		assertFalse(AttackRangeState.isEligible(true, false, false, false, false, true, false),
+			"开启“只显示敌对”后被动生物被过滤");
+		assertTrue(AttackRangeState.isEligible(true, false, false, false, true, true, false),
+			"开启“只显示敌对”后敌对生物仍参与收集");
+		assertFalse(AttackRangeState.isEligible(true, false, false, true, true, false, false),
+			"默认过滤隐身实体");
+		assertTrue(AttackRangeState.isEligible(true, false, false, true, true, false, true),
+			"开启“显示隐身”后隐身实体参与收集");
+		assertFalse(AttackRangeState.isEligible(false, false, false, false, true, false, true),
+			"死亡实体始终被过滤");
+		assertFalse(AttackRangeState.isEligible(true, true, false, false, true, false, true),
+			"已移除实体始终被过滤");
+		assertFalse(AttackRangeState.isEligible(true, false, true, false, true, false, true),
+			"旁观者始终被过滤");
 	}
 
 	@Test

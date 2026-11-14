@@ -66,4 +66,26 @@ class DurabilityOverlayRendererTest {
 			.toList();
 		assertEquals(TweakifyModConfig.SUPPORTED_DURABILITY_DISPLAYS, codes);
 	}
+
+	// 固定配色模式忽略剩余耐久分档。
+	@Test
+	void colorModeOverridesAutoBuckets() {
+		assertEquals(WHITE, DurabilityOverlayRenderer.colorFor(100, 100, DurabilityColorMode.WHITE));
+		assertEquals(WHITE, DurabilityOverlayRenderer.colorFor(1, 100, DurabilityColorMode.WHITE));
+		assertEquals(YELLOW, DurabilityOverlayRenderer.colorFor(100, 100, DurabilityColorMode.YELLOW));
+		assertEquals(YELLOW, DurabilityOverlayRenderer.colorFor(0, 100, DurabilityColorMode.YELLOW));
+		assertEquals(RED, DurabilityOverlayRenderer.colorFor(100, 100, DurabilityColorMode.RED));
+		assertEquals(RED, DurabilityOverlayRenderer.colorFor(0, 100, DurabilityColorMode.RED));
+		assertEquals(GREEN, DurabilityOverlayRenderer.colorFor(100, 100, DurabilityColorMode.AUTO));
+		assertEquals(RED, DurabilityOverlayRenderer.colorFor(0, 100, null),
+			"null 模式回退到自动分档");
+	}
+
+	@Test
+	void colorModeCodesMatchSupportedList() {
+		List<String> codes = Arrays.stream(DurabilityColorMode.values())
+			.map(DurabilityColorMode::code)
+			.toList();
+		assertEquals(TweakifyModConfig.SUPPORTED_DURABILITY_COLOR_MODES, codes);
+	}
 }
