@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.AsyncFileWriter;
 import com.gtzc.tweakify.util.HookProbe;
@@ -29,6 +30,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MerchantMenu;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -192,7 +194,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			return true;
 		});
 
-		// 探针报表（测试标签）：把已激活的 Mixin 行为探针打到聊天栏，
+		// 探针报表（测试标签）：把已激活的 Mixin 行为探针打到聊天栏或剪贴板，
 		// 排查“功能开了却没反应”时可直接确认钩子是否真的注入。
 		TweakifyModConfigOptions.DEBUG_PROBE_REPORT.getKeybind().setCallback((action, key) -> {
 			Minecraft client = Minecraft.getInstance();
@@ -200,6 +202,13 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 				return false;
 			}
 			List<String> hooks = HookProbe.reportedHooks();
+			if (TweakifyModConfigOptions.DEBUG_PROBE_REPORT_COPY.getBooleanValue()) {
+				client.keyboardHandler.setClipboard(hooks.isEmpty() ? "" : String.join("\n", hooks));
+				client.gui.chatListener().handleSystemMessage(Component.literal(hooks.isEmpty()
+					? "[Tweakify] no mixin hook has fired yet (clipboard cleared)"
+					: "[Tweakify] copied " + hooks.size() + " active hooks to the clipboard"), false);
+				return true;
+			}
 			if (hooks.isEmpty()) {
 				client.gui.chatListener().handleSystemMessage(
 					Component.literal("[Tweakify] no mixin hook has fired yet"), false);
@@ -210,6 +219,32 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			for (String hook : hooks) {
 				client.gui.chatListener().handleSystemMessage(
 					Component.literal(" - " + hook), false);
+			}
+			return true;
+		});
+
+		// 已启用功能报表（测试标签）：只列根级布尔开关，用于快速核对当前配置组合。
+		TweakifyModConfigOptions.DEBUG_ENABLED_FEATURES_REPORT.getKeybind().setCallback((action, key) -> {
+			Minecraft client = Minecraft.getInstance();
+			if (client.gui == null || TweakifyMod.CONFIG == null) {
+				return false;
+			}
+			List<String> enabled = new ArrayList<>();
+			for (ConfigCatalog.Entry entry : ConfigCatalog.commandEntries()) {
+				if (entry.isRoot()
+					&& TweakifyMod.CONFIG.getBoolean(entry.name())) {
+					enabled.add(entry.name());
+				}
+			}
+			if (enabled.isEmpty()) {
+				client.gui.chatListener().handleSystemMessage(
+					Component.literal("[Tweakify] no root toggle is enabled"), false);
+				return true;
+			}
+			client.gui.chatListener().handleSystemMessage(
+				Component.literal("[Tweakify] enabled root toggles: " + enabled.size()), false);
+			for (String name : enabled) {
+				client.gui.chatListener().handleSystemMessage(Component.literal(" - " + name), false);
 			}
 			return true;
 		});
