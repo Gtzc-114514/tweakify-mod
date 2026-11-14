@@ -237,10 +237,12 @@ public final class CreativeItemGroups {
 
 	// 面板注入点：切换标签页时只重置状态，真正的成组在随后的列表重建里完成。
 	// 这样 selectTab 与“标签内容刷新”两条路径共用同一个入口，不会出现“列表换了、组还是旧的”。
+	// 先检查自定义组引用的标签页：搜索/背包/快捷栏页也要给出配置无效的反馈。
 	public static void beginTab(CreativeModeTab tab) {
 		currentTab = tab;
 		GROUPS.clear();
 		baseItems = new ArrayList<>();
+		warnUnsupportedCustomGroups();
 		resetRenderState();
 	}
 
@@ -317,6 +319,9 @@ public final class CreativeItemGroups {
 		if (currentTab == null || !isEnabled()) {
 			return;
 		}
+		// 先检查全部自定义组引用：无效/非分类页只告警一次。
+		// 这段在类型门禁之前，因此搜索/背包页也能得到反馈。
+		warnUnsupportedCustomGroups();
 		// 分组只作用于分类页：快捷栏/背包页的物品来自原版其他数据源，搜索页由搜索框维护。
 		if (currentTab.getType() != CreativeModeTab.Type.CATEGORY) {
 			return;
@@ -330,26 +335,64 @@ public final class CreativeItemGroups {
 		for (GroupDefinition definition : parseCustomGroups(customGroupEntries())) {
 			if (currentTabId.equals(definition.tabId())) {
 				definitions.add(definition);
-			} else {
-				// 拼写错误或引用了不存在的标签页时只提示一次，避免“配了却无效”的沉默失败。
-				warnUnknownCustomTab(definition.tabId());
 			}
 		}
 		GROUPS.addAll(create(definitions, displayItems));
 	}
 
-	// 已提示过的未知标签页：避免每次列表重建都重复写日志（状态只在客户端主线程读写）。
-	private static final Set<String> WARNED_CUSTOM_TABS = new HashSet<>();
+	// 告警类型：未注册/语法非法，或已注册但不是分类页（搜索/快捷栏/背包）。
+	enum CustomTabWarning {
+		UNKNOWN,
+		NON_CATEGORY
+	}
 
-	private static void warnUnknownCustomTab(String tabId) {
-		if (tabId.isEmpty() || !WARNED_CUSTOM_TABS.add(tabId)) {
-			return;
+	// 包私有纯谓词：null 表示该标签页受支持（分类页或空）；否则需要告警。
+	static CustomTabWarning customTabWarning(String tabId) {
+		if (tabId == null || tabId.isEmpty()) {
+			return null;
 		}
 		Identifier id = Identifier.tryParse(tabId);
-		if (id == null || !BuiltInRegistries.CREATIVE_MODE_TAB.containsKey(id)) {
+		CreativeModeTab tab = id == null ? null
+			: BuiltInRegistries.CREATIVE_MODE_TAB.get(id).map(holder -> holder.value()).orElse(null);
+		if (tab == null) {
+			return CustomTabWarning.UNKNOWN;
+		}
+		return tab.getType() == CreativeModeTab.Type.CATEGORY ? null : CustomTabWarning.NON_CATEGORY;
+	}
+
+	// 包私有：输出告警并返回是否真的写了一条日志；同一标签页每个屏幕会话只提示一次。
+	// 先判定再写入集合，保证去重集合的语义是“已告警过的标签页”，而不是“见过的标签页”。
+	static boolean warnUnsupportedCustomTab(String tabId) {
+		CustomTabWarning warning = customTabWarning(tabId);
+		if (warning == null || tabId == null || !WARNED_CUSTOM_TABS.add(tabId)) {
+			return false;
+		}
+		if (warning == CustomTabWarning.UNKNOWN) {
 			TweakifyMod.LOGGER.warn("Ignoring custom item group for unknown creative tab: {}", tabId);
+		} else {
+			TweakifyMod.LOGGER.warn(
+				"Ignoring custom item group for non-category tab (only category pages are grouped): {}", tabId);
+		}
+		return true;
+	}
+
+	// 包私有：测试断言“不需要告警的标签页不占用去重名额”。
+	static boolean isCustomTabWarnedForTest(String tabId) {
+		return WARNED_CUSTOM_TABS.contains(tabId);
+	}
+
+	// 检查配置中的全部自定义组（不受当前页类型限制）：切页与列表重建都调用。
+	public static void warnUnsupportedCustomGroups() {
+		if (!isEnabled()) {
+			return;
+		}
+		for (GroupDefinition definition : parseCustomGroups(customGroupEntries())) {
+			warnUnsupportedCustomTab(definition.tabId());
 		}
 	}
+
+	// 已告警过的标签页：避免每次列表重建都重复写日志（状态只在客户端主线程读写）。
+	private static final Set<String> WARNED_CUSTOM_TABS = new HashSet<>();
 
 	// 配置变化时只重建分类页的物品列表：快捷栏/背包页的物品来自原版其他数据源，
 	// 用 getDisplayItems 重填会清空预览；搜索页结果由搜索框维护，也不应在配置变化时重建。
@@ -530,10 +573,15 @@ public final class CreativeItemGroups {
 
 	// 组图标当前应显示的物品：收起的组固定显示首个成员，只有展开且开启“显示组内物品”时才轮播。
 	public static ItemStack rotatingIcon(Group group) {
+		return rotatingIcon(group, Util.getMillis());
+	}
+
+	// 重载：渲染传当前时间，单测注入固定时刻验证轮播顺序。
+	static ItemStack rotatingIcon(Group group, long millis) {
 		if (group == null || !group.visible() || !showItemsInGroup() || group.items().isEmpty()) {
 			return null;
 		}
-		int index = (int) ((Util.getMillis() / ICON_ROTATE_MILLIS) % group.items().size());
+		int index = (int) ((millis / ICON_ROTATE_MILLIS) % group.items().size());
 		return group.items().get(index);
 	}
 

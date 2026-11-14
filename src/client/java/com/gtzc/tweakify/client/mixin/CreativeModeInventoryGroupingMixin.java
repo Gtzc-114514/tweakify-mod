@@ -115,8 +115,13 @@ public class CreativeModeInventoryGroupingMixin {
 			return;
 		}
 		this.tweakify$lastConfigSignature = signature;
-		if (selectedTab == null
-			|| !CreativeItemGroups.needsContentRefreshOnConfigChange(selectedTab.getType())) {
+		if (selectedTab == null) {
+			return;
+		}
+		if (!CreativeItemGroups.needsContentRefreshOnConfigChange(selectedTab.getType())) {
+			// 非分类页不重建列表，但仍要检查自定义组配置：
+			// 搜索/背包页引用了非分类页标签页时也要给出一次反馈，而不是静默无效。
+			CreativeItemGroups.warnUnsupportedCustomGroups();
 			return;
 		}
 		CreativeItemGroups.beginTab(selectedTab);
