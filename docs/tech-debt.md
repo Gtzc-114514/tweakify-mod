@@ -5,34 +5,47 @@
 
 ## 已评估条目
 
-状态列取值：`暂缓，<理由>` / `已修复（<摘要>，见详情）` / `复测未达触发条件（YYYY-MM-DD，见 T3 验证清单）`。
+状态列取值：`暂缓，<理由>` / `暂缓，<理由>（复评 YYYY-MM-DD，见详情）` / `已修复（<摘要>，见详情）` / `复测未达触发条件（YYYY-MM-DD，见 T3 验证清单）`。复评日期只写最近一次，历史评估保留在详情段落中。
 
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
-| T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest |
+| T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest（复评 2026-11-15，见详情） |
 | T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（摘要去重 + 精确比对，见详情） |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高 |
 
 ## T1 详情：section 预筛的集成测试缺口
 
-- **现状**：`sectionNeedsScan(...)` 的纯函数决策（屏障/基岩开关组合、section 索引越界、null section）已有 21 个单测覆盖；
-  未覆盖的是 `ScanJob` 中一行接线 `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`，
+- **现状**：`sectionNeedsScan(...)` 的纯函数决策（屏障/基岩开关组合、section 索引越界、null section）由
+  `BlockMarkerScannerTest` 中 7 个用例（20 处调用断言）覆盖；该类现有 8 个用例，v1.0.4 移除静止降频时
+  删掉的是 13 个调度类用例，section 覆盖未减少。未覆盖的是 `ScanJob` 中一行接线
+  `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`，
   以及它与真实 `LevelChunk.getSectionIndex/getSectionsCount/getSection` 的交互。
 - **失败模式**：把该行改成 `= true` 只是取消预筛，扫描到的方块与最终标记结果仍然正确，
   只会让方块读取量与耗时回到优化前的水平——属于**性能回退**，不是功能错误。
+- **触发条件**：实机出现可感知的扫描性能回退（判定口径见「后续观察条件」），
+  或为其他高价值端到端场景重建 GameTest 基础设施。
 - **不补 GameTest 的理由**：
   1. 功能正确性风险为零：被跳过的 section 在原逐方块逻辑下也不会产出任何标记（纯函数决策 + `maybeHas` 语义已论证）；
   2. 项目已刻意移除自动 GameTest（客户端启动、依赖与测试世界构造都要重建，CI 不再启动客户端），
      为捕获一个常量变异重建整套基础设施，维护成本远高于收益；
   3. 该变异只可能由人为删除优化引入，diff 中只有一行，代码审查成本极低。
 - **缓解措施**：
-  - 赋值处已有注释说明「false 时整段跳过方块读取」，误改时容易被审查注意到；
-  - 若未来为更高价值的端到端场景重建 GameTest 基础设施，顺带补一条「屏障/基岩 section 跳过」场景，边际成本才低；
+  - `ScanJob.chunkMayContain` 字段声明处与 `scanLayer` 跳过分支都有「整段跳过方块读取」注释，误改时容易被审查注意到；
+  - 若未来重建 GameTest 基础设施（触发条件见「后续观察条件」），顺带补一条「屏障/基岩 section 跳过」场景，边际成本才低；
   - 实机排查性能回退时，可参考 v1.0.3 验证期间使用的 `[perf-sample]` 统计方式（已在合入前移除）。
-- **最近评估（2026-11-15）**：触发条件当前不成立——`chunkMayContain` 赋值与注释仍在 `BlockMarkerScanner.scanLayer` 中，
-  1.0.4/1.0.5 的扫描改造未触碰该行，且无性能回退报告；项目未重建 GameTest。
+- **最近评估（2026-11-15）**：触发条件当前不成立——`chunkMayContain` 赋值仍在 `ScanJob.scanLayer` 的
+  `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`；
+  该行最后一次文本变更为 `bdbd765`（v1.0.3 之前），1.0.4 的扫描改造（半径 16→32、刷新 2 次/秒→6 次/秒）未触碰该行，
+  1.0.5 未改扫描（仅改发布侧缓存去重）。期间未收到回退反馈，但项目已无性能遥测（`[perf-sample]` 合入前移除），
+  「无反馈」不等于「无回退」，1.0.4 的负载提升需按下方口径抽样确认。项目未重建 GameTest。
   结论：维持“暂缓，不补 GameTest”（优先级 P3）。
-  后续观察条件：出现真实误删/改坏导致的可感知性能回退，或为其他高价值场景重建 GameTest 基础设施时重新评估。
+- **后续观察条件**：
+  - 触发：出现真实误删/改坏导致的可感知性能回退，或为其他高价值场景重建 GameTest 基础设施；
+  - 判定口径：同一场景对 `Render thread` 采样 `BlockMarkerScanner.tick`（含 `ScanJob.step`/`scanLayer`），
+    占比相对上一版本上升 > 2 个百分点，或单轮 `scanMs` 比 v1.0.3 基线（约 1.5 ms/轮）翻倍以上；
+    场景取 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) 的 A/B/C/D；
+  - 闭环：重新评估后在本条追加一行「最近评估（YYYY-MM-DD）」，并同步 T1 表格状态为
+    「暂缓，不补 GameTest（复评 YYYY-MM-DD，见详情）」。
 
 ## T2 详情：顶点缓存的失效粒度过粗
 
