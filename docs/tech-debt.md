@@ -8,7 +8,7 @@
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
 | T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest |
-| T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 暂缓，待出现 GC 或帧时间证据 |
+| T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（内容摘要去重，见详情） |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高 |
 
 ## T1 详情：section 预筛的集成测试缺口
@@ -43,6 +43,10 @@
   三种方案都不改变“引用变化即失效”的契约注释，只减少无效重建。
 - **触发条件**：实机出现 GC 抖动或帧时间周期性尖峰，且 profiler 显示几何重建占 tick 时间超过约 1%；
   或把基岩/攻击范围上限调到 256 并同时开启多个渲染功能时。在此之前保持现状。
+- **修复记录**：`BedrockHighlightState.setMarkers` 与 `AttackRangeState.publishEntries` 在发布前计算内容摘要
+  （基岩：size + `Marker.hashCode()`；攻击范围：size + 坐标/半径，不含随玩家移动变化的 `distanceSq`），
+  摘要相同则保留旧列表引用，顶点缓存按引用比较自然跳过重建；`clear()` 与 `resetForTest()` 会重置摘要。
+  摘要为 31 进制哈希，碰撞概率极低，命中也只是少重建一次（几何停在上一份内容），不会画出错误几何。
 
 ## T3 详情：扫描与收集仍在主线程分帧执行
 
