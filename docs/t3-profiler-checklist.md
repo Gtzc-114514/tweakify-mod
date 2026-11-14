@@ -26,6 +26,8 @@ T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRan
 | E | 刷怪场或村庄（≥64 生物，超过上限 64 时只保留最近的） | 攻击范围开启（距离 48、上限 64） | 实体收集侧 |
 
 每个场景取 3 轮结果的中位值，再与基线版本（v1.0.4）同场景的中位值对比（A/B/C；D 不参与回退判读，T1 回退判据）。
+基线与当前版本均按「冷启动 1 轮 + 热缓存 2 轮」的同一构成采集；3 轮明细记入 §六，
+各场景中位值填入 §六 末尾的「A/B/C/D/E 中位」行（tick 占比与 `avgLayerUs` 取中位，MSPT/FPS 亦取中位），版本间对比只用中位行。
 
 ## 三、采集步骤
 
@@ -36,9 +38,12 @@ T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRan
 3. 静止 60 秒后开始移动 60 秒；
 4. `/spark profiler stop`，保存火焰图链接；
 5. `/spark tickmonitor --threshold-tick 50` 观察超过 50 ms 的 tick（避免每条 tick 都输出）；
-6. 单层耗时：用火焰图中 `BlockMarkerScanner.tick` 的累计占比 × 该轮 tick 平均时长（`/spark health` 的 p50）
-   ÷ 该轮实际扫描层数（半径 32 为 65 层/轮）估算 `avgLayerUs`；需要更高精度时在 `ScanJob.step()` 临时加
-   `System.nanoTime()` 累加（合入前移除）。
+6. 单层耗时：`avgLayerUs`(µs) = `BlockMarkerScanner.tick` 累计占比 × 采样窗口时长(120 s)
+   ÷ 窗口内处理层数 × 10^6；窗口内处理层数 = 65 层/轮 × 6 次/秒 × 120 s ≈ 46 800。
+   若只有单 tick 平均耗时 M(ms)：`avgLayerUs` = 占比 × M ÷ 22（每 tick 层数）× 1000
+   （勿用「每轮层数 65」作除数，一轮跨 3 tick）。
+   需要更高精度时在 `ScanJob.step()` 的 `scanLayer(...)` 调用前后累加 `System.nanoTime()`，
+   同时累加层数，导出「累计耗时 / 层数」（µs/层，合入前移除）。
 
 ### JFR（备用）
 
@@ -61,7 +66,7 @@ jcmd <pid> JFR.stop name=scan        # 需要提前结束时
 | MSPT | `/spark health` 的 p50 / p95 / p99（注：该值为集成服务端 tick 时间，仅作旁证） |
 | FPS | 每轮分段（静止/移动各 60 秒）的平均值与 1% low |
 | 扫描规模 | 每轮 section 预筛命中数、进入逐方块读取的层数、命中标记数（屏障/基岩各取上限前） |
-| `avgLayerUs`（单层耗时） | 同一场景同一层数下 `ScanJob.scanLayer` 的单层平均耗时：由火焰图占比 × tick 平均时长 ÷ 每轮层数估算，或临时埋点实测；两种方式在备注列注明 |
+| `avgLayerUs`（单层耗时） | 同一场景同一层数下 `ScanJob.scanLayer` 的单层平均耗时：按 §三 第 6 步的窗口法换算，或临时埋点实测；两种方式在备注列注明 |
 | 快照等价量 | 按命中 section 数换算的 `copy()` 体积（section 数 × 2–4 KB），用于评估快照方案的每 tick 预算 |
 | 元数据 | 维度、坐标、种子、实体数、已加载区块数、CPU、渲染距离、图形后端 |
 | 日志 | `logs/latest.log` 中的异常、GC 告警与 Tweakify 相关 warning |
@@ -97,6 +102,11 @@ jcmd <pid> JFR.stop name=scan        # 需要提前结束时
 | E-1 | | | | | | | | | | |
 | E-2 | | | | | | | | | | |
 | E-3 | | | | | | | | | | |
+| A 中位 | | | | | | | | | | |
+| B 中位 | | | | | | | | | | |
+| C 中位 | | | | | | | | | | |
+| D 中位 | | | | | | | | | | |
+| E 中位 | | | | | | | | | | |
 
 ## 七、结果处理
 
