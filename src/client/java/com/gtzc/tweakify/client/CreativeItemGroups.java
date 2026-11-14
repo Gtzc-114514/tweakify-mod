@@ -696,13 +696,17 @@ public final class CreativeItemGroups {
 		return normalizeTabId(key != null ? key.toString() : tab.getDisplayName().getString());
 	}
 
-	// 自定义组 tabId 的统一归一化：去空白、转小写、缺命名空间时补 minecraft:。
+	// 自定义组 tabId 的统一归一化：去空白、转小写，再交给 Identifier 补全/校验。
+	// Identifier 会把空命名空间补成 minecraft（":combat" → minecraft:combat），
+	// 因此匹配与告警使用同一个字符串，不会出现“谓词认为受支持、匹配却失败”的静默无效。
+	// 解析失败（多冒号、冒号后空格等）保留原串，由告警谓词判为未知。
 	static String normalizeTabId(String raw) {
 		String value = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
-		if (value.isEmpty() || value.indexOf(':') >= 0) {
+		if (value.isEmpty()) {
 			return value;
 		}
-		return "minecraft:" + value;
+		Identifier id = Identifier.tryParse(value);
+		return id != null ? id.toString() : value;
 	}
 
 	private static String itemId(Item item) {
