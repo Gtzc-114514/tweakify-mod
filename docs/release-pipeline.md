@@ -78,6 +78,7 @@
 | 项 | 值 |
 | --- | --- |
 | Run ID | `43526912662` |
+| 对应提交 | `11f6e9a`（`v1.0.2` 标签提交；当时 `verify jar mod version` 为 5 类归因，尚未拆分目录预检/枚举失败） |
 | 触发 | push tag `v1.0.2` |
 | 结论 | **success**，总耗时 39 秒（job 36 秒） |
 | 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
