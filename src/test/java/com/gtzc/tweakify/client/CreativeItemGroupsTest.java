@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -199,6 +200,65 @@ class CreativeItemGroupsTest {
 		assertTrue(stripped.contains(diamond));
 		assertFalse(stripped.contains(stone), "楼梯成员已被摘除");
 		assertTrue(stripped.contains(oak), "组图标保留在列表中");
+
+		// 正向：切到 combat 页后，同一个配置文件里的“剑”组应生效，楼梯保持原样。
+		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
+			CreativeModeTabs.COMBAT));
+		List<ItemStack> combatStripped = CreativeItemGroups.stripMembers(
+			List.of(oak, stone, spruce, iron, gold, diamond));
+
+		assertEquals(4, combatStripped.size(), "combat 页只应摘除剑成员，楼梯保持原样");
+		assertTrue(combatStripped.contains(oak));
+		assertTrue(combatStripped.contains(iron));
+		assertFalse(combatStripped.contains(gold));
+		CreativeItemGroups.Group swordGroup = CreativeItemGroups.iconGroup(3);
+		assertNotNull(swordGroup);
+		assertEquals("剑", swordGroup.name().getString());
+		assertEquals(List.of(iron, gold, diamond), swordGroup.items());
+	}
+
+	// 自定义组 tabId 是自由文本：缺命名空间或大小写不同时也要能匹配已注册的标签页。
+	@Test
+	void customGroupTabIdsAreNormalized() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack coarse = stack(Items.COARSE_DIRT);
+		ItemStack rooted = stack(Items.ROOTED_DIRT);
+
+		assertEquals("minecraft:building_blocks", CreativeItemGroups.normalizeTabId(" Building_Blocks "));
+		assertEquals("", CreativeItemGroups.normalizeTabId(null));
+
+		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+			"building_blocks|泥土|dirt",
+			"Building_Blocks|泥土2|coarse_dirt"));
+
+		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
+			CreativeModeTabs.BUILDING_BLOCKS));
+		List<ItemStack> stripped = CreativeItemGroups.stripMembers(List.of(dirt, coarse, rooted));
+
+		assertEquals(1, stripped.size(), "两种写法的 tabId 都应归一化并生效");
+		assertSame(dirt, stripped.get(0));
+		CreativeItemGroups.Group group = CreativeItemGroups.iconGroup(0);
+		assertNotNull(group);
+		assertEquals(List.of(dirt, coarse, rooted), group.items());
+	}
+
+	// 默认组开启（默认值）时，自定义组仍应参与成组，不会被默认组配置分支跳过。
+	@Test
+	void customGroupsWorkWithDefaultGroups() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack coarse = stack(Items.COARSE_DIRT);
+		ItemStack rooted = stack(Items.ROOTED_DIRT);
+
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+			"minecraft:building_blocks|泥土|dirt"));
+
+		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
+			CreativeModeTabs.BUILDING_BLOCKS));
+		List<ItemStack> stripped = CreativeItemGroups.stripMembers(List.of(dirt, coarse, rooted));
+
+		assertEquals(1, stripped.size(), "默认组开启时自定义组仍生效");
+		assertNotNull(CreativeItemGroups.iconGroup(0));
 	}
 
 	@Test
@@ -272,30 +332,99 @@ class CreativeItemGroupsTest {
 	@Test
 	void displayIndexRecomputesAfterViewportScroll() {
 		ItemStack dirt = stack(Items.DIRT);
+		ItemStack gravel = stack(Items.GRAVEL);
+		ItemStack sand = stack(Items.SAND);
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
+			Component.literal("Stairs"), List.of(oak, stone, spruce));
+
+		SimpleContainer container = new SimpleContainer(3);
+		List<Slot> slots = List.of(
+			new Slot(container, 0, 0, 0), new Slot(container, 1, 0, 0), new Slot(container, 2, 0, 0));
+		container.setItem(0, dirt);
+		container.setItem(1, gravel);
+		container.setItem(2, sand);
+
+		// 组图标 oak 位于基准列表第 3 位：初始视图完全不含图标。
+		// 基准只含图标（与 stripMembers 摘除成员后的生产形态一致）。
+		CreativeItemGroups.installGroupsForTest(List.of(group), List.of(dirt, gravel, sand, oak));
+		assertEquals(0, CreativeItemGroups.displayIndex(slots, 0));
+		assertNull(CreativeItemGroups.iconGroup(CreativeItemGroups.displayIndex(slots, 0)));
+
+		// 模拟滚动到图标所在窗口：slots 引用与槽位对象都不变，只换容器内容。
+		container.setItem(0, oak);
+		container.setItem(1, ItemStack.EMPTY);
+		container.setItem(2, ItemStack.EMPTY);
+
+		assertEquals(3, CreativeItemGroups.displayIndex(slots, 0), "滚动后必须重新计算偏移");
+		assertSame(group, CreativeItemGroups.iconGroup(CreativeItemGroups.displayIndex(slots, 0)),
+			"图标标记必须跟随滚动后的槽位");
+		assertTrue(CreativeItemGroups.isCollapsedIconSlot(CreativeItemGroups.displayIndex(slots, 0)));
+		assertFalse(CreativeItemGroups.isMemberSlot(CreativeItemGroups.displayIndex(slots, 0)));
+	}
+
+	// 只比较首个锚点会漏掉“首个锚点仍是同一引用、第二个锚点变化”的滚动场景。
+	@Test
+	void displayIndexRecomputesWhenOnlySecondAnchorChanges() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack gravel = stack(Items.GRAVEL);
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+
+		SimpleContainer container = new SimpleContainer(2);
+		List<Slot> slots = List.of(new Slot(container, 0, 0, 0), new Slot(container, 1, 0, 0));
+		container.setItem(0, dirt);
+		container.setItem(1, gravel);
+
+		// dirt 在基准列表中出现两次：滚动后首个锚点仍是同一个 dirt 引用。
+		CreativeItemGroups.installGroupsForTest(List.of(), List.of(dirt, gravel, dirt, oak, stone));
+		assertEquals(0, CreativeItemGroups.displayIndex(slots, 0));
+
+		container.setItem(1, oak);
+		assertEquals(2, CreativeItemGroups.displayIndex(slots, 0),
+			"第二个锚点变化也必须重算偏移");
+	}
+
+	// 展开态下滚动到成员窗口：成员标记必须跟随当前视图，而不是停在展开时的位置。
+	@Test
+	void expandedGroupMembersFollowViewportScroll() {
+		ItemStack dirt = stack(Items.DIRT);
 		ItemStack oak = stack(Items.OAK_STAIRS);
 		ItemStack stone = stack(Items.STONE_STAIRS);
 		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
 		ItemStack sand = stack(Items.SAND);
-		ItemStack gravel = stack(Items.GRAVEL);
+		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
+			Component.literal("Stairs"), List.of(oak, stone, spruce));
+
+		NonNullList<ItemStack> items = NonNullList.create();
+		items.add(dirt);
+		items.add(oak);
+		items.add(sand);
+		// toggle 只重建 GROUPS 中的组：先把组注入，模拟生产路径里从 iconGroup 拿到的对象。
+		CreativeItemGroups.installGroupsForTest(List.of(group), List.of(dirt, oak, sand));
+		group.setIconIndex(1);
+		CreativeItemGroups.toggle(group, items);
 
 		SimpleContainer container = new SimpleContainer(3);
 		List<Slot> slots = List.of(
 			new Slot(container, 0, 0, 0), new Slot(container, 1, 0, 0), new Slot(container, 2, 0, 0));
 		container.setItem(0, dirt);
 		container.setItem(1, oak);
-		container.setItem(2, stone);
+		container.setItem(2, oak);
 
-		CreativeItemGroups.installGroupsForTest(List.of(), List.of(dirt, oak, stone, spruce, sand, gravel));
-		assertEquals(0, CreativeItemGroups.displayIndex(slots, 0));
-		assertEquals(2, CreativeItemGroups.displayIndex(slots, 2));
+		assertTrue(CreativeItemGroups.isExpandedIconSlot(CreativeItemGroups.displayIndex(slots, 1)));
+		assertTrue(CreativeItemGroups.isMemberSlot(CreativeItemGroups.displayIndex(slots, 2)));
 
-		// 模拟滚动：slots 列表引用与槽位对象都不变，只换容器里的当前视图内容。
-		container.setItem(0, spruce);
-		container.setItem(1, sand);
-		container.setItem(2, gravel);
+		// 滚动到成员窗口：槽位 0 变为成员 oak 的副本。
+		container.setItem(0, oak);
+		container.setItem(1, stone);
+		container.setItem(2, spruce);
 
-		assertEquals(3, CreativeItemGroups.displayIndex(slots, 0), "滚动后必须重新计算偏移");
-		assertEquals(5, CreativeItemGroups.displayIndex(slots, 2));
+		assertTrue(CreativeItemGroups.isMemberSlot(CreativeItemGroups.displayIndex(slots, 0)),
+			"滚动到成员窗口后，成员标记必须跟随滚动后的槽位");
+		assertFalse(CreativeItemGroups.isExpandedIconSlot(CreativeItemGroups.displayIndex(slots, 0)));
 	}
 
 	// 配置变化只需重建分类页：快捷栏/背包页物品来自其他数据源，搜索页由搜索框维护。
@@ -307,6 +436,25 @@ class CreativeItemGroupsTest {
 		assertFalse(CreativeItemGroups.needsContentRefreshOnConfigChange(CreativeModeTab.Type.INVENTORY));
 	}
 
+	// 配置签名只包含影响分组结果的项：切换轮播不应重建列表，排序/自定义组变化必须重建。
+	@Test
+	void configSignatureTracksGroupingFieldsOnly() {
+		TweakifyModConfig config = new TweakifyModConfig();
+		String base = CreativeItemGroups.configSignature(config);
+
+		config.functions.itemGroupsShowItems = true;
+		assertEquals(base, CreativeItemGroups.configSignature(config), "轮播开关不触发重建");
+
+		config.functions.itemGroupsSort = TweakifyModConfig.ITEM_GROUP_SORT_ALPHABETICAL;
+		assertNotEquals(base, CreativeItemGroups.configSignature(config), "排序变化必须重建");
+
+		config.functions.itemGroupsSort = TweakifyModConfig.ITEM_GROUP_SORT_DEFAULT;
+		config.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+			List.of("minecraft:building_blocks|A|dirt"));
+		assertNotEquals(base, CreativeItemGroups.configSignature(config), "自定义组变化必须重建");
+		assertEquals("", CreativeItemGroups.configSignature(null));
+	}
+
 	// 轮播只用于展开的组：收起时图标固定为首个成员，关闭轮播时也不会返回替换图标。
 	@Test
 	void collapsedIconDoesNotRotate() {
@@ -315,10 +463,17 @@ class CreativeItemGroupsTest {
 				stack(Items.OAK_STAIRS), stack(Items.STONE_STAIRS), stack(Items.SPRUCE_STAIRS)));
 		TweakifyMod.CONFIG.functions.itemGroupsShowItems = true;
 
+		assertNull(CreativeItemGroups.rotatingIcon(null), "空组不轮播");
 		assertNull(CreativeItemGroups.rotatingIcon(group), "收起的组不轮播");
 
 		group.setVisible(true);
-		assertNotNull(CreativeItemGroups.rotatingIcon(group), "展开后开启显示组内物品才轮播");
+		ItemStack rotating = CreativeItemGroups.rotatingIcon(group);
+		assertNotNull(rotating, "展开后开启显示组内物品才轮播");
+		assertTrue(group.items().contains(rotating), "轮播必须返回组内物品");
+
+		CreativeItemGroups.Group empty = new CreativeItemGroups.Group(Component.literal("Empty"), List.of());
+		empty.setVisible(true);
+		assertNull(CreativeItemGroups.rotatingIcon(empty), "空成员的组不轮播");
 
 		TweakifyMod.CONFIG.functions.itemGroupsShowItems = false;
 		assertNull(CreativeItemGroups.rotatingIcon(group), "关闭显示组内物品后不轮播");
