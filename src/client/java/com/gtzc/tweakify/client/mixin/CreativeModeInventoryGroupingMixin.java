@@ -105,9 +105,8 @@ public class CreativeModeInventoryGroupingMixin {
 	}
 
 	// 配置变化（总开关/排序/默认组/自定义组）时重建当前页，避免必须重开界面。
-	// 只重建分类页：快捷栏/背包页的物品来自原版其他数据源，搜索页结果由搜索框维护，
-	// 用 getDisplayItems 重填会清空它们的预览内容。类型判断必须在 beginTab 之前：
-	// 非分类页既不需要重建，也不应清空分组状态（进入该页时已经清空）。
+	// 决策（分类页重建 / 非分类页只告警）已下沉到 CreativeItemGroups.onConfigChanged，
+	// mixin 只负责转发与按返回值刷新列表，便于单测覆盖非分类页告警分支。
 	@Inject(method = "containerTick", at = @At("TAIL"))
 	private void tweakify$refreshOnConfigChange(CallbackInfo ci) {
 		String signature = CreativeItemGroups.configSignature(TweakifyMod.CONFIG);
@@ -115,17 +114,9 @@ public class CreativeModeInventoryGroupingMixin {
 			return;
 		}
 		this.tweakify$lastConfigSignature = signature;
-		if (selectedTab == null) {
-			return;
+		if (selectedTab != null && CreativeItemGroups.onConfigChanged(selectedTab)) {
+			this.refreshCurrentTabContents(selectedTab.getDisplayItems());
 		}
-		if (!CreativeItemGroups.needsContentRefreshOnConfigChange(selectedTab.getType())) {
-			// 非分类页不重建列表，但仍要检查自定义组配置：
-			// 搜索/背包页引用了非分类页标签页时也要给出一次反馈，而不是静默无效。
-			CreativeItemGroups.warnUnsupportedCustomGroups();
-			return;
-		}
-		CreativeItemGroups.beginTab(selectedTab);
-		this.refreshCurrentTabContents(selectedTab.getDisplayItems());
 	}
 
 	@Unique

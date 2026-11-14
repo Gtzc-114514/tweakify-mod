@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * 创造模式物品分组：与 {@code BizCub/inventory-item-groups} 的行为保持一致。
@@ -346,39 +347,50 @@ public final class CreativeItemGroups {
 		NON_CATEGORY
 	}
 
-	// 包私有纯谓词：null 表示该标签页受支持（分类页或空）；否则需要告警。
+	// 包私有纯谓词：先归一化再分类，保证空白/大小写/空命名空间与分组匹配使用同一规则。
 	static CustomTabWarning customTabWarning(String tabId) {
-		if (tabId == null || tabId.isEmpty()) {
+		return customTabWarning(tabId, CreativeItemGroups::lookupCreativeTab);
+	}
+
+	// 包私有接缝：测试可注入查找函数，验证非 minecraft 命名空间的已注册分类页，
+	// 不必向全局注册表注册测试 tab（注册表在 Bootstrap 后已冻结，且注册会永久污染全局状态）。
+	static CustomTabWarning customTabWarning(String tabId, Function<Identifier, CreativeModeTab> lookup) {
+		String normalized = normalizeTabId(tabId);
+		if (normalized.isEmpty()) {
 			return null;
 		}
-		Identifier id = Identifier.tryParse(tabId);
-		CreativeModeTab tab = id == null ? null
-			: BuiltInRegistries.CREATIVE_MODE_TAB.get(id).map(holder -> holder.value()).orElse(null);
+		Identifier id = Identifier.tryParse(normalized);
+		CreativeModeTab tab = id == null || lookup == null ? null : lookup.apply(id);
 		if (tab == null) {
 			return CustomTabWarning.UNKNOWN;
 		}
 		return tab.getType() == CreativeModeTab.Type.CATEGORY ? null : CustomTabWarning.NON_CATEGORY;
 	}
 
+	private static CreativeModeTab lookupCreativeTab(Identifier id) {
+		return BuiltInRegistries.CREATIVE_MODE_TAB.get(id).map(holder -> holder.value()).orElse(null);
+	}
+
 	// 包私有：输出告警并返回是否真的写了一条日志；同一标签页每个屏幕会话只提示一次。
-	// 先判定再写入集合，保证去重集合的语义是“已告警过的标签页”，而不是“见过的标签页”。
+	// 去重键使用归一化后的 ID，":search" 与 "minecraft:search" 共享同一条告警。
 	static boolean warnUnsupportedCustomTab(String tabId) {
-		CustomTabWarning warning = customTabWarning(tabId);
-		if (warning == null || tabId == null || !WARNED_CUSTOM_TABS.add(tabId)) {
+		String normalized = normalizeTabId(tabId);
+		CustomTabWarning warning = customTabWarning(normalized);
+		if (warning == null || !WARNED_CUSTOM_TABS.add(normalized)) {
 			return false;
 		}
 		if (warning == CustomTabWarning.UNKNOWN) {
-			TweakifyMod.LOGGER.warn("Ignoring custom item group for unknown creative tab: {}", tabId);
+			TweakifyMod.LOGGER.warn("Ignoring custom item group for unknown creative tab: {}", normalized);
 		} else {
 			TweakifyMod.LOGGER.warn(
-				"Ignoring custom item group for non-category tab (only category pages are grouped): {}", tabId);
+				"Ignoring custom item group for non-category tab (only category pages are grouped): {}", normalized);
 		}
 		return true;
 	}
 
 	// 包私有：测试断言“不需要告警的标签页不占用去重名额”。
 	static boolean isCustomTabWarnedForTest(String tabId) {
-		return WARNED_CUSTOM_TABS.contains(tabId);
+		return WARNED_CUSTOM_TABS.contains(normalizeTabId(tabId));
 	}
 
 	// 检查配置中的全部自定义组（不受当前页类型限制）：切页与列表重建都调用。
@@ -398,6 +410,21 @@ public final class CreativeItemGroups {
 	// 用 getDisplayItems 重填会清空预览；搜索页结果由搜索框维护，也不应在配置变化时重建。
 	public static boolean needsContentRefreshOnConfigChange(CreativeModeTab.Type type) {
 		return type == CreativeModeTab.Type.CATEGORY;
+	}
+
+	// 配置变化决策：分类页由调用方重建列表（beginTab 已清空组状态并在重建时重新成组）；
+	// 非分类页不重建列表，但仍检查自定义组引用，避免搜索/背包页的无效配置静默无反馈。
+	// 返回值：true 表示调用方需要重建当前页的物品列表。
+	public static boolean onConfigChanged(CreativeModeTab tab) {
+		if (tab == null) {
+			return false;
+		}
+		if (!needsContentRefreshOnConfigChange(tab.getType())) {
+			warnUnsupportedCustomGroups();
+			return false;
+		}
+		beginTab(tab);
+		return true;
 	}
 
 	// 参考实现的 setIndexes：收起时图标取基准列表里的首个位置、成员索引置 -1；
