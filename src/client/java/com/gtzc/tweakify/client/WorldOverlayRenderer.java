@@ -28,31 +28,38 @@ public final class WorldOverlayRenderer {
 		if (bedrock.isEmpty() && ranges.isEmpty()) {
 			return;
 		}
+		Vec3 camera = context.levelState().cameraRenderState.pos;
+		// 提交前可见性：基岩按相机高度选面，攻击范围按视锥剔除；
+		// 两边都不可见时不提交 0 顶点的几何（Vulkan 后端对提交次数敏感）。
+		boolean bedrockVisible = !bedrock.isEmpty() && BedrockHighlightRenderer.hasVisible(bedrock, camera.y);
+		boolean rangesVisible = AttackRangeRenderer.hasVisible(ranges, frustum);
+		if (!bedrockVisible && !rangesVisible) {
+			return;
+		}
 		// 数量上限在 AttackRangeState 按 attackRangeMaxTargets 统一截断，这里不再二次限制。
 		boolean sphere = TweakifyMod.CONFIG != null
 			&& TweakifyModConfig.ATTACK_RANGE_DISPLAY_SPHERE.equals(TweakifyMod.CONFIG.functions.attackRangeDisplayMode);
-		Vec3 camera = context.levelState().cameraRenderState.pos;
 		boolean filled = TweakifyMod.CONFIG != null
 			&& TweakifyModConfig.ATTACK_RANGE_RENDER_FILLED.equals(TweakifyMod.CONFIG.functions.attackRangeRenderMode);
 		if (filled) {
 			// 半透明实心模式：攻击范围与基岩高亮共用 debugFilledBox（有 OIT 固定开销）。
 			context.submitNodeCollector().submitCustomGeometry(context.poseStack(), RenderTypes.debugFilledBox(),
 				(pose, vertices) -> {
-					if (!bedrock.isEmpty()) {
+					if (bedrockVisible) {
 						BedrockHighlightRenderer.drawGeometry(vertices, pose, bedrock, camera);
 					}
-					if (!ranges.isEmpty()) {
+					if (rangesVisible) {
 						AttackRangeRenderer.drawFilled(vertices, pose, ranges, camera, sphere, frustum);
 					}
 				});
 			return;
 		}
 		// 线框模式：基岩高亮仍用填充方块，攻击范围走无 OIT 的线条通道。
-		if (!bedrock.isEmpty()) {
+		if (bedrockVisible) {
 			context.submitNodeCollector().submitCustomGeometry(context.poseStack(), RenderTypes.debugFilledBox(),
 				(pose, vertices) -> BedrockHighlightRenderer.drawGeometry(vertices, pose, bedrock, camera));
 		}
-		if (!ranges.isEmpty()) {
+		if (rangesVisible) {
 			context.submitNodeCollector().submitCustomGeometry(context.poseStack(), RenderTypes.linesTranslucent(),
 				(pose, vertices) -> AttackRangeRenderer.drawLines(vertices, pose, ranges, camera, sphere,
 					frustum));

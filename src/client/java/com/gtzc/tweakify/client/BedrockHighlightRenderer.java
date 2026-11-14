@@ -20,6 +20,21 @@ public final class BedrockHighlightRenderer {
 	private BedrockHighlightRenderer() {
 	}
 
+	// 提交前判断：是否有至少一个面当前可见（相机高度决定顶/底面）；
+	// 判定与 drawGeometry 选段的条件保持一致，避免提交空几何。
+	static boolean hasVisible(List<BedrockHighlightState.Marker> markers, double cameraY) {
+		for (BedrockHighlightState.Marker marker : markers) {
+			int blockY = marker.pos().getY();
+			if (marker.topExposed() && BedrockHighlightState.isFaceVisibleFrom(true, cameraY, blockY)) {
+				return true;
+			}
+			if (marker.bottomExposed() && BedrockHighlightState.isFaceVisibleFrom(false, cameraY, blockY)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// 由 WorldOverlayRenderer 统一提交：把可见面的缓存顶点写进共享顶点缓冲。
 	public static void drawGeometry(VertexConsumer vertices, PoseStack.Pose pose,
 									List<BedrockHighlightState.Marker> markers, Vec3 camera) {

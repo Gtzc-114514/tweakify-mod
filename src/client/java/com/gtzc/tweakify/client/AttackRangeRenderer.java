@@ -36,6 +36,16 @@ public final class AttackRangeRenderer {
 		writeVisible(vertices, pose, entries, camera, sphere, frustum);
 	}
 
+	// 提交前判断：是否有条目在视锥内；与 writeVisible 共用同一判定，避免提交空几何。
+	static boolean hasVisible(List<AttackRangeState.Entry> entries, Frustum frustum) {
+		for (AttackRangeState.Entry entry : entries) {
+			if (isVisible(entry, frustum)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static boolean isVisible(AttackRangeState.Entry entry, Frustum frustum) {
 		return frustum == null || frustum.isVisible(entry.bounds());
 	}
