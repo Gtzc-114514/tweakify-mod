@@ -55,44 +55,44 @@ public final class AttackRangeState {
 			TweakifyModConfig.MIN_ATTACK_RANGE_TARGETS, TweakifyModConfig.MAX_ATTACK_RANGE_TARGETS);
 		// 用范围查询代替遍历全部渲染实体，减少每 tick 的实体扫描量。
 		AABB searchBox = client.player.getBoundingBox().inflate(maxDistance);
-		List<LivingEntity> candidates = new ArrayList<>();
+		double maxDistanceSq = maxDistance * maxDistance;
+		List<Entry> found = new ArrayList<>();
 		if (config.functions.attackRangeIncludeSelf) {
-			candidates.add(client.player);
+			// 自己与自己的距离为 0，与其它实体走同一条收集规则。
+			addEntry(found, client.player, client.player, maxDistanceSq, config);
 		}
 		for (Entity entity : client.level.getEntities(client.player, searchBox,
 			e -> e instanceof Mob || e instanceof Player)) {
 			if (entity instanceof LivingEntity living && living != client.player) {
-				candidates.add(living);
+				addEntry(found, living, client.player, maxDistanceSq, config);
 			}
-		}
-		double maxDistanceSq = maxDistance * maxDistance;
-		List<Entry> found = new ArrayList<>();
-		for (LivingEntity living : candidates) {
-			if (!living.isAlive() || living.isRemoved() || living.isSpectator() || living.isInvisible()) {
-				continue;
-			}
-			double distanceSq = living.distanceToSqr(client.player);
-			if (distanceSq > maxDistanceSq) {
-				continue;
-			}
-			if (!config.isAttackRangeEntityAllowed(living.getType())) {
-				continue;
-			}
-			double x = living.getX();
-			double feetY = living.getY() + 0.05;
-			double centerY = living.getY() + living.getBbHeight() / 2.0;
-			double z = living.getZ();
-			float radius = attackRadius(living);
-			AABB bounds = new AABB(x - radius, centerY - radius, z - radius,
-				x + radius, centerY + radius, z + radius);
-			found.add(new Entry(x, feetY, centerY, z, radius, bounds, distanceSq));
 		}
 		// 按距离排序：渲染层只取最近的若干目标，保证超出显示上限时先显示近处。
 		found.sort(BY_DISTANCE);
-		if (found.size() > maxTargets) {
-			found = new ArrayList<>(found.subList(0, maxTargets));
+		entries = List.copyOf(found.subList(0, Math.min(found.size(), maxTargets)));
+	}
+
+	// 单个实体的过滤与条目计算：状态、距离与 ID 列表都在这里统一处理。
+	private static void addEntry(List<Entry> found, LivingEntity living, Player viewer,
+			double maxDistanceSq, TweakifyModConfig config) {
+		if (!living.isAlive() || living.isRemoved() || living.isSpectator() || living.isInvisible()) {
+			return;
 		}
-		entries = List.copyOf(found);
+		double distanceSq = living.distanceToSqr(viewer);
+		if (distanceSq > maxDistanceSq) {
+			return;
+		}
+		if (!config.isAttackRangeEntityAllowed(living.getType())) {
+			return;
+		}
+		double x = living.getX();
+		double feetY = living.getY() + 0.05;
+		double centerY = living.getY() + living.getBbHeight() / 2.0;
+		double z = living.getZ();
+		float radius = attackRadius(living);
+		AABB bounds = new AABB(x - radius, centerY - radius, z - radius,
+			x + radius, centerY + radius, z + radius);
+		found.add(new Entry(x, feetY, centerY, z, radius, bounds, distanceSq));
 	}
 
 	public static List<Entry> entries() {
