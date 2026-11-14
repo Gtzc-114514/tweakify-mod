@@ -20,6 +20,9 @@ public final class BedrockHighlightState {
 	}
 
 	private static List<Marker> markers = List.of();
+	// 已发布内容的摘要：相同则跳过发布，让 BedrockGeometryCache 保持旧引用、不重建顶点。
+	private static int markersHash;
+	private static boolean hasPublishedMarkers;
 
 	private BedrockHighlightState() {
 	}
@@ -70,16 +73,34 @@ public final class BedrockHighlightState {
 			sorted.sort(Comparator.comparingDouble(marker -> marker.pos().distSqr(center)));
 			accepted = sorted.subList(0, maxMarkers);
 		}
-		// 必须是新列表实例：BedrockGeometryCache 用引用变化判断是否重建顶点。
-		// List.copyOf 对已经是不可变列表的入参会返回同一实例，
-		// 以后若改成先构造不可变列表再发布，缓存将静默不再失效。
+		// 内容摘要未变时保留旧列表引用：BedrockGeometryCache 按引用失效，
+		// 跳过发布即可避免每秒 6 次仍然整表重建顶点数组。
+		int hash = contentHash(accepted);
+		if (hasPublishedMarkers && hash == markersHash) {
+			return;
+		}
+		hasPublishedMarkers = true;
+		markersHash = hash;
+		// 内容变化时必须发布新列表实例：缓存的失效条件就是引用变化。
 		markers = List.copyOf(accepted);
 	}
 
-	// 功能关闭时清空标记（避免残留上一帧的几何）。
+	// 轻量内容摘要：size + 每个标记的坐标与暴露面。
+	// 成本是一次 O(n) 哈希运算，远低于重建几何（每个标记 48 顶点）。
+	private static int contentHash(List<Marker> markers) {
+		int hash = markers.size();
+		for (Marker marker : markers) {
+			hash = 31 * hash + marker.hashCode();
+		}
+		return hash;
+	}
+
+	// 功能关闭时清空标记（避免残留上一帧的几何），并重置摘要以便重新开启后再次发布。
 	static void clear() {
 		if (!markers.isEmpty()) {
 			markers = List.of();
 		}
+		hasPublishedMarkers = false;
+		markersHash = 0;
 	}
 }

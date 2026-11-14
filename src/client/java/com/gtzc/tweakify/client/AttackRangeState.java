@@ -33,6 +33,9 @@ public final class AttackRangeState {
 	private static final Comparator<Entry> BY_DISTANCE = Comparator.comparingDouble(Entry::distanceSq);
 
 	private static List<Entry> entries = List.of();
+	// 已发布内容的摘要：相同则跳过发布，让 AttackRangeGeometryCache 保持旧引用、不重建顶点。
+	private static int entriesHash;
+	private static boolean hasPublishedEntries;
 	// 刷新频率：每秒 12 次（20/12 ≈ 1.67 tick），比屏障/基岩更快。
 	static final int REFRESHES_PER_SECOND = 12;
 	private static final RefreshScheduler REFRESH = new RefreshScheduler(REFRESHES_PER_SECOND);
@@ -47,6 +50,8 @@ public final class AttackRangeState {
 			&& client.player != null && client.level != null;
 		if (!enabled) {
 			entries = List.of();
+			hasPublishedEntries = false;
+			entriesHash = 0;
 			wasEnabled = false;
 			REFRESH.reset();
 			return;
@@ -75,12 +80,37 @@ public final class AttackRangeState {
 				addEntry(found, living, client.player, maxDistanceSq, config);
 			}
 		}
-		// 按距离排序：渲染层只取最近的若干目标，保证超出显示上限时先显示近处。
+		publishEntries(found, maxTargets);
+	}
+
+	// 发布本次收集结果：先按距离排序并截断，内容摘要未变时保留旧列表引用，
+	// 避免 AttackRangeGeometryCache 每秒 12 次仍然整表重建顶点。
+	// 包私有：供 tick 与单测共用。
+	static void publishEntries(List<Entry> found, int maxTargets) {
 		found.sort(BY_DISTANCE);
-		// 必须是新列表实例：AttackRangeGeometryCache 用引用变化判断是否重建顶点。
-		// List.copyOf 对已经是不可变列表的入参会返回同一实例，
-		// 以后若改成先构造不可变列表再发布，缓存将静默不再失效。
-		entries = List.copyOf(found.subList(0, Math.min(found.size(), maxTargets)));
+		List<Entry> visible = found.subList(0, Math.min(found.size(), maxTargets));
+		int hash = contentHash(visible);
+		if (hasPublishedEntries && hash == entriesHash) {
+			return;
+		}
+		hasPublishedEntries = true;
+		entriesHash = hash;
+		// 内容变化时必须发布新列表实例：缓存的失效条件就是引用变化。
+		entries = List.copyOf(visible);
+	}
+
+	// 轻量内容摘要：只含决定几何的坐标与半径；
+	// distanceSq 随玩家移动变化，不参与摘要，否则玩家移动会让缓存白重建。
+	private static int contentHash(List<Entry> entries) {
+		int hash = entries.size();
+		for (Entry entry : entries) {
+			hash = 31 * hash + Double.hashCode(entry.x());
+			hash = 31 * hash + Double.hashCode(entry.feetY());
+			hash = 31 * hash + Double.hashCode(entry.centerY());
+			hash = 31 * hash + Double.hashCode(entry.z());
+			hash = 31 * hash + Float.hashCode(entry.radius());
+		}
+		return hash;
 	}
 
 	// 单个实体的过滤与条目计算：状态、距离与 ID 列表都在这里统一处理。
@@ -108,6 +138,15 @@ public final class AttackRangeState {
 
 	public static List<Entry> entries() {
 		return entries;
+	}
+
+	// 包私有：测试之间清理静态状态，避免共享列表与摘要互相影响。
+	static void resetForTest() {
+		entries = List.of();
+		entriesHash = 0;
+		hasPublishedEntries = false;
+		wasEnabled = false;
+		REFRESH.reset();
 	}
 
 	// 生物沿用 Mob.isWithinMeleeAttackRange 的距离来源；玩家使用主手物品的 AttackRange（默认实体交互距离）。
