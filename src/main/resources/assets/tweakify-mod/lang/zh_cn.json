@@ -874,7 +874,7 @@
   "tweakify-mod.config.general.comment.itemGroupsAddAll": "启用内置的默认物品组；关闭后只使用下面的自定义物品组。",
   "tweakify-mod.config.lists.name.customItemGroups": "自定义物品组",
   "tweakify-mod.config.lists.prettyName.customItemGroups": "自定义物品组",
-  "tweakify-mod.config.lists.comment.customItemGroups": "每行一个组：标签页ID|组名|包含ID(逗号分隔)|排除ID|等价ID，至少填前三段。例如 minecraft:building_blocks|石英|quartz",
+  "tweakify-mod.config.lists.comment.customItemGroups": "每行一个组：标签页ID|组名|包含ID(逗号分隔)|排除ID|等价ID，至少填前三段。组只在行首标签页生效。例如 minecraft:building_blocks|石英|quartz",
   "group_name.inventory_item_groups.logs": "原木",
   "group_name.inventory_item_groups.woods": "木头",
   "group_name.inventory_item_groups.stripped_logs": "去皮原木",

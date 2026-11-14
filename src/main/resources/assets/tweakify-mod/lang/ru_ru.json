@@ -831,7 +831,7 @@
   "tweakify-mod.config.general.comment.itemGroupsAddAll": "Включает встроенные группы предметов; при отключении используются только пользовательские группы ниже.",
   "tweakify-mod.config.lists.name.customItemGroups": "Пользовательские группы",
   "tweakify-mod.config.lists.prettyName.customItemGroups": "Пользовательские группы",
-  "tweakify-mod.config.lists.comment.customItemGroups": "По одной группе в строке: id вкладки|имя группы|содержащиеся id (через запятую)|исключённые id|эквивалентные id. Первые три части обязательны.",
+  "tweakify-mod.config.lists.comment.customItemGroups": "По одной группе в строке: id вкладки|имя группы|содержащиеся id (через запятую)|исключённые id|эквивалентные id. Первые три части обязательны; группа действует только на вкладке из первого поля.",
   "group_name.inventory_item_groups.logs": "Брёвна",
   "group_name.inventory_item_groups.woods": "Древесина",
   "group_name.inventory_item_groups.stripped_logs": "Обтёсанные брёвна",
