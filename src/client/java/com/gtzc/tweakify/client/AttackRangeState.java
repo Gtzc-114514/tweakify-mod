@@ -9,6 +9,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.AttackRange;
@@ -138,7 +139,9 @@ public final class AttackRangeState {
 	// 单个实体的过滤与条目计算：状态、距离与 ID 列表都在这里统一处理。
 	private static void addEntry(List<Entry> found, LivingEntity living, Player viewer,
 			double maxDistanceSq, TweakifyModConfig config) {
-		if (!living.isAlive() || living.isRemoved() || living.isSpectator() || living.isInvisible()) {
+		if (!isEligible(living.isAlive(), living.isRemoved(), living.isSpectator(), living.isInvisible(),
+			living instanceof Enemy, config.functions.attackRangeHostileOnly,
+			config.functions.attackRangeIncludeInvisible)) {
 			return;
 		}
 		double distanceSq = living.distanceToSqr(viewer);
@@ -156,6 +159,18 @@ public final class AttackRangeState {
 		AABB bounds = new AABB(x - radius, centerY - radius, z - radius,
 			x + radius, centerY + radius, z + radius);
 		found.add(new Entry(x, feetY, centerY, z, radius, bounds, distanceSq));
+	}
+
+	// 实体是否参与收集：纯函数，便于对“敌对/隐身”两个子开关做真值表覆盖。
+	static boolean isEligible(boolean alive, boolean removed, boolean spectator, boolean invisible,
+			boolean hostile, boolean hostileOnly, boolean includeInvisible) {
+		if (!alive || removed || spectator) {
+			return false;
+		}
+		if (invisible && !includeInvisible) {
+			return false;
+		}
+		return !hostileOnly || hostile;
 	}
 
 	public static List<Entry> entries() {

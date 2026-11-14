@@ -18,7 +18,8 @@ import java.util.List;
  *
  * <p>坐标与 {@code Hud.extractEffects} 保持一致：有益效果从右向左排一行，
  * 有害效果整体下移 26 像素；图标背景 24x24，图标本体 18x18 且偏移 3 像素。
- * 文字固定按 0.5 倍缩放贴在图标底边内侧，长时间效果改用小时/天单位。
+ * 文字默认按 0.5 倍缩放贴在图标底边内侧，长时间效果改用小时/天单位；
+ * 开启“固定按秒”后文本可能更长，超出图标宽度时按比例缩小。
  */
 public final class StatusEffectTimerRenderer {
 	// 原版效果图标的排列参数。
@@ -31,8 +32,9 @@ public final class StatusEffectTimerRenderer {
 	private static final int EFFECT_ICON_SIZE = 18;
 
 	// 文字固定 0.5 倍：字形高约 4.5 像素，能放进图标下沿。
-	// 时长格式已限制为最多 5 个字符，不再按宽度缩小，避免小数缩放让字体发虚。
+	// 默认格式最多 5 个字符；改为“始终按秒”后可能更长，超出图标宽度时再按比例缩小。
 	private static final float TEXT_SCALE = 0.5f;
+	private static final float MIN_TEXT_SCALE = 0.3f;
 	private static final int TEXT_COLOR = 0xFFFFFFFF;
 
 	// 复用的排序缓冲：效果集合很小，每帧清空重填即可，
@@ -94,17 +96,31 @@ public final class StatusEffectTimerRenderer {
 
 	// 计算文字位置：固定 0.5 倍，底边贴住图标下沿；坐标取整避免字体像素落在半像素上。
 	public static TextPlacement placementFor(Font font, MobEffectInstance effect, int x, int y) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		boolean alwaysSeconds = config != null && config.functions.statusEffectDurationAlwaysSeconds;
+		return placementFor(font, effect, x, y, alwaysSeconds);
+	}
+
+	// 重载：缓存/测试可直接指定格式，不必依赖全局配置。
+	public static TextPlacement placementFor(Font font, MobEffectInstance effect, int x, int y,
+			boolean alwaysSeconds) {
 		// 无尽效果没有剩余时间，保持图标干净。
 		if (effect.isInfiniteDuration()) {
 			return null;
 		}
-		String text = EffectDurationFormatter.format(effect.getDuration());
+		String text = EffectDurationFormatter.format(effect.getDuration(), alwaysSeconds);
 		int textWidth = font.width(text);
-		float scaledWidth = textWidth * TEXT_SCALE;
+		float scale = TEXT_SCALE;
+		// 秒模式可能超过 5 个字符：超出图标宽度时按比例缩小，避免溢出到相邻图标。
+		if (textWidth * scale > EFFECT_ICON_SIZE) {
+			scale = Math.max(MIN_TEXT_SCALE, EFFECT_ICON_SIZE / (float) textWidth);
+		}
+		float scaledWidth = textWidth * scale;
+		float scaledHeight = font.lineHeight * scale;
 		float drawX = Math.round(x + (EFFECT_BOX_SIZE - scaledWidth) / 2.0f);
 		// 文字底边贴住图标下沿（背景 y + 3 + 18）；向下取整保证不越过图标。
-		float drawY = (float) Math.floor(y + EFFECT_ICON_OFFSET + EFFECT_ICON_SIZE - font.lineHeight * TEXT_SCALE);
-		return new TextPlacement(text, drawX, drawY, scaledWidth, font.lineHeight * TEXT_SCALE);
+		float drawY = (float) Math.floor(y + EFFECT_ICON_OFFSET + EFFECT_ICON_SIZE - scaledHeight);
+		return new TextPlacement(text, drawX, drawY, scaledWidth, scaledHeight);
 	}
 
 	private static void renderTimer(GuiGraphicsExtractor gui, Font font, MobEffectInstance effect, int x, int y) {

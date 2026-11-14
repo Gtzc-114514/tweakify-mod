@@ -1,5 +1,6 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -20,8 +21,6 @@ import java.util.Map;
  * 方块扫描由 {@link BlockMarkerScanner} 与基岩高亮共用一次遍历。
  */
 public final class BarrierVisibilityState {
-	// 单次扫描最多保留的标记数量：超出时保留离玩家最近的。
-	private static final int MAX_MARKERS = 256;
 	// 每 tick 最多生成的粒子数；配合逐方块冷却，均匀覆盖而不会堆叠。
 	private static final int PARTICLES_PER_TICK = 8;
 	// 同一方块两次标记粒子之间的冷却（3 秒），确保旧粒子已经消失。
@@ -47,13 +46,19 @@ public final class BarrierVisibilityState {
 		return state.is(Blocks.BARRIER);
 	}
 
-	// 接收扫描结果：超出上限时保留离玩家最近的，并清理已离开范围的粒子冷却记录。
+	// 接收扫描结果（默认上限）：超出时保留离玩家最近的，并清理已离开范围的粒子冷却记录。
 	static void setMarkers(List<BlockPos> found, BlockPos center) {
+		setMarkers(found, center, TweakifyModConfig.DEFAULT_BARRIER_MARKERS);
+	}
+
+	// 接收扫描结果：上限由 barrierVisibilityMaxMarkers 控制，非正数时回退到默认值。
+	static void setMarkers(List<BlockPos> found, BlockPos center, int maxMarkers) {
+		int limit = maxMarkers > 0 ? maxMarkers : TweakifyModConfig.DEFAULT_BARRIER_MARKERS;
 		List<BlockPos> accepted = found;
-		if (accepted.size() > MAX_MARKERS) {
+		if (accepted.size() > limit) {
 			List<BlockPos> sorted = new ArrayList<>(accepted);
 			sorted.sort(Comparator.comparingDouble(pos -> pos.distSqr(center)));
-			accepted = sorted.subList(0, MAX_MARKERS);
+			accepted = sorted.subList(0, limit);
 		}
 		markers = List.copyOf(accepted);
 		pruneCooldowns();

@@ -262,12 +262,20 @@ final class BlockMarkerScanner {
 		void finish() {
 			BlockPos center = new BlockPos(this.centerX, this.centerY, this.centerZ);
 			if (this.barrier) {
-				BarrierVisibilityState.setMarkers(this.barriers, center);
+				BarrierVisibilityState.setMarkers(this.barriers, center, maxBarrierMarkers());
 			}
 			if (this.bedrock) {
 				BedrockHighlightState.setMarkers(this.markers, center, this.maxBedrockMarkers);
 			}
 		}
+	}
+
+	private static int maxBarrierMarkers() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		int configured = config == null ? TweakifyModConfig.DEFAULT_BARRIER_MARKERS
+			: config.functions.barrierVisibilityMaxMarkers;
+		return Math.max(TweakifyModConfig.MIN_BARRIER_MARKERS,
+			Math.min(TweakifyModConfig.MAX_BARRIER_MARKERS, configured));
 	}
 
 	private static int maxBedrockMarkers() {

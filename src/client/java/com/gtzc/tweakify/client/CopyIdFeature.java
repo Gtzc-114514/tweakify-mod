@@ -57,18 +57,34 @@ public final class CopyIdFeature {
 	}
 
 	// 复制的目标：ID、类型（block/entity/item）与数量（只有物品有）。
-	private record Target(String id, String type, int count) {
+	// 包私有：单测直接验证格式化结果，不必构造客户端世界。
+	record Target(String id, String type, int count) {
 	}
 
-	private static String formatTarget(Target target, TweakifyModConfig config) {
+	// 配置项上的格式化入口：配色/格式均来自配置对象。
+	static String formatTarget(Target target, TweakifyModConfig config) {
 		CopyIdFormat format = config == null
 			? CopyIdFormat.PLAIN
 			: CopyIdFormat.fromCode(config.functions.copyItemIdFormat);
+		boolean includeNamespace = config == null || config.functions.copyItemIdNamespace;
+		return formatTarget(target.id(), target.type(), target.count(), format, includeNamespace);
+	}
+
+	// 纯格式化逻辑：includeNamespace 关闭时去掉“命名空间:”前缀。
+	static String formatTarget(String id, String type, int count, CopyIdFormat format,
+			boolean includeNamespace) {
+		String shown = includeNamespace ? id : stripNamespace(id);
 		return switch (format) {
-			case PLAIN -> target.id();
-			case TYPED -> target.type() + ":" + target.id();
-			case COUNTED -> target.count() > 1 ? target.count() + "x " + target.id() : target.id();
+			case PLAIN -> shown;
+			case TYPED -> type + ":" + shown;
+			case COUNTED -> count > 1 ? count + "x " + shown : shown;
 		};
+	}
+
+	// 去掉第一个冒号及其之前的部分；没有命名空间时原样返回。
+	static String stripNamespace(String id) {
+		int index = id.indexOf(':');
+		return index >= 0 && index + 1 < id.length() ? id.substring(index + 1) : id;
 	}
 
 	private static void showMessage(Minecraft client, Component message) {

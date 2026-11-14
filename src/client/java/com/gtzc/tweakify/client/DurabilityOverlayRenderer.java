@@ -79,7 +79,8 @@ public final class DurabilityOverlayRenderer {
 			scale = Math.max(MIN_TEXT_SCALE, MAX_TEXT_WIDTH / textWidth);
 		}
 		float top = TEXT_BOTTOM - font.lineHeight * scale;
-		drawCentered(gui, font, text, textWidth, x, y + top, scale, colorFor(remaining, max));
+		drawCentered(gui, font, text, textWidth, x, y + top, scale,
+			colorFor(remaining, max, colorModeFor(config)));
 	}
 
 	// 显示内容解析结果缓存：配置变化频率很低，不必每帧每个物品槽都遍历枚举。
@@ -129,8 +130,36 @@ public final class DurabilityOverlayRenderer {
 		return cachedMode;
 	}
 
-	// 剩余耐久对应的文字颜色。
+	// 配色模式解析结果缓存：与显示内容一样，配置变化频率很低。
+	private static String cachedColorModeCode;
+	private static DurabilityColorMode cachedColorMode = DurabilityColorMode.AUTO;
+
+	private static DurabilityColorMode colorModeFor(TweakifyModConfig config) {
+		String code = config.functions.durabilityOverlayColorMode;
+		if (!Objects.equals(code, cachedColorModeCode)) {
+			cachedColorModeCode = code;
+			cachedColorMode = DurabilityColorMode.fromCode(code);
+		}
+		return cachedColorMode;
+	}
+
+	// 剩余耐久对应的文字颜色（自动分档）。
 	public static int colorFor(int remaining, int max) {
+		return colorFor(remaining, max, DurabilityColorMode.AUTO);
+	}
+
+	// 按配色模式取文字颜色：AUTO 随剩余耐久变化，其余固定单色。
+	public static int colorFor(int remaining, int max, DurabilityColorMode mode) {
+		return switch (mode == null ? DurabilityColorMode.AUTO : mode) {
+			case AUTO -> autoColorFor(remaining, max);
+			case WHITE -> WHITE;
+			case YELLOW -> YELLOW;
+			case RED -> RED;
+		};
+	}
+
+	// 自动分档：高于 75% 绿，高于 50% 白，高于 25% 黄，其余红。
+	private static int autoColorFor(int remaining, int max) {
 		double ratio = max <= 0 ? 0.0 : (double) remaining / max;
 		if (ratio > HIGH_RATIO) {
 			return GREEN;

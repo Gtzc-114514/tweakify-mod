@@ -4,7 +4,8 @@ package com.gtzc.tweakify.client;
  * 药水效果剩余时间的紧凑格式：秒 / 分:秒 / 2h05 / 2d05。
  *
  * <p>向上取整，保证效果仍存在时不会提前显示 0；无尽效果由调用方跳过，不进入这里。
- * 最长只输出 5 个字符（例如 {@code 99d23}、{@code 100d}），避免长时间效果把文字压得过小。
+ * 默认格式最长只输出 5 个字符（例如 {@code 99d23}、{@code 100d}），避免长时间效果把文字压得过小；
+ * {@link #formatSeconds} 固定按秒输出、不限制长度，由渲染层按图标宽度缩小字号。
  */
 public final class EffectDurationFormatter {
 	// 1 秒 = 20 tick，与原版药水时间单位一致。
@@ -14,7 +15,7 @@ public final class EffectDurationFormatter {
 	}
 
 	public static String format(int ticks) {
-		int totalSeconds = Math.max(0, (int) Math.ceil(Math.max(0, ticks) / (double) TICKS_PER_SECOND));
+		int totalSeconds = totalSeconds(ticks);
 		int days = totalSeconds / 86400;
 		int hours = (totalSeconds % 86400) / 3600;
 		int minutes = (totalSeconds % 3600) / 60;
@@ -31,6 +32,21 @@ public final class EffectDurationFormatter {
 			return minutes + ":" + twoDigits(seconds);
 		}
 		return Integer.toString(seconds);
+	}
+
+	// 始终按秒显示：不使用分:秒与 h/d 缩写，适合需要精确读秒的场景。
+	public static String formatSeconds(int ticks) {
+		return Integer.toString(totalSeconds(ticks));
+	}
+
+	// 按配置选择格式：alwaysSeconds 为 true 时固定使用秒。
+	public static String format(int ticks, boolean alwaysSeconds) {
+		return alwaysSeconds ? formatSeconds(ticks) : format(ticks);
+	}
+
+	// 向上取整的剩余秒数，保证效果仍存在时不会提前显示 0。
+	private static int totalSeconds(int ticks) {
+		return Math.max(0, (int) Math.ceil(Math.max(0, ticks) / (double) TICKS_PER_SECOND));
 	}
 
 	// 与 {@code %02d} 等价：两位数字，不足补前导零。
