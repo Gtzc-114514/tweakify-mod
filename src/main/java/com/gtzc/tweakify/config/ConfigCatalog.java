@@ -68,6 +68,7 @@ public final class ConfigCatalog {
 		entries.add(function("copyItemId", true));
 		entries.add(child("copyItemId", "copyTargetId"));
 		entries.add(child("copyItemId", "copyItemIdFormat"));
+		entries.add(child("copyItemId", "copyItemIdNamespace"));
 		entries.add(child("copyItemId", "copyItemIdCloseContainer"));
 		entries.add(child("copyItemId", "copyItemIdChatMessage"));
 		// 交互冷却
@@ -214,11 +215,14 @@ public final class ConfigCatalog {
 		entries.add(function("highlightSingleLayerBedrock", true));
 		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockMaxMarkers"));
 		entries.add(function("barrierVisibility", true));
+		entries.add(child("barrierVisibility", "barrierVisibilityMaxMarkers"));
 		entries.add(function("durabilityOverlay", true));
 		entries.add(child("durabilityOverlay", "durabilityDisplayMode"));
+		entries.add(child("durabilityOverlay", "durabilityOverlayColorMode"));
 		entries.add(child("durabilityOverlay", "durabilityOverlayHotbarOnly"));
 		entries.add(child("durabilityOverlay", "durabilityOverlayLowThreshold"));
 		entries.add(function("statusEffectDurationDisplay", true));
+		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationAlwaysSeconds"));
 		entries.add(function("elytraFireworkCooldown", true));
 		entries.add(child("elytraFireworkCooldown", "elytraFireworkCooldownTicks"));
 		entries.add(modified("disableFlatWorldSlimeSpawn", true));
@@ -246,6 +250,8 @@ public final class ConfigCatalog {
 		entries.add(child("attackRangeDisplay", "attackRangeDisplayMode"));
 		entries.add(child("attackRangeDisplay", "attackRangeRenderMode"));
 		entries.add(child("attackRangeDisplay", "attackRangeIncludeSelf", true));
+		entries.add(child("attackRangeDisplay", "attackRangeHostileOnly"));
+		entries.add(child("attackRangeDisplay", "attackRangeIncludeInvisible"));
 		entries.add(child("attackRangeDisplay", "attackRangeMaxDistance"));
 		entries.add(child("attackRangeDisplay", "attackRangeMaxTargets"));
 		entries.add(child("attackRangeDisplay", "attackRangeEntities"));
@@ -312,9 +318,17 @@ public final class ConfigCatalog {
 		entries.add(testing("debugInfoOverlay", true));
 		entries.add(child("debugInfoOverlay", "debugInfoShowPerformance"));
 		entries.add(child("debugInfoOverlay", "debugInfoShowTarget"));
+		entries.add(child("debugInfoOverlay", "debugInfoShowBiome"));
+		entries.add(child("debugInfoOverlay", "debugInfoShowSpeed"));
+		entries.add(child("debugInfoOverlay", "debugInfoShowEntities"));
+		entries.add(child("debugInfoOverlay", "debugInfoShowConfigStats"));
+		entries.add(child("debugInfoOverlay", "debugInfoShowEffects"));
 		entries.add(child("debugInfoOverlay", "debugInfoShowHooks"));
-		// 探针报表（测试标签，纯快捷键动作：把已激活的 Mixin 钩子打到聊天栏）
+		// 探针报表（测试标签，纯快捷键动作：把已激活的 Mixin 钩子打到聊天栏或剪贴板）
 		entries.add(testing("debugProbeReport", false));
+		entries.add(child("debugProbeReport", "debugProbeReportCopy"));
+		// 已启用功能报表（测试标签，纯快捷键动作）
+		entries.add(testing("debugEnabledFeaturesReport", false));
 		validate(entries);
 		return entries;
 	}

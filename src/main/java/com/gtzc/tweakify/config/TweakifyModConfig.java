@@ -133,6 +133,15 @@ public class TweakifyModConfig {
 	public static final List<String> SUPPORTED_DURABILITY_DISPLAYS = List.of(
 		DURABILITY_DISPLAY_PERCENT, DURABILITY_DISPLAY_VALUE);
 
+	// 耐久文字的配色：auto 按剩余耐久分档（绿/白/黄/红），其余固定单色。
+	public static final String DURABILITY_COLOR_MODE_AUTO = "auto";
+	public static final String DURABILITY_COLOR_MODE_WHITE = "white";
+	public static final String DURABILITY_COLOR_MODE_YELLOW = "yellow";
+	public static final String DURABILITY_COLOR_MODE_RED = "red";
+	public static final List<String> SUPPORTED_DURABILITY_COLOR_MODES = List.of(
+		DURABILITY_COLOR_MODE_AUTO, DURABILITY_COLOR_MODE_WHITE,
+		DURABILITY_COLOR_MODE_YELLOW, DURABILITY_COLOR_MODE_RED);
+
 	// 自定义方块轮廓：字段名、步进、线宽范围与默认值。
 	public static final String BLOCK_OUTLINE_WIDTH_FIELD = "blockOutlineWidth";
 	public static final double BLOCK_OUTLINE_WIDTH_STEP = 0.5;
@@ -205,6 +214,11 @@ public class TweakifyModConfig {
 	public static final int MIN_BEDROCK_MARKERS = 1;
 	public static final int MAX_BEDROCK_MARKERS = 256;
 	public static final int DEFAULT_BEDROCK_MARKERS = 32;
+
+	// 屏障可见的标记数量限制：默认 256 与旧版固定上限一致。
+	public static final int MIN_BARRIER_MARKERS = 16;
+	public static final int MAX_BARRIER_MARKERS = 256;
+	public static final int DEFAULT_BARRIER_MARKERS = 256;
 
 	// 更好的放置覆盖：可覆盖的植物范围（仅花草 / 含作物 / 全部植物）。
 	public static final String BLOCK_PLACEMENT_FLOWERS = "flowers";

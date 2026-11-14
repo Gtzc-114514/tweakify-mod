@@ -141,11 +141,19 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 屏障可见：不手持屏障物品也能看到周围屏障，条目自带快捷键用于切换开关。
 	public static final ConfigBooleanHotkeyed BARRIER_VISIBILITY = new ConfigBooleanHotkeyed(
 		"barrierVisibility", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 单次扫描最多保留的屏障标记数量。
+	public static final ConfigInteger BARRIER_VISIBILITY_MAX_MARKERS = new ConfigInteger(
+		"barrierVisibilityMaxMarkers", TweakifyModConfig.DEFAULT_BARRIER_MARKERS,
+		TweakifyModConfig.MIN_BARRIER_MARKERS,
+		TweakifyModConfig.MAX_BARRIER_MARKERS).apply(GENERAL_KEY);
 	// 装备耐久显示：耐久条上叠加耐久百分比 / 剩余耐久数值，显示内容由子项切换。
 	public static final ConfigBooleanHotkeyed DURABILITY_OVERLAY = new ConfigBooleanHotkeyed(
 		"durabilityOverlay", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigOptionList DURABILITY_DISPLAY_MODE = new ConfigOptionList(
 		"durabilityDisplayMode", DurabilityDisplayMode.PERCENT).apply(GENERAL_KEY);
+	// 耐久文字配色：自动分档 / 固定白、黄、红。
+	public static final ConfigOptionList DURABILITY_OVERLAY_COLOR_MODE = new ConfigOptionList(
+		"durabilityOverlayColorMode", DurabilityColorMode.AUTO).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_CURSE_ENCHANTMENT_RESTRICTION = new ConfigBoolean(
 		"disableCurseEnchantmentRestriction", false).apply(GENERAL_KEY);
 	// 禁用附魔过于昂贵：铁砧花费达到 40 级时仍可取出结果。
@@ -305,6 +313,12 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 是否显示本地玩家自己的攻击范围。
 	public static final ConfigBoolean ATTACK_RANGE_INCLUDE_SELF = new ConfigBoolean(
 		"attackRangeIncludeSelf", false).apply(GENERAL_KEY);
+	// 只显示敌对生物；关闭时保持生物 + 玩家的原逻辑。
+	public static final ConfigBoolean ATTACK_RANGE_HOSTILE_ONLY = new ConfigBoolean(
+		"attackRangeHostileOnly", false).apply(GENERAL_KEY);
+	// 是否连隐身实体也显示。
+	public static final ConfigBoolean ATTACK_RANGE_INCLUDE_INVISIBLE = new ConfigBoolean(
+		"attackRangeIncludeInvisible", false).apply(GENERAL_KEY);
 	// 攻击范围的收集距离与单次最多目标数。
 	public static final ConfigInteger ATTACK_RANGE_MAX_DISTANCE = new ConfigInteger(
 		"attackRangeMaxDistance", TweakifyModConfig.DEFAULT_ATTACK_RANGE_DISTANCE,
@@ -416,9 +430,15 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 药水效果时间显示：在 HUD 效果图标下方叠加剩余时间。
 	public static final ConfigBooleanHotkeyed STATUS_EFFECT_DURATION_DISPLAY = new ConfigBooleanHotkeyed(
 		"statusEffectDurationDisplay", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 时间格式固定为秒（不使用分:秒 / h / d 缩写）。
+	public static final ConfigBoolean STATUS_EFFECT_DURATION_ALWAYS_SECONDS = new ConfigBoolean(
+		"statusEffectDurationAlwaysSeconds", false).apply(GENERAL_KEY);
 	// 复制 ID 子项。
 	public static final ConfigOptionList COPY_ITEM_ID_FORMAT = new ConfigOptionList(
 		"copyItemIdFormat", CopyIdFormat.PLAIN).apply(GENERAL_KEY);
+	// 是否保留命名空间前缀：关闭后 minecraft:stone 复制为 stone。
+	public static final ConfigBoolean COPY_ITEM_ID_NAMESPACE = new ConfigBoolean(
+		"copyItemIdNamespace", true).apply(GENERAL_KEY);
 	public static final ConfigBoolean COPY_ITEM_ID_CLOSE_CONTAINER = new ConfigBoolean(
 		"copyItemIdCloseContainer", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean COPY_ITEM_ID_CHAT_MESSAGE = new ConfigBoolean(
@@ -554,11 +574,27 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"debugInfoShowPerformance", true).apply(GENERAL_KEY);
 	public static final ConfigBoolean DEBUG_INFO_SHOW_TARGET = new ConfigBoolean(
 		"debugInfoShowTarget", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean DEBUG_INFO_SHOW_BIOME = new ConfigBoolean(
+		"debugInfoShowBiome", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean DEBUG_INFO_SHOW_SPEED = new ConfigBoolean(
+		"debugInfoShowSpeed", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean DEBUG_INFO_SHOW_ENTITIES = new ConfigBoolean(
+		"debugInfoShowEntities", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean DEBUG_INFO_SHOW_CONFIG_STATS = new ConfigBoolean(
+		"debugInfoShowConfigStats", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean DEBUG_INFO_SHOW_EFFECTS = new ConfigBoolean(
+		"debugInfoShowEffects", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean DEBUG_INFO_SHOW_HOOKS = new ConfigBoolean(
 		"debugInfoShowHooks", false).apply(GENERAL_KEY);
 	// 探针报表：纯快捷键动作，把已激活的 Mixin 行为探针输出到聊天栏。
 	public static final ConfigHotkey DEBUG_PROBE_REPORT = new ConfigHotkey(
 		"debugProbeReport", "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 探针输出到剪贴板而非聊天栏。
+	public static final ConfigBoolean DEBUG_PROBE_REPORT_COPY = new ConfigBoolean(
+		"debugProbeReportCopy", false).apply(GENERAL_KEY);
+	// 已启用功能报表：纯快捷键动作，把启用的功能根开关输出到聊天栏。
+	public static final ConfigHotkey DEBUG_ENABLED_FEATURES_REPORT = new ConfigHotkey(
+		"debugEnabledFeaturesReport", "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed ENTITY_HIGHLIGHT = new ConfigBooleanHotkeyed(
 		"entityHighlight", false, "", TOGGLE_HOTKEY_SETTINGS).apply(HIGHLIGHT_KEY);
 	public static final ConfigBoolean HIGHLIGHT_PRESET_1 = new ConfigBoolean(

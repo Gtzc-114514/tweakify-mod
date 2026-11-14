@@ -26,11 +26,13 @@ public final class FunctionConfig extends ConfigSection {
 			FieldSanitizer.of("copyItemIdFormat", this::sanitizeCopyIdFormat),
 			FieldSanitizer.of("chatSelectionColor", this::sanitizeChatSelectionColor),
 			FieldSanitizer.of("durabilityDisplayMode", this::sanitizeDurabilityDisplayMode),
+			FieldSanitizer.of("durabilityOverlayColorMode", this::sanitizeDurabilityColorMode),
 			FieldSanitizer.of("attackRangeDisplayMode", this::sanitizeAttackRangeDisplayMode),
 			new FieldSanitizer(List.of("attackRangeMaxDistance", "attackRangeMaxTargets"),
 				this::sanitizeAttackRangeLimits),
 			FieldSanitizer.of("attackRangeRenderMode", this::sanitizeAttackRangeRenderMode),
 			FieldSanitizer.of("highlightSingleLayerBedrockMaxMarkers", this::sanitizeBedrockMarkerLimit),
+			FieldSanitizer.of("barrierVisibilityMaxMarkers", this::sanitizeBarrierMarkerLimit),
 			FieldSanitizer.of("cutThroughItems", this::sanitizeCutThroughItems),
 			FieldSanitizer.of("cutThroughPlants", this::sanitizeCutThroughPlants),
 			FieldSanitizer.of("elytraFireworkCooldownTicks", this::sanitizeElytraFireworkTicks),
@@ -60,6 +62,9 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 复制格式：plain（纯 ID）/ typed（带 block/entity/item 前缀）/ counted（带数量）。
 	public volatile String copyItemIdFormat = TweakifyModConfig.COPY_ID_FORMAT_PLAIN;
+
+	// 复制的 ID 是否保留命名空间前缀：关闭后 minecraft:stone 复制为 stone。
+	public volatile boolean copyItemIdNamespace = true;
 
 	// 复制后自动关闭容器界面。
 	public volatile boolean copyItemIdCloseContainer = false;
@@ -247,6 +252,12 @@ public final class FunctionConfig extends ConfigSection {
 	// 是否显示本地玩家自己的攻击范围（默认关闭，避免球体包住自身）。
 	public volatile boolean attackRangeIncludeSelf = false;
 
+	// 只显示敌对生物（保持原版的 Monster 判定）。
+	public volatile boolean attackRangeHostileOnly = false;
+
+	// 是否连隐身实体也一并显示（默认关闭，与原版行为一致）。
+	public volatile boolean attackRangeIncludeInvisible = false;
+
 	// 收集范围（格）与单次最多显示的目标数量。
 	public volatile int attackRangeMaxDistance = TweakifyModConfig.DEFAULT_ATTACK_RANGE_DISTANCE;
 	public volatile int attackRangeMaxTargets = TweakifyModConfig.DEFAULT_ATTACK_RANGE_TARGETS;
@@ -324,11 +335,17 @@ public final class FunctionConfig extends ConfigSection {
 	// 屏障可见：开启后在周围屏障方块中心显示红色标记，未手持屏障物品也能看到。
 	public volatile boolean barrierVisibility = false;
 
+	// 单次扫描最多保留的屏障标记数量（超出时保留离玩家最近的）。
+	public volatile int barrierVisibilityMaxMarkers = TweakifyModConfig.DEFAULT_BARRIER_MARKERS;
+
 	// 装备耐久显示：在物品栏耐久条上方叠加耐久文字，满耐久时不显示。
 	public volatile boolean durabilityOverlay = false;
 
 	// 耐久文字内容：percent（耐久百分比）/ value（剩余耐久数值）。
 	public volatile String durabilityDisplayMode = TweakifyModConfig.DURABILITY_DISPLAY_PERCENT;
+
+	// 耐久文字配色：auto（按剩余耐久分档）/ white / yellow / red。
+	public volatile String durabilityOverlayColorMode = TweakifyModConfig.DURABILITY_COLOR_MODE_AUTO;
 
 	// 仅在 HUD 快捷栏显示耐久文字（打开任意界面时不显示）。
 	public volatile boolean durabilityOverlayHotbarOnly = false;
@@ -338,6 +355,9 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 药水效果时间显示：在 HUD 的效果图标下方显示剩余时间。
 	public volatile boolean statusEffectDurationDisplay = false;
+
+	// 时间格式固定为秒（不使用分:秒 / h / d 缩写）。
+	public volatile boolean statusEffectDurationAlwaysSeconds = false;
 
 	// 各功能根开关的切换快捷键，默认无快捷键（空字符串）。
 	// 功能标签只给根功能提供快捷键，子设置不占快捷键栏。
@@ -466,6 +486,17 @@ public final class FunctionConfig extends ConfigSection {
 		return true;
 	}
 
+	// 修正不合法的耐久配色，回退到自动分档。
+	private boolean sanitizeDurabilityColorMode() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_DURABILITY_COLOR_MODES, durabilityOverlayColorMode)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported durability color mode in config: {}", durabilityOverlayColorMode);
+		durabilityOverlayColorMode = TweakifyModConfig.DURABILITY_COLOR_MODE_AUTO;
+		return true;
+	}
+
 	// 修正不合法的攻击范围显示方式，回退到平面圆环。
 	private boolean sanitizeAttackRangeDisplayMode() {
 		if (TweakifyModConfig.isSupportedValue(
@@ -514,6 +545,19 @@ public final class FunctionConfig extends ConfigSection {
 		LOGGER.warn("Clamping highlightSingleLayerBedrockMaxMarkers from {} to {}",
 			highlightSingleLayerBedrockMaxMarkers, clamped);
 		highlightSingleLayerBedrockMaxMarkers = clamped;
+		return true;
+	}
+
+	// 修正屏障标记数量，手工改坏配置时夹回允许范围。
+	private boolean sanitizeBarrierMarkerLimit() {
+		int clamped = Math.max(TweakifyModConfig.MIN_BARRIER_MARKERS,
+			Math.min(TweakifyModConfig.MAX_BARRIER_MARKERS, barrierVisibilityMaxMarkers));
+		if (clamped == barrierVisibilityMaxMarkers) {
+			return false;
+		}
+		LOGGER.warn("Clamping barrierVisibilityMaxMarkers from {} to {}",
+			barrierVisibilityMaxMarkers, clamped);
+		barrierVisibilityMaxMarkers = clamped;
 		return true;
 	}
 
