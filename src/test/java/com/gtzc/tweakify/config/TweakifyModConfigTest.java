@@ -220,6 +220,28 @@ class TweakifyModConfigTest {
 		assertTrue(rewritten.contains("\"locatorBarHeadBorderThickness\": \"thick\""));
 	}
 
+	// 版本 4：默认（all）/ 包含模式下，旧名单迁移到包含名单，旧整数 1 迁移为 normal。
+	@Test
+	void loadMigratesLegacyLocatorFilterNamesIntoIncludedList() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, """
+			{
+			  "configVersion": 3,
+			  "locatorBarHeadFilterNames": ["Alice"],
+			  "locatorBarHeadBorderThickness": 1
+			}
+			""");
+
+		TweakifyModConfig config = TweakifyModConfig.load(path);
+
+		assertEquals(List.of("Alice"), config.functions.locatorBarHeadIncludedPlayers,
+			"默认/包含模式的旧名单应迁移到包含名单");
+		assertTrue(config.functions.locatorBarHeadExcludedPlayers.isEmpty());
+		assertEquals(TweakifyModConfig.LOCATOR_HEAD_BORDER_NORMAL,
+			config.functions.locatorBarHeadBorderThickness, "旧数字 1 应迁移为标准档");
+		assertFalse(Files.readString(path).contains("locatorBarHeadFilterNames"), "旧键应在写盘后消失");
+	}
+
 	@Test
 	void loadIgnoresRemovedMiniHudHotkey() throws IOException {
 		Path path = configPath();
