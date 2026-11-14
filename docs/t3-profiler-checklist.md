@@ -1,7 +1,7 @@
 # T3 实机 profiler 验证检查表
 
 本清单对应 [`docs/tech-debt.md`](tech-debt.md) 的 T3（扫描与收集仍在主线程分帧执行）；
-T1 的版本间对比复用本文 §二 的 A/B/C 场景（D 为两项全关的对照基线）。
+T1 的版本间对比复用本文 §二 的 A/B/C 场景（D 为两项全关的对照基线），基线版本取 v1.0.4。
 T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRangeState.tick` 占主线程超过约 5%，
 或收到“开启屏障可见后卡顿”的可复现反馈。两者是独立触发路径：未收到复现反馈且占比未达 5% 之前，T3 保持暂缓。
 
@@ -25,7 +25,7 @@ T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRan
 | D | 普通主世界空旷区 | 两项全关 | 对照组 |
 | E | 刷怪场或村庄（≥64 生物，超过上限 64 时只保留最近的） | 攻击范围开启（距离 48、上限 64） | 实体收集侧 |
 
-三轮结果取中位后与上一版本同场景同轮次对比（T1 回退判据）。
+每个场景取 3 轮结果的中位值，再与基线版本（v1.0.4）同场景的中位值对比（A/B/C；D 不参与回退判读，T1 回退判据）。
 
 ## 三、采集步骤
 
@@ -35,7 +35,10 @@ T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRan
 2. 进入场景后执行 `/spark profiler start --timeout 120`；
 3. 静止 60 秒后开始移动 60 秒；
 4. `/spark profiler stop`，保存火焰图链接；
-5. `/spark tickmonitor --threshold-tick 50` 观察超过 50 ms 的 tick（避免每条 tick 都输出）。
+5. `/spark tickmonitor --threshold-tick 50` 观察超过 50 ms 的 tick（避免每条 tick 都输出）；
+6. 单层耗时：用火焰图中 `BlockMarkerScanner.tick` 的累计占比 × 该轮 tick 平均时长（`/spark health` 的 p50）
+   ÷ 该轮实际扫描层数（半径 32 为 65 层/轮）估算 `avgLayerUs`；需要更高精度时在 `ScanJob.step()` 临时加
+   `System.nanoTime()` 累加（合入前移除）。
 
 ### JFR（备用）
 
@@ -58,7 +61,7 @@ jcmd <pid> JFR.stop name=scan        # 需要提前结束时
 | MSPT | `/spark health` 的 p50 / p95 / p99（注：该值为集成服务端 tick 时间，仅作旁证） |
 | FPS | 每轮分段（静止/移动各 60 秒）的平均值与 1% low |
 | 扫描规模 | 每轮 section 预筛命中数、进入逐方块读取的层数、命中标记数（屏障/基岩各取上限前） |
-| 单层耗时 | `avgLayerUs`：同一场景同一层数下 `ScanJob.scanLayer` 的单层平均耗时（由 Spark/JFR 采样或临时埋点取得），用于 T1 回退判据 |
+| `avgLayerUs`（单层耗时） | 同一场景同一层数下 `ScanJob.scanLayer` 的单层平均耗时：由火焰图占比 × tick 平均时长 ÷ 每轮层数估算，或临时埋点实测；两种方式在备注列注明 |
 | 快照等价量 | 按命中 section 数换算的 `copy()` 体积（section 数 × 2–4 KB），用于评估快照方案的每 tick 预算 |
 | 元数据 | 维度、坐标、种子、实体数、已加载区块数、CPU、渲染距离、图形后端 |
 | 日志 | `logs/latest.log` 中的异常、GC 告警与 Tweakify 相关 warning |
