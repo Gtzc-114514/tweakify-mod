@@ -121,6 +121,35 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 
 同时 main 分支 push 触发的 `build.yml`（run `43543809341`）同为 success。
 
+## 验证记录：v1.0.4 发布
+
+本次无 `release.yml` 改动，版本一致性校验链与 notes 机制按既有流程再次通过：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `43606022836` |
+| 对应提交 | `2e4d87c`（`v1.0.4` 标签提交；含 1.0.4 版本号、notes 与版本索引） |
+| 触发 | push tag `v1.0.4` |
+| 结论 | **success**，总耗时 47 秒（job 47 秒） |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.0.4` 并写入 `$GITHUB_OUTPUT` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.0.4` 去前缀后与版本 `1.0.4` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.0.4` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.0.4.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.0.4` 开头（1,282 字符），与仓库内 notes 逐字一致，含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.0.4.jar`（569,837 字节）、`tweakify-mod-1.0.4-sources.jar`（415,124 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `43606035408`）同为 success。
+
+> 备注：本次 `git push origin main` 首次失败（`Empty reply from server`），tag 推送成功后再补推 main；
+> tag 指向的提交已包含 notes，Release 正文未受影响。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
