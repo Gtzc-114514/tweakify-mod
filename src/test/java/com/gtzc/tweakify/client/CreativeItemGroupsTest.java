@@ -7,6 +7,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.SimpleContainer;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -290,18 +292,43 @@ class CreativeItemGroupsTest {
 		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
 		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
 			":search|搜索|stone",
+			":hotbar|快捷栏|stone",
+			":inventory|背包|stone",
 			":nonexistent|缺失|stone"));
 		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
 			CreativeModeTabs.BUILDING_BLOCKS));
 
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest(":search"),
 			"非分类页 ID 必须告警");
+		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest(":hotbar"),
+			"快捷栏 ID 必须告警");
+		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest(":inventory"),
+			"背包 ID 必须告警");
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest(":nonexistent"),
 			"未注册 ID 必须告警");
+		assertFalse(CreativeItemGroups.warnUnsupportedCustomTab(":search"),
+			"端到端已告警过，再次调用不应重复");
 
 		List<ItemStack> stripped = CreativeItemGroups.stripMembers(
 			List.of(stack(Items.STONE), stack(Items.STONE_BRICKS), stack(Items.SMOOTH_STONE)));
 		assertEquals(3, stripped.size(), "无效标签页的自定义组不得摘除物品");
+	}
+
+	// ":" / "minecraft:"（空 path）端到端：配置行仍要留下一次告警，且不成组。
+	@Test
+	void emptyPathTabsWarnEndToEnd() {
+		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+			":|空路径|stone",
+			"minecraft:|空路径2|stone"));
+		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
+			CreativeModeTabs.BUILDING_BLOCKS));
+
+		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:"),
+			"空 path 的 tabId 必须告警");
+		List<ItemStack> stripped = CreativeItemGroups.stripMembers(
+			List.of(stack(Items.STONE), stack(Items.STONE_BRICKS), stack(Items.SMOOTH_STONE)));
+		assertEquals(3, stripped.size(), "空 path 的自定义组不得摘除物品");
 	}
 
 	// 默认组开启（默认值）时，自定义组仍应参与成组，不能被默认组配置分支跳过。
@@ -647,13 +674,28 @@ class CreativeItemGroupsTest {
 			.title(Component.literal("Mod Category"))
 			.icon(() -> new ItemStack(Items.STONE))
 			.build();
-		assertNull(CreativeItemGroups.customTabWarning("tweakify_test:category", id -> modCategory));
+		Map<Identifier, CreativeModeTab> modTabs = Map.of(
+			Identifier.parse("tweakify_test:category"), modCategory);
+		// 大写输入经归一化后必须查到小写键，直接验证“归一化后的 ID 传入查找”。
+		assertNull(CreativeItemGroups.customTabWarning("Tweakify_Test:Category", modTabs::get));
 		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
-			CreativeItemGroups.customTabWarning("tweakify_test:missing", id -> null));
+			CreativeItemGroups.customTabWarning("tweakify_test:missing", modTabs::get));
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning("tweakify_test:boom", id -> {
+				throw new IllegalStateException("boom");
+			}), "查找异常按未知处理，不得冒泡");
 		CreativeModeTab search = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeModeTabs.SEARCH);
 		assertNotNull(search);
+		Map<Identifier, CreativeModeTab> searchTabs = Map.of(
+			Identifier.parse("tweakify_test:search"), search);
 		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
-			CreativeItemGroups.customTabWarning("tweakify_test:search", id -> search));
+			CreativeItemGroups.customTabWarning("Tweakify_Test:Search", searchTabs::get));
+
+		// Unicode 与超长 ID 不会命中注册表，仍归为未知。
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning("中文:combat"));
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning("minecraft:" + "a".repeat(300)));
 	}
 
 	// 告警去重：每个标签页只真正告警一次；不需要告警的 tabId 不占用名额；clear 后复位。
@@ -705,9 +747,30 @@ class CreativeItemGroupsTest {
 			"rebuildGroups 必须检查自定义组");
 	}
 
+	// 格式错误行（字段不足/空 tabId/空包含项）必须留下一次告警，clear 后复位。
+	@Test
+	void malformedCustomRowsWarnOnce() {
+		String shortRow = "字段不足";
+		String emptyTab = "|没有标签页|stairs";
+		String emptyContained = "minecraft:building_blocks|名|,,";
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+			List.of(shortRow, emptyTab, emptyContained));
+
+		CreativeItemGroups.warnUnsupportedCustomGroups();
+		assertTrue(CreativeItemGroups.isInvalidRowWarnedForTest(shortRow));
+		assertTrue(CreativeItemGroups.isInvalidRowWarnedForTest(emptyTab));
+		assertTrue(CreativeItemGroups.isInvalidRowWarnedForTest(emptyContained));
+
+		CreativeItemGroups.clear();
+		assertFalse(CreativeItemGroups.isInvalidRowWarnedForTest(shortRow), "clear 后应复位");
+	}
+
 	// 配置变化决策：分类页要求重建列表；非分类页不重建但必须检查自定义组。
 	@Test
 	void onConfigChangedRefreshesOnlyCategoryTabs() {
+		ItemStack oakStairs = stack(Items.OAK_STAIRS);
+		ItemStack stoneStairs = stack(Items.STONE_STAIRS);
+		ItemStack spruceStairs = stack(Items.SPRUCE_STAIRS);
 		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
 			List.of("minecraft:search|搜索|stone"));
 
@@ -723,6 +786,14 @@ class CreativeItemGroupsTest {
 		assertNotNull(building);
 		assertTrue(CreativeItemGroups.onConfigChanged(building), "分类页需要重建列表");
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:search"));
+
+		// 前置：分类页建立默认楼梯组。
+		CreativeItemGroups.stripMembers(List.of(oakStairs, stoneStairs, spruceStairs));
+		assertNotNull(CreativeItemGroups.iconGroup(0), "前置：分类页已成立楼梯组");
+
+		// 非分类页只告警，不得清空既有组状态。
+		assertFalse(CreativeItemGroups.onConfigChanged(search), "非分类页不重建列表");
+		assertNotNull(CreativeItemGroups.iconGroup(0), "非分类页不得清空既有组状态");
 
 		assertFalse(CreativeItemGroups.onConfigChanged(null));
 	}
