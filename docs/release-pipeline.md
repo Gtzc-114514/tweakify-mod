@@ -80,7 +80,7 @@
 | Run ID | `43526912662` |
 | 对应提交 | `11f6e9a`（`v1.0.2` 标签提交；当时 `verify jar mod version` 为 5 类归因，尚未拆分目录预检/枚举失败） |
 | 触发 | push tag `v1.0.2` |
-| 结论 | **success**，总耗时 39 秒（job 36 秒） |
+| 结论 | **success**，job 耗时 36 秒（run 39 秒） |
 | 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
 
 关键验证点：
@@ -104,7 +104,7 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 | Run ID | `43543826316` |
 | 对应提交 | `84edc61`（`v1.0.3` 标签提交；含手写 notes 与 1.0.3 版本号） |
 | 触发 | push tag `v1.0.3` |
-| 结论 | **success**，总耗时 42 秒（job 42 秒） |
+| 结论 | **success**，job 耗时 42 秒 |
 | 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
 
 关键验证点：
@@ -130,7 +130,7 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 | Run ID | `43606022836` |
 | 对应提交 | `2e4d87c`（`v1.0.4` 标签提交；含 1.0.4 版本号、notes 与版本索引） |
 | 触发 | push tag `v1.0.4` |
-| 结论 | **success**，总耗时 47 秒（job 47 秒） |
+| 结论 | **success**，job 耗时 47 秒 |
 | 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
 
 关键验证点：
@@ -159,7 +159,7 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 | Run ID | `43611085835` |
 | 对应提交 | `23d8fd7`（`v1.0.5` 标签提交；含 1.0.5 版本号、notes 与版本索引） |
 | 触发 | push tag `v1.0.5` |
-| 结论 | **success**，总耗时 34 秒（job 34 秒） |
+| 结论 | **success**，job 耗时 34 秒（run 36 秒） |
 | 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
 
 关键验证点：
@@ -178,6 +178,9 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 
 > 备注：本次 `git push origin main` 连续失败 8 次（`Connection was reset` / `Failed to connect` / `Empty reply`，含 HTTP/1.1 尝试），
 > 第 9 次成功；tag 推送重试 1 次。GitHub 443 服务间歇性不可用，不影响版本一致性校验。
+>
+> v1.0.5 发布后对 notes 的措辞修正（状态管理分述与耗时口径）已用 `gh release edit v1.0.5 --notes-file docs/release-notes/v1.0.5.md` 同步线上；
+> 重跑该标签的 release 工作流会用 tag 提交中的旧版正文覆盖，届时需重新 edit。
 
 ## 已知但决定不改的点
 
@@ -205,7 +208,7 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 
 - [ ] `gradle.properties` 的 `version` 改为新版本号；
 - [ ] `README.md` 版本表同步（`| Tweakify Mod | X.Y.Z |`）；
-- [ ] `docs/release-notes/vX.Y.Z.md`：一句话概述 → 架构 / 兼容性 / 修复 / 构建与发布 → 末尾 `compare/v上一个...vX.Y.Z` 链接；
+- [ ] `docs/release-notes/vX.Y.Z.md`：一句话概述 → 按改动主题分节（如 性能 / 测试 / 兼容性 / 构建与发布）→ 末尾 `compare/v上一个...vX.Y.Z` 链接；
 - [ ] 若本次改了 Mixin 注入点：`docs/mixin-probes.md` 的覆盖数、字段数、基线一并同步。
 
 ### 二、时序（最容易踩的坑）
