@@ -76,8 +76,8 @@ jobs:
           GRADLE_VERSION: ${{ steps.gv.outputs.version }}
         run: |
           set -euo pipefail
-          # 先确认工具链完整（find/head/unzip/python3），避免把「镜像缺工具」误归因成「jar 内容问题」。
-          for tool in find head unzip python3; do
+          # 先确认工具链完整（find/unzip/python3），避免把「镜像缺工具」误归因成「jar 内容问题」。
+          for tool in find unzip python3; do
             command -v "$tool" >/dev/null \
               || { echo "::error::runner 镜像缺少 $tool，无法校验 jar 版本"; exit 1; }
           done
