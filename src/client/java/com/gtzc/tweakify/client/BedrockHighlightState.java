@@ -41,15 +41,19 @@ public final class BedrockHighlightState {
 
 	// 计算某个位置的标记；不是单层基岩或两面都被方块挡住时返回 null。
 	// 自身状态由调用方传入（同一位置只查一次），只有候选方块才会再去查上下邻居。
-	static Marker markerAt(BlockGetter level, BlockPos pos, BlockState state) {
+	// 批量扫描时由调用方提供可变的相邻坐标，避免每层上千次 above()/below() 产生的临时 BlockPos。
+	static Marker markerAt(BlockGetter level, BlockPos pos, BlockState state,
+			BlockPos.MutableBlockPos neighbor) {
 		if (!state.is(Blocks.BEDROCK)) {
 			return null;
 		}
-		BlockState above = level.getBlockState(pos.above());
+		neighbor.set(pos.getX(), pos.getY() + 1, pos.getZ());
+		BlockState above = level.getBlockState(neighbor);
 		if (above.is(Blocks.BEDROCK)) {
 			return null;
 		}
-		BlockState below = level.getBlockState(pos.below());
+		neighbor.set(pos.getX(), pos.getY() - 1, pos.getZ());
+		BlockState below = level.getBlockState(neighbor);
 		if (below.is(Blocks.BEDROCK)) {
 			return null;
 		}

@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,9 @@ final class BlockMarkerScanner {
 	private static final int BEDROCK_INTERVAL_TICKS = 20;
 	// 每次扫描分帧处理：每 tick 3 层 y（约 3.2k 次方块读取），一次完整扫描约 11 tick。
 	private static final int LAYERS_PER_TICK = 3;
+	// 单层最多跨几个区块：跨度 2R+1 格，最坏情况下起点落在区块末格，
+	// 覆盖的区块数为 floor((跨度+14)/16) + 1（R=16 时为 3）。
+	private static final int MAX_CHUNKS_PER_AXIS = (SCAN_RADIUS * 2 + 1 + 14) / 16 + 1;
 	// 计数器回到 0 的周期：同时是 10 与 20 的整数倍，避免长时间运行后 int 溢出。
 	private static final int COUNTER_RESET_TICKS = 1200;
 
@@ -119,6 +123,10 @@ final class BlockMarkerScanner {
 		// 复用同一个可变坐标：整个体积扫描（每 tick 3.2k 次）只在命中时才创建不可变副本，
 		// 避免每秒数万次临时对象分配。可变实例不能存进列表，命中处必须 immutable()。
 		private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+		// 相邻位置查询同样复用：基岩密集时每层要查上千次上下邻居。
+		private final BlockPos.MutableBlockPos neighbor = new BlockPos.MutableBlockPos();
+		// 本层涉及的区块：按扫描半径算出的上界分配，每个扫描任务复用同一数组。
+		private final LevelChunk[] layerChunks = new LevelChunk[MAX_CHUNKS_PER_AXIS * MAX_CHUNKS_PER_AXIS];
 
 		ScanJob(ClientLevel level, BlockPos center, boolean barrier, boolean bedrock) {
 			this.level = level;
@@ -134,28 +142,51 @@ final class BlockMarkerScanner {
 		boolean step() {
 			int layers = 0;
 			while (layers < LAYERS_PER_TICK && this.nextOffsetY <= SCAN_RADIUS) {
-				int y = this.centerY + this.nextOffsetY;
-				for (int dx = -SCAN_RADIUS; dx <= SCAN_RADIUS; dx++) {
-					for (int dz = -SCAN_RADIUS; dz <= SCAN_RADIUS; dz++) {
-						this.cursor.set(this.centerX + dx, y, this.centerZ + dz);
-						BlockState state = this.level.getBlockState(this.cursor);
-						if (this.barrier && BarrierVisibilityState.isBarrier(state)) {
-							this.barriers.add(this.cursor.immutable());
-						}
-						if (this.bedrock) {
-							// markerAt 内部会对坐标做 immutable()，传入可变实例是安全的。
-							BedrockHighlightState.Marker marker =
-								BedrockHighlightState.markerAt(this.level, this.cursor, state);
-							if (marker != null) {
-								this.markers.add(marker);
-							}
-						}
-					}
-				}
+				scanLayer(this.centerY + this.nextOffsetY);
 				this.nextOffsetY++;
 				layers++;
 			}
 			return this.nextOffsetY > SCAN_RADIUS;
+		}
+
+		// 单层扫描：先预取本层涉及的区块，再按原来的 x 主序、z 次序逐方块遍历。
+		// 遍历顺序与逐方块 getBlockState 完全一致（标记写入顺序不变），
+		// 但区块查找从每层 1089 次降到最多 9 次。
+		private void scanLayer(int y) {
+			int minX = this.centerX - SCAN_RADIUS;
+			int maxX = this.centerX + SCAN_RADIUS;
+			int minZ = this.centerZ - SCAN_RADIUS;
+			int maxZ = this.centerZ + SCAN_RADIUS;
+			int baseChunkX = minX >> 4;
+			int baseChunkZ = minZ >> 4;
+			int chunkCountX = (maxX >> 4) - baseChunkX + 1;
+			int chunkCountZ = (maxZ >> 4) - baseChunkZ + 1;
+			for (int chunkX = 0; chunkX < chunkCountX; chunkX++) {
+				for (int chunkZ = 0; chunkZ < chunkCountZ; chunkZ++) {
+					// 未加载区块返回空区块，读取结果是空气，与原版 getBlockState 行为一致。
+					this.layerChunks[chunkX * chunkCountZ + chunkZ] =
+						this.level.getChunk(baseChunkX + chunkX, baseChunkZ + chunkZ);
+				}
+			}
+			for (int x = minX; x <= maxX; x++) {
+				int chunkX = (x >> 4) - baseChunkX;
+				for (int z = minZ; z <= maxZ; z++) {
+					LevelChunk chunk = this.layerChunks[chunkX * chunkCountZ + ((z >> 4) - baseChunkZ)];
+					this.cursor.set(x, y, z);
+					BlockState state = chunk.getBlockState(this.cursor);
+					if (this.barrier && BarrierVisibilityState.isBarrier(state)) {
+						this.barriers.add(this.cursor.immutable());
+					}
+					if (this.bedrock) {
+						// markerAt 内部会对坐标做 immutable()，传入可变实例是安全的。
+						BedrockHighlightState.Marker marker = BedrockHighlightState.markerAt(
+							this.level, this.cursor, state, this.neighbor);
+						if (marker != null) {
+							this.markers.add(marker);
+						}
+					}
+				}
+			}
 		}
 
 		void finish() {
