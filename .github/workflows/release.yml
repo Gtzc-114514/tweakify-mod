@@ -90,8 +90,8 @@ jobs:
             echo "::error::无法枚举 build/libs（目录存在但 find 失败，可能是权限或挂载问题）"
             exit 1
           fi
-          # head 从已捕获的字符串读取，避免生产者在管道内收到 SIGPIPE 导致 141 无注解中止。
-          JAR=$(printf '%s\n' "$JAR_LIST" | head -n1)
+          # 纯 bash 参数展开取首行：无子进程，也不存在 SIGPIPE 面。
+          JAR="${JAR_LIST%%$'\n'*}"
           if [ -z "$JAR" ]; then
             echo "::error::No main jar found in build/libs"
             exit 1
