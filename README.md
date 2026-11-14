@@ -18,9 +18,9 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 
 | 项 | 版本 |
 | --- | --- |
-| Tweakify Mod | 1.0.5 |
+| Tweakify Mod | 1.0.6 |
 | Minecraft | 26.3 |
-| Fabric Loader | >= 0.19.5 |
+| Fabric Loader | >= 0.20.1 |
 | Fabric API | 0.163.0+26.3 |
 | MaLiLib | 0.30.2（必需） |
 | Mod Menu | 21.0.0（可选，仅用于提供模组列表入口） |
