@@ -24,6 +24,7 @@
 | T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest（最近复评 2026-11-15，见详情） |
 | T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（摘要去重 + 精确比对，见详情） |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高 |
+| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-15，见详情） |
 
 ## T1 详情：section 预筛的集成测试缺口
 
@@ -135,6 +136,31 @@
 - **验证清单**：实机 profiler 采集步骤、场景矩阵、数据清单与判定标准见
   [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)。
 
+## T4 详情：mixin 层配置热更新转发无自动化覆盖
+
+- **现状**：配置变化后“是否重建当前页”的决策已下沉到 `CreativeItemGroups.onConfigChanged`，
+  由 `CreativeItemGroupsTest.onConfigChangedRefreshesOnlyCategoryTabs` 覆盖分类页重建、
+  非分类页只告警且不清空组状态、null 分支。
+  `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` 只剩签名比对、调用 `onConfigChanged`
+  与按返回值刷新列表；本条只描述该转发链路。
+- **失败模式**：转发代码被误删、条件写反（如常数 false）或刷新调用被移除时，单元测试全绿；
+  实机表现为配置变化后物品列表不刷新，或非分类页误清空 `currentTab`/渲染快照，
+  导致组图标与点击判定错位。
+- **触发条件**：修改 `CreativeModeInventoryGroupingMixin` 的 `containerTick` 注入或
+  `refreshCurrentTabContents` 调用；或其它模组重写 `CreativeModeInventoryScreen.containerTick`
+  导致注入失效（该注入未设 `require = 0`，注入失败会在启动期报错，不属于静默失效）。
+- **判定口径**：代码审查 + 实机手动回归：在分类页切换排序/总开关应立即重建列表；
+  在搜索页修改配置不应清空搜索结果；在快捷栏/背包页修改配置不应清空预览；
+  日志应出现对应告警且只出现一次。
+- **闭环动作**：若将来引入可加载 Mixin 的集成测试（Fabric Loader JUnit 或 GameTest），
+  补一条“配置变化 → 分类页刷新 / 非分类页仅告警”的转发测试并删除本条；
+  否则每次改动该 mixin 按判定口径手动回归。
+- **缓解措施**：转发逻辑保持一行 `if (onConfigChanged(selectedTab)) refreshCurrentTabContents(...)`，
+  决策与副作用集中在可单测的 `onConfigChanged`；`itemGroups` 的 HookProbe 可在实机确认钩子已执行。
+- **最近评估（2026-11-15）**：`onConfigChanged` 的三个分支已由单测覆盖；mixin 转发在一行内，
+  本次重构已核对与抽取前逐分支等价。项目未引入 Mixin 集成测试，维持暂缓。
+- **待办**：实机回归一次搜索/快捷栏/背包页的配置变化路径并记录结果。
+
 ## 与既有清单的关系
 
 | 文件 | 范围 |
@@ -143,4 +169,4 @@
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
 | `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T1 判定口径复用其 A/B/C 场景（D 作对照）、基线 v1.0.4 与 3 轮（冷启动 1 + 热缓存 2）取中位 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
-| 本文件 | 测试覆盖与性能取舍类技术债（T1–T3）；不搬运上述条目，避免两处维护漂移 |
+| 本文件 | 测试覆盖与性能取舍类技术债（T1–T4）；不搬运上述条目，避免两处维护漂移 |
