@@ -5,6 +5,8 @@
 
 ## 已评估条目
 
+状态列取值：`暂缓，<理由>` / `已修复（<摘要>，见详情）` / `复测未达触发条件（YYYY-MM-DD，见 T3 验证清单）`。
+
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
 | T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest |
@@ -67,8 +69,9 @@
      （内部为 `PalettedContainer.copy()`）取 section 快照（65³ 体积约 125 个 section，每 tick 约 42 个、84–168 KB），
      后台线程解析快照产出标记，结果回主线程应用；快照记录基准 center，玩家移动超阈值或换世界时丢弃结果；
   3. 更简单的降负手段优先：降低刷新频率、缩小扫描半径或降低标记上限。
-- **触发条件**：实机在屏障/基岩密集场景帧率明显下降，且 profiler 确认 `BlockMarkerScanner.tick` 占主线程超过约 5%；
-  或收到“开启屏障可见后卡顿”的可复现反馈。在此之前不引入线程与快照生命周期管理。
+- **触发条件**：实机在屏障/基岩密集或实体密集场景帧率明显下降，且 profiler 确认 `BlockMarkerScanner.tick`
+  或 `AttackRangeState.tick` 占主线程超过约 5%；或收到“开启屏障可见后卡顿”的可复现反馈。
+  在此之前不引入线程与快照生命周期管理。
 - **验证清单**：实机 profiler 采集步骤、场景矩阵、数据清单与判定标准见
   [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)。
 
