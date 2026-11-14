@@ -96,15 +96,15 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `entityHighlight` 自定义实体高亮 | 关 | 为预设列表中的实体显示发光描边；需同时开启一个预设 |
 | `highlightPreset1` / `highlightPreset2` / `highlightPreset3` 高亮预设 | 关 | 三个预设互斥，开启一个会自动关闭其他 |
 | `highlightPreset1Entities` / `highlightPreset2Entities` / `highlightPreset3Entities` 预设实体 | 空 | 各预设需要高亮的实体 ID 列表，支持 `minecraft:item` 等掉落物实体 |
-| `highlightSingleLayerBedrock` 高亮单层基岩 | 关 | 在周围单层基岩朝向空气的顶面/底面显示凸出 1 像素的金色实心小方块，便于寻找下界顶棚的可击穿薄弱点 |
+| `highlightSingleLayerBedrock` 高亮单层基岩 | 关 | 在周围 32 格内的单层基岩朝向空气的顶面/底面显示凸出 1 像素的金色实心小方块，便于寻找下界顶棚的可击穿薄弱点；每秒刷新 6 次 |
 | `highlightSingleLayerBedrockMaxMarkers` 基岩标记最大数量 | 32 | 单次最多显示的标记数（1 ~ 256）；超出时保留最近的 |
-| `barrierVisibility` 屏障可见 | 关 | 周围屏障方块显示与手持屏障物品时相同的原版标记粒子，粒子固定在方块中心并逐方块冷却，不会偏移或重叠；扫描半径 16 格，每秒刷新两次 |
+| `barrierVisibility` 屏障可见 | 关 | 周围屏障方块显示与手持屏障物品时相同的原版标记粒子，粒子固定在方块中心并逐方块冷却，不会偏移或重叠；扫描半径 32 格，每秒刷新 6 次 |
 | `durabilityOverlay` 装备耐久显示 | 关 | 在物品栏的耐久条上方叠加耐久文字；满耐久不显示，颜色随剩余耐久由绿转白、黄、红 |
 | `durabilityDisplayMode` 耐久显示内容 | `percent` | `percent` 耐久百分比 / `value` 剩余耐久数值（只显示当前剩余，不显示初始耐久）；两者字号一致 |
 | `durabilityOverlayHotbarOnly` 仅快捷栏显示 | 关 | 只在快捷栏显示耐久文字，背包格子里不显示 |
 | `durabilityOverlayLowThreshold` 低耐久提醒阈值 | 0 | 剩余耐久低于该百分比（0 ~ 100）时才显示；0 表示始终显示 |
 | `statusEffectDurationDisplay` 药水效果时间显示 | 关 | 在 HUD 右侧药水效果图标下方显示剩余时间（秒 / 分:秒 / 2h05 / 2d05）；无尽效果不显示 |
-| `attackRangeDisplay` 生物攻击范围 | 关 | 以生物或玩家为中心显示半透明蓝色线框攻击范围，半径按原版攻击距离计算 |
+| `attackRangeDisplay` 生物攻击范围 | 关 | 以生物或玩家为中心显示半透明蓝色线框攻击范围，半径按原版攻击距离计算；每秒刷新 12 次 |
 | `attackRangeDisplayMode` 范围显示方式 | `flat` | `flat` 脚下双圆环 / `sphere` 经纬线框球体 |
 | `attackRangeRenderMode` 范围渲染方式 | `wireframe` | `wireframe` 蓝色线框（无 OIT，性能更好）/ `filled` 半透明实心（观感更完整，可能掉帧） |
 | `attackRangeIncludeSelf` 显示自己的范围 | 关 | 是否显示本地玩家自己的攻击范围；关闭后只显示其他生物与玩家 |
