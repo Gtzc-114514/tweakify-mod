@@ -182,6 +182,33 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 > v1.0.5 发布后对 notes 的措辞修正（状态管理分述与耗时口径）已用 `gh release edit v1.0.5 --notes-file docs/release-notes/v1.0.5.md` 同步线上；
 > 重跑该标签的 release 工作流会用 tag 提交中的旧版正文覆盖，届时需重新 edit。
 
+## 验证记录：v1.0.6 发布
+
+本次无 `release.yml` 改动，版本一致性校验链与 notes 机制按既有流程再次通过；本次同时升级 Fabric Loader 到 0.20.1：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `43625965816` |
+| 对应提交 | `54bbfd1`（`v1.0.6` 标签提交；含 Loader 0.20.1、版本号、notes 与索引） |
+| 触发 | push tag `v1.0.6` |
+| 结论 | **success**，job 耗时 49 秒 |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.0.6` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.0.6` 去前缀后与版本 `1.0.6` 一致 | ✅ |
+| `build` | Fabric Loader 0.20.1 依赖解析与全量测试通过 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.0.6` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.0.6.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.0.6` 开头（1,004 字符），与仓库内 notes 逐字一致，含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.0.6.jar`（571,149 字节）、`tweakify-mod-1.0.6-sources.jar`（416,422 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `43625946723`）同为 success。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
