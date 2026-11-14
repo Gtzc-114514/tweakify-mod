@@ -150,6 +150,35 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 > 备注：本次 `git push origin main` 首次失败（`Empty reply from server`），tag 推送成功后再补推 main；
 > tag 指向的提交已包含 notes，Release 正文未受影响。
 
+## 验证记录：v1.0.5 发布
+
+本次无 `release.yml` 改动，版本一致性校验链与 notes 机制按既有流程再次通过：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `43611085835` |
+| 对应提交 | `23d8fd7`（`v1.0.5` 标签提交；含 1.0.5 版本号、notes 与版本索引） |
+| 触发 | push tag `v1.0.5` |
+| 结论 | **success**，总耗时 34 秒（job 34 秒） |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.0.5` 并写入 `$GITHUB_OUTPUT` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.0.5` 去前缀后与版本 `1.0.5` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.0.5` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.0.5.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.0.5` 开头（962 字符），与仓库内 notes 逐字一致，含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.0.5.jar`（571,148 字节）、`tweakify-mod-1.0.5-sources.jar`（416,422 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `43610999806`）同为 success。
+
+> 备注：本次 `git push origin main` 连续失败 8 次（`Connection was reset` / `Failed to connect` / `Empty reply`，含 HTTP/1.1 尝试），
+> 第 9 次成功；tag 推送重试 1 次。GitHub 443 服务间歇性不可用，不影响版本一致性校验。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
