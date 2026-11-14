@@ -145,6 +145,8 @@ public final class ConfigCatalog {
 		entries.add(fix("parrotDanceOnShoulder", true));
 		// 更好的粗体（修复标签）
 		entries.add(fix("betterBold", true));
+		// 冰霜行者跳跃修复（修复标签）
+		entries.add(fix("frostWalkerJumpFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		// 第三人称自身名字（修改标签）
@@ -163,9 +165,28 @@ public final class ConfigCatalog {
 		entries.add(child("cameraMotion", "cameraMotionMouseSmoothing"));
 		entries.add(child("cameraMotion", "cameraMotionFirstPerson"));
 		entries.add(child("cameraMotion", "cameraMotionThirdPerson"));
-		// 物品分组（功能标签，参考 Inventory Item Groups 的基岩版分组）
+		// 物品分组（功能标签，参考 inventory-item-groups 的基岩版分组）
 		entries.add(function("itemGroups", true));
 		entries.add(child("itemGroups", "itemGroupsSort"));
+		entries.add(child("itemGroups", "itemGroupsShowItems"));
+		entries.add(child("itemGroups", "itemGroupsAddAll"));
+		entries.add(child("itemGroups", "customItemGroups"));
+		// 定位栏优化（功能标签，参考 locator-heads：玩家头像 + 描边 + 名字 + 过滤 + 指南针）
+		entries.add(function("locatorBarHeads", true));
+		entries.add(child("locatorBarHeads", "locatorBarAlwaysShowXp"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadScale"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadHatLayer"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadBorder"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadBorderThickness"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadBorderColor"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadNames"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadFilter"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadFilterNames"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadNearbyOnly"));
+		entries.add(child("locatorBarHeads", "locatorBarCompass"));
+		entries.add(child("locatorBarHeads", "locatorBarCompassColor"));
+		entries.add(child("locatorBarHeads", "locatorBarCompassShadow"));
+		entries.add(child("locatorBarHeads", "locatorBarCompassCoordinates"));
 		// 强制关闭加载屏幕（修改标签）
 		entries.add(modified("forceCloseLoadingScreen", true));
 		entries.add(child("forceCloseLoadingScreen", "forceCloseLoadingScreenInstant"));
@@ -241,6 +262,21 @@ public final class ConfigCatalog {
 		entries.add(child("disableNetherPortalEffect", "disableNetherPortalSound"));
 		entries.add(modified("disableBedTooFar", true));
 		entries.add(modified("ironGolemRideMinecart", true));
+		// 穿牌打开容器（修改标签）
+		entries.add(modified("signOpenContainer", true));
+		// 禁用蛛网减速（修改标签）
+		entries.add(modified("disableCobwebSlowdown", true));
+		entries.add(child("disableCobwebSlowdown", "cobwebSlowdownAllEntities"));
+		// 禁用液体推动（修改标签）
+		entries.add(modified("disableFluidPush", true));
+		entries.add(child("disableFluidPush", "disableWaterPush"));
+		entries.add(child("disableFluidPush", "disableLavaPush"));
+		// 禁用粘液块减速（修改标签，子项为弹跳）
+		entries.add(modified("disableSlimeBlockSlowdown", true));
+		entries.add(child("disableSlimeBlockSlowdown", "disableSlimeBlockBounce"));
+		// 禁用蜂蜜块减速（修改标签，子项为黏着）
+		entries.add(modified("disableHoneyBlockSlowdown", true));
+		entries.add(child("disableHoneyBlockSlowdown", "disableHoneyBlockStick"));
 		entries.add(modified("connectedBlockOutline", true));
 		entries.add(function("customBlockOutline", true));
 		entries.add(child("customBlockOutline", TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD));
@@ -271,6 +307,13 @@ public final class ConfigCatalog {
 		entries.add(child("scrollListMemory", "scrollListMemoryPersist"));
 		entries.add(child("scrollListMemory", "malilibScrollMemory"));
 		entries.add(child("scrollListMemory", "modMenuScrollMemory"));
+		// 调试信息叠加层（测试标签）
+		entries.add(testing("debugInfoOverlay", true));
+		entries.add(child("debugInfoOverlay", "debugInfoShowPerformance"));
+		entries.add(child("debugInfoOverlay", "debugInfoShowTarget"));
+		entries.add(child("debugInfoOverlay", "debugInfoShowHooks"));
+		// 探针报表（测试标签，纯快捷键动作：把已激活的 Mixin 钩子打到聊天栏）
+		entries.add(testing("debugProbeReport", false));
 		validate(entries);
 		return entries;
 	}
@@ -310,6 +353,11 @@ public final class ConfigCatalog {
 	// 优化标签的根节点（可带命令）。
 	private static Entry optimization(String name, boolean command) {
 		return new Entry(name, null, Tab.OPTIMIZATION, command);
+	}
+
+	// 测试标签的根节点（可带命令）。
+	private static Entry testing(String name, boolean command) {
+		return new Entry(name, null, Tab.TESTING, command);
 	}
 
 	private static Entry child(String parent, String name) {

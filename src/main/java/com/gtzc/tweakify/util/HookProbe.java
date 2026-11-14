@@ -2,6 +2,8 @@ package com.gtzc.tweakify.util;
 
 import com.gtzc.tweakify.TweakifyMod;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,5 +36,12 @@ public final class HookProbe {
 		if (!reported.get() && reported.compareAndSet(false, true)) {
 			TweakifyMod.LOGGER.info("Mixin hook active: {}", hook);
 		}
+	}
+
+	// 已激活的钩子名（按名称排序）：调试叠加层与探针报表共用。
+	public static List<String> reportedHooks() {
+		List<String> hooks = new ArrayList<>(REPORTED);
+		hooks.sort(String::compareTo);
+		return hooks;
 	}
 }

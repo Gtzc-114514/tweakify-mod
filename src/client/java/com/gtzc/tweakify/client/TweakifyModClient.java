@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.AsyncFileWriter;
+import com.gtzc.tweakify.util.HookProbe;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.device.DeviceInfo;
 import com.mojang.renderpearl.api.device.GpuDevice;
@@ -19,12 +20,16 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MerchantMenu;
 
+import java.util.List;
 import java.util.Locale;
 
 public class TweakifyModClient implements ClientModInitializer, IInitializationHandler {
@@ -67,6 +72,13 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 
 		// 基岩高亮与攻击范围合并为一次世界叠加层提交，减少管线切换/draw call。
 		LevelRenderEvents.COLLECT_SUBMITS.register(WorldOverlayRenderer::render);
+
+		// 指南针用 Fabric 的 HUD 元素注册（与参考实现同一种注册方式）：
+		// addLast 保证排在原版和其它模组的全部 HUD 元素之后，字母永远在最上层。
+		HudElementRegistry.addLast(
+			Identifier.fromNamespaceAndPath(TweakifyMod.MOD_ID, "locator_compass"),
+			LocatorCompass::renderElement);
+		TweakifyMod.LOGGER.info("Locator compass registered via HudElementRegistry.addLast");
 
 		// 不依赖 Mod Menu 也能打开配置界面（Mod Menu 是可选依赖）。
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
@@ -129,7 +141,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		remoteServerLogged = true;
 		TweakifyMod.LOGGER.warn("Connected to a remote server: server-side features (anvil, shovel snow, item despawn, "
 			+ "slime spawn, farmland, pick block, smithing, iron golem minecart, bone meal, active crawling, "
-			+ "thrown spawn eggs) only work in single player or on a LAN host");
+			+ "thrown spawn eggs, cobweb/fluid/slime/honey physics, frost walker jump fix) only work in single "
+			+ "player or on a LAN host");
 	}
 
 	private static void logRenderBackendOnce() {
@@ -176,6 +189,28 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 				return false;
 			}
 			CopyIdFeature.copyTargetId();
+			return true;
+		});
+
+		// 探针报表（测试标签）：把已激活的 Mixin 行为探针打到聊天栏，
+		// 排查“功能开了却没反应”时可直接确认钩子是否真的注入。
+		TweakifyModConfigOptions.DEBUG_PROBE_REPORT.getKeybind().setCallback((action, key) -> {
+			Minecraft client = Minecraft.getInstance();
+			if (client.gui == null) {
+				return false;
+			}
+			List<String> hooks = HookProbe.reportedHooks();
+			if (hooks.isEmpty()) {
+				client.gui.chatListener().handleSystemMessage(
+					Component.literal("[Tweakify] no mixin hook has fired yet"), false);
+				return true;
+			}
+			client.gui.chatListener().handleSystemMessage(
+				Component.literal("[Tweakify] active hooks: " + hooks.size()), false);
+			for (String hook : hooks) {
+				client.gui.chatListener().handleSystemMessage(
+					Component.literal(" - " + hook), false);
+			}
 			return true;
 		});
 	}

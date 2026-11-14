@@ -5,6 +5,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import fi.dy.masa.malilib.config.IConfigBase;
+import fi.dy.masa.malilib.config.IConfigStringList;
+import net.minecraft.SharedConstants;
+import net.minecraft.server.Bootstrap;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -12,6 +17,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 语言文件必须保持相同键集：缺失键会静默回退到游戏语言，游戏内很难发现漏翻。
  */
 class LangFilesTest {
+	// 选项实例需要枚举/注册表静态数据：先按其它测试类的方式引导一次。
+	@BeforeAll
+	static void bootstrapMinecraft() {
+		SharedConstants.tryDetectVersion();
+		Bootstrap.bootStrap();
+	}
+
 	@Test
 	void allLanguageFilesShareTheSameKeys() throws IOException {
 		Set<String> reference = keysOf(TweakifyModConfig.SUPPORTED_LANGUAGES.get(0));
@@ -61,7 +74,8 @@ class LangFilesTest {
 			Set<String> keys = keysOf(code);
 			for (String optionName : optionNames) {
 				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = "tweakify-mod.config.general." + kind + "." + optionName;
+					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
+						+ kind + "." + optionName;
 					assertTrue(keys.contains(key), "missing " + key + " in " + code);
 				}
 			}
@@ -79,7 +93,8 @@ class LangFilesTest {
 			Set<String> keys = keysOf(code);
 			for (String optionName : optionNames) {
 				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = "tweakify-mod.config.general." + kind + "." + optionName;
+					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
+						+ kind + "." + optionName;
 					assertTrue(keys.contains(key), "missing " + key + " in " + code);
 				}
 			}
@@ -98,7 +113,8 @@ class LangFilesTest {
 			Set<String> keys = keysOf(code);
 			for (String optionName : optionNames) {
 				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = "tweakify-mod.config.general." + kind + "." + optionName;
+					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
+						+ kind + "." + optionName;
 					assertTrue(keys.contains(key), "missing " + key + " in " + code);
 				}
 			}
@@ -114,12 +130,14 @@ class LangFilesTest {
 			"cameraMotionTurningRoll", "cameraMotionStrafingRoll", "cameraMotionForwardPitch",
 			"cameraMotionVerticalPitch", "cameraMotionIdleSway", "cameraMotionScreenShake",
 			"cameraMotionMouseSmoothing", "cameraMotionFirstPerson", "cameraMotionThirdPerson",
-			"itemGroups", "itemGroupsSort");
+			"itemGroups", "itemGroupsSort", "itemGroupsShowItems", "itemGroupsAddAll",
+			"customItemGroups");
 		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
 			Set<String> keys = keysOf(code);
 			for (String optionName : optionNames) {
 				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = "tweakify-mod.config.general." + kind + "." + optionName;
+					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
+						+ kind + "." + optionName;
 					assertTrue(keys.contains(key), "missing " + key + " in " + code);
 				}
 			}
@@ -131,9 +149,59 @@ class LangFilesTest {
 				assertTrue(keys.contains(sort.translationKey()),
 					"missing " + sort.translationKey() + " in " + code);
 			}
-			for (String key : List.of("tweakify-mod.item_group.expand",
-					"tweakify-mod.item_group.collapse")) {
+		}
+	}
+
+	// 默认物品组的组名翻译键必须在四种语言都存在：
+	// 键格式与参考模组（inventory-item-groups）一致，已有资源包可直接复用。
+	@Test
+	void defaultGroupNameTranslationsExistInEveryLanguage() throws IOException {
+		Set<String> names = new LinkedHashSet<>();
+		for (String tabId : List.of(
+			"minecraft:building_blocks", "minecraft:colored_blocks", "minecraft:natural_blocks",
+			"minecraft:functional_blocks", "minecraft:redstone_blocks",
+			"minecraft:tools_and_utilities", "minecraft:combat",
+			"minecraft:food_and_drinks", "minecraft:ingredients")) {
+			for (CreativeItemGroups.GroupDefinition definition : CreativeItemGroups.definitionsFor(tabId)) {
+				names.add(definition.name());
+			}
+		}
+		assertFalse(names.isEmpty(), "default groups must be defined");
+		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+			Set<String> keys = keysOf(code);
+			for (String name : names) {
+				String key = "group_name.inventory_item_groups." + name;
 				assertTrue(keys.contains(key), "missing " + key + " in " + code);
+			}
+		}
+	}
+
+	// 本轮新增功能（冰霜行者修复、定位栏头像、移动物理禁用、穿牌开容器、调试工具）的
+	// 名称/提示/说明键必须在四种语言都存在。
+	@Test
+	void physicsAndLocatorFeatureTranslationsExistInEveryLanguage() throws IOException {
+		List<String> optionNames = List.of(
+			"frostWalkerJumpFix", "locatorBarHeads", "locatorBarHeadScale",
+			"locatorBarHeadHatLayer", "locatorBarHeadBorder", "locatorBarHeadBorderThickness",
+			"locatorBarHeadBorderColor", "locatorBarHeadNames", "locatorBarHeadFilter",
+			"locatorBarHeadFilterNames", "locatorBarHeadNearbyOnly", "locatorBarCompass",
+			"locatorBarCompassColor", "locatorBarCompassShadow", "locatorBarCompassCoordinates",
+			"locatorBarAlwaysShowXp",
+			"signOpenContainer",
+			"disableCobwebSlowdown", "cobwebSlowdownAllEntities",
+			"disableFluidPush", "disableWaterPush", "disableLavaPush",
+			"disableSlimeBlockSlowdown", "disableSlimeBlockBounce",
+			"disableHoneyBlockSlowdown", "disableHoneyBlockStick",
+			"debugInfoOverlay", "debugInfoShowPerformance", "debugInfoShowTarget",
+			"debugInfoShowHooks", "debugProbeReport");
+		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+			Set<String> keys = keysOf(code);
+			for (String optionName : optionNames) {
+				for (String kind : List.of("name", "prettyName", "comment")) {
+					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
+						+ kind + "." + optionName;
+					assertTrue(keys.contains(key), "missing " + key + " in " + code);
+				}
 			}
 		}
 	}
@@ -179,7 +247,8 @@ class LangFilesTest {
 		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
 			Set<String> keys = keysOf(code);
 			for (String kind : List.of("name", "prettyName", "comment")) {
-				String key = "tweakify-mod.config.general." + kind
+				String key = expectedKeyPrefix(
+					TweakifyModConfigOptions.optionOf("disableResourcePackCompatibilityCheck")) + kind
 					+ ".disableResourcePackCompatibilityCheck";
 				assertTrue(keys.contains(key), "missing " + key + " in " + code);
 			}
@@ -214,6 +283,57 @@ class LangFilesTest {
 				assertTrue(keys.contains(key), "missing " + key + " in " + code);
 			}
 		}
+	}
+
+	// 定位栏新增选项的枚举值翻译键必须在四种语言都存在（描边样式 / 名字时机 / 过滤 / 颜色）。
+	@Test
+	void locatorOptionValueTranslationsExistInEveryLanguage() throws IOException {
+		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+			Set<String> keys = keysOf(code);
+			for (LocatorHeadBorder border : LocatorHeadBorder.values()) {
+				assertTrue(keys.contains(border.translationKey()),
+					"missing " + border.translationKey() + " in " + code);
+			}
+			for (LocatorHeadNames names : LocatorHeadNames.values()) {
+				assertTrue(keys.contains(names.translationKey()),
+					"missing " + names.translationKey() + " in " + code);
+			}
+			for (LocatorHeadFilter filter : LocatorHeadFilter.values()) {
+				assertTrue(keys.contains(filter.translationKey()),
+					"missing " + filter.translationKey() + " in " + code);
+			}
+			for (LocatorHeadColor color : LocatorHeadColor.values()) {
+				assertTrue(keys.contains(color.translationKey()),
+					"missing " + color.translationKey() + " in " + code);
+			}
+		}
+	}
+
+	// 配置项的翻译键前缀由 TweakifyModConfigOptions 里的 .apply(...) 决定：
+	// 高亮组 → config.highlight、字符串列表 → config.lists、其余 → config.general。
+	// 前缀写错时界面会直接显示原始键名（英文），这里逐项校验。
+	@Test
+	void everyOptionUsesThePrefixMatchingItsRegistration() throws IOException {
+		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+			Set<String> keys = keysOf(code);
+			for (IConfigBase option : TweakifyModConfigOptions.ALL_OPTIONS) {
+				String prefix = expectedKeyPrefix(option);
+				for (String kind : List.of("name", "prettyName", "comment")) {
+					String key = prefix + kind + "." + option.getName();
+					assertTrue(keys.contains(key), "missing " + key + " in " + code);
+				}
+			}
+		}
+	}
+
+	private static String expectedKeyPrefix(IConfigBase option) {
+		if (ConfigCatalog.isInsideGroup("entityHighlight", option.getName())) {
+			return "tweakify-mod.config.highlight.";
+		}
+		if (option instanceof IConfigStringList) {
+			return "tweakify-mod.config.lists.";
+		}
+		return "tweakify-mod.config.general.";
 	}
 
 	private static Set<String> keysOf(String code) throws IOException {

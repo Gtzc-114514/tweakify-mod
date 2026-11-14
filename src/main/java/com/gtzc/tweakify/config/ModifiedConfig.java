@@ -133,7 +133,38 @@ public final class ModifiedConfig extends ConfigSection {
 	public volatile boolean disableBedTooFar = false;
 
 	// 铁傀儡进矿车：空矿车碰到铁傀儡时让铁傀儡坐进矿车（仅单人/局域网生效）。
+	// 只限普通矿车：漏斗/运输/动力/TNT 等特种矿车不拉铁傀儡。
 	public volatile boolean ironGolemRideMinecart = false;
+
+	// 穿牌打开容器：准星对准告示牌时，直接打开它背后的容器（潜行时仍走告示牌原版逻辑）。
+	public volatile boolean signOpenContainer = false;
+
+	// 禁用蛛网减速：蜘蛛网不再把实体粘住并限制移动。
+	public volatile boolean disableCobwebSlowdown = false;
+
+	// 子开关：除玩家以外的实体也一起解除蛛网减速。
+	public volatile boolean cobwebSlowdownAllEntities = false;
+
+	// 禁用液体推动：水流与岩浆流不再对实体施加水平推力（垂直浮力保留）。
+	public volatile boolean disableFluidPush = false;
+
+	// 子开关：仅解除水流推力。
+	public volatile boolean disableWaterPush = true;
+
+	// 子开关：仅解除岩浆流推力。
+	public volatile boolean disableLavaPush = true;
+
+	// 禁用粘液块减速：站在粘液块上不再被乘算降低水平速度。
+	public volatile boolean disableSlimeBlockSlowdown = false;
+
+	// 子开关：同时取消粘液块的弹跳。
+	public volatile boolean disableSlimeBlockBounce = true;
+
+	// 禁用蜂蜜块减速：蜂蜜块的 0.4 速度系数不再影响移动速度。
+	public volatile boolean disableHoneyBlockSlowdown = false;
+
+	// 子开关：同时取消蜂蜜块的黏着与下滑限制。
+	public volatile boolean disableHoneyBlockStick = true;
 
 	// 连接方块轮廓：准星对准门、床、双箱等连接方块时显示整体轮廓（类似基岩版）。
 	public volatile boolean connectedBlockOutline = false;

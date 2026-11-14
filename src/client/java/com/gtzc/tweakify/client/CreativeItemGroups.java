@@ -1,58 +1,111 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * 创造模式物品栏的“物品分组”规则（参考 Inventory Item Groups 的基岩版分组方式）。
+ * 创造模式物品分组：与 {@code BizCub/inventory-item-groups} 的行为保持一致。
  *
- * <p>每个物品栏分类按物品 ID 的包含/排除规则生成默认分组（楼梯、台阶、羊毛、
- * 药水等）；命中分组的物品只显示组图标，点击图标展开剩余成员。搜索页、
- * 快捷栏与玩家背包不调用这里，保持原版行为。
+ * <p>要点（逐条对齐参考实现）：
+ * <ul>
+ *   <li>组由“标签页 ID + 包含/排除/等价 ID 模式”定义，组内物品从
+ *       {@code CreativeModeTab.getDisplayItems()} 里按 ID 片段匹配；</li>
+ *   <li>同一标签页内按定义顺序先到先得，后面组不再收录已被前面组占用的物品；</li>
+ *   <li>成员少于 3 个的组不成立，物品保持原样散落；</li>
+ *   <li>组图标是组内第一个物品，点击图标展开/收起，展开的成员紧跟在图标之后；</li>
+ *   <li>展开时把成员插入 {@code ItemPickerMenu.items}，收起时从同一位置移除；</li>
+ *   <li>展开状态下的“是否显示组内物品”会让图标按 1.5 秒轮播组内物品。</li>
+ * </ul>
+ *
+ * <p>索引算法照搬参考实现：维护一份“成员全部被摘除”的基准列表，
+ * 槽位索引先映射回基准列表再加偏移，从而在展开/收起后仍能定位到同一个组。
+ *
+ * <p>性能：渲染路径每帧要对 45 个槽位各查一次“该画什么”，所以把
+ * “显示索引 → 图标/成员/组”预先算成数组，并把“槽位 → 显示索引”的偏移
+ * 按物品版本缓存；两者只在列表真正变化时重建，每帧只剩一次数组下标访问。
+ *
+ * <p>缓存失效契约：组表、基准列表、渲染快照与索引偏移只在
+ * {@link #beginTab}、{@link #stripMembers}、{@link #toggle}、{@link #clear} 中更新。
+ * 这三条生产路径覆盖了原版对 {@code ItemPickerMenu.items} 的全部改写：
+ * 切页（{@code selectTab} 内的 {@code addAll}）、标签内容刷新
+ * （{@code tryRefreshInvalidatedTabs → refreshCurrentTabContents}，它会脱离
+ * {@code selectTab} 单独触发）、以及本功能的展开/收起。因此渲染与点击判定
+ * 不会读到陈旧索引；万一某条未知路径直接改了列表，{@code setIndexes} 的
+ * “图标不存在”兜底也会把组置为不可渲染，而不是留下错位高亮。
+ *
+ * <p>线程约束：所有状态只在客户端主线程（界面事件 / 渲染）读写。
  */
 public final class CreativeItemGroups {
-	// 排序方式：保持物品栏原顺序 / 按物品 ID 字母序。
-	public static final String SORT_DEFAULT = "default";
-	public static final String SORT_ALPHABETICAL = "alphabetical";
-	public static final List<String> SUPPORTED_SORTS = List.of(SORT_DEFAULT, SORT_ALPHABETICAL);
-
-	// 与参考模组一致：少于 3 个成员的组不折叠，避免把两个物品塞进一个图标。
+	// 与参考实现一致：成员少于 3 个的组不折叠。
 	public static final int MIN_GROUP_SIZE = 3;
+	// 创造模式物品区的槽位上限（0 ~ 44）。
+	public static final int CREATIVE_SLOT_LIMIT = 44;
+	// 组名翻译键前缀与参考实现一致，便于直接沿用已有的资源包翻译。
+	private static final String GROUP_NAME_PREFIX = "group_name.inventory_item_groups.";
+	// 图标轮播间隔：参考实现为 1.5 秒。
+	private static final long ICON_ROTATE_MILLIS = 1500L;
+	// 未配置排除项时的哨兵串：使「任一排除项都不包含」恒为真（参考实现的写法）。
+	private static final String NO_EXCLUSION = "1111111";
 
-	private static final String BUILDING_BLOCKS = "minecraft:building_blocks";
-	private static final String COLORED_BLOCKS = "minecraft:colored_blocks";
-	private static final String NATURAL_BLOCKS = "minecraft:natural_blocks";
-	private static final String FUNCTIONAL_BLOCKS = "minecraft:functional_blocks";
-	private static final String REDSTONE_BLOCKS = "minecraft:redstone_blocks";
-	private static final String TOOLS_AND_UTILITIES = "minecraft:tools_and_utilities";
-	private static final String COMBAT = "minecraft:combat";
-	private static final String FOOD_AND_DRINKS = "minecraft:food_and_drinks";
-	private static final String INGREDIENTS = "minecraft:ingredients";
+	// 自定义组的字段分隔符：tabId|组名|包含|排除|等价。
+	private static final String CUSTOM_FIELD_SEPARATOR = "\\|";
+	private static final String CUSTOM_ITEM_SEPARATOR = ",";
 
-	private static final Map<String, List<Definition>> DEFINITIONS = buildDefinitions();
+	public static final String SORT_ALPHABETICAL = TweakifyModConfig.ITEM_GROUP_SORT_ALPHABETICAL;
+
+	private static final boolean[] EMPTY_FLAGS = new boolean[0];
+	private static final Group[] EMPTY_GROUPS = new Group[0];
+
+	private static final List<GroupDefinition> DEFAULT_GROUPS = buildDefaultGroups();
+
+	// 当前标签页的组、以及“成员被摘除后”的基准列表（参考实现的 groups / tempItemStacks）。
+	private static final List<Group> GROUPS = new ArrayList<>();
+	private static List<ItemStack> baseItems = new ArrayList<>();
+
+	// 渲染期派生数据：把“显示索引 → 该画什么”预先算好，每帧只剩一次数组查表。
+	// 只在物品列表变化（切页 / 展开 / 收起 / 内容刷新）时重建，渲染路径不再扫描组与成员。
+	// 图标槽位只用一张 Group[] 当唯一真相：绘制与点击读同一个对象，不会出现判定不一致。
+	private static boolean[] memberSlots = EMPTY_FLAGS;
+	private static Group[] groupByIconSlot = EMPTY_GROUPS;
+
+	// 当前标签页：切页时记录，物品列表重建时用它重建组定义。
+	private static CreativeModeTab currentTab;
+
+	// 槽位 → 显示索引的偏移：只取决于前两个槽位与基准列表，物品变化时一次性失效。
+	private static int displayIndexOffset;
+	private static boolean displayIndexValid;
+	private static List<Slot> displayIndexSlots;
 
 	private CreativeItemGroups() {
 	}
 
 	/**
-	 * 一个默认分组规则：物品 ID 包含任一 {@code containedItems} 且不包含任何
-	 * {@code excludedItems} 时命中。
+	 * 一个组的定义：命中任一 {@code containedItems} 片段、且不被全部排除项同时命中，
+	 * 或 ID 与 {@code equivalentItems} 完全相等时，物品属于该组。
 	 */
-	public record Definition(String key, List<String> containedItems, List<String> excludedItems) {
-		public Definition {
+	public record GroupDefinition(String name, String tabId, List<String> containedItems,
+								  List<String> nonContainedItems, List<String> equivalentItems) {
+		public GroupDefinition {
 			containedItems = List.copyOf(containedItems);
-			excludedItems = List.copyOf(excludedItems);
+			nonContainedItems = List.copyOf(nonContainedItems);
+			equivalentItems = List.copyOf(equivalentItems);
 		}
 
 		public boolean matches(String itemId) {
@@ -63,334 +116,635 @@ public final class CreativeItemGroups {
 					break;
 				}
 			}
-			if (!contained) {
-				return false;
-			}
-			for (String pattern : this.excludedItems) {
-				if (itemId.contains(pattern)) {
-					return false;
+			// 参考实现：排除项用 anyMatch(!contains)，空列表时用哨兵串让它恒为真。
+			boolean notExcluded = false;
+			if (this.nonContainedItems.isEmpty()) {
+				notExcluded = !itemId.contains(NO_EXCLUSION);
+			} else {
+				for (String pattern : this.nonContainedItems) {
+					if (!itemId.contains(pattern)) {
+						notExcluded = true;
+						break;
+					}
 				}
 			}
-			return true;
+			return (contained && notExcluded) || this.equivalentItems.contains(itemId);
 		}
 	}
 
-	public record Group(String key, List<ItemStack> items) {
-		public Group {
-			items = List.copyOf(items);
+	/** 组内物品及其在基准列表中的当前位置；-1 表示当前不可见（已收起）。 */
+	public static final class IndexedItemStack {
+		private final ItemStack stack;
+		private int index;
+
+		IndexedItemStack(ItemStack stack, int index) {
+			this.stack = stack;
+			this.index = index;
+		}
+
+		public ItemStack stack() {
+			return this.stack;
+		}
+
+		public int index() {
+			return this.index;
+		}
+
+		public void setIndex(int index) {
+			this.index = index;
+		}
+	}
+
+	/** 一个已成立的组：图标、展开状态与成员索引。 */
+	public static final class Group {
+		private final Component name;
+		private final List<ItemStack> items;
+		private final List<IndexedItemStack> members = new ArrayList<>();
+		private boolean visible;
+		private int iconIndex = -1;
+
+		Group(Component name, List<ItemStack> items) {
+			this.name = name;
+			this.items = List.copyOf(items);
+			for (ItemStack stack : items) {
+				this.members.add(new IndexedItemStack(stack, -1));
+			}
+		}
+
+		public Component name() {
+			return this.name;
+		}
+
+		public List<ItemStack> items() {
+			return this.items;
+		}
+
+		public List<IndexedItemStack> members() {
+			return this.members;
 		}
 
 		public ItemStack icon() {
 			return this.items.getFirst();
 		}
 
-		public boolean isGrouped() {
-			return this.items.size() >= MIN_GROUP_SIZE;
+		public int iconIndex() {
+			return this.iconIndex;
 		}
+
+		public void setIconIndex(int iconIndex) {
+			this.iconIndex = iconIndex;
+		}
+
+		public boolean visible() {
+			return this.visible;
+		}
+
+		public void setVisible(boolean visible) {
+			this.visible = visible;
+		}
+
+		// 与参考实现一致：按物品相等性批量改写成员索引。
+		public void setItemWithIndex(ItemStack item, int index) {
+			for (IndexedItemStack entry : this.members) {
+				if (entry.stack().equals(item)) {
+					entry.setIndex(index);
+				}
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------- 组构建
+
+	// 内置默认组按标签页过滤；包私有供单测与语言文件键校验使用。
+	static List<GroupDefinition> definitionsFor(String tabId) {
+		List<GroupDefinition> definitions = new ArrayList<>();
+		for (GroupDefinition definition : DEFAULT_GROUPS) {
+			if (definition.tabId().equals(tabId)) {
+				definitions.add(definition);
+			}
+		}
+		return definitions;
+	}
+
+	// 面板注入点：切换标签页时只重置状态，真正的成组在随后的列表重建里完成。
+	// 这样 selectTab 与“标签内容刷新”两条路径共用同一个入口，不会出现“列表换了、组还是旧的”。
+	public static void beginTab(CreativeModeTab tab) {
+		currentTab = tab;
+		GROUPS.clear();
+		baseItems = new ArrayList<>();
+		resetRenderState();
 	}
 
 	/**
-	 * 分组结果：显示列表已按展开状态折叠/展开，{@code groupByItem} 用于
-	 * 判断某个槽位是否属于分组以及是否为组图标。
+	 * 纯构建：按定义顺序成组，先到先得地剔除重复物品，再丢掉成员不足 3 个的组。
+	 * 包私有以便单测直接覆盖算法。
 	 */
-	public record Result(List<ItemStack> displayItems, Map<String, Group> groups,
-						 Map<Item, Group> groupByItem) {
-		public Result {
-			displayItems = List.copyOf(displayItems);
-			groups = Map.copyOf(groups);
-			groupByItem = Map.copyOf(groupByItem);
-		}
-
-		public Group groupOf(ItemStack stack) {
-			return stack == null || stack.isEmpty() ? null : this.groupByItem.get(stack.getItem());
-		}
+	static List<Group> create(List<GroupDefinition> definitions, List<ItemStack> displayItems) {
+		return create(definitions, displayItems, isAlphabetical());
 	}
 
-	public static boolean isSupportedSort(String sort) {
-		return sort != null && SUPPORTED_SORTS.contains(sort);
-	}
-
-	public static List<Definition> definitionsFor(String tabId) {
-		return DEFINITIONS.getOrDefault(tabId, List.of());
-	}
-
-	/**
-	 * 构建指定分类的显示列表。
-	 *
-	 * @param tabId    物品栏分类 ID（如 {@code minecraft:building_blocks}）
-	 * @param source   该分类的完整物品列表
-	 * @param expanded 当前展开的分组 key
-	 * @param sort     分组内排序方式
-	 */
-	public static Result build(String tabId, Collection<ItemStack> source, Set<String> expanded,
-							   String sort) {
-		List<ItemStack> stacks = new ArrayList<>(source);
-		List<Definition> definitions = definitionsFor(tabId);
-		if (definitions.isEmpty()) {
-			return new Result(stacks, Map.of(), Map.of());
-		}
-
-		Map<Item, String> idCache = new HashMap<>();
-		Set<Item> consumed = new HashSet<>();
-		List<Group> accepted = new ArrayList<>();
-		Map<Item, Group> groupByItem = new LinkedHashMap<>();
-		for (Definition definition : definitions) {
-			List<ItemStack> members = new ArrayList<>();
-			for (ItemStack stack : stacks) {
-				if (stack == null || stack.isEmpty() || consumed.contains(stack.getItem())) {
+	static List<Group> create(List<GroupDefinition> definitions, List<ItemStack> displayItems,
+						  boolean alphabetical) {
+		List<Group> created = new ArrayList<>();
+		List<ItemStack> claimed = new ArrayList<>();
+		for (GroupDefinition definition : definitions) {
+			List<ItemStack> matched = new ArrayList<>();
+			for (ItemStack stack : displayItems) {
+				if (stack == null || stack.isEmpty()) {
 					continue;
 				}
-				if (definition.matches(itemId(stack.getItem(), idCache))) {
-					members.add(stack);
+				if (definition.matches(itemId(stack.getItem()))) {
+					matched.add(stack);
 				}
 			}
-			if (members.size() < MIN_GROUP_SIZE) {
-				// 未达标的组不占用物品，后续更具体的规则仍可使用它们。
+			// 参考实现：已被前面组占用的物品不再重复入组。
+			matched.removeAll(claimed);
+			sortItems(matched, alphabetical);
+			if (matched.isEmpty()) {
 				continue;
 			}
-			if (SORT_ALPHABETICAL.equals(sort)) {
-				members.sort((left, right) -> itemId(left.getItem(), idCache)
-					.compareTo(itemId(right.getItem(), idCache)));
-			}
-			Group group = new Group(definition.key(), members);
-			accepted.add(group);
-			for (ItemStack stack : members) {
-				consumed.add(stack.getItem());
-				groupByItem.put(stack.getItem(), group);
-			}
+			claimed.addAll(matched);
+			created.add(new Group(groupName(definition.name()), matched));
 		}
+		created.removeIf(group -> group.items().size() < MIN_GROUP_SIZE);
+		return created;
+	}
 
-		if (accepted.isEmpty()) {
-			return new Result(stacks, Map.of(), Map.of());
+	// 组内排序：默认保持物品栏原顺序，字母序按物品 ID 排序。
+	private static void sortItems(List<ItemStack> items, boolean alphabetical) {
+		if (alphabetical) {
+			items.sort((left, right) -> itemId(left.getItem()).compareTo(itemId(right.getItem())));
 		}
+	}
 
-		List<ItemStack> display = new ArrayList<>(stacks.size());
-		for (ItemStack stack : stacks) {
-			if (stack == null || stack.isEmpty()) {
-				display.add(stack);
+	// 面板注入点：每一次展示列表重建（切页 / 标签内容刷新 / 配置变更）都从这里过。
+	// 先按当前列表重新成组，再摘除成员：旧组可能指向已经不存在的物品，直接复用会留下错位的图标/高亮。
+	public static List<ItemStack> stripMembers(Collection<ItemStack> source) {
+		List<ItemStack> stripped = new ArrayList<>(source);
+		rebuildGroups(stripped);
+		if (GROUPS.isEmpty()) {
+			baseItems = stripped;
+			resetRenderState();
+			return stripped;
+		}
+		// 用哈希集合一次扫过：与 removeAll 语义相同（删除所有同值元素），
+		// 但避免 m 个成员 × n 个物品的两两 equals。
+		Set<ItemStack> removed = new HashSet<>();
+		for (Group group : GROUPS) {
+			removed.addAll(group.items());
+			removed.remove(group.icon());
+		}
+		if (!removed.isEmpty()) {
+			stripped.removeIf(removed::contains);
+		}
+		baseItems = stripped;
+		setIndexes();
+		return stripped;
+	}
+
+	// 按当前标签页 + 当前配置从给定列表重建组；无标签页或功能关闭时得到空组表。
+	private static void rebuildGroups(List<ItemStack> displayItems) {
+		GROUPS.clear();
+		if (currentTab == null || !isEnabled()) {
+			return;
+		}
+		List<GroupDefinition> definitions = new ArrayList<>();
+		if (includeDefaultGroups()) {
+			definitions.addAll(definitionsFor(tabId(currentTab)));
+		}
+		definitions.addAll(parseCustomGroups(customGroupEntries()));
+		GROUPS.addAll(create(definitions, displayItems));
+	}
+
+	// 参考实现的 setIndexes：收起时图标取基准列表里的首个位置、成员索引置 -1；
+	// 展开时图标取首个位置，同一物品的后续位置留给成员（用于重复物品的补位）。
+	private static void setIndexes() {
+		for (Group group : GROUPS) {
+			// 图标已经不在基准列表里（列表被刷新过）：清空索引，避免残留图标与高亮。
+			// 正常情况下 rebuildGroups 已保证图标存在，这里只是兜底。
+			if (!baseItems.contains(group.icon())) {
+				group.setIconIndex(-1);
+				for (IndexedItemStack entry : group.members()) {
+					entry.setIndex(-1);
+				}
 				continue;
 			}
-			Group group = groupByItem.get(stack.getItem());
-			if (group == null) {
-				display.add(stack);
-				continue;
-			}
-			if (stack != group.icon()) {
-				// 组图标保留在原位置，其余成员只在展开时插入到图标之后。
-				continue;
-			}
-			display.add(stack);
-			if (expanded.contains(group.key())) {
-				for (ItemStack member : group.items()) {
-					if (member != stack) {
-						display.add(member);
+			boolean iconAssigned = false;
+			for (ItemStack stack : group.items()) {
+				int firstIndex = baseItems.indexOf(stack);
+				int lastIndex = baseItems.lastIndexOf(stack);
+				if (firstIndex < 0) {
+					continue;
+				}
+				if (group.visible()) {
+					if (firstIndex != lastIndex && !iconAssigned) {
+						group.setIconIndex(firstIndex);
+						group.setItemWithIndex(stack, lastIndex);
+						iconAssigned = true;
+					} else {
+						group.setItemWithIndex(stack, firstIndex);
+					}
+				} else {
+					group.setIconIndex(firstIndex);
+					for (IndexedItemStack entry : group.members()) {
+						entry.setIndex(-1);
 					}
 				}
 			}
 		}
+		rebuildRenderState();
+		displayIndexValid = false;
+	}
 
-		Map<String, Group> groups = new LinkedHashMap<>();
-		for (Group group : accepted) {
-			groups.put(group.key(), group);
+	// ---------------------------------------------------------------- 交互
+
+	public static boolean isCreativeSlot(int slotIndex) {
+		return slotIndex >= 0 && slotIndex <= CREATIVE_SLOT_LIMIT;
+	}
+
+	// 槽位 → 显示索引：渲染与点击判定共用。
+	// 偏移只取决于前两个槽位与基准列表，物品不变时可以一直复用。
+	public static int displayIndex(List<Slot> slots, int slotIndex) {
+		if (slots.isEmpty()) {
+			return -1;
 		}
-		return new Result(display, groups, groupByItem);
-	}
-
-	public static boolean isRepresentative(ItemStack stack, Group group) {
-		return stack != null && group != null && group.isGrouped()
-			&& ItemStack.isSameItemSameComponents(stack, group.icon());
-	}
-
-	// 展开分组的成员槽位需要黑色底；组图标、普通槽位与背包槽位都不画。
-	public static boolean shouldDrawExpandedBackground(int slotIndex, int creativeSlotCount,
-			boolean groupingActive, Group group, boolean expanded, boolean representative) {
-		return slotIndex >= 0 && slotIndex < creativeSlotCount
-			&& groupingActive && group != null && group.isGrouped() && expanded && !representative;
-	}
-
-	private static String itemId(Item item, Map<Item, String> cache) {
-		String cached = cache.get(item);
-		if (cached != null) {
-			return cached;
+		if (!displayIndexValid || displayIndexSlots != slots) {
+			displayIndexSlots = slots;
+			displayIndexOffset = offsetFor(slots, baseItems);
+			displayIndexValid = true;
 		}
-		Identifier id = BuiltInRegistries.ITEM.getKey(item);
-		String value = id == null ? "minecraft:air" : id.toString();
-		cache.put(item, value);
-		return value;
+		return displayIndexOffset + slotIndex;
 	}
 
-	private record DefaultGroup(String tabId, Definition definition) {
+	// 参考实现用前两个槽位的物品反推基准偏移；取不到时归零。
+	private static int offsetFor(List<Slot> slots, List<ItemStack> base) {
+		int secondItemIndex = slots.size() >= 2 ? base.indexOf(slots.get(1).getItem()) : -1;
+		int result;
+		if (secondItemIndex >= 0) {
+			result = secondItemIndex;
+			if (!slots.get(0).getItem().equals(slots.get(1).getItem())) {
+				result--;
+			}
+		} else {
+			result = base.indexOf(slots.get(0).getItem());
+		}
+		return Math.max(result, 0);
 	}
 
-	private static Map<String, List<Definition>> buildDefinitions() {
-		List<DefaultGroup> all = new ArrayList<>();
+	// 以下四个查询供渲染与点击判定使用：已是 O(1) 数组查表，边界外统一返回 false / null。
+	// 展开/收起状态直接读图标所属的组，与点击时拿到的 Group 是同一个对象，不存在双份状态。
+	public static boolean isExpandedIconSlot(int displayIndex) {
+		Group group = groupAt(displayIndex);
+		return group != null && group.visible();
+	}
 
-		// 建筑方块
-		add(all, BUILDING_BLOCKS, "logs", contains("log", "stem", "bamboo_block"), excluded("stripped"));
-		add(all, BUILDING_BLOCKS, "woods", contains("wood", "hyphae"), excluded("stripped"));
-		add(all, BUILDING_BLOCKS, "stripped_logs", contains("log", "stem", "bamboo_block"));
-		add(all, BUILDING_BLOCKS, "stripped_woods", contains("wood", "hyphae"));
-		add(all, BUILDING_BLOCKS, "stairs", contains("stair"));
-		add(all, BUILDING_BLOCKS, "slabs", contains("slab"));
-		add(all, BUILDING_BLOCKS, "planks", contains("planks", "mosaic"));
-		add(all, BUILDING_BLOCKS, "fence_gates", contains("fence_gate"));
-		add(all, BUILDING_BLOCKS, "fences", contains("fence"));
-		add(all, BUILDING_BLOCKS, "trapdoors", contains("trapdoor"));
-		add(all, BUILDING_BLOCKS, "doors", contains("door"));
-		add(all, BUILDING_BLOCKS, "pressure_plates", contains("pressure_plate"));
-		add(all, BUILDING_BLOCKS, "buttons", contains("button"));
-		add(all, BUILDING_BLOCKS, "bars", contains("bar"), excluded("cinnabar"));
-		add(all, BUILDING_BLOCKS, "chains", contains("chain"));
-		add(all, BUILDING_BLOCKS, "copper", contains("copper"));
-		add(all, BUILDING_BLOCKS, "walls", contains("wall"));
-		add(all, BUILDING_BLOCKS, "decorative_stone",
-			contains("bricks", "chiseled", "tiles", "polished"));
-		add(all, BUILDING_BLOCKS, "sandstone", contains("sandstone"));
+	public static boolean isCollapsedIconSlot(int displayIndex) {
+		Group group = groupAt(displayIndex);
+		return group != null && !group.visible();
+	}
 
-		// 彩色方块
-		add(all, COLORED_BLOCKS, "wool_stairs", contains("wool_stairs"));
-		add(all, COLORED_BLOCKS, "wool_slabs", contains("wool_slab"));
-		add(all, COLORED_BLOCKS, "wool", contains("wool"));
-		add(all, COLORED_BLOCKS, "carpets", contains("carpet"));
-		add(all, COLORED_BLOCKS, "glazed_terracotta", contains("glazed_terracotta"));
-		add(all, COLORED_BLOCKS, "terracotta", contains("terracotta"));
-		add(all, COLORED_BLOCKS, "concrete_powder", contains("concrete_powder"));
-		add(all, COLORED_BLOCKS, "concrete_stairs", contains("concrete_stairs"));
-		add(all, COLORED_BLOCKS, "concrete_slabs", contains("concrete_slab"));
-		add(all, COLORED_BLOCKS, "concrete", contains("concrete"));
-		add(all, COLORED_BLOCKS, "glass_panes", contains("glass_pane"));
-		add(all, COLORED_BLOCKS, "glass", contains("glass"));
-		add(all, COLORED_BLOCKS, "shulker_boxes", contains("shulker_box"));
-		add(all, COLORED_BLOCKS, "candles", contains("candle"));
-		add(all, COLORED_BLOCKS, "banners", contains("banner"));
-		add(all, COLORED_BLOCKS, "beds", contains("bed"));
-		add(all, COLORED_BLOCKS, "cushions", contains("_cushion"));
+	public static boolean isMemberSlot(int displayIndex) {
+		return flagAt(memberSlots, displayIndex);
+	}
 
-		// 自然方块
-		add(all, NATURAL_BLOCKS, "ores", contains("_ore", "debris", "raw_"));
-		add(all, NATURAL_BLOCKS, "mushrooms", contains("mushroom", "fungus"));
-		add(all, NATURAL_BLOCKS, "saplings", contains("sapling", "propagule"));
-		add(all, NATURAL_BLOCKS, "ground_cover",
-			contains("fern", "_grass", "bush", "_sprouts", "hanging_moss", "_vines", "shrub"),
-			excluded("_bush"));
-		add(all, NATURAL_BLOCKS, "seeds", contains("seeds", "_pod"));
-		add(all, NATURAL_BLOCKS, "flowers", contains(
-			"dandelion", "poppy", "orchid", "allium", "tulip", "daisy", "cornflower",
-			"torchflower", "azure_bluet", "valley", "cactus_flower", "eyeblossom", "rose",
-			"petals", "wildflower", "crimson_roots", "warped_roots", "sunflower", "peony",
-			"lilac", "pitcher_plant"));
-		add(all, NATURAL_BLOCKS, "leaves", contains("leaves"));
-		add(all, NATURAL_BLOCKS, "coral_blocks", contains("coral_block"));
-		add(all, NATURAL_BLOCKS, "coral_decorations", contains("coral"));
-		add(all, NATURAL_BLOCKS, "stone", contains(
-			":stone", "diorite", "andesite", "granite", "tuff", "basalt", "blackstone",
-			"deepslate"));
-		add(all, NATURAL_BLOCKS, "logs", contains("log", "stem"));
+	public static Group iconGroup(int displayIndex) {
+		return groupAt(displayIndex);
+	}
 
-		// 功能方块
-		add(all, FUNCTIONAL_BLOCKS, "lanterns", contains("lantern"), excluded("sea"));
-		add(all, FUNCTIONAL_BLOCKS, "chains", contains("chain"));
-		add(all, FUNCTIONAL_BLOCKS, "bulbs", contains("bulb"));
-		add(all, FUNCTIONAL_BLOCKS, "anvils", contains("anvil"));
-		add(all, FUNCTIONAL_BLOCKS, "lightning_rods", contains("lightning_rod"));
-		add(all, FUNCTIONAL_BLOCKS, "shelves", contains("_shelf"));
-		add(all, FUNCTIONAL_BLOCKS, "hanging_signs", contains("hanging_sign"));
-		add(all, FUNCTIONAL_BLOCKS, "signs", contains("sign"));
-		add(all, FUNCTIONAL_BLOCKS, "chests", contains("chest"));
-		add(all, FUNCTIONAL_BLOCKS, "shulker_boxes", contains("shulker_box"));
-		add(all, FUNCTIONAL_BLOCKS, "beds", contains("_bed"));
-		add(all, FUNCTIONAL_BLOCKS, "candles", contains("candle"));
-		add(all, FUNCTIONAL_BLOCKS, "banners", contains("banner"));
-		add(all, FUNCTIONAL_BLOCKS, "skulls", contains("head", "skull"));
-		add(all, FUNCTIONAL_BLOCKS, "golem_statues", contains("golem_statue"));
-		add(all, FUNCTIONAL_BLOCKS, "infested_stone", contains("infested"));
-		add(all, FUNCTIONAL_BLOCKS, "paintings", contains("painting"));
+	private static Group groupAt(int displayIndex) {
+		return displayIndex >= 0 && displayIndex < groupByIconSlot.length
+			? groupByIconSlot[displayIndex]
+			: null;
+	}
 
-		// 红石方块
-		add(all, REDSTONE_BLOCKS, "bulbs", contains("bulb"));
-		add(all, REDSTONE_BLOCKS, "pressure_plates", contains("pressure_plate"));
-		add(all, REDSTONE_BLOCKS, "transport", contains("minecart", "boat", "_raft"));
-		add(all, REDSTONE_BLOCKS, "chests", contains("chest"));
-		add(all, REDSTONE_BLOCKS, "rails", contains("rail"));
+	private static boolean flagAt(boolean[] flags, int displayIndex) {
+		return displayIndex >= 0 && displayIndex < flags.length && flags[displayIndex];
+	}
 
-		// 工具与实用物品
-		add(all, TOOLS_AND_UTILITIES, "shovels", contains("shovel"));
-		add(all, TOOLS_AND_UTILITIES, "pickaxes", contains("pickaxe"));
-		add(all, TOOLS_AND_UTILITIES, "axes", contains("axe"));
-		add(all, TOOLS_AND_UTILITIES, "hoes", contains("hoe"));
-		add(all, TOOLS_AND_UTILITIES, "bundles", contains("bundle"));
-		add(all, TOOLS_AND_UTILITIES, "firework_rockets", contains("firework_rocket"));
-		add(all, TOOLS_AND_UTILITIES, "harnesses", contains("harness"));
-		add(all, TOOLS_AND_UTILITIES, "chest_boats", contains("chest_boat", "chest_raft"));
-		add(all, TOOLS_AND_UTILITIES, "boats", contains("boat", "_raft"));
-		add(all, TOOLS_AND_UTILITIES, "rails", contains("rail"));
-		add(all, TOOLS_AND_UTILITIES, "minecarts", contains("minecart"));
-		add(all, TOOLS_AND_UTILITIES, "discs", contains("disc"));
-		add(all, TOOLS_AND_UTILITIES, "goat_horns", contains("goat_horn"));
-		add(all, TOOLS_AND_UTILITIES, "creature_buckets", contains(
+	// 物品列表变化时重建派生数据；索引均来自 setIndexes，尺寸与基准列表一致。
+	private static void rebuildRenderState() {
+		int size = baseItems.size();
+		memberSlots = new boolean[size];
+		groupByIconSlot = new Group[size];
+		for (Group group : GROUPS) {
+			int icon = group.iconIndex();
+			if (icon < 0 || icon >= size) {
+				continue;
+			}
+			groupByIconSlot[icon] = group;
+			if (!group.visible()) {
+				continue;
+			}
+			for (IndexedItemStack entry : group.members()) {
+				int index = entry.index();
+				if (index >= 0 && index < size) {
+					memberSlots[index] = true;
+				}
+			}
+		}
+	}
+
+	// 清空派生数据：关闭界面 / 切页时调用，避免残留旧页的标记。
+	private static void resetRenderState() {
+		memberSlots = EMPTY_FLAGS;
+		groupByIconSlot = EMPTY_GROUPS;
+		displayIndexValid = false;
+		displayIndexSlots = null;
+	}
+
+	// 点击组图标：展开时把成员插到图标之后，收起时从同一位置移除，再按当前列表重建索引。
+	public static void toggle(Group group, NonNullList<ItemStack> items) {
+		if (group == null) {
+			return;
+		}
+		group.setVisible(!group.visible());
+		int insertIndex = Math.max(0, Math.min(items.size(), group.iconIndex() + 1));
+		if (group.visible()) {
+			// 反向逐个插入同一位置，最终顺序与组内顺序一致（参考实现写法）。
+			List<ItemStack> members = new ArrayList<>(group.items());
+			Collections.reverse(members);
+			for (ItemStack stack : members) {
+				items.add(insertIndex, stack);
+			}
+		} else {
+			for (int i = 0; i < group.items().size() && insertIndex < items.size(); i++) {
+				items.remove(insertIndex);
+			}
+		}
+		baseItems = new ArrayList<>(items);
+		setIndexes();
+	}
+
+	// 组图标当前应显示的物品：关闭“显示组内物品”时返回 null（走原版图标）。
+	public static ItemStack rotatingIcon(Group group) {
+		if (group == null || !showItemsInGroup() || group.items().isEmpty()) {
+			return null;
+		}
+		int index = (int) ((Util.getMillis() / ICON_ROTATE_MILLIS) % group.items().size());
+		return group.items().get(index);
+	}
+
+	public static void clear() {
+		currentTab = null;
+		GROUPS.clear();
+		baseItems = new ArrayList<>();
+		resetRenderState();
+	}
+
+	// 包私有：单测注入一组组定义与基准列表，跑完 setIndexes 后可直接断言渲染快照。
+	static void installGroupsForTest(List<Group> groups, List<ItemStack> base) {
+		GROUPS.clear();
+		GROUPS.addAll(groups);
+		baseItems = List.copyOf(base);
+		setIndexes();
+	}
+
+	// ---------------------------------------------------------------- 配置
+
+	private static boolean isEnabled() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config != null && config.functions.itemGroups;
+	}
+
+	private static boolean includeDefaultGroups() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config == null || config.functions.itemGroupsAddAll;
+	}
+
+	private static boolean showItemsInGroup() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config != null && config.functions.itemGroupsShowItems;
+	}
+
+	private static boolean isAlphabetical() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config != null && SORT_ALPHABETICAL.equals(config.functions.itemGroupsSort);
+	}
+
+	private static List<String> customGroupEntries() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config == null
+			? List.of()
+			: config.getStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD);
+	}
+
+	// 自定义组：tabId|组名|包含(逗号分隔)|排除|等价；至少需要前三个字段。
+	static List<GroupDefinition> parseCustomGroups(List<String> entries) {
+		List<GroupDefinition> definitions = new ArrayList<>();
+		if (entries == null) {
+			return definitions;
+		}
+		for (String entry : entries) {
+			if (entry == null) {
+				continue;
+			}
+			String[] parts = entry.split(CUSTOM_FIELD_SEPARATOR, -1);
+			if (parts.length < 3) {
+				continue;
+			}
+			String tabId = parts[0].trim();
+			String name = parts[1].trim();
+			List<String> contained = splitItems(parts[2]);
+			if (tabId.isEmpty() || contained.isEmpty()) {
+				continue;
+			}
+			List<String> excluded = parts.length > 3 ? splitItems(parts[3]) : List.of();
+			List<String> equivalent = parts.length > 4 ? splitItems(parts[4]) : List.of();
+			definitions.add(new GroupDefinition(name.isEmpty() ? tabId : name, tabId,
+				contained, excluded, equivalent));
+		}
+		return definitions;
+	}
+
+	private static List<String> splitItems(String raw) {
+		List<String> items = new ArrayList<>();
+		if (raw == null) {
+			return items;
+		}
+		for (String part : raw.split(CUSTOM_ITEM_SEPARATOR, -1)) {
+			String value = part.trim();
+			if (!value.isEmpty()) {
+				items.add(value);
+			}
+		}
+		return items;
+	}
+
+	// ---------------------------------------------------------------- 工具
+
+	// 标签页 ID：优先用注册表键，取不到时退回显示名（参考实现同此策略）。
+	private static String tabId(CreativeModeTab tab) {
+		if (tab == null) {
+			return "";
+		}
+		Identifier key = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
+		return key != null ? key.toString() : tab.getDisplayName().getString();
+	}
+
+	private static String itemId(Item item) {
+		Identifier key = BuiltInRegistries.ITEM.getKey(item);
+		return key == null ? "minecraft:air" : key.toString();
+	}
+
+	// 组名优先走翻译键，缺失时退回原始文本（与参考实现一致）。
+	private static Component groupName(String name) {
+		String key = GROUP_NAME_PREFIX + name;
+		return Language.getInstance().has(key) ? Component.translatable(key) : Component.literal(name);
+	}
+
+	// ---------------------------------------------------------------- 默认组
+
+	private static void addGroup(List<GroupDefinition> list, String tabId, String name,
+								 List<String> contained) {
+		addGroup(list, tabId, name, contained, List.of());
+	}
+
+	private static void addGroup(List<GroupDefinition> list, String tabId, String name,
+								 List<String> contained, List<String> excluded) {
+		list.add(new GroupDefinition(name, tabId, contained, excluded, List.of()));
+	}
+
+	private static List<String> ids(String... values) {
+		return List.of(values);
+	}
+
+	// 默认组表与参考实现逐条对齐（标签页、名称、包含/排除模式完全一致）。
+	private static List<GroupDefinition> buildDefaultGroups() {
+		List<GroupDefinition> all = new ArrayList<>();
+
+		String tabId = "minecraft:building_blocks";
+		addGroup(all, tabId, "logs", ids("log", "stem", "bamboo_block"), ids("stripped"));
+		addGroup(all, tabId, "woods", ids("wood", "hyphae"), ids("stripped"));
+		addGroup(all, tabId, "stripped_logs", ids("log", "stem", "bamboo_block"));
+		addGroup(all, tabId, "stripped_woods", ids("wood", "hyphae"));
+		addGroup(all, tabId, "stairs", ids("stair"));
+		addGroup(all, tabId, "slabs", ids("slab"));
+		addGroup(all, tabId, "planks", ids("planks", "mosaic"));
+		addGroup(all, tabId, "fence_gates", ids("fence_gate"));
+		addGroup(all, tabId, "fences", ids("fence"));
+		addGroup(all, tabId, "trapdoors", ids("trapdoor"));
+		addGroup(all, tabId, "doors", ids("door"));
+		addGroup(all, tabId, "pressure_plates", ids("pressure_plate"));
+		addGroup(all, tabId, "buttons", ids("button"));
+		addGroup(all, tabId, "bars", ids("bar"), ids("cinnabar"));
+		addGroup(all, tabId, "chains", ids("chain"));
+		addGroup(all, tabId, "copper", ids("copper"));
+		addGroup(all, tabId, "walls", ids("wall"));
+		addGroup(all, tabId, "decorative_stone", ids("bricks", "chiseled", "tiles", "polished"));
+		addGroup(all, tabId, "sandstone", ids("sandstone"));
+
+		tabId = "minecraft:colored_blocks";
+		addGroup(all, tabId, "wool_stairs", ids("wool_stairs"));
+		addGroup(all, tabId, "wool_slabs", ids("wool_slab"));
+		addGroup(all, tabId, "wool", ids("wool"));
+		addGroup(all, tabId, "carpets", ids("carpet"));
+		addGroup(all, tabId, "glazed_terracotta", ids("glazed_terracotta"));
+		addGroup(all, tabId, "terracotta", ids("terracotta"));
+		addGroup(all, tabId, "concrete_powder", ids("concrete_powder"));
+		addGroup(all, tabId, "concrete_stairs", ids("concrete_stairs"));
+		addGroup(all, tabId, "concrete_slabs", ids("concrete_slab"));
+		addGroup(all, tabId, "concrete", ids("concrete"));
+		addGroup(all, tabId, "glass_panes", ids("glass_pane"));
+		addGroup(all, tabId, "glass", ids("glass"));
+		addGroup(all, tabId, "shulker_boxes", ids("shulker_box"));
+		addGroup(all, tabId, "candles", ids("candle"));
+		addGroup(all, tabId, "banners", ids("banner"));
+		addGroup(all, tabId, "beds", ids("bed"));
+		addGroup(all, tabId, "cushions", ids("_cushion"));
+
+		tabId = "minecraft:natural_blocks";
+		addGroup(all, tabId, "ores", ids("_ore", "debris", "raw_"));
+		addGroup(all, tabId, "mushrooms", ids("mushroom", "fungus"));
+		addGroup(all, tabId, "saplings", ids("sapling", "propagule"));
+		addGroup(all, tabId, "ground_cover",
+			ids("fern", "_grass", "bush", "_sprouts", "hanging_moss", "_vines", "shrub"), ids("_bush"));
+		addGroup(all, tabId, "seeds", ids("seeds", "_pod"));
+		addGroup(all, tabId, "flowers", ids(
+			"dandelion", "poppy", "orchid", "allium", "tulip", "daisy", "cornflower", "torchflower",
+			"azure_bluet", "valley", "cactus_flower", "eyeblossom", "rose", "petals", "wildflower",
+			"crimson_roots", "warped_roots", "sunflower", "peony", "lilac", "pitcher_plant"));
+		addGroup(all, tabId, "leaves", ids("leaves"));
+		addGroup(all, tabId, "coral_blocks", ids("coral_block"));
+		addGroup(all, tabId, "coral_decorations", ids("coral"));
+		addGroup(all, tabId, "stone", ids(
+			":stone", "diorite", "andesite", "granite", "tuff", "basalt", "blackstone", "deepslate"));
+		addGroup(all, tabId, "logs", ids("log", "stem"));
+
+		tabId = "minecraft:functional_blocks";
+		addGroup(all, tabId, "lanterns", ids("lantern"), ids("sea"));
+		addGroup(all, tabId, "chains", ids("chain"));
+		addGroup(all, tabId, "bulbs", ids("bulb"));
+		addGroup(all, tabId, "anvils", ids("anvil"));
+		addGroup(all, tabId, "lightning_rods", ids("lightning_rod"));
+		addGroup(all, tabId, "shelves", ids("_shelf"));
+		addGroup(all, tabId, "hanging_signs", ids("hanging_sign"));
+		addGroup(all, tabId, "signs", ids("sign"));
+		addGroup(all, tabId, "chests", ids("chest"));
+		addGroup(all, tabId, "shulker_boxes", ids("shulker_box"));
+		addGroup(all, tabId, "beds", ids("_bed"));
+		addGroup(all, tabId, "candles", ids("candle"));
+		addGroup(all, tabId, "banners", ids("banner"));
+		addGroup(all, tabId, "skulls", ids("head", "skull"));
+		addGroup(all, tabId, "golem_statues", ids("golem_statue"));
+		addGroup(all, tabId, "infested_stone", ids("infested"));
+		addGroup(all, tabId, "paintings", ids("painting"));
+
+		tabId = "minecraft:redstone_blocks";
+		addGroup(all, tabId, "bulbs", ids("bulb"));
+		addGroup(all, tabId, "pressure_plates", ids("pressure_plate"));
+		addGroup(all, tabId, "transport", ids("minecart", "boat", "_raft"));
+		addGroup(all, tabId, "chests", ids("chest"));
+		addGroup(all, tabId, "rails", ids("rail"));
+
+		tabId = "minecraft:tools_and_utilities";
+		addGroup(all, tabId, "shovels", ids("shovel"));
+		addGroup(all, tabId, "pickaxes", ids("pickaxe"));
+		addGroup(all, tabId, "axes", ids("axe"));
+		addGroup(all, tabId, "hoes", ids("hoe"));
+		addGroup(all, tabId, "bundles", ids("bundle"));
+		addGroup(all, tabId, "firework_rockets", ids("firework_rocket"));
+		addGroup(all, tabId, "harnesses", ids("harness"));
+		addGroup(all, tabId, "chest_boats", ids("chest_boat", "chest_raft"));
+		addGroup(all, tabId, "boats", ids("boat", "_raft"));
+		addGroup(all, tabId, "rails", ids("rail"));
+		addGroup(all, tabId, "minecarts", ids("minecart"));
+		addGroup(all, tabId, "discs", ids("disc"));
+		addGroup(all, tabId, "goat_horns", ids("goat_horn"));
+		addGroup(all, tabId, "creature_buckets", ids(
 			"cod_bucket", "salmon_bucket", "tropical_fish_bucket", "pufferfish_bucket",
 			"axolotl_bucket", "tadpole_bucket", "sulfur_cube_bucket"));
 
-		// 战斗
-		add(all, COMBAT, "swords", contains("sword"));
-		add(all, COMBAT, "spears", contains("spear"));
-		add(all, COMBAT, "axes", contains("axe"));
-		add(all, COMBAT, "helmets", contains("helmet"));
-		add(all, COMBAT, "chestplates", contains("chestplate"));
-		add(all, COMBAT, "leggings", contains("leggings"));
-		add(all, COMBAT, "boots", contains("boots"));
-		add(all, COMBAT, "horse_armor", contains("horse_armor"));
-		add(all, COMBAT, "nautilus_armor", contains("nautilus_armor"));
-		add(all, COMBAT, "eggs", contains("egg"));
-		add(all, COMBAT, "tipped_arrows", contains("tipped_arrow"));
-		add(all, COMBAT, "firework_rockets", contains("firework_rocket"));
+		tabId = "minecraft:combat";
+		addGroup(all, tabId, "swords", ids("sword"));
+		addGroup(all, tabId, "spears", ids("spear"));
+		addGroup(all, tabId, "axes", ids("axe"));
+		addGroup(all, tabId, "helmets", ids("helmet"));
+		addGroup(all, tabId, "chestplates", ids("chestplate"));
+		addGroup(all, tabId, "leggings", ids("leggings"));
+		addGroup(all, tabId, "boots", ids("boots"));
+		addGroup(all, tabId, "horse_armor", ids("horse_armor"));
+		addGroup(all, tabId, "nautilus_armor", ids("nautilus_armor"));
+		addGroup(all, tabId, "eggs", ids("egg"));
+		addGroup(all, tabId, "tipped_arrows", ids("tipped_arrow"));
+		addGroup(all, tabId, "firework_rockets", ids("firework_rocket"));
 
-		// 食物与饮品
-		add(all, FOOD_AND_DRINKS, "suspicious_stews", contains("suspicious_stew"));
-		add(all, FOOD_AND_DRINKS, "ominous_bottles", contains("ominous_bottle"));
-		add(all, FOOD_AND_DRINKS, "splash_potions", contains("splash_potion"));
-		add(all, FOOD_AND_DRINKS, "lingering_potions", contains("lingering_potion"));
-		add(all, FOOD_AND_DRINKS, "potions", contains("potion"));
-		add(all, FOOD_AND_DRINKS, "cooked_food", contains("cooked"));
-		add(all, FOOD_AND_DRINKS, "raw_food", contains(
-			"beef", "porkchop", "mutton", "chicken", "rabbit", ":cod", "salmon"),
-			excluded("rabbit_"));
+		tabId = "minecraft:food_and_drinks";
+		addGroup(all, tabId, "suspicious_stews", ids("suspicious_stew"));
+		addGroup(all, tabId, "ominous_bottles", ids("ominous_bottle"));
+		addGroup(all, tabId, "splash_potions", ids("splash_potion"));
+		addGroup(all, tabId, "lingering_potions", ids("lingering_potion"));
+		addGroup(all, tabId, "potions", ids("potion"));
+		addGroup(all, tabId, "cooked_food", ids("cooked"));
+		addGroup(all, tabId, "raw_food", ids(
+			"beef", "porkchop", "mutton", "chicken", "rabbit", ":cod", "salmon"), ids("rabbit_"));
 
-		// 原材料
-		add(all, INGREDIENTS, "dyes", contains("dye"));
-		add(all, INGREDIENTS, "banner_patterns", contains("banner_pattern"));
-		add(all, INGREDIENTS, "pottery_sherds", contains("pottery_sherd"));
-		add(all, INGREDIENTS, "smithing_templates", contains("smithing_template"));
-		add(all, INGREDIENTS, "enchanted_books", contains("enchanted_book"));
+		tabId = "minecraft:ingredients";
+		addGroup(all, tabId, "dyes", ids("dye"));
+		addGroup(all, tabId, "banner_patterns", ids("banner_pattern"));
+		addGroup(all, tabId, "pottery_sherds", ids("pottery_sherd"));
+		addGroup(all, tabId, "smithing_templates", ids("smithing_template"));
+		addGroup(all, tabId, "enchanted_books", ids("enchanted_book"));
 
-		Map<String, List<Definition>> result = new LinkedHashMap<>();
-		for (DefaultGroup entry : all) {
-			result.computeIfAbsent(entry.tabId(), ignored -> new ArrayList<>())
-				.add(entry.definition());
-		}
-		Map<String, List<Definition>> frozen = new LinkedHashMap<>();
-		for (Map.Entry<String, List<Definition>> entry : result.entrySet()) {
-			frozen.put(entry.getKey(), List.copyOf(entry.getValue()));
-		}
-		return Map.copyOf(frozen);
-	}
-
-	private static void add(List<DefaultGroup> definitions, String tabId, String key,
-							List<String> containedItems) {
-		add(definitions, tabId, key, containedItems, List.of());
-	}
-
-	private static void add(List<DefaultGroup> definitions, String tabId, String key,
-							List<String> containedItems, List<String> excludedItems) {
-		definitions.add(new DefaultGroup(tabId,
-			new Definition(key, containedItems, excludedItems)));
-	}
-
-	private static List<String> contains(String... patterns) {
-		return List.of(patterns);
-	}
-
-	private static List<String> excluded(String... patterns) {
-		return List.of(patterns);
+		return List.copyOf(all);
 	}
 }

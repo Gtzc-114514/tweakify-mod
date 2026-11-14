@@ -85,7 +85,8 @@
 		"LightningBoltShakeMixin",
 		"HandSwingShakeMixin",
 		"CreativeModeInventoryGroupingMixin",
-		"CreativeModeInventorySlotBackgroundMixin",
+		"CreativeModeInventorySlotRenderMixin",
+		"CreativeItemPickerMenuAccessor",
 		"SpawnEggItemThrowMixin",
 		"ThrownEggSpawnEggMixin",
 		"SpawnPlacementsMixin",
@@ -104,7 +105,20 @@
 		"ZombifiedPiglinPeacefulSpawnMixin",
 		"LivingEntityPeacefulAttackMixin",
 		"PlayerPeacefulDamageMixin",
-		"SummonCommandPeacefulMixin"
+		"SummonCommandPeacefulMixin",
+		"FrostWalkerJumpFixMixin",
+		"CobwebSlowdownMixin",
+		"FluidPushMixin",
+		"SlimeBlockSlowdownMixin",
+		"SlimeBlockBounceMixin",
+		"HoneyBlockSlowdownMixin",
+		"HoneyBlockStickMixin",
+		"SignOpenContainerMixin",
+		"LocatorBarHeadsMixin",
+		"HudAlwaysShowXpMixin",
+		"ExperienceBarAlwaysShowXpMixin",
+		"HudDebugInfoMixin",
+		"HudExperienceLevelMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

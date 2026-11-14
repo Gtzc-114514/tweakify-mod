@@ -168,6 +168,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 更好的粗体：粗体偏移从 1.0 改为 0.5。
 	public static final ConfigBoolean BETTER_BOLD = new ConfigBoolean(
 		"betterBold", false).apply(GENERAL_KEY);
+	// 冰霜行者跳跃修复：跳跃途中也继续在脚下结冰。
+	public static final ConfigBoolean FROST_WALKER_JUMP_FIX = new ConfigBoolean(
+		"frostWalkerJumpFix", false).apply(GENERAL_KEY);
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(GENERAL_KEY);
@@ -207,6 +210,54 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"itemGroups", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigOptionList ITEM_GROUPS_SORT = new ConfigOptionList(
 		"itemGroupsSort", ItemGroupSort.DEFAULT).apply(GENERAL_KEY);
+	// 展开时图标轮播组内物品（对应参考模组的 showItemsInGroup）。
+	public static final ConfigBoolean ITEM_GROUPS_SHOW_ITEMS = new ConfigBoolean(
+		"itemGroupsShowItems", false).apply(GENERAL_KEY);
+	// 是否启用内置默认组；关闭后只用自定义组（对应参考模组的 Add all groups）。
+	public static final ConfigBoolean ITEM_GROUPS_ADD_ALL = new ConfigBoolean(
+		"itemGroupsAddAll", true).apply(GENERAL_KEY);
+	// 自定义组：每行 tabId|组名|包含|排除|等价。
+	public static final ConfigStringList CUSTOM_ITEM_GROUPS = new ConfigStringList(
+		"customItemGroups", ImmutableList.of()).apply(LISTS_KEY);
+	// 定位栏优化：把定位栏圆点换成本服玩家头像（参考 locator-heads）。
+	public static final ConfigBooleanHotkeyed LOCATOR_BAR_HEADS = new ConfigBooleanHotkeyed(
+		"locatorBarHeads", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 经验条与定位栏同时显示（参考 alwaysShowXP）。
+	public static final ConfigBoolean LOCATOR_BAR_ALWAYS_SHOW_XP = new ConfigBoolean(
+		"locatorBarAlwaysShowXp", false).apply(GENERAL_KEY);
+	public static final ConfigInteger LOCATOR_BAR_HEAD_SCALE = new ConfigInteger(
+		"locatorBarHeadScale", TweakifyModConfig.DEFAULT_LOCATOR_HEAD_SIZE,
+		TweakifyModConfig.MIN_LOCATOR_HEAD_SIZE,
+		TweakifyModConfig.MAX_LOCATOR_HEAD_SIZE).apply(GENERAL_KEY);
+	public static final ConfigBoolean LOCATOR_BAR_HEAD_HAT_LAYER = new ConfigBoolean(
+		"locatorBarHeadHatLayer", true).apply(GENERAL_KEY);
+	// 描边：样式（关/固定色/队伍色）、粗细与固定颜色。
+	public static final ConfigOptionList LOCATOR_BAR_HEAD_BORDER = new ConfigOptionList(
+		"locatorBarHeadBorder", LocatorHeadBorder.OFF).apply(GENERAL_KEY);
+	public static final ConfigInteger LOCATOR_BAR_HEAD_BORDER_THICKNESS = new ConfigInteger(
+		"locatorBarHeadBorderThickness", TweakifyModConfig.DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS,
+		TweakifyModConfig.MIN_LOCATOR_HEAD_BORDER_THICKNESS,
+		TweakifyModConfig.MAX_LOCATOR_HEAD_BORDER_THICKNESS).apply(GENERAL_KEY);
+	public static final ConfigOptionList LOCATOR_BAR_HEAD_BORDER_COLOR = new ConfigOptionList(
+		"locatorBarHeadBorderColor", LocatorHeadColor.WHITE).apply(GENERAL_KEY);
+	// 玩家名字时机与玩家过滤。
+	public static final ConfigOptionList LOCATOR_BAR_HEAD_NAMES = new ConfigOptionList(
+		"locatorBarHeadNames", LocatorHeadNames.NEVER).apply(GENERAL_KEY);
+	public static final ConfigOptionList LOCATOR_BAR_HEAD_FILTER = new ConfigOptionList(
+		"locatorBarHeadFilter", LocatorHeadFilter.ALL).apply(GENERAL_KEY);
+	public static final ConfigStringList LOCATOR_BAR_HEAD_FILTER_NAMES = new ConfigStringList(
+		"locatorBarHeadFilterNames", ImmutableList.of()).apply(LISTS_KEY);
+	public static final ConfigBoolean LOCATOR_BAR_HEAD_NEARBY_ONLY = new ConfigBoolean(
+		"locatorBarHeadNearbyOnly", false).apply(GENERAL_KEY);
+	// 指南针覆盖层：开关、颜色、文字阴影与坐标标记。
+	public static final ConfigBoolean LOCATOR_BAR_COMPASS = new ConfigBoolean(
+		"locatorBarCompass", false).apply(GENERAL_KEY);
+	public static final ConfigOptionList LOCATOR_BAR_COMPASS_COLOR = new ConfigOptionList(
+		"locatorBarCompassColor", LocatorHeadColor.WHITE).apply(GENERAL_KEY);
+	public static final ConfigBoolean LOCATOR_BAR_COMPASS_SHADOW = new ConfigBoolean(
+		"locatorBarCompassShadow", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean LOCATOR_BAR_COMPASS_COORDINATES = new ConfigBoolean(
+		"locatorBarCompassCoordinates", false).apply(GENERAL_KEY);
 	// 鞘翅烟花限制：滑翔中使用烟花后，等加速结束才能再次右键使用。
 	public static final ConfigBooleanHotkeyed ELYTRA_FIREWORK_COOLDOWN = new ConfigBooleanHotkeyed(
 		"elytraFireworkCooldown", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -288,6 +339,31 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 铁傀儡进矿车：空矿车碰到铁傀儡时让铁傀儡坐进矿车。
 	public static final ConfigBoolean IRON_GOLEM_RIDE_MINECART = new ConfigBoolean(
 		"ironGolemRideMinecart", false).apply(GENERAL_KEY);
+	// 穿牌打开容器：准星对准告示牌时直接打开它背后的容器。
+	public static final ConfigBoolean SIGN_OPEN_CONTAINER = new ConfigBoolean(
+		"signOpenContainer", false).apply(GENERAL_KEY);
+	// 禁用蛛网减速：蜘蛛网不再粘住并限制移动。
+	public static final ConfigBoolean DISABLE_COBWEB_SLOWDOWN = new ConfigBoolean(
+		"disableCobwebSlowdown", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean COBWEB_SLOWDOWN_ALL_ENTITIES = new ConfigBoolean(
+		"cobwebSlowdownAllEntities", false).apply(GENERAL_KEY);
+	// 禁用液体推动：水流与岩浆流不再施加水平推力。
+	public static final ConfigBoolean DISABLE_FLUID_PUSH = new ConfigBoolean(
+		"disableFluidPush", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean DISABLE_WATER_PUSH = new ConfigBoolean(
+		"disableWaterPush", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean DISABLE_LAVA_PUSH = new ConfigBoolean(
+		"disableLavaPush", true).apply(GENERAL_KEY);
+	// 禁用粘液块减速：站在粘液块上不再被乘算降速。
+	public static final ConfigBoolean DISABLE_SLIME_BLOCK_SLOWDOWN = new ConfigBoolean(
+		"disableSlimeBlockSlowdown", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean DISABLE_SLIME_BLOCK_BOUNCE = new ConfigBoolean(
+		"disableSlimeBlockBounce", true).apply(GENERAL_KEY);
+	// 禁用蜂蜜块减速：蜂蜜块不再降低移动速度。
+	public static final ConfigBoolean DISABLE_HONEY_BLOCK_SLOWDOWN = new ConfigBoolean(
+		"disableHoneyBlockSlowdown", false).apply(GENERAL_KEY);
+	public static final ConfigBoolean DISABLE_HONEY_BLOCK_STICK = new ConfigBoolean(
+		"disableHoneyBlockStick", true).apply(GENERAL_KEY);
 	// 连接方块轮廓：准星对准门/床/双箱等连接方块时显示整体轮廓。
 	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE = new ConfigBoolean(
 		"connectedBlockOutline", false).apply(GENERAL_KEY);
@@ -471,6 +547,18 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"malilibScrollMemory", true).apply(GENERAL_KEY);
 	public static final ConfigBoolean MOD_MENU_SCROLL_MEMORY = new ConfigBoolean(
 		"modMenuScrollMemory", true).apply(GENERAL_KEY);
+	// 调试信息叠加层：HUD 左下角显示运行时信息。
+	public static final ConfigBooleanHotkeyed DEBUG_INFO_OVERLAY = new ConfigBooleanHotkeyed(
+		"debugInfoOverlay", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigBoolean DEBUG_INFO_SHOW_PERFORMANCE = new ConfigBoolean(
+		"debugInfoShowPerformance", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean DEBUG_INFO_SHOW_TARGET = new ConfigBoolean(
+		"debugInfoShowTarget", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean DEBUG_INFO_SHOW_HOOKS = new ConfigBoolean(
+		"debugInfoShowHooks", false).apply(GENERAL_KEY);
+	// 探针报表：纯快捷键动作，把已激活的 Mixin 行为探针输出到聊天栏。
+	public static final ConfigHotkey DEBUG_PROBE_REPORT = new ConfigHotkey(
+		"debugProbeReport", "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed ENTITY_HIGHLIGHT = new ConfigBooleanHotkeyed(
 		"entityHighlight", false, "", TOGGLE_HOTKEY_SETTINGS).apply(HIGHLIGHT_KEY);
 	public static final ConfigBoolean HIGHLIGHT_PRESET_1 = new ConfigBoolean(
@@ -494,9 +582,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	public static final ConfigStringList ATTACK_RANGE_ENTITIES = new EntityIdConfigStringList(
 		"attackRangeEntities", ImmutableList.of()).apply(LISTS_KEY);
 	public static final ConfigStringList DISABLED_SPAWN_ENTITIES = new EntityIdConfigStringList(
-		"disabledSpawnEntities", ImmutableList.of()).apply(GENERAL_KEY);
+		"disabledSpawnEntities", ImmutableList.of()).apply(LISTS_KEY);
 	public static final ConfigStringList PEACEFUL_MODE_MONSTER_ENTITIES = new EntityIdConfigStringList(
-		"peacefulModeMonsterEntities", ImmutableList.of()).apply(GENERAL_KEY);
+		"peacefulModeMonsterEntities", ImmutableList.of()).apply(LISTS_KEY);
 	public static final ConfigStringList RESTRICTED_OFFHAND_ITEMS = new ItemIdConfigStringList(
 		"restrictedOffhandItems",
 		ImmutableList.copyOf(TweakifyModConfig.defaultLightSourceItemIds())).apply(LISTS_KEY);

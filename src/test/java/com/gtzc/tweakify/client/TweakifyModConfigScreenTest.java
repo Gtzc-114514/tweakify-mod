@@ -146,6 +146,43 @@ class TweakifyModConfigScreenTest {
 		assertTab("thirdPersonPlayerName", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("betterBold", TweakifyModConfigScreen.ConfigTab.FIXING);
 		assertTab("miniHudFpsOptimization", TweakifyModConfigScreen.ConfigTab.OPTIMIZATION);
+		// 冰霜行者跳跃修复归入修复标签。
+		assertTab("frostWalkerJumpFix", TweakifyModConfigScreen.ConfigTab.FIXING);
+		// 定位栏优化的主开关与子设置都归入功能标签。
+		assertTab("locatorBarHeads", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarAlwaysShowXp", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadScale", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadHatLayer", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadBorder", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadBorderThickness", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadBorderColor", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadNames", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadFilter", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadFilterNames", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadNearbyOnly", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarCompass", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarCompassColor", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarCompassShadow", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarCompassCoordinates", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		// 物品分组的子设置同样归入功能标签。
+		assertTab("itemGroupsShowItems", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("itemGroupsAddAll", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("customItemGroups", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		// 穿牌打开容器与四个移动物理禁用项归入修改标签。
+		assertTab("signOpenContainer", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("disableCobwebSlowdown", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("cobwebSlowdownAllEntities", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("disableFluidPush", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("disableWaterPush", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("disableLavaPush", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("disableSlimeBlockSlowdown", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("disableSlimeBlockBounce", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("disableHoneyBlockSlowdown", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("disableHoneyBlockStick", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		// 调试辅助功能归入测试标签。
+		assertTab("debugInfoOverlay", TweakifyModConfigScreen.ConfigTab.TESTING);
+		assertTab("debugInfoShowPerformance", TweakifyModConfigScreen.ConfigTab.TESTING);
+		assertTab("debugProbeReport", TweakifyModConfigScreen.ConfigTab.TESTING);
 	}
 
 	private static void assertTab(String name, TweakifyModConfigScreen.ConfigTab expected) {

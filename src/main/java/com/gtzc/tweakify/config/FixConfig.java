@@ -19,4 +19,8 @@ public final class FixConfig extends ConfigSection {
 
 	// 更好的粗体：把粗体偏移从原版 1.0 改为 0.5（与 MCPatcher/OptiFine 一致）。
 	public volatile boolean betterBold = false;
+
+	// 冰霜行者跳跃修复：跳跃时（离地状态）也继续在脚下结冰，
+	// 修正原版只在站地帧结冰、跳着过水面时会踩空落水的问题。
+	public volatile boolean frostWalkerJumpFix = false;
 }

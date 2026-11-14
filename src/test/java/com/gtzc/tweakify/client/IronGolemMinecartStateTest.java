@@ -12,22 +12,28 @@ class IronGolemMinecartStateTest {
 
 	@Test
 	void picksUpOnServerWhenEnabledAndCartIsEmpty() {
-		assertTrue(IronGolemMinecartState.shouldPickUp(true, false, false));
+		assertTrue(IronGolemMinecartState.shouldPickUp(true, false, false, true));
 	}
 
 	@Test
 	void rejectsWhenSwitchIsOff() {
-		assertFalse(IronGolemMinecartState.shouldPickUp(false, false, false));
+		assertFalse(IronGolemMinecartState.shouldPickUp(false, false, false, true));
 	}
 
 	@Test
 	void rejectsOnClientSide() {
-		assertFalse(IronGolemMinecartState.shouldPickUp(true, true, false));
+		assertFalse(IronGolemMinecartState.shouldPickUp(true, true, false, true));
 	}
 
 	@Test
 	void rejectsWhenCartAlreadyHasPassenger() {
-		assertFalse(IronGolemMinecartState.shouldPickUp(true, false, true));
+		assertFalse(IronGolemMinecartState.shouldPickUp(true, false, true, true));
+	}
+
+	// 漏斗/运输/动力/TNT 等特种矿车不是普通矿车，铁傀儡不能坐进去。
+	@Test
+	void rejectsSpecialMinecarts() {
+		assertFalse(IronGolemMinecartState.shouldPickUp(true, false, false, false));
 	}
 
 	@Test

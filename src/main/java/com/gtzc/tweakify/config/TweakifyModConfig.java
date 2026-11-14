@@ -97,6 +97,13 @@ public class TweakifyModConfig {
 	public static final String MAIN_HAND_USE_COOLDOWN_ITEMS_FIELD = "mainHandUseCooldownItems";
 	public static final String OFFHAND_USE_COOLDOWN_ITEMS_FIELD = "offhandUseCooldownItems";
 
+	// 自定义物品组定义列表：内容不是单个 ID，而是“标签页|组名|包含|排除|等价”的整行，
+	// 因此不参与物品 ID 规范化（否则整行会被当成非法 ID 丢掉）。
+	public static final String CUSTOM_ITEM_GROUPS_FIELD = "customItemGroups";
+
+	// 定位栏玩家过滤名单字段名：内容是玩家名（非物品 ID），客户端渲染前按分隔符拆开。
+	public static final String LOCATOR_HEAD_FILTER_NAMES_FIELD = "locatorBarHeadFilterNames";
+
 	// 配置版本字段名：迁移步骤专用，档案加载时不复制（档案不应改写当前版本号）。
 	private static final String CONFIG_VERSION_FIELD = "configVersion";
 
@@ -225,6 +232,55 @@ public class TweakifyModConfig {
 	public static final int MAX_CAMERA_MOTION_INTENSITY = 200;
 	public static final int DEFAULT_CAMERA_MOTION_INTENSITY = 100;
 
+	// 定位栏头像倍率档位（与参考实现同一张表）：1..9 对应
+	// 0.5x / 0.6x / 0.7x / 0.8x / 1.0x / 1.1x / 1.2x / 1.3x / 1.5x，默认 5 = 1.0x。
+	public static final int MIN_LOCATOR_HEAD_SIZE = 1;
+	public static final int MAX_LOCATOR_HEAD_SIZE = 9;
+	public static final int DEFAULT_LOCATOR_HEAD_SIZE = 5;
+
+	// 定位栏头像描边样式：关闭 / 固定颜色 / 跟随队伍颜色。
+	public static final String LOCATOR_HEAD_BORDER_OFF = "off";
+	public static final String LOCATOR_HEAD_BORDER_STATIC = "static";
+	public static final String LOCATOR_HEAD_BORDER_TEAM = "team";
+	public static final List<String> SUPPORTED_LOCATOR_HEAD_BORDERS = List.of(
+		LOCATOR_HEAD_BORDER_OFF, LOCATOR_HEAD_BORDER_STATIC, LOCATOR_HEAD_BORDER_TEAM);
+
+	// 描边粗细（像素）。
+	public static final int MIN_LOCATOR_HEAD_BORDER_THICKNESS = 1;
+	public static final int MAX_LOCATOR_HEAD_BORDER_THICKNESS = 3;
+	public static final int DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS = 1;
+
+	// 定位栏玩家名字显示时机：不显示 / 总是 / 仅注视时 / 仅玩家列表打开时。
+	public static final String LOCATOR_HEAD_NAMES_NEVER = "never";
+	public static final String LOCATOR_HEAD_NAMES_ALWAYS = "always";
+	public static final String LOCATOR_HEAD_NAMES_LOOKING_AT = "looking_at";
+	public static final String LOCATOR_HEAD_NAMES_PLAYER_LIST = "player_list";
+	public static final List<String> SUPPORTED_LOCATOR_HEAD_NAMES = List.of(
+		LOCATOR_HEAD_NAMES_NEVER, LOCATOR_HEAD_NAMES_ALWAYS,
+		LOCATOR_HEAD_NAMES_LOOKING_AT, LOCATOR_HEAD_NAMES_PLAYER_LIST);
+
+	// 定位栏玩家过滤：全部 / 仅包含名单 / 排除名单。
+	public static final String LOCATOR_HEAD_FILTER_ALL = "all";
+	public static final String LOCATOR_HEAD_FILTER_INCLUDE = "include";
+	public static final String LOCATOR_HEAD_FILTER_EXCLUDE = "exclude";
+	public static final List<String> SUPPORTED_LOCATOR_HEAD_FILTERS = List.of(
+		LOCATOR_HEAD_FILTER_ALL, LOCATOR_HEAD_FILTER_INCLUDE, LOCATOR_HEAD_FILTER_EXCLUDE);
+
+	// 定位栏描边/指南针共用的颜色调色板（ARGB 在客户端枚举里映射）。
+	public static final String LOCATOR_COLOR_WHITE = "white";
+	public static final String LOCATOR_COLOR_BLACK = "black";
+	public static final String LOCATOR_COLOR_GRAY = "gray";
+	public static final String LOCATOR_COLOR_RED = "red";
+	public static final String LOCATOR_COLOR_ORANGE = "orange";
+	public static final String LOCATOR_COLOR_YELLOW = "yellow";
+	public static final String LOCATOR_COLOR_GREEN = "green";
+	public static final String LOCATOR_COLOR_BLUE = "blue";
+	public static final String LOCATOR_COLOR_AQUA = "aqua";
+	public static final List<String> SUPPORTED_LOCATOR_COLORS = List.of(
+		LOCATOR_COLOR_WHITE, LOCATOR_COLOR_BLACK, LOCATOR_COLOR_GRAY, LOCATOR_COLOR_RED,
+		LOCATOR_COLOR_ORANGE, LOCATOR_COLOR_YELLOW, LOCATOR_COLOR_GREEN, LOCATOR_COLOR_BLUE,
+		LOCATOR_COLOR_AQUA);
+
 	// 复制 ID 的输出格式：纯 ID / 带类型前缀 / 带数量。
 	public static final String COPY_ID_FORMAT_PLAIN = "plain";
 	public static final String COPY_ID_FORMAT_TYPED = "typed";
@@ -300,6 +356,7 @@ public class TweakifyModConfig {
 	public final ModifiedConfig modified = new ModifiedConfig();
 	public final FixConfig fix = new FixConfig();
 	public final OptimizationConfig optimization = new OptimizationConfig();
+	public final TestingConfig testing = new TestingConfig();
 
 	// 运行期加速用的缓存集合，不参与序列化。
 	// volatile：命令写入发生在集成服务端线程，判定读发生在客户端线程，
@@ -620,7 +677,10 @@ public class TweakifyModConfig {
 			// 留到 rebuildCache 就是 new HashSet<>(null) 的启动 NPE，这里强制回写一份空列表。
 			Object raw = read(entry.getKey());
 			List<String> original = asList(raw);
-			List<String> sanitized = sanitizeItemList(original);
+			// 自定义物品组等自由格式列表不做 ID 规范化，只补 null。
+			List<String> sanitized = isFreeFormListField(entry.getKey())
+				? List.copyOf(original)
+				: sanitizeItemList(original);
 			if (raw == null || !sanitized.equals(original)) {
 				write(entry.getKey(), sanitized);
 				changed = true;
@@ -671,6 +731,11 @@ public class TweakifyModConfig {
 			}
 		}
 		return new ArrayList<>(uniqueItems);
+	}
+
+	// 自定义物品组定义等自由格式列表：整行内容不当作 ID 处理。
+	public static boolean isFreeFormListField(String name) {
+		return CUSTOM_ITEM_GROUPS_FIELD.equals(name);
 	}
 
 	private void rebuildCache() {
@@ -756,7 +821,8 @@ public class TweakifyModConfig {
 
 	// 写入时统一换成新的不可变列表（写时复制）：渲染线程正在遍历旧列表也不会看到中间状态。
 	public synchronized void setStringList(String name, List<String> values) {
-		write(name, List.copyOf(sanitizeItemList(values)));
+		List<String> copy = values == null ? List.of() : values;
+		write(name, isFreeFormListField(name) ? List.copyOf(copy) : List.copyOf(sanitizeItemList(copy)));
 		// 列表内容变了，命中判定用的缓存集合延迟到下次查询时统一重建。
 		cacheDirty = true;
 	}
@@ -1015,7 +1081,9 @@ public class TweakifyModConfig {
 			if (value instanceof List<?> list) {
 				@SuppressWarnings("unchecked")
 				List<String> raw = (List<String>) list;
-				write(name, List.copyOf(sanitizeItemList(raw)));
+				write(name, isFreeFormListField(name)
+					? List.copyOf(raw)
+					: List.copyOf(sanitizeItemList(raw)));
 			} else if (value != null) {
 				// null 时保持当前值：把列表/字符串字段置空会让下游每 tick 调用 NPE。
 				write(name, value);

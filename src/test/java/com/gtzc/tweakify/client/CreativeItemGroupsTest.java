@@ -1,30 +1,56 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 物品分组的纯逻辑：组定义匹配、去重顺序、最小成员数、排序、自定义组解析与展开/收起。
+ * 行为对齐 {@code BizCub/inventory-item-groups}。
+ */
 class CreativeItemGroupsTest {
+	private static final String TAB = "minecraft:building_blocks";
+
 	@BeforeAll
 	static void bootstrapMinecraft() {
 		SharedConstants.tryDetectVersion();
 		Bootstrap.bootStrap();
 		BuiltInRegistries.ITEM.freeze();
+	}
+
+	// 分组状态是进程级静态：逐用例准备/清理，避免顺序依赖。
+	@BeforeEach
+	void enableGrouping() {
+		TweakifyMod.CONFIG = new TweakifyModConfig();
+		TweakifyMod.CONFIG.functions.itemGroups = true;
+	}
+
+	@AfterEach
+	void resetGroupState() {
+		CreativeItemGroups.clear();
+		TweakifyMod.CONFIG = null;
 	}
 
 	@Test
@@ -45,50 +71,63 @@ class CreativeItemGroupsTest {
 	}
 
 	@Test
-	void collapsedGroupKeepsIconAndExpandedRestoresMembers() {
+	void definitionMatchesContainedPatterns() {
+		CreativeItemGroups.GroupDefinition stairs = definition("stairs", List.of("stair"), List.of());
+
+		assertTrue(stairs.matches("minecraft:oak_stairs"));
+		assertFalse(stairs.matches("minecraft:oak_slab"));
+	}
+
+	@Test
+	void definitionExcludesByAnyNotContainedPattern() {
+		// 与参考实现一致：排除项用 anyMatch(!contains)，任意一个不命中即放行。
+		CreativeItemGroups.GroupDefinition logs = definition("logs",
+			List.of("log", "stem", "bamboo_block"), List.of("stripped"));
+
+		assertTrue(logs.matches("minecraft:oak_log"));
+		assertFalse(logs.matches("minecraft:stripped_oak_log"));
+		assertFalse(logs.matches("minecraft:stone"));
+	}
+
+	@Test
+	void equivalentItemsMatchByFullId() {
+		CreativeItemGroups.GroupDefinition quartz = new CreativeItemGroups.GroupDefinition(
+			"quartz", TAB, List.of("quartz_block"), List.of(), List.of("minecraft:quartz"));
+
+		assertTrue(quartz.matches("minecraft:quartz"));
+		assertTrue(quartz.matches("minecraft:quartz_block"));
+		assertFalse(quartz.matches("minecraft:quartz_stairs"));
+	}
+
+	@Test
+	void groupsBelowThreeMembersAreDropped() {
+		CreativeItemGroups.GroupDefinition stairs = definition("stairs", List.of("stair"), List.of());
+		List<ItemStack> twoMembers = List.of(stack(Items.OAK_STAIRS), stack(Items.STONE_STAIRS));
+
+		assertTrue(CreativeItemGroups.create(List.of(stairs), twoMembers).isEmpty(),
+			"成员少于 3 个的组不成立");
+
+		List<ItemStack> threeMembers = List.of(
+			stack(Items.OAK_STAIRS), stack(Items.STONE_STAIRS), stack(Items.SPRUCE_STAIRS));
+		List<CreativeItemGroups.Group> groups = CreativeItemGroups.create(List.of(stairs), threeMembers);
+		assertEquals(1, groups.size());
+		assertEquals(3, groups.getFirst().items().size());
+		assertFalse(groups.getFirst().visible(), "新建的组默认收起");
+	}
+
+	@Test
+	void iconIsFirstMemberAndLaterGroupsDoNotReclaimItems() {
 		ItemStack oak = stack(Items.OAK_STAIRS);
 		ItemStack stone = stack(Items.STONE_STAIRS);
 		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
-		ItemStack dirt = stack(Items.DIRT);
-		List<ItemStack> source = List.of(oak, stone, spruce, dirt);
+		CreativeItemGroups.GroupDefinition first = definition("stairs", List.of("stair"), List.of());
+		CreativeItemGroups.GroupDefinition second = definition("again", List.of("stair"), List.of());
 
-		CreativeItemGroups.Result collapsed = CreativeItemGroups.build(
-			"minecraft:building_blocks", source, Set.of(), CreativeItemGroups.SORT_DEFAULT);
-		assertEquals(List.of(oak, dirt), collapsed.displayItems());
-		assertEquals(1, collapsed.groups().size());
-		CreativeItemGroups.Group group = collapsed.groups().get("stairs");
-		assertEquals(3, group.items().size());
-		assertTrue(CreativeItemGroups.isRepresentative(oak, group));
-		assertFalse(CreativeItemGroups.isRepresentative(stone, group));
+		List<CreativeItemGroups.Group> groups = CreativeItemGroups.create(
+			List.of(first, second), List.of(oak, stone, spruce));
 
-		CreativeItemGroups.Result expanded = CreativeItemGroups.build(
-			"minecraft:building_blocks", source, Set.of("stairs"), CreativeItemGroups.SORT_DEFAULT);
-		assertEquals(List.of(oak, stone, spruce, dirt), expanded.displayItems());
-	}
-
-	@Test
-	void groupsWithLessThanThreeMembersStayUngrouped() {
-		List<ItemStack> source = List.of(
-			stack(Items.OAK_STAIRS), stack(Items.STONE_STAIRS), stack(Items.DIRT));
-		CreativeItemGroups.Result result = CreativeItemGroups.build(
-			"minecraft:building_blocks", source, Set.of(), CreativeItemGroups.SORT_DEFAULT);
-		assertTrue(result.groups().isEmpty());
-		assertEquals(source, result.displayItems());
-	}
-
-	@Test
-	void excludedItemsStayOutsideTheGroup() {
-		ItemStack oakLog = stack(Items.OAK_LOG);
-		ItemStack birchLog = stack(Items.BIRCH_LOG);
-		ItemStack spruceLog = stack(Items.SPRUCE_LOG);
-		ItemStack stripped = stack(Items.STRIPPED_OAK_LOG);
-		List<ItemStack> source = List.of(oakLog, birchLog, spruceLog, stripped);
-
-		CreativeItemGroups.Result collapsed = CreativeItemGroups.build(
-			"minecraft:building_blocks", source, Set.of(), CreativeItemGroups.SORT_DEFAULT);
-		assertEquals(List.of(oakLog, stripped), collapsed.displayItems());
-		assertEquals(3, collapsed.groups().get("logs").items().size());
-		assertFalse(collapsed.groupByItem().containsKey(stripped.getItem()));
+		assertEquals(1, groups.size(), "后一个组拿不到任何物品，会被最小成员数过滤掉");
+		assertSame(oak, groups.getFirst().icon(), "组图标是组内第一个物品");
 	}
 
 	@Test
@@ -96,86 +135,192 @@ class CreativeItemGroupsTest {
 		ItemStack birch = stack(Items.BIRCH_STAIRS);
 		ItemStack oak = stack(Items.OAK_STAIRS);
 		ItemStack stone = stack(Items.STONE_STAIRS);
-		List<ItemStack> source = List.of(stone, oak, birch);
+		List<CreativeItemGroups.GroupDefinition> definitions =
+			List.of(definition("stairs", List.of("stair"), List.of()));
 
-		CreativeItemGroups.Result result = CreativeItemGroups.build(
-			"minecraft:building_blocks", source, Set.of(), CreativeItemGroups.SORT_ALPHABETICAL);
-		List<Item> order = new ArrayList<>();
-		for (ItemStack stack : result.groups().get("stairs").items()) {
-			order.add(stack.getItem());
-		}
-		List<Item> expected = new ArrayList<>(List.of(birch.getItem(), oak.getItem(), stone.getItem()));
-		expected.sort((left, right) -> BuiltInRegistries.ITEM.getKey(left).toString()
-			.compareTo(BuiltInRegistries.ITEM.getKey(right).toString()));
-		assertEquals(expected, order);
+		List<CreativeItemGroups.Group> sorted = CreativeItemGroups.create(
+			definitions, List.of(stone, oak, birch), true);
+		assertEquals(List.of(birch, oak, stone), sorted.getFirst().items());
+
+		List<CreativeItemGroups.Group> original = CreativeItemGroups.create(
+			definitions, List.of(stone, oak, birch), false);
+		assertEquals(List.of(stone, oak, birch), original.getFirst().items(),
+			"默认排序保持物品栏原顺序");
 	}
 
 	@Test
-	void categoriesWithoutDefinitionsAreUnchanged() {
-		List<ItemStack> source = List.of(stack(Items.DIRT), stack(Items.STONE));
-		CreativeItemGroups.Result result = CreativeItemGroups.build(
-			"minecraft:search", source, Set.of(), CreativeItemGroups.SORT_DEFAULT);
-		assertEquals(source, result.displayItems());
-		assertTrue(result.groups().isEmpty());
-		assertTrue(result.groupByItem().isEmpty());
+	void customGroupsParseFromListFormat() {
+		List<CreativeItemGroups.GroupDefinition> definitions = CreativeItemGroups.parseCustomGroups(List.of(
+			"minecraft:building_blocks|石英|quartz",
+			"  minecraft:combat | 武器 | sword, axe | | minecraft:trident ",
+			"字段不足",
+			"|没有标签页|stairs"));
+
+		assertEquals(2, definitions.size(), "字段不足或缺少标签页的行会被忽略");
+
+		CreativeItemGroups.GroupDefinition quartz = definitions.get(0);
+		assertEquals("石英", quartz.name());
+		assertEquals(TAB, quartz.tabId());
+		assertTrue(quartz.matches("minecraft:quartz_block"));
+
+		CreativeItemGroups.GroupDefinition weapons = definitions.get(1);
+		assertEquals("minecraft:combat", weapons.tabId());
+		assertEquals(List.of("sword", "axe"), weapons.containedItems());
+		assertTrue(weapons.matches("minecraft:iron_sword"));
+		assertTrue(weapons.matches("minecraft:trident"), "等价 ID 不参与包含匹配但能直接命中");
 	}
 
 	@Test
-	void groupKeysAreUniqueWithinEachTab() {
-		for (String tabId : List.of(
-			"minecraft:building_blocks", "minecraft:colored_blocks", "minecraft:natural_blocks",
-			"minecraft:functional_blocks", "minecraft:redstone_blocks",
-			"minecraft:tools_and_utilities", "minecraft:combat",
-			"minecraft:food_and_drinks", "minecraft:ingredients")) {
-			Set<String> keys = new HashSet<>();
-			for (CreativeItemGroups.Definition definition : CreativeItemGroups.definitionsFor(tabId)) {
-				assertTrue(keys.add(definition.key()),
-					"duplicate group key " + definition.key() + " in " + tabId);
-				assertFalse(definition.containedItems().isEmpty(),
-					"group " + definition.key() + " must have at least one pattern");
-			}
-		}
+	void toggleInsertsMembersAfterIconAndRemovesThem() {
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack sand = stack(Items.SAND);
+		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
+			Component.literal("Stairs"), List.of(oak, stone, spruce));
+
+		NonNullList<ItemStack> items = NonNullList.create();
+		items.add(dirt);
+		items.add(oak);
+		items.add(sand);
+		group.setIconIndex(1);
+
+		CreativeItemGroups.toggle(group, items);
+		assertTrue(group.visible());
+		// 参考实现会把组内全部物品（含图标物品本身）插到图标之后。
+		assertEquals(List.of(dirt, oak, oak, stone, spruce, sand), items);
+
+		CreativeItemGroups.toggle(group, items);
+		assertFalse(group.visible());
+		assertEquals(List.of(dirt, oak, sand), items, "收起后回到展开前的内容");
 	}
 
 	@Test
-	void expandedBackgroundOnlyCoversExpandedMembers() {
-		CreativeItemGroups.Group group = new CreativeItemGroups.Group("stairs", List.of(
-			stack(Items.OAK_STAIRS), stack(Items.STONE_STAIRS), stack(Items.SPRUCE_STAIRS)));
+	void displayIndexMapsDisplayedSlotsBackToTheList() {
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		CreativeItemGroups.installGroupsForTest(List.of(), List.of(oak, stone, spruce));
+		List<Slot> slots = List.of(slot(oak), slot(stone), slot(spruce));
 
-		assertTrue(CreativeItemGroups.shouldDrawExpandedBackground(
-			0, 45, true, group, true, false), "expanded member should get a background");
-		assertFalse(CreativeItemGroups.shouldDrawExpandedBackground(
-			0, 45, true, group, true, true), "group icon must keep its normal background");
-		assertFalse(CreativeItemGroups.shouldDrawExpandedBackground(
-			0, 45, true, group, false, false), "collapsed group member is not visible");
-		assertFalse(CreativeItemGroups.shouldDrawExpandedBackground(
-			45, 45, true, group, true, false), "player inventory slot must not be painted");
-		assertFalse(CreativeItemGroups.shouldDrawExpandedBackground(
-			-1, 45, true, group, true, false), "negative slot index must not be painted");
-		assertFalse(CreativeItemGroups.shouldDrawExpandedBackground(
-			0, 45, false, group, true, false), "disabled grouping must not paint");
-		assertFalse(CreativeItemGroups.shouldDrawExpandedBackground(
-			0, 45, true, null, true, false), "ungrouped slot must not paint");
-		CreativeItemGroups.Group small = new CreativeItemGroups.Group("small", List.of(
-			stack(Items.OAK_STAIRS), stack(Items.STONE_STAIRS)));
-		assertFalse(CreativeItemGroups.shouldDrawExpandedBackground(
-			0, 45, true, small, true, false), "group below the fold threshold must not paint");
+		assertEquals(0, CreativeItemGroups.displayIndex(slots, 0));
+		assertEquals(1, CreativeItemGroups.displayIndex(slots, 1));
+		assertEquals(2, CreativeItemGroups.displayIndex(slots, 2));
+		assertEquals(-1, CreativeItemGroups.displayIndex(List.of(), 0));
 	}
 
 	@Test
-	void supportedSortsAreStable() {
-		assertTrue(CreativeItemGroups.isSupportedSort(CreativeItemGroups.SORT_DEFAULT));
-		assertTrue(CreativeItemGroups.isSupportedSort(CreativeItemGroups.SORT_ALPHABETICAL));
-		assertFalse(CreativeItemGroups.isSupportedSort("unknown"));
-		assertFalse(CreativeItemGroups.isSupportedSort(null));
+	void creativeSlotLimitMatchesTheItemPickerGrid() {
+		assertTrue(CreativeItemGroups.isCreativeSlot(0));
+		assertTrue(CreativeItemGroups.isCreativeSlot(CreativeItemGroups.CREATIVE_SLOT_LIMIT));
+		assertFalse(CreativeItemGroups.isCreativeSlot(CreativeItemGroups.CREATIVE_SLOT_LIMIT + 1));
+		assertFalse(CreativeItemGroups.isCreativeSlot(-1));
+	}
+
+	// 显示索引的偏移只取决于“前两个槽位 + 基准列表”，基准变化后必须重新计算。
+	@Test
+	void displayIndexRecomputesWhenItemsChange() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		// 前两个槽位固定显示 oak / stone，基准列表变化会改变偏移。
+		List<Slot> slots = List.of(slot(oak), slot(stone), slot(spruce));
+
+		CreativeItemGroups.installGroupsForTest(List.of(), List.of(dirt, oak, stone, spruce));
+		assertEquals(1, CreativeItemGroups.displayIndex(slots, 0), "oak 在基准列表的第 1 位");
+		assertEquals(3, CreativeItemGroups.displayIndex(slots, 2));
+
+		CreativeItemGroups.installGroupsForTest(List.of(), List.of(oak, stone, spruce));
+		assertEquals(0, CreativeItemGroups.displayIndex(slots, 0), "基准变化后偏移必须失效重算");
+	}
+
+	// 渲染快照：收起只标图标（可展开），展开时标图标 + 三个成员位（含图标物品自身）。
+	@Test
+	void renderSnapshotTracksExpandedIconsAndMembers() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
+			Component.literal("Stairs"), List.of(oak, stone, spruce));
+		CreativeItemGroups.installGroupsForTest(List.of(group), List.of(dirt, oak));
+
+		assertTrue(CreativeItemGroups.isCollapsedIconSlot(1));
+		assertFalse(CreativeItemGroups.isExpandedIconSlot(1));
+		assertFalse(CreativeItemGroups.isMemberSlot(1));
+		assertSame(group, CreativeItemGroups.iconGroup(1));
+		assertNull(CreativeItemGroups.iconGroup(0), "非图标槽位不返回组");
+		assertNull(CreativeItemGroups.iconGroup(-1));
+
+		NonNullList<ItemStack> items = NonNullList.create();
+		items.add(dirt);
+		items.add(oak);
+		CreativeItemGroups.toggle(group, items);
+
+		assertTrue(CreativeItemGroups.isExpandedIconSlot(1));
+		assertFalse(CreativeItemGroups.isCollapsedIconSlot(1));
+		assertFalse(CreativeItemGroups.isMemberSlot(1), "图标槽位不算成员位");
+		assertTrue(CreativeItemGroups.isMemberSlot(2));
+		assertTrue(CreativeItemGroups.isMemberSlot(3));
+		assertTrue(CreativeItemGroups.isMemberSlot(4));
+		assertFalse(CreativeItemGroups.isMemberSlot(5), "越界索引不返回 true");
+	}
+
+	// 列表被刷新后旧组可能指向不存在的物品：必须不画图标/高亮，而不是沿用旧索引。
+	@Test
+	void staleGroupWithoutIconIsNotRendered() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
+			Component.literal("Stairs"), List.of(oak, stack(Items.STONE_STAIRS), stack(Items.SPRUCE_STAIRS)));
+		CreativeItemGroups.installGroupsForTest(List.of(group), List.of(dirt, oak));
+		assertSame(group, CreativeItemGroups.iconGroup(1));
+
+		// 模拟“列表换了但没重新成组”：基准里已经没有组图标。
+		CreativeItemGroups.installGroupsForTest(List.of(group),
+			List.of(dirt, stack(Items.SAND), stack(Items.GRAVEL)));
+		assertNull(CreativeItemGroups.iconGroup(1), "图标不存在的组不能占用槽位");
+		assertFalse(CreativeItemGroups.isExpandedIconSlot(1));
+		assertFalse(CreativeItemGroups.isCollapsedIconSlot(1));
+		assertFalse(CreativeItemGroups.isMemberSlot(1));
+	}
+
+	// 展示列表重建时必须重新成组，而不是复用上一份列表算出的旧组。
+	@Test
+	void stripMembersRebuildsGroupsInsteadOfReusingStaleOnes() {
+		ItemStack dirt = stack(Items.DIRT);
+		ItemStack oak = stack(Items.OAK_STAIRS);
+		ItemStack stone = stack(Items.STONE_STAIRS);
+		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
+		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
+			Component.literal("Stairs"), List.of(oak, stone, spruce));
+		CreativeItemGroups.installGroupsForTest(List.of(group), List.of(dirt, oak));
+		assertSame(group, CreativeItemGroups.iconGroup(1));
+
+		// 没有当前标签页（等价于外部刷新时的重建）：旧组必须被丢弃，成员不再被摘除。
+		List<ItemStack> stripped = CreativeItemGroups.stripMembers(List.of(dirt, oak, stone, spruce));
+		assertEquals(4, stripped.size(), "旧组已被丢弃，成员不再被摘除");
+		assertNull(CreativeItemGroups.iconGroup(1));
+		assertFalse(CreativeItemGroups.isMemberSlot(2));
+	}
+
+	private static CreativeItemGroups.GroupDefinition definition(String name, List<String> contained,
+																 List<String> excluded) {
+		return new CreativeItemGroups.GroupDefinition(name, TAB, contained, excluded, List.of());
 	}
 
 	private static ItemStack stack(Item item) {
 		// 单元测试没有完整数据包加载流程，手动绑定空组件表，避免 Holder 的组件尚未绑定。
-		// Item.builtInRegistryHolder() 已弃用，改从注册表取 holder。
 		BuiltInRegistries.ITEM.getResourceKey(item)
 			.flatMap(BuiltInRegistries.ITEM::get)
 			.ifPresent(holder -> holder.bindComponents(DataComponentMap.EMPTY));
 		return new ItemStack(item);
+	}
+
+	private static Slot slot(ItemStack stack) {
+		SimpleContainer container = new SimpleContainer(stack);
+		return new Slot(container, 0, 0, 0);
 	}
 }

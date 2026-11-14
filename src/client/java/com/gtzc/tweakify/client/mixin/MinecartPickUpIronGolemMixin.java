@@ -21,6 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>原版矿车没有像船那样的自动拾取逻辑；这里每 4 tick 查询一次碰撞箱内的铁傀儡，
  * 避免大量矿车时每 tick 都做实体扫描。只在服务端执行，乘客由原版同步到客户端。
+ *
+ * <p>只认普通矿车：漏斗/运输/动力/TNT 等特种矿车有各自的界面与功能，
+ * 让铁傀儡坐进去会把它们堵死，因此直接跳过。
  */
 @Mixin(AbstractMinecart.class)
 public class MinecartPickUpIronGolemMixin {
@@ -37,7 +40,8 @@ public class MinecartPickUpIronGolemMixin {
 		AbstractMinecart minecart = (AbstractMinecart) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (!IronGolemMinecartState.shouldPickUp(config != null && config.modified.ironGolemRideMinecart,
-			minecart.level().isClientSide(), !minecart.getPassengers().isEmpty())) {
+			minecart.level().isClientSide(), !minecart.getPassengers().isEmpty(),
+			IronGolemMinecartState.isPlainMinecart(minecart))) {
 			return;
 		}
 		// 每 4 tick 检查一次；用实体 ID 错开相位，避免所有空矿车在同一 tick 集中查询。

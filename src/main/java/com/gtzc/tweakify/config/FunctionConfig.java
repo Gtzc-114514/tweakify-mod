@@ -40,6 +40,13 @@ public final class FunctionConfig extends ConfigSection {
 			FieldSanitizer.of("blockOutlineAnimationSpeed", this::sanitizeBlockOutlineAnimationSpeed),
 			FieldSanitizer.of("piglinGoldArmorSwapMode", this::sanitizePiglinArmorSwapMode),
 			FieldSanitizer.of("itemGroupsSort", this::sanitizeItemGroupsSort),
+			FieldSanitizer.of("locatorBarHeadScale", this::sanitizeLocatorHeadScale),
+			FieldSanitizer.of("locatorBarHeadBorder", this::sanitizeLocatorHeadBorder),
+			FieldSanitizer.of("locatorBarHeadBorderThickness", this::sanitizeLocatorHeadBorderThickness),
+			FieldSanitizer.of("locatorBarHeadBorderColor", this::sanitizeLocatorBorderColor),
+			FieldSanitizer.of("locatorBarHeadNames", this::sanitizeLocatorHeadNames),
+			FieldSanitizer.of("locatorBarHeadFilter", this::sanitizeLocatorHeadFilter),
+			FieldSanitizer.of("locatorBarCompassColor", this::sanitizeLocatorCompassColor),
 			FieldSanitizer.of("cameraMotionIntensity", this::sanitizeCameraMotionIntensity));
 		// 启动期校验：新增数值/枚举字段忘记登记校验器时直接失败。
 		assertSanitizerCoverage(fieldNamesOf(this.sanitizers));
@@ -155,6 +162,42 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile boolean itemGroups = false;
 	public volatile String hotkeyItemGroups = "";
 	public volatile String itemGroupsSort = TweakifyModConfig.ITEM_GROUP_SORT_DEFAULT;
+
+	// 展开时图标改为轮播组内物品（与参考实现同名选项一致）。
+	public volatile boolean itemGroupsShowItems = false;
+
+	// 是否启用内置默认组；关闭后只用自定义组。
+	public volatile boolean itemGroupsAddAll = true;
+
+	// 自定义组：每行 tabId|组名|包含(逗号分隔)|排除|等价；至少需要前三个字段。
+	volatile List<String> customItemGroups = new ArrayList<>();
+
+	// 定位栏优化：把定位栏上的彩色圆点换成本服玩家的头像（参考 locator-heads）。
+	public volatile boolean locatorBarHeads = false;
+	public volatile String hotkeyLocatorBarHeads = "";
+	// 经验条与定位栏同时显示（参考 alwaysShowXP）：强制优先经验条，并把定位栏标记叠在它上面。
+	public volatile boolean locatorBarAlwaysShowXp = false;
+	public volatile int locatorBarHeadScale = TweakifyModConfig.DEFAULT_LOCATOR_HEAD_SIZE;
+	public volatile boolean locatorBarHeadHatLayer = true;
+
+	// 描边：样式（关/固定色/队伍色）、粗细与固定颜色。
+	public volatile String locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_OFF;
+	public volatile int locatorBarHeadBorderThickness = TweakifyModConfig.DEFAULT_LOCATOR_HEAD_BORDER_THICKNESS;
+	public volatile String locatorBarHeadBorderColor = TweakifyModConfig.LOCATOR_COLOR_WHITE;
+
+	// 玩家名字时机与玩家过滤（名单为空时 INCLUDE 全部隐藏、EXCLUDE 全部显示）。
+	public volatile String locatorBarHeadNames = TweakifyModConfig.LOCATOR_HEAD_NAMES_NEVER;
+	public volatile String locatorBarHeadFilter = TweakifyModConfig.LOCATOR_HEAD_FILTER_ALL;
+	volatile List<String> locatorBarHeadFilterNames = new ArrayList<>();
+
+	// 只显示当前已加载的玩家（附近）。
+	public volatile boolean locatorBarHeadNearbyOnly = false;
+
+	// 指南针覆盖层：开关、颜色、文字阴影与坐标标记（+X/-X/+Z/-Z）。
+	public volatile boolean locatorBarCompass = false;
+	public volatile String locatorBarCompassColor = TweakifyModConfig.LOCATOR_COLOR_WHITE;
+	public volatile boolean locatorBarCompassShadow = true;
+	public volatile boolean locatorBarCompassCoordinates = false;
 
 	// 关闭指定生物生成：列表中的生物不会通过自然/结构/巡逻/增援/刷怪笼等世界生成出现。
 	// 玩家主动生成默认放行；关闭 disabledSpawnAllowPlayerSpawn 后刷怪蛋、命令、繁殖等也会被拦截。
@@ -568,6 +611,86 @@ public final class FunctionConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported item group sort: {}", itemGroupsSort);
 		itemGroupsSort = TweakifyModConfig.ITEM_GROUP_SORT_DEFAULT;
+		return true;
+	}
+
+	// 修正定位栏头像尺寸，手工改坏配置时夹回允许范围。
+	private boolean sanitizeLocatorHeadScale() {
+		int clamped = Math.max(TweakifyModConfig.MIN_LOCATOR_HEAD_SIZE,
+			Math.min(TweakifyModConfig.MAX_LOCATOR_HEAD_SIZE, locatorBarHeadScale));
+		if (clamped == locatorBarHeadScale) {
+			return false;
+		}
+		LOGGER.warn("Clamping locatorBarHeadScale from {} to {}", locatorBarHeadScale, clamped);
+		locatorBarHeadScale = clamped;
+		return true;
+	}
+
+	// 修正描边样式。
+	private boolean sanitizeLocatorHeadBorder() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_LOCATOR_HEAD_BORDERS, locatorBarHeadBorder)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported locator head border: {}", locatorBarHeadBorder);
+		locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_OFF;
+		return true;
+	}
+
+	// 修正描边粗细。
+	private boolean sanitizeLocatorHeadBorderThickness() {
+		int clamped = Math.max(TweakifyModConfig.MIN_LOCATOR_HEAD_BORDER_THICKNESS,
+			Math.min(TweakifyModConfig.MAX_LOCATOR_HEAD_BORDER_THICKNESS, locatorBarHeadBorderThickness));
+		if (clamped == locatorBarHeadBorderThickness) {
+			return false;
+		}
+		LOGGER.warn("Clamping locatorBarHeadBorderThickness from {} to {}",
+			locatorBarHeadBorderThickness, clamped);
+		locatorBarHeadBorderThickness = clamped;
+		return true;
+	}
+
+	// 修正描边固定颜色。
+	private boolean sanitizeLocatorBorderColor() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_LOCATOR_COLORS, locatorBarHeadBorderColor)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported locator border color: {}", locatorBarHeadBorderColor);
+		locatorBarHeadBorderColor = TweakifyModConfig.LOCATOR_COLOR_WHITE;
+		return true;
+	}
+
+	// 修正名字显示时机。
+	private boolean sanitizeLocatorHeadNames() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_LOCATOR_HEAD_NAMES, locatorBarHeadNames)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported locator head names mode: {}", locatorBarHeadNames);
+		locatorBarHeadNames = TweakifyModConfig.LOCATOR_HEAD_NAMES_NEVER;
+		return true;
+	}
+
+	// 修正玩家过滤模式。
+	private boolean sanitizeLocatorHeadFilter() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_LOCATOR_HEAD_FILTERS, locatorBarHeadFilter)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported locator head filter: {}", locatorBarHeadFilter);
+		locatorBarHeadFilter = TweakifyModConfig.LOCATOR_HEAD_FILTER_ALL;
+		return true;
+	}
+
+	// 修正指南针颜色。
+	private boolean sanitizeLocatorCompassColor() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_LOCATOR_COLORS, locatorBarCompassColor)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported locator compass color: {}", locatorBarCompassColor);
+		locatorBarCompassColor = TweakifyModConfig.LOCATOR_COLOR_WHITE;
 		return true;
 	}
 
