@@ -60,8 +60,13 @@ public abstract class CreativeModeInventoryGroupingMixin implements CreativeItem
 	@Unique
 	private Map<Item, CreativeItemGroups.Group> tweakify$groups = Map.of();
 
+	// 分组是否生效与排序方式上次刷新时的值：每 tick 比较字段即可，
+	// 不用拼一个签名字符串（会每 tick 产生临时 String）。
 	@Unique
-	private String tweakify$groupingSignature = "";
+	private boolean tweakify$lastGroupingActive;
+
+	@Unique
+	private String tweakify$lastSortMode = "";
 
 	@Inject(method = "selectTab", at = @At("HEAD"))
 	private void tweakify$clearGroupsBeforeTabChange(CreativeModeTab tab, CallbackInfo callback) {
@@ -189,9 +194,11 @@ public abstract class CreativeModeInventoryGroupingMixin implements CreativeItem
 
 	@Inject(method = "containerTick", at = @At("TAIL"))
 	private void tweakify$refreshOnConfigChange(CallbackInfo callback) {
-		String signature = tweakify$isGroupingActive() + "|" + tweakify$sortMode();
-		if (!signature.equals(this.tweakify$groupingSignature)) {
-			this.tweakify$groupingSignature = signature;
+		boolean groupingActive = tweakify$isGroupingActive();
+		String sort = tweakify$sortMode();
+		if (groupingActive != this.tweakify$lastGroupingActive || !sort.equals(this.tweakify$lastSortMode)) {
+			this.tweakify$lastGroupingActive = groupingActive;
+			this.tweakify$lastSortMode = sort;
 			if (selectedTab != null) {
 				this.refreshCurrentTabContents(selectedTab.getDisplayItems());
 			}
