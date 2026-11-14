@@ -15,53 +15,40 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * 世界标记扫描调度：基岩高亮与屏障可见共用一次 33³ 方块遍历。
+ * 世界标记扫描调度：基岩高亮与屏障可见共用一次 65³ 方块遍历。
  *
- * <p>两个功能都开启时，原先每 10 tick 要扫两遍（屏障一遍、基岩一遍）的区域，
- * 现在只在两种扫描同时到期的 tick 合并成一遍，方块读取次数约减少三分之一；
- * 只开一个功能时扫描频率与原来一致。
+ * <p>刷新频率：每秒 6 次（20/6 ≈ 3.33 tick），由 {@link RefreshScheduler} 累计调度，
+ * 间隔在 3/4 tick 之间交替；开关或世界变化时立即补扫一次。
  *
- * <p>整个体积分帧处理：每 tick 只扫 {@link #LAYERS_PER_TICK} 层 y，
- * 避免一次 3.6 万次方块读取造成的帧时间尖刺。
+ * <p>整个体积分帧处理：每 tick 推进 {@link #LAYERS_PER_TICK} 层 y，
+ * 65 层在 3 tick 内完成一轮，因此每次刷新窗口都能拿到完整结果；
+ * 单层最多 65×65 次读取，一次刷新约 6.9 万次位置遍历（section 预筛会跳过大部分读取）。
  *
- * <p>两条额外的降耗措施：
- * <ul>
- *   <li>静止降频：玩家连续 2 秒位移不超过 0.05 格时，屏障/基岩的刷新间隔放宽到 40/80 tick；
- *       重新移动时若没有进行中的扫描，会立即补扫一次，移动时的可见性基本不受影响。</li>
- *   <li>section 预筛：逐层先查区块的 section palette 是否可能包含目标方块，
- *       不含（如纯石头/空气/越界层）则整段跳过，不再逐方块读取。</li>
- * </ul>
+ * <p>section 预筛：逐层先查区块的 section palette 是否可能包含目标方块，
+ * 不含（如纯石头/空气/越界层）则整段跳过，不再逐方块读取。
  */
 final class BlockMarkerScanner {
-	private static final int SCAN_RADIUS = 16;
-	// 屏障每 10 tick（0.5 秒）刷新一次，基岩标记每 20 tick（1 秒）刷新一次。
-	// 包私有：单测需要把间隔数值与需求固定下来。
-	static final int BARRIER_INTERVAL_TICKS = 10;
-	static final int BEDROCK_INTERVAL_TICKS = 20;
-	// 静止时屏障/基岩的刷新间隔（静止判定与阈值见 {@link IdleTracker}）。
-	static final int IDLE_BARRIER_INTERVAL_TICKS = 40;
-	static final int IDLE_BEDROCK_INTERVAL_TICKS = 80;
-	// 每次扫描分帧处理：每 tick 3 层 y（约 3.2k 次方块读取），一次完整扫描约 11 tick。
-	private static final int LAYERS_PER_TICK = 3;
+	// 可见半径：屏障与基岩共用（原 16 格的两倍）。
+	private static final int SCAN_RADIUS = 32;
+	// 刷新频率：每秒 6 次（20/6 ≈ 3.33 tick 一次）。
+	// 包私有：单测需要把频率数值与需求固定下来。
+	static final int REFRESHES_PER_SECOND = 6;
+	private static final RefreshScheduler REFRESH = new RefreshScheduler(REFRESHES_PER_SECOND);
+	// 分帧层数：65 层 / 22 ≈ 3 tick 完成一轮，与 3~4 tick 的刷新窗口对齐。
+	private static final int LAYERS_PER_TICK = 22;
 	// 单层最多跨几个区块：跨度 2R+1 格，最坏情况下起点落在区块末格，
-	// 覆盖的区块数为 floor((跨度+14)/16) + 1（R=16 时为 3）。
+	// 覆盖的区块数为 floor((跨度+14)/16) + 1（R=32 时为 5）。
 	private static final int MAX_CHUNKS_PER_AXIS = (SCAN_RADIUS * 2 + 1 + 14) / 16 + 1;
-	// 计数器回到 0 的周期：同时是 10/20/40/80 的整数倍，避免长时间运行后 int 溢出，
-	// 也保证静止降频的取模周期不会被重置打断。
-	private static final int COUNTER_RESET_TICKS = 1200;
 
 	// 目标方块谓词：section 的 palette 完全不包含它们时整段跳过读取。
 	private static final Predicate<BlockState> IS_BARRIER = state -> state.is(Blocks.BARRIER);
 	private static final Predicate<BlockState> IS_BEDROCK = state -> state.is(Blocks.BEDROCK);
 
-	private static int tickCounter;
 	private static boolean barrierWasEnabled;
 	private static boolean bedrockWasEnabled;
 	private static ClientLevel lastLevel;
 	// 当前进行中的分帧扫描；世界切换或功能关闭时直接丢弃。
 	private static ScanJob activeJob;
-	// 静止判定状态：连续无位移的 tick 数与上一 tick 的玩家位置。
-	private static final IdleTracker IDLE_TRACKER = new IdleTracker();
 
 	private BlockMarkerScanner() {
 	}
@@ -96,19 +83,6 @@ final class BlockMarkerScanner {
 		};
 	}
 
-	// 扫描是否到期：功能关闭时永不到期；开关/维度变化或从静止转为移动时立即到期；
-	// 否则按当前是否静止选择刷新间隔。
-	static boolean isScanDue(boolean enabled, boolean toggled, boolean startedMoving,
-							 int tickCounter, boolean idle, int activeInterval, int idleInterval) {
-		if (!enabled) {
-			return false;
-		}
-		if (toggled || startedMoving) {
-			return true;
-		}
-		return tickCounter % (idle ? idleInterval : activeInterval) == 0;
-	}
-
 	// section 索引是否有效：越界（世界上下边界外）或区块根本没有 section 时无需读取。
 	static boolean isValidSectionIndex(int index, int sectionCount) {
 		return index >= 0 && index < sectionCount;
@@ -131,77 +105,12 @@ final class BlockMarkerScanner {
 		return sectionNeedsScan(section.maybeHas(IS_BARRIER), section.maybeHas(IS_BEDROCK), target);
 	}
 
-	/** 静止判定状态机：位移阈值与 tick 计数在这里维护，与扫描调度解耦。 */
-	static final class IdleTracker {
-		// 单 tick 位移超过 0.05 格视为移动（用平方值比较，避免开方）。
-		static final double MOVE_EPSILON_SQ = 0.05 * 0.05;
-		// 连续 40 tick（2 秒）位移不超过 0.05 格才进入静止状态。
-		static final int IDLE_TRIGGER_TICKS = 40;
-
-		private double lastX;
-		private double lastY;
-		private double lastZ;
-		private int idleTicks;
-		private boolean idle;
-		private boolean initialized;
-
-		// 返回 true 表示从静止转为移动，调用方应立即补扫一次。
-		boolean update(double x, double y, double z) {
-			if (!this.initialized) {
-				reset(x, y, z);
-				return false;
-			}
-			double dx = x - this.lastX;
-			double dy = y - this.lastY;
-			double dz = z - this.lastZ;
-			if (dx * dx + dy * dy + dz * dz > MOVE_EPSILON_SQ) {
-				this.lastX = x;
-				this.lastY = y;
-				this.lastZ = z;
-				boolean wasIdle = this.idle;
-				this.idleTicks = 0;
-				this.idle = false;
-				return wasIdle;
-			}
-			if (this.idleTicks < IDLE_TRIGGER_TICKS) {
-				this.idleTicks++;
-			}
-			this.idle = this.idleTicks >= IDLE_TRIGGER_TICKS;
-			return false;
-		}
-
-		// 以当前位置为基准重新开始计数（换维度/重进世界）。
-		void reset(double x, double y, double z) {
-			this.lastX = x;
-			this.lastY = y;
-			this.lastZ = z;
-			this.idleTicks = 0;
-			this.idle = false;
-			this.initialized = true;
-		}
-
-		// 玩家/世界不可用：丢弃位置基准，下次 update 重新初始化。
-		void clear() {
-			this.idleTicks = 0;
-			this.idle = false;
-			this.initialized = false;
-		}
-
-		boolean isIdle() {
-			return this.idle;
-		}
-	}
-
 	static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		boolean available = client.player != null && client.level != null;
 		boolean barrier = config != null && config.functions.barrierVisibility && available;
 		boolean bedrock = config != null && config.functions.highlightSingleLayerBedrock && available;
 
-		tickCounter++;
-		if (tickCounter >= COUNTER_RESET_TICKS) {
-			tickCounter = 0;
-		}
 		// 切换维度/重进世界时清空旧标记并立即重扫，避免在新维度里看到上个维度的坐标。
 		// 退回标题界面（level == null）时也要断开引用：静态字段持有 ClientLevel 会连带留住整个客户端世界。
 		ClientLevel level = client.level;
@@ -219,23 +128,6 @@ final class BlockMarkerScanner {
 			BarrierVisibilityState.clear();
 			BedrockHighlightState.clear();
 		}
-		// 静止检测：位移阈值与 tick 计数由 IdleTracker 维护；从静止转为移动时立即补扫。
-		boolean startedMoving = false;
-		boolean idle = false;
-		if (available) {
-			double playerX = client.player.getX();
-			double playerY = client.player.getY();
-			double playerZ = client.player.getZ();
-			if (levelChanged) {
-				// 换维度/重进世界：以当前位置为基准，避免把传送当成移动。
-				IDLE_TRACKER.reset(playerX, playerY, playerZ);
-			} else {
-				startedMoving = IDLE_TRACKER.update(playerX, playerY, playerZ);
-			}
-			idle = IDLE_TRACKER.isIdle();
-		} else {
-			IDLE_TRACKER.clear();
-		}
 		// 单个功能关闭时立即清空它自己的标记：避免残留几何或继续生成粒子。
 		if (barrierWasEnabled && !barrier) {
 			BarrierVisibilityState.clear();
@@ -250,7 +142,7 @@ final class BlockMarkerScanner {
 
 		if (!barrier && !bedrock) {
 			activeJob = null;
-			tickCounter = 0;
+			REFRESH.reset();
 			return;
 		}
 
@@ -259,11 +151,9 @@ final class BlockMarkerScanner {
 			|| (activeJob.barrier && !barrier) || (activeJob.bedrock && !bedrock))) {
 			activeJob = null;
 		}
-		boolean barrierDue = isScanDue(barrier, toggled, startedMoving, tickCounter,
-			idle, BARRIER_INTERVAL_TICKS, IDLE_BARRIER_INTERVAL_TICKS);
-		boolean bedrockDue = isScanDue(bedrock, toggled, startedMoving, tickCounter,
-			idle, BEDROCK_INTERVAL_TICKS, IDLE_BEDROCK_INTERVAL_TICKS);
-		if (activeJob == null && (barrierDue || bedrockDue)) {
+		// 每 tick 都推进刷新额度；窗口到期且没有进行中的扫描时才启动新一轮。
+		boolean refreshDue = REFRESH.tick();
+		if (activeJob == null && (toggled || refreshDue)) {
 			activeJob = new ScanJob(level, client.player.blockPosition(), barrier, bedrock);
 		}
 		if (activeJob != null && activeJob.step()) {
@@ -287,8 +177,8 @@ final class BlockMarkerScanner {
 		private final List<BedrockHighlightState.Marker> markers = new ArrayList<>();
 		private final int maxBedrockMarkers;
 		private int nextOffsetY = -SCAN_RADIUS;
-		// 复用同一个可变坐标：整个体积扫描（每 tick 3.2k 次）只在命中时才创建不可变副本，
-		// 避免每秒数万次临时对象分配。可变实例不能存进列表，命中处必须 immutable()。
+		// 复用同一个可变坐标：整个体积扫描（每 tick 最多 9.3 万格）只在命中时才创建不可变副本，
+		// 避免每秒数十万次临时对象分配。可变实例不能存进列表，命中处必须 immutable()。
 		private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		// 相邻位置查询同样复用：基岩密集时每层要查上千次上下邻居。
 		private final BlockPos.MutableBlockPos neighbor = new BlockPos.MutableBlockPos();
@@ -324,7 +214,7 @@ final class BlockMarkerScanner {
 
 		// 单层扫描：先预取本层涉及的区块并预检 section，再按原来的 x 主序、z 次序逐方块遍历。
 		// 遍历顺序与逐方块 getBlockState 完全一致（标记写入顺序不变），
-		// 但区块查找从每层 1089 次降到最多 9 次，palette 不含目标方块的 section 整段跳过。
+		// 但区块查找从每层 4225 次降到最多 25 次，palette 不含目标方块的 section 整段跳过。
 		private void scanLayer(int y) {
 			int minX = this.centerX - SCAN_RADIUS;
 			int maxX = this.centerX + SCAN_RADIUS;

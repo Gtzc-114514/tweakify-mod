@@ -9,169 +9,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 方块扫描的两项降耗判定：静止阈值边界与 section 预筛的开关组合。
+ * 方块扫描的刷新频率、目标推导与 section 预筛。
  *
- * <p>静止判定覆盖：位移恰好 0.05 格不触发移动、40 tick 临界值、静止与移动互转、
- * 对角线位移按平方和判断、重置与失活后的基线重建。
- * <p>section 预筛覆盖：屏障/基岩四种开关组合下，只跳过不含任何目标方块的 section。
+ * <p>section 预筛覆盖：屏障/基岩四种开关组合下，只跳过不含任何目标方块的 section；
+ * 越界索引与缺失 section 同样跳过。
  */
 class BlockMarkerScannerTest {
 
-	// ===== 静止判定 =====
-
+	// 需求数值用字面量固定：常量被改动时必须在这里同步暴露，避免测试跟着常量漂移。
 	@Test
-	void firstUpdateInitializesWithoutReportingMovement() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		assertFalse(tracker.update(10.0, 64.0, -3.0), "首次观测只建立基线");
-		assertFalse(tracker.isIdle());
-	}
-
-	@Test
-	void displacementExactlyAtThresholdIsNotMovement() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		tracker.reset(0.0, 0.0, 0.0);
-		// 位移恰好 0.05 格：平方值与阈值相等，判定使用严格大于，因此不算移动。
-		double delta = 0.05;
-		for (int i = 0; i < BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS; i++) {
-			assertFalse(tracker.update(delta, 0.0, 0.0), "阈值边界不应重置静止计数");
-		}
-		assertTrue(tracker.isIdle(), "持续处于阈值边界也应正常进入静止");
-	}
-
-	@Test
-	void idleThresholdsMatchDocumentedValues() {
-		// 需求数值用字面量固定：常量被改动时必须在这里同步暴露，避免测试跟着常量漂移。
-		assertEquals(40, BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS, "连续 40 tick（2 秒）无位移进入静止");
-		assertEquals(0.0025, BlockMarkerScanner.IdleTracker.MOVE_EPSILON_SQ, 1.0e-12, "0.05 格的平方值");
-		assertEquals(10, BlockMarkerScanner.BARRIER_INTERVAL_TICKS);
-		assertEquals(20, BlockMarkerScanner.BEDROCK_INTERVAL_TICKS);
-		assertEquals(40, BlockMarkerScanner.IDLE_BARRIER_INTERVAL_TICKS);
-		assertEquals(80, BlockMarkerScanner.IDLE_BEDROCK_INTERVAL_TICKS);
-	}
-
-	@Test
-	void displacementJustAboveThresholdResetsIdleCount() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		tracker.reset(0.0, 0.0, 0.0);
-		for (int i = 0; i < BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS; i++) {
-			tracker.update(0.0, 0.0, 0.0);
-		}
-		assertTrue(tracker.isIdle());
-		assertTrue(tracker.update(0.050_001, 0.0, 0.0), "从静止转为移动应触发补扫");
-		assertFalse(tracker.isIdle());
-	}
-
-	@Test
-	void idleTriggersExactlyAtTriggerTick() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		tracker.reset(0.0, 0.0, 0.0);
-		for (int i = 0; i < BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS - 1; i++) {
-			tracker.update(0.0, 0.0, 0.0);
-			assertFalse(tracker.isIdle(), "第 " + (i + 1) + " tick 还不应进入静止");
-		}
-		tracker.update(0.0, 0.0, 0.0);
-		assertTrue(tracker.isIdle(), "第 40 tick 应进入静止");
-	}
-
-	@Test
-	void continuousMovementNeverReportsStartedMoving() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		tracker.reset(0.0, 0.0, 0.0);
-		assertFalse(tracker.update(0.1, 0.0, 0.0), "移动中不算从静止转为移动");
-		assertFalse(tracker.isIdle());
-		assertFalse(tracker.update(0.2, 0.0, 0.0));
-		// 同一位置的重复观测位移为 0，只会累计静止计数，不会误报移动。
-		assertFalse(tracker.update(0.2, 0.0, 0.0));
-		assertFalse(tracker.isIdle());
-	}
-
-	@Test
-	void diagonalDisplacementUsesSquaredDistance() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		tracker.reset(0.0, 0.0, 0.0);
-		// 单轴 0.04 都低于 0.05，但平方和 0.0032 大于阈值 0.0025，仍判定为移动。
-		assertFalse(tracker.update(0.04, 0.0, 0.04));
-		assertFalse(tracker.isIdle());
-	}
-
-	@Test
-	void idleThenMoveThenIdleAgainFollowsFullCycle() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		tracker.reset(0.0, 0.0, 0.0);
-		for (int i = 0; i < BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS; i++) {
-			tracker.update(0.0, 0.0, 0.0);
-		}
-		assertTrue(tracker.isIdle());
-		assertTrue(tracker.update(1.0, 0.0, 0.0));
-		assertFalse(tracker.isIdle());
-		// 重新静止后应能在下一个 40 tick 再次进入静止，而不是一直停在移动状态。
-		for (int i = 0; i < BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS - 1; i++) {
-			tracker.update(1.0, 0.0, 0.0);
-		}
-		assertFalse(tracker.isIdle());
-		tracker.update(1.0, 0.0, 0.0);
-		assertTrue(tracker.isIdle());
-	}
-
-	@Test
-	void resetStartsFreshBaseline() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		tracker.reset(100.0, 70.0, 100.0);
-		assertFalse(tracker.update(100.0, 70.0, 100.0));
-		// 重置到新位置后，旧基线与新位置之间的跳跃不会被当成移动。
-		tracker.reset(-200.0, 30.0, 500.0);
-		assertFalse(tracker.update(-200.0, 30.0, 500.0));
-		assertFalse(tracker.isIdle());
-	}
-
-	@Test
-	void clearRequiresReinitialization() {
-		BlockMarkerScanner.IdleTracker tracker = new BlockMarkerScanner.IdleTracker();
-		tracker.reset(0.0, 0.0, 0.0);
-		for (int i = 0; i < BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS; i++) {
-			tracker.update(0.0, 0.0, 0.0);
-		}
-		assertTrue(tracker.isIdle());
-		tracker.clear();
-		assertFalse(tracker.isIdle());
-		assertFalse(tracker.update(1.0, 2.0, 3.0), "失活后第一次观测只重建基线");
-	}
-
-	// ===== 扫描调度判定 =====
-
-	@Test
-	void scanDueIgnoresDisabledFeatures() {
-		assertFalse(BlockMarkerScanner.isScanDue(false, false, false, 0, false, 10, 40));
-		assertFalse(BlockMarkerScanner.isScanDue(false, true, true, 0, true, 10, 40),
-			"开关/维度变化也不能让关闭的功能到期");
-	}
-
-	@Test
-	void scanDueFiresImmediatelyOnToggleOrStartedMoving() {
-		assertTrue(BlockMarkerScanner.isScanDue(true, true, false, 1, false, 10, 40));
-		assertTrue(BlockMarkerScanner.isScanDue(true, true, false, 1, true, 10, 40));
-		assertTrue(BlockMarkerScanner.isScanDue(true, false, true, 1, false, 10, 40));
-		assertTrue(BlockMarkerScanner.isScanDue(true, false, true, 1, true, 10, 40),
-			"静止中起步应在非间隔 tick 也立即到期");
-	}
-
-	@Test
-	void scanDueUsesBaseIntervalWhileMoving() {
-		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 9, false, 10, 40));
-		assertTrue(BlockMarkerScanner.isScanDue(true, false, false, 10, false, 10, 40));
-		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 19, false, 20, 80));
-		assertTrue(BlockMarkerScanner.isScanDue(true, false, false, 20, false, 20, 80));
-	}
-
-	@Test
-	void scanDueUsesIdleIntervalWhileIdle() {
-		// 静止后屏障按 40 tick、基岩按 80 tick 到期，基础间隔内的 tick 不再触发。
-		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 10, true, 10, 40));
-		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 20, true, 10, 40));
-		assertTrue(BlockMarkerScanner.isScanDue(true, false, false, 40, true, 10, 40));
-		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 20, true, 20, 80));
-		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 40, true, 20, 80));
-		assertTrue(BlockMarkerScanner.isScanDue(true, false, false, 80, true, 20, 80));
+	void refreshRateMatchesRequirement() {
+		assertEquals(6, BlockMarkerScanner.REFRESHES_PER_SECOND, "屏障/基岩每秒刷新 6 次");
 	}
 
 	// ===== section 预筛 =====
