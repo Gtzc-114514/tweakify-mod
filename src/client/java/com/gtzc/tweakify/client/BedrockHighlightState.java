@@ -20,9 +20,9 @@ public final class BedrockHighlightState {
 	}
 
 	private static List<Marker> markers = List.of();
-	// 已发布内容的摘要：相同则跳过发布，让 BedrockGeometryCache 保持旧引用、不重建顶点。
-	private static int markersHash;
-	private static boolean hasPublishedMarkers;
+	// 已发布内容的摘要：null 表示尚未发布；相同则跳过发布，
+	// 让 BedrockGeometryCache 保持旧引用、不重建顶点。
+	private static Integer publishedHash;
 
 	private BedrockHighlightState() {
 	}
@@ -77,11 +77,10 @@ public final class BedrockHighlightState {
 		// 跳过发布即可避免每秒 6 次仍然整表重建顶点数组。
 		// 摘要只作预筛，再用 equals 精确比对，哈希碰撞不会让几何停在旧内容。
 		int hash = contentHash(accepted);
-		if (hasPublishedMarkers && hash == markersHash && markers.equals(accepted)) {
+		if (publishedHash != null && publishedHash == hash && markers.equals(accepted)) {
 			return;
 		}
-		hasPublishedMarkers = true;
-		markersHash = hash;
+		publishedHash = hash;
 		// 内容变化时必须发布新列表实例：缓存的失效条件就是引用变化。
 		markers = List.copyOf(accepted);
 	}
@@ -101,7 +100,6 @@ public final class BedrockHighlightState {
 		if (!markers.isEmpty()) {
 			markers = List.of();
 		}
-		hasPublishedMarkers = false;
-		markersHash = 0;
+		publishedHash = null;
 	}
 }

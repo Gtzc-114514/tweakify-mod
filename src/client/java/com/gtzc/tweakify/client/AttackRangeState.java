@@ -39,9 +39,9 @@ public final class AttackRangeState {
 		.thenComparingDouble(Entry::radius);
 
 	private static List<Entry> entries = List.of();
-	// 已发布内容的摘要：相同则跳过发布，让 AttackRangeGeometryCache 保持旧引用、不重建顶点。
-	private static int entriesHash;
-	private static boolean hasPublishedEntries;
+	// 已发布内容的摘要：null 表示尚未发布；相同则跳过发布，
+	// 让 AttackRangeGeometryCache 保持旧引用、不重建顶点。
+	private static Integer publishedHash;
 	// 刷新频率：每秒 12 次（20/12 ≈ 1.67 tick），比屏障/基岩更快。
 	static final int REFRESHES_PER_SECOND = 12;
 	private static final RefreshScheduler REFRESH = new RefreshScheduler(REFRESHES_PER_SECOND);
@@ -55,11 +55,7 @@ public final class AttackRangeState {
 		boolean enabled = config != null && config.functions.attackRangeDisplay
 			&& client.player != null && client.level != null;
 		if (!enabled) {
-			entries = List.of();
-			hasPublishedEntries = false;
-			entriesHash = 0;
-			wasEnabled = false;
-			REFRESH.reset();
+			resetState();
 			return;
 		}
 		// 每秒 12 次（20/12 ≈ 1.67 tick）；开启后立即收集一次，未到窗口时沿用上一轮结果。
@@ -97,11 +93,10 @@ public final class AttackRangeState {
 		List<Entry> visible = found.subList(0, Math.min(found.size(), maxTargets));
 		int hash = contentHash(visible);
 		// 摘要只作预筛，再用几何字段精确比对：哈希碰撞不会让几何停在旧内容。
-		if (hasPublishedEntries && hash == entriesHash && sameGeometry(entries, visible)) {
+		if (publishedHash != null && publishedHash == hash && sameGeometry(entries, visible)) {
 			return;
 		}
-		hasPublishedEntries = true;
-		entriesHash = hash;
+		publishedHash = hash;
 		// 内容变化时必须发布新列表实例：缓存的失效条件就是引用变化。
 		entries = List.copyOf(visible);
 	}
@@ -167,9 +162,13 @@ public final class AttackRangeState {
 
 	// 包私有：测试之间清理静态状态，避免共享列表与摘要互相影响。
 	static void resetForTest() {
+		resetState();
+	}
+
+	// 统一清理发布状态：功能关闭与测试之间共用，避免新增字段时只改一处。
+	private static void resetState() {
 		entries = List.of();
-		entriesHash = 0;
-		hasPublishedEntries = false;
+		publishedHash = null;
 		wasEnabled = false;
 		REFRESH.reset();
 	}
