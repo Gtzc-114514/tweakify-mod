@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -41,9 +42,10 @@ import java.util.Set;
  * “显示索引 → 图标/成员/组”预先算成数组，并把“槽位 → 显示索引”的偏移
  * 按物品版本缓存；两者只在列表真正变化时重建，每帧只剩一次数组下标访问。
  *
- * <p>缓存失效契约：组表、基准列表、渲染快照与索引偏移只在
- * {@link #beginTab}、{@link #stripMembers}、{@link #toggle}、{@link #clear} 中更新。
- * 这三条生产路径覆盖了原版对 {@code ItemPickerMenu.items} 的全部改写：
+ * <p>缓存失效契约：组表、基准列表与渲染快照只在
+ * {@link #beginTab}、{@link #stripMembers}、{@link #toggle}、{@link #clear} 中更新；
+ * 槽位索引偏移额外跟随前两个槽位的物品变化（列表滚动）重算。
+ * 这些生产路径覆盖了原版对 {@code ItemPickerMenu.items} 的全部改写：
  * 切页（{@code selectTab} 内的 {@code addAll}）、标签内容刷新
  * （{@code tryRefreshInvalidatedTabs → refreshCurrentTabContents}，它会脱离
  * {@code selectTab} 单独触发）、以及本功能的展开/收起。因此渲染与点击判定
@@ -107,6 +109,8 @@ public final class CreativeItemGroups {
 	public record GroupDefinition(String name, String tabId, List<String> containedItems,
 								  List<String> nonContainedItems, List<String> equivalentItems) {
 		public GroupDefinition {
+			// 自定义组是自由文本：统一归一化标签页 ID，避免缺命名空间/大小写不同时静默失效。
+			tabId = normalizeTabId(tabId);
 			containedItems = List.copyOf(containedItems);
 			nonContainedItems = List.copyOf(nonContainedItems);
 			equivalentItems = List.copyOf(equivalentItems);
@@ -221,9 +225,10 @@ public final class CreativeItemGroups {
 
 	// 内置默认组按标签页过滤；包私有供单测与语言文件键校验使用。
 	static List<GroupDefinition> definitionsFor(String tabId) {
+		String normalized = normalizeTabId(tabId);
 		List<GroupDefinition> definitions = new ArrayList<>();
 		for (GroupDefinition definition : DEFAULT_GROUPS) {
-			if (definition.tabId().equals(tabId)) {
+			if (definition.tabId().equals(normalized)) {
 				definitions.add(definition);
 			}
 		}
@@ -312,6 +317,10 @@ public final class CreativeItemGroups {
 		if (currentTab == null || !isEnabled()) {
 			return;
 		}
+		// 分组只作用于分类页：快捷栏/背包页的物品来自原版其他数据源，搜索页由搜索框维护。
+		if (currentTab.getType() != CreativeModeTab.Type.CATEGORY) {
+			return;
+		}
 		String currentTabId = tabId(currentTab);
 		List<GroupDefinition> definitions = new ArrayList<>();
 		if (includeDefaultGroups()) {
@@ -321,9 +330,25 @@ public final class CreativeItemGroups {
 		for (GroupDefinition definition : parseCustomGroups(customGroupEntries())) {
 			if (currentTabId.equals(definition.tabId())) {
 				definitions.add(definition);
+			} else {
+				// 拼写错误或引用了不存在的标签页时只提示一次，避免“配了却无效”的沉默失败。
+				warnUnknownCustomTab(definition.tabId());
 			}
 		}
 		GROUPS.addAll(create(definitions, displayItems));
+	}
+
+	// 已提示过的未知标签页：避免每次列表重建都重复写日志（状态只在客户端主线程读写）。
+	private static final Set<String> WARNED_CUSTOM_TABS = new HashSet<>();
+
+	private static void warnUnknownCustomTab(String tabId) {
+		if (tabId.isEmpty() || !WARNED_CUSTOM_TABS.add(tabId)) {
+			return;
+		}
+		Identifier id = Identifier.tryParse(tabId);
+		if (id == null || !BuiltInRegistries.CREATIVE_MODE_TAB.containsKey(id)) {
+			TweakifyMod.LOGGER.warn("Ignoring custom item group for unknown creative tab: {}", tabId);
+		}
 	}
 
 	// 配置变化时只重建分类页的物品列表：快捷栏/背包页的物品来自原版其他数据源，
@@ -516,6 +541,7 @@ public final class CreativeItemGroups {
 		currentTab = null;
 		GROUPS.clear();
 		baseItems = new ArrayList<>();
+		WARNED_CUSTOM_TABS.clear();
 		resetRenderState();
 	}
 
@@ -554,6 +580,18 @@ public final class CreativeItemGroups {
 		return config == null
 			? List.of()
 			: config.getStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD);
+	}
+
+	// 配置签名：只包含会影响分组结果的项。轮播开关只影响渲染，不参与签名，
+	// 切换时不应重建列表，否则已展开的组会被收起。
+	public static String configSignature(TweakifyModConfig config) {
+		if (config == null) {
+			return "";
+		}
+		return config.functions.itemGroups + "|"
+			+ config.functions.itemGroupsSort + "|"
+			+ config.functions.itemGroupsAddAll + "|"
+			+ String.join("\n", config.getStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD));
 	}
 
 	// 自定义组：tabId|组名|包含(逗号分隔)|排除|等价；至少需要前三个字段。
@@ -601,12 +639,22 @@ public final class CreativeItemGroups {
 	// ---------------------------------------------------------------- 工具
 
 	// 标签页 ID：优先用注册表键，取不到时退回显示名（参考实现同此策略）。
+	// 两种来源都归一化，确保与自定义组使用同一套比较规则。
 	private static String tabId(CreativeModeTab tab) {
 		if (tab == null) {
 			return "";
 		}
 		Identifier key = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab);
-		return key != null ? key.toString() : tab.getDisplayName().getString();
+		return normalizeTabId(key != null ? key.toString() : tab.getDisplayName().getString());
+	}
+
+	// 自定义组 tabId 的统一归一化：去空白、转小写、缺命名空间时补 minecraft:。
+	static String normalizeTabId(String raw) {
+		String value = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+		if (value.isEmpty() || value.indexOf(':') >= 0) {
+			return value;
+		}
+		return "minecraft:" + value;
 	}
 
 	private static String itemId(Item item) {
