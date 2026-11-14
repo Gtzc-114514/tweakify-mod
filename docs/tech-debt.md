@@ -8,7 +8,7 @@
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
 | T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest |
-| T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（内容摘要去重，见详情） |
+| T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（摘要去重 + 精确比对，见详情） |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高 |
 
 ## T1 详情：section 预筛的集成测试缺口
@@ -47,8 +47,11 @@
   （基岩：size + `Marker.hashCode()`；攻击范围：size + 坐标/半径，不含随玩家移动变化的 `distanceSq`），
   摘要相同后再做一次精确比对（基岩逐条 `equals`，攻击范围只比几何字段），两者都相同才保留旧引用；
   因此哈希碰撞不会漏判内容变化，最多损失一次重建收益，几何不会停在旧内容。
-  `clear()` 与 `resetForTest()` 会重置摘要与已发布标记。
-  攻击范围按距离排序时用坐标/半径作并列规则，等距实体的顺序确定，不会因迭代顺序变化而误重建。
+  摘要比较使用 `Objects.equals(publishedHash, hash)`，可空 `Integer` 与 `int` 混用不会退化为引用比较。
+  清理路径：攻击范围关闭功能与 `resetForTest()` 共用 `resetState()`，基岩关闭功能走 `clear()`，
+  两者都会把摘要置空（`publishedHash = null`）。
+  攻击范围按距离排序时用 `x → feetY → z → radius` 作并列规则，等距实体的顺序确定，
+  不会因迭代顺序变化而误重建或让最近目标在轮次间抖动。
 
 ## T3 详情：扫描与收集仍在主线程分帧执行
 
