@@ -4,11 +4,9 @@ import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.SimpleContainer;
@@ -286,6 +284,26 @@ class CreativeItemGroupsTest {
 		assertEquals("剑", group.name().getString());
 	}
 
+	// 空命名空间/未注册 tabId 的告警端到端：配置行写错时切页后必须留下告警记录。
+	@Test
+	void colonPrefixedInvalidTabsWarnEndToEnd() {
+		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+			":search|搜索|stone",
+			":nonexistent|缺失|stone"));
+		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
+			CreativeModeTabs.BUILDING_BLOCKS));
+
+		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest(":search"),
+			"非分类页 ID 必须告警");
+		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest(":nonexistent"),
+			"未注册 ID 必须告警");
+
+		List<ItemStack> stripped = CreativeItemGroups.stripMembers(
+			List.of(stack(Items.STONE), stack(Items.STONE_BRICKS), stack(Items.SMOOTH_STONE)));
+		assertEquals(3, stripped.size(), "无效标签页的自定义组不得摘除物品");
+	}
+
 	// 默认组开启（默认值）时，自定义组仍应参与成组，不能被默认组配置分支跳过。
 	@Test
 	void customGroupsWorkWithDefaultGroups() {
@@ -314,17 +332,25 @@ class CreativeItemGroupsTest {
 		assertSame(dirt, customGroup.icon());
 	}
 
-	// 非分类页（搜索/快捷栏/背包）不得成组：类型门禁被删除或只排除其中一类时该用例会失败。
+	// 非分类页（搜索/快捷栏/背包）不得成组：各页独立用例，失败不会中断其他页的判定。
 	@Test
-	void customGroupsAreIgnoredOnNonCategoryTabs() {
-		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
+	void customGroupsAreIgnoredOnSearchTab() {
 		assertNonCategoryTabIgnored(CreativeModeTabs.SEARCH);
+	}
+
+	@Test
+	void customGroupsAreIgnoredOnHotbarTab() {
 		assertNonCategoryTabIgnored(CreativeModeTabs.HOTBAR);
+	}
+
+	@Test
+	void customGroupsAreIgnoredOnInventoryTab() {
 		assertNonCategoryTabIgnored(CreativeModeTabs.INVENTORY);
 	}
 
 	// 每个非分类页都用它自己的 tabId 配置自定义组：门禁只排除某一类时其余页会成组。
 	private static void assertNonCategoryTabIgnored(ResourceKey<CreativeModeTab> key) {
+		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
 		CreativeModeTab tab = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(key);
 		assertNotNull(tab, "标签页必须已注册: " + key.identifier());
 		String tabId = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab).toString();
@@ -574,60 +600,69 @@ class CreativeItemGroupsTest {
 		assertEquals("", CreativeItemGroups.configSignature(null));
 	}
 
-	// 告警谓词：分类页受支持，搜索/快捷栏/背包页与未注册 ID 需要告警。
+	// 告警谓词：先归一化再分类；分类页受支持，搜索/快捷栏/背包与未注册 ID 需要告警。
 	@Test
 	void customTabWarningClassifiesTabs() {
 		assertNull(CreativeItemGroups.customTabWarning(null));
 		assertNull(CreativeItemGroups.customTabWarning(""));
+		assertNull(CreativeItemGroups.customTabWarning("   "), "空白归一化为空 ID，视为无配置");
 		assertNull(CreativeItemGroups.customTabWarning("minecraft:building_blocks"));
 		assertNull(CreativeItemGroups.customTabWarning("minecraft:combat"));
+		assertNull(CreativeItemGroups.customTabWarning("MINECRAFT:COMBAT"), "归一化后大小写不敏感");
 		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
 			CreativeItemGroups.customTabWarning("minecraft:search"));
 		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
 			CreativeItemGroups.customTabWarning("minecraft:hotbar"));
 		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
 			CreativeItemGroups.customTabWarning("minecraft:inventory"));
+		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
+			CreativeItemGroups.customTabWarning(":search"));
+		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
+			CreativeItemGroups.customTabWarning(":hotbar"));
+		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
+			CreativeItemGroups.customTabWarning(":inventory"));
 		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
 			CreativeItemGroups.customTabWarning("somemod:missing"));
 		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
-			CreativeItemGroups.customTabWarning("minecraft:minecraft:stone"));
-		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
-			CreativeItemGroups.customTabWarning(":stone"));
-
-		// 空命名空间由 tryParse 补全：":combat" 受支持，":search" 属于非分类页。
-		assertNull(CreativeItemGroups.customTabWarning(":combat"));
-		assertNull(CreativeItemGroups.customTabWarning(":building_blocks"));
-		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
-			CreativeItemGroups.customTabWarning(":search"));
+			CreativeItemGroups.customTabWarning(":nonexistent"));
 		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
 			CreativeItemGroups.customTabWarning(":"));
 		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
 			CreativeItemGroups.customTabWarning("minecraft:"));
 		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
-			CreativeItemGroups.customTabWarning("   "));
+			CreativeItemGroups.customTabWarning("minecraft:/"));
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning("minecraft: search"));
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning("minecraft:minecraft:stone"));
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning("a:b:c"));
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning(":stone"));
+		assertNull(CreativeItemGroups.customTabWarning(":combat"));
+		assertNull(CreativeItemGroups.customTabWarning(":building_blocks"));
 
-		// 非 minecraft 命名空间的已注册分类页不应误报。
-		CreativeModeTab modTab = CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
+		// 非 minecraft 命名空间的已注册分类页通过查找接缝验证，不向全局注册表注册测试 tab。
+		CreativeModeTab modCategory = CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
 			.title(Component.literal("Mod Category"))
 			.icon(() -> new ItemStack(Items.STONE))
 			.build();
-		try {
-			Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB,
-				Identifier.fromNamespaceAndPath("tweakify_test", "category"), modTab);
-			assertNull(CreativeItemGroups.customTabWarning("tweakify_test:category"));
-		} catch (IllegalStateException frozenRegistry) {
-			// 注册表已冻结（不同测试环境）：退化为断言未注册的模组 ID 归为 UNKNOWN。
-			assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
-				CreativeItemGroups.customTabWarning("tweakify_test:category"));
-		}
+		assertNull(CreativeItemGroups.customTabWarning("tweakify_test:category", id -> modCategory));
+		assertEquals(CreativeItemGroups.CustomTabWarning.UNKNOWN,
+			CreativeItemGroups.customTabWarning("tweakify_test:missing", id -> null));
+		CreativeModeTab search = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeModeTabs.SEARCH);
+		assertNotNull(search);
+		assertEquals(CreativeItemGroups.CustomTabWarning.NON_CATEGORY,
+			CreativeItemGroups.customTabWarning("tweakify_test:search", id -> search));
 	}
 
 	// 告警去重：每个标签页只真正告警一次；不需要告警的 tabId 不占用名额；clear 后复位。
 	@Test
 	void customTabWarningsOnlyFireOncePerSession() {
-		assertTrue(CreativeItemGroups.warnUnsupportedCustomTab("minecraft:search"));
+		assertTrue(CreativeItemGroups.warnUnsupportedCustomTab(":search"));
 		assertFalse(CreativeItemGroups.warnUnsupportedCustomTab("minecraft:search"),
-			"同一标签页只告警一次");
+			"不同写法归一化后应合并去重");
+		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest(":search"));
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:search"));
 
 		assertFalse(CreativeItemGroups.warnUnsupportedCustomTab("minecraft:building_blocks"));
@@ -668,6 +703,28 @@ class CreativeItemGroupsTest {
 			List.of(stack(Items.STONE), stack(Items.STONE_BRICKS), stack(Items.SMOOTH_STONE)));
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:search"),
 			"rebuildGroups 必须检查自定义组");
+	}
+
+	// 配置变化决策：分类页要求重建列表；非分类页不重建但必须检查自定义组。
+	@Test
+	void onConfigChangedRefreshesOnlyCategoryTabs() {
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+			List.of("minecraft:search|搜索|stone"));
+
+		CreativeModeTab search = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeModeTabs.SEARCH);
+		assertNotNull(search);
+		assertFalse(CreativeItemGroups.onConfigChanged(search), "非分类页不重建列表");
+		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:search"),
+			"非分类页配置变化必须检查自定义组");
+
+		CreativeItemGroups.clear();
+		CreativeModeTab building = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
+			CreativeModeTabs.BUILDING_BLOCKS);
+		assertNotNull(building);
+		assertTrue(CreativeItemGroups.onConfigChanged(building), "分类页需要重建列表");
+		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:search"));
+
+		assertFalse(CreativeItemGroups.onConfigChanged(null));
 	}
 
 	// 轮播只用于展开的组：收起时图标固定为首个成员，关闭轮播时也不会返回替换图标。
