@@ -1,7 +1,5 @@
 package com.gtzc.tweakify.client;
 
-import java.util.Locale;
-
 /**
  * 药水效果剩余时间的紧凑格式：秒 / 分:秒 / 2h05 / 2d05。
  *
@@ -22,17 +20,21 @@ public final class EffectDurationFormatter {
 		int minutes = (totalSeconds % 3600) / 60;
 		int seconds = totalSeconds % 60;
 		// 长时间效果使用小时/天单位，避免 6 位以上数字挤在图标底部。
+		// 这里在 HUD 每帧路径上，用字符串拼接代替 String.format（后者要建 Formatter，开销高一个量级）。
 		if (days > 0) {
-			return days >= 100
-				? String.format(Locale.ROOT, "%dd", days)
-				: String.format(Locale.ROOT, "%dd%02d", days, hours);
+			return days >= 100 ? days + "d" : days + "d" + twoDigits(hours);
 		}
 		if (hours > 0) {
-			return String.format(Locale.ROOT, "%dh%02d", hours, minutes);
+			return hours + "h" + twoDigits(minutes);
 		}
 		if (minutes > 0) {
-			return String.format(Locale.ROOT, "%d:%02d", minutes, seconds);
+			return minutes + ":" + twoDigits(seconds);
 		}
 		return Integer.toString(seconds);
+	}
+
+	// 与 {@code %02d} 等价：两位数字，不足补前导零。
+	private static String twoDigits(int value) {
+		return value < 10 ? "0" + value : Integer.toString(value);
 	}
 }

@@ -35,6 +35,11 @@ public final class StatusEffectTimerRenderer {
 	private static final float TEXT_SCALE = 0.5f;
 	private static final int TEXT_COLOR = 0xFFFFFFFF;
 
+	// 复用的排序缓冲：效果集合很小，每帧清空重填即可，
+	// 避免每帧复制集合与排序时新建列表（渲染线程单线程访问）。
+	private static final List<MobEffectInstance> SORTED_EFFECTS = new ArrayList<>();
+	private static final Comparator<MobEffectInstance> DESCENDING = Comparator.reverseOrder();
+
 	private StatusEffectTimerRenderer() {
 	}
 
@@ -61,11 +66,12 @@ public final class StatusEffectTimerRenderer {
 		}
 
 		// 与原版相同的顺序：按效果自身排序后反向遍历。
-		List<MobEffectInstance> effects = new ArrayList<>(activeEffects);
-		effects.sort(Comparator.reverseOrder());
+		SORTED_EFFECTS.clear();
+		SORTED_EFFECTS.addAll(activeEffects);
+		SORTED_EFFECTS.sort(DESCENDING);
 		int beneficialCount = 0;
 		int harmfulCount = 0;
-		for (MobEffectInstance effect : effects) {
+		for (MobEffectInstance effect : SORTED_EFFECTS) {
 			if (!effect.showIcon()) {
 				continue;
 			}
