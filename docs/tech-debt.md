@@ -69,6 +69,8 @@
   3. 更简单的降负手段优先：降低刷新频率、缩小扫描半径或降低标记上限。
 - **触发条件**：实机在屏障/基岩密集场景帧率明显下降，且 profiler 确认 `BlockMarkerScanner.tick` 占主线程超过约 5%；
   或收到“开启屏障可见后卡顿”的可复现反馈。在此之前不引入线程与快照生命周期管理。
+- **验证清单**：实机 profiler 采集步骤、场景矩阵、数据清单与判定标准见
+  [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)。
 
 ## 与既有清单的关系
 
@@ -76,4 +78,5 @@
 | --- | --- |
 | `docs/release-pipeline.md`「已知但决定不改的点」 | CI/发布流水线（L1–L3、H1–H2） |
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
+| `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准 |
 | 本文件 | 测试覆盖与性能取舍类技术债（T1–T3）；不搬运上述条目，避免两处维护漂移 |
