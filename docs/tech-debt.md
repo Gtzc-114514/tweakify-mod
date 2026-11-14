@@ -65,7 +65,8 @@
   `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`；
   该行最后一次文本变更为 `bdbd765`（已含在 v1.0.3 中，此后未再变动），
   1.0.4 的扫描改造（半径 16→32、刷新 10/20 tick（屏障 2 次/秒、基岩 1 次/秒，静止降频 40/80 tick）→ 每秒 6 次）
-  未触碰该行，1.0.5 未改扫描（只改发布侧缓存去重、排序并列规则与状态清理）。
+  未触碰该行，1.0.5 未改扫描（只改发布侧缓存去重、排序并列规则与状态清理）；
+  1.0.6 仅升级 Fabric Loader 与文档、未改 Java 源码与注入点（见 [`docs/release-notes/v1.0.6.md`](release-notes/v1.0.6.md)），扫描相关代码同样未动。
   期间未收到回退反馈，但项目已无性能遥测，「无反馈」不等于「无回退」，
   需按「判定口径」以 v1.0.4 为基线抽样确认接线仍生效。
   项目未重建 GameTest。

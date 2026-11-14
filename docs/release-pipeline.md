@@ -189,7 +189,7 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 | 项 | 值 |
 | --- | --- |
 | Run ID | `43625965816` |
-| 对应提交 | `54bbfd1`（`v1.0.6` 标签提交；含 Loader 0.20.1、版本号、notes 与索引） |
+| 对应提交 | `54bbfd1`（`v1.0.6` 标签提交；含 notes 与版本索引；Loader 0.20.1 与版本号在父提交 `e9cffbf`） |
 | 触发 | push tag `v1.0.6` |
 | 结论 | **success**，job 耗时 49 秒 |
 | 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
@@ -236,6 +236,7 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 - [ ] `gradle.properties` 的 `version` 改为新版本号；
 - [ ] `README.md` 版本表同步（`| Tweakify Mod | X.Y.Z |`）；
 - [ ] `docs/release-notes/vX.Y.Z.md`：一句话概述 → 按改动主题分节（如 性能 / 测试 / 兼容性 / 构建与发布）→ 末尾 `compare/v上一个...vX.Y.Z` 链接；
+- [ ] 若本次改了 Fabric Loader 或依赖版本：同步 `gradle.properties`、`src/main/resources/fabric.mod.json` 的 `depends` 与 README 环境要求表（v1.0.6 的三处同步即此情形）；
 - [ ] 若本次改了 Mixin 注入点：`docs/mixin-probes.md` 的覆盖数、字段数、基线一并同步。
 
 ### 二、时序（最容易踩的坑）
@@ -276,3 +277,4 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 | `docs/release-notes/v1.0.1.md` | 1.0.1 的发布正文 |
 | `gradle.properties` | `version` 单一来源（标签与 jar 都以它为准） |
 | `docs/tech-debt.md` | 技术债台账（测试覆盖与性能取舍类，T1–T3；条目状态以该文件为准） |
+| `docs/t3-profiler-checklist.md` | T3 实机 profiler 采集与判定（T1 复用其 A/B/C 场景） |
