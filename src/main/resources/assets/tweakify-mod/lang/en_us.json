@@ -874,7 +874,7 @@
   "tweakify-mod.config.general.comment.itemGroupsAddAll": "Enables the built-in item groups; disable it to use only the custom groups below.",
   "tweakify-mod.config.lists.name.customItemGroups": "Custom item groups",
   "tweakify-mod.config.lists.prettyName.customItemGroups": "Custom item groups",
-  "tweakify-mod.config.lists.comment.customItemGroups": "One group per line: tab id|group name|contained ids (comma separated)|excluded ids|equivalent ids. The first three parts are required; a group only applies to the tab given in the first field (search/hotbar/inventory pages are not grouped and only log one warning). Tab ids are case-insensitive, a missing namespace is completed as minecraft: (:combat equals minecraft:combat), and a blank id is treated as unset, e.g. minecraft:building_blocks|quartz|quartz",
+  "tweakify-mod.config.lists.comment.customItemGroups": "One group per line: tab id|group name|contained ids (comma separated)|excluded ids|equivalent ids. The first three parts are required; a group only applies to the tab given in the first field (search/hotbar/inventory pages are not grouped and only log one warning). Tab ids are case-insensitive, a missing namespace is completed as minecraft: (:combat equals minecraft:combat); rows missing fields or with an empty tab/contained list are logged once and ignored, and blank rows are ignored, e.g. minecraft:building_blocks|quartz|quartz",
   "group_name.inventory_item_groups.logs": "Logs",
   "group_name.inventory_item_groups.woods": "Woods",
   "group_name.inventory_item_groups.stripped_logs": "Stripped Logs",

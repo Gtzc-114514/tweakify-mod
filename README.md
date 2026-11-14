@@ -165,7 +165,7 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `itemGroupsSort` 组内排序 | `default` | `default` 保持物品栏原顺序 / `alphabetical` 按物品 ID 字母序（组图标随之变化） |
 | `itemGroupsShowItems` 显示组内物品 | 关 | 展开状态下图标每 1.5 秒轮播一个组内物品，而不是固定显示首个物品 |
 | `itemGroupsAddAll` 启用默认组 | 开 | 启用内置的默认物品组；关闭后只使用下面的自定义组 |
-| `customItemGroups` 自定义物品组 | 空 | 每行一个组：`标签页ID|组名|包含ID(逗号分隔)|排除ID|等价ID`，例如 `minecraft:building_blocks|石英|quartz`；组只在行首标签页生效（搜索/快捷栏/背包页不成组，只记录一次告警）；标签页 ID 大小写不敏感、缺命名空间按 `minecraft:` 补全（`:combat` 等价 `minecraft:combat`），纯空白视为未配置；组名可写进 `group_name.inventory_item_groups.<组名>` 翻译键 |
+| `customItemGroups` 自定义物品组 | 空 | 每行一个组：`标签页ID|组名|包含ID(逗号分隔)|排除ID|等价ID`，例如 `minecraft:building_blocks|石英|quartz`；组只在行首标签页生效（搜索/快捷栏/背包页不成组，只记录一次告警）；标签页 ID 大小写不敏感、缺命名空间按 `minecraft:` 补全（`:combat` 等价 `minecraft:combat`）；行内字段不足/标签页为空/包含项为空的行会在日志提示一次并忽略，整行空白忽略；组名可写进 `group_name.inventory_item_groups.<组名>` 翻译键 |
 | `locatorBarHeads` 定位栏优化 | 关 | 把定位栏上的彩色圆点换成本服玩家的头像（参考 locator-heads）；找不到皮肤时保留原版圆点 |
 | `locatorBarAlwaysShowXp` 经验条与定位栏同时显示 | 关 | 与参考 alwaysShowXP 一致：强制经验条优先显示，并把定位栏头像叠在经验条上；乘车时不强制 |
 | `locatorBarHeadScale` 头像尺寸 | 5 | 头像倍率档位（1 ~ 9）：0.5x / 0.6x / 0.7x / 0.8x / 1.0x / 1.1x / 1.2x / 1.3x / 1.5x；默认 5 = 原版圆点大小 |

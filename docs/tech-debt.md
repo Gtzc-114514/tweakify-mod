@@ -155,8 +155,8 @@
 - **闭环动作**：若将来引入可加载 Mixin 的集成测试（Fabric Loader JUnit 或 GameTest），
   补一条“配置变化 → 分类页刷新 / 非分类页仅告警”的转发测试并删除本条；
   否则每次改动该 mixin 按判定口径手动回归。
-- **缓解措施**：转发逻辑保持一行 `if (onConfigChanged(selectedTab)) refreshCurrentTabContents(...)`，
-  决策与副作用集中在可单测的 `onConfigChanged`；`itemGroups` 的 HookProbe 可在实机确认钩子已执行。
+- **缓解措施**：转发保持单条语句 `if (selectedTab != null && onConfigChanged(selectedTab)) refreshCurrentTabContents(...)`，
+  决策与副作用集中在可单测的 `onConfigChanged`；`itemGroups` 的 HookProbe 只能确认点击钩子，转发链路仍需按判定口径手动回归。
 - **最近评估（2026-11-15）**：`onConfigChanged` 的三个分支已由单测覆盖；mixin 转发在一行内，
   本次重构已核对与抽取前逐分支等价。项目未引入 Mixin 集成测试，维持暂缓。
 - **待办**：实机回归一次搜索/快捷栏/背包页的配置变化路径并记录结果。
