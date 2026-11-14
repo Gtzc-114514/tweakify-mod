@@ -365,6 +365,7 @@ public final class CreativeItemGroups {
 			tab = id == null || lookup == null ? null : lookup.apply(id);
 		} catch (RuntimeException e) {
 			// 契约：查找失败一律按未知处理，避免异常从切页/渲染路径向上冒。
+			TweakifyMod.LOGGER.debug("Creative tab lookup failed for {}, treating as unknown", normalized, e);
 			return CustomTabWarning.UNKNOWN;
 		}
 		if (tab == null) {
@@ -417,22 +418,28 @@ public final class CreativeItemGroups {
 
 	private static void warnInvalidCustomRows(List<String> entries) {
 		for (String entry : entries) {
-			if (entry == null) {
+			if (entry == null || entry.isBlank()) {
+				// 整行空白视为未配置，与配置界面新增空行/尾随空白的行为一致。
 				continue;
 			}
 			String[] parts = entry.split(CUSTOM_FIELD_SEPARATOR, -1);
 			String tabId = parts.length > 0 ? parts[0].trim() : "";
 			List<String> contained = parts.length > 2 ? splitItems(parts[2]) : List.of();
 			boolean invalid = parts.length < 3 || tabId.isEmpty() || contained.isEmpty();
-			if (invalid && WARNED_INVALID_ROWS.add(entry)) {
+			if (invalid && WARNED_INVALID_ROWS.add(invalidRowKey(entry))) {
 				TweakifyMod.LOGGER.warn("Ignoring malformed custom item group row: {}", entry);
 			}
 		}
 	}
 
+	// 格式错误行的去重键：忽略大小写与首尾空白，同一行的写法变体只提示一次。
+	private static String invalidRowKey(String entry) {
+		return entry.trim().toLowerCase(Locale.ROOT);
+	}
+
 	// 包私有：测试断言格式错误行只告警一次。
 	static boolean isInvalidRowWarnedForTest(String entry) {
-		return WARNED_INVALID_ROWS.contains(entry);
+		return WARNED_INVALID_ROWS.contains(invalidRowKey(entry));
 	}
 
 	// 已告警过的标签页：避免每次列表重建都重复写日志（状态只在客户端主线程读写）。
@@ -659,6 +666,11 @@ public final class CreativeItemGroups {
 		GROUPS.addAll(groups);
 		baseItems = List.copyOf(base);
 		setIndexes();
+	}
+
+	// 包私有：测试同时断言组表与渲染快照，防止只清一处造成“图标在但点不动”。
+	static int groupCountForTest() {
+		return GROUPS.size();
 	}
 
 	// ---------------------------------------------------------------- 配置
