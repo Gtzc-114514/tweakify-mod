@@ -19,7 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * 攻击范围：每 tick 收集附近的生物与玩家并计算原版攻击距离，
+ * 攻击范围：按每秒 12 次的频率收集附近的生物与玩家并计算原版攻击距离，
  * ID 列表为空时包含全部生物与玩家，非空时只保留命中的实体。
  */
 public final class AttackRangeState {
@@ -33,22 +33,30 @@ public final class AttackRangeState {
 	private static final Comparator<Entry> BY_DISTANCE = Comparator.comparingDouble(Entry::distanceSq);
 
 	private static List<Entry> entries = List.of();
-	private static int tickCounter;
+	// 刷新频率：每秒 12 次（20/12 ≈ 1.67 tick），比屏障/基岩更快。
+	static final int REFRESHES_PER_SECOND = 12;
+	private static final RefreshScheduler REFRESH = new RefreshScheduler(REFRESHES_PER_SECOND);
+	private static boolean wasEnabled;
 
 	private AttackRangeState() {
 	}
 
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.functions.attackRangeDisplay || client.player == null || client.level == null) {
+		boolean enabled = config != null && config.functions.attackRangeDisplay
+			&& client.player != null && client.level != null;
+		if (!enabled) {
 			entries = List.of();
-			tickCounter = 0;
+			wasEnabled = false;
+			REFRESH.reset();
 			return;
 		}
-		// 每 2 tick 刷新一次（约 100ms），把实体扫描与半径计算开销减半。
-		if (++tickCounter % 2 != 0) {
+		// 每秒 12 次（20/12 ≈ 1.67 tick）；开启后立即收集一次，未到窗口时沿用上一轮结果。
+		boolean refreshDue = REFRESH.tick();
+		if (!refreshDue && wasEnabled) {
 			return;
 		}
+		wasEnabled = true;
 		double maxDistance = Mth.clamp(config.functions.attackRangeMaxDistance,
 			TweakifyModConfig.MIN_ATTACK_RANGE_DISTANCE, TweakifyModConfig.MAX_ATTACK_RANGE_DISTANCE);
 		int maxTargets = Mth.clamp(config.functions.attackRangeMaxTargets,
@@ -69,6 +77,9 @@ public final class AttackRangeState {
 		}
 		// 按距离排序：渲染层只取最近的若干目标，保证超出显示上限时先显示近处。
 		found.sort(BY_DISTANCE);
+		// 必须是新列表实例：AttackRangeGeometryCache 用引用变化判断是否重建顶点。
+		// List.copyOf 对已经是不可变列表的入参会返回同一实例，
+		// 以后若改成先构造不可变列表再发布，缓存将静默不再失效。
 		entries = List.copyOf(found.subList(0, Math.min(found.size(), maxTargets)));
 	}
 
