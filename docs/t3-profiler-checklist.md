@@ -27,7 +27,7 @@ T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRan
 
 每个场景取 3 轮结果的中位值，再与基线版本（v1.0.4）同场景的中位值对比（A/B/C；D 不参与回退判读，T1 回退判据）。
 基线与当前版本均按「冷启动 1 轮 + 热缓存 2 轮」的同一构成采集；3 轮明细记入 §六，
-各场景中位值填入 §六 末尾的「A/B/C/D/E 中位」行（tick 占比与 `avgLayerUs` 取中位，MSPT/FPS 亦取中位），版本间对比只用中位行。
+各场景中位值填入 §六 末尾的「A/B/C/D/E 中位」行（tick 占比、MSPT、FPS 取中位；`avgLayerUs` 仅在 A/B/C 有扫描时取中位，D/E 记「不适用」），版本间对比只用中位行。
 
 ## 三、采集步骤
 
@@ -39,8 +39,10 @@ T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRan
 4. `/spark profiler stop`，保存火焰图链接；
 5. `/spark tickmonitor --threshold-tick 50` 观察超过 50 ms 的 tick（避免每条 tick 都输出）；
 6. 单层耗时：`avgLayerUs`(µs) = `BlockMarkerScanner.tick` 累计占比 × 采样窗口时长(120 s)
-   ÷ 窗口内处理层数 × 10^6；窗口内处理层数 = 65 层/轮 × 6 次/秒 × 120 s ≈ 46 800。
-   若只有单 tick 平均耗时 M(ms)：`avgLayerUs` = 占比 × M ÷ 22（每 tick 层数）× 1000
+   ÷ 窗口内处理层数 × 10^6；窗口内处理层数 = 65 层/轮 × 6 次/秒 × 120 s ≈ 46 800
+   （仅适用于至少开启屏障或基岩的 A/B/C；D/E 无扫描，`avgLayerUs` 记「不适用」，不要填 0）。
+   若只有单 tick 平均耗时 M(ms)：`avgLayerUs` = 占比 × M ÷ 19.5（= 65 层/轮 × 6 次/秒 ÷ 20 tick/秒，
+   即占空比折算后的平均每 tick 层数；22 是扫描 tick 的峰值层数，用 22 会低估约 11%）× 1000
    （勿用「每轮层数 65」作除数，一轮跨 3 tick）。
    需要更高精度时在 `ScanJob.step()` 的 `scanLayer(...)` 调用前后累加 `System.nanoTime()`，
    同时累加层数，导出「累计耗时 / 层数」（µs/层，合入前移除）。
@@ -83,9 +85,11 @@ jcmd <pid> JFR.stop name=scan        # 需要提前结束时
 
 ## 六、记录模板
 
-每场景 3 轮各填一行：
+每场景 3 轮各填一行；中位行填 tick 占比 / `avgLayerUs` / MSPT / FPS 四列的 3 轮中位值，
+其余列按该版本统一填写：「版本/提交」与「配置」必填（版本间对比的依据），日期填该轮次组的采集日，
+Spark/JFR 与备注可留空。
 
-| 场景/轮次 | 日期 | 环境（单人/局域网/远程） | 版本/提交 | 配置 | tick 占比 | avgLayerUs | MSPT p50/p95/p99 | FPS 均值/1% low | Spark/JFR | 备注 |
+| 场景/轮次 | 日期 | 环境（单人/局域网/远程） | 版本/提交 | 配置 | tick 占比 | avgLayerUs (µs) | MSPT p50/p95/p99 | FPS 均值/1% low | Spark/JFR | 备注 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | A-1 | | | | | | | | | | |
 | A-2 | | | | | | | | | | |
