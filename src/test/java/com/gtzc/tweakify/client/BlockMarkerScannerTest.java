@@ -1,5 +1,6 @@
 package com.gtzc.tweakify.client;
 
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,11 +32,21 @@ class BlockMarkerScannerTest {
 		tracker.reset(0.0, 0.0, 0.0);
 		// 位移恰好 0.05 格：平方值与阈值相等，判定使用严格大于，因此不算移动。
 		double delta = 0.05;
-		assertEquals(BlockMarkerScanner.IdleTracker.MOVE_EPSILON_SQ, delta * delta, 0.0);
 		for (int i = 0; i < BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS; i++) {
 			assertFalse(tracker.update(delta, 0.0, 0.0), "阈值边界不应重置静止计数");
 		}
 		assertTrue(tracker.isIdle(), "持续处于阈值边界也应正常进入静止");
+	}
+
+	@Test
+	void idleThresholdsMatchDocumentedValues() {
+		// 需求数值用字面量固定：常量被改动时必须在这里同步暴露，避免测试跟着常量漂移。
+		assertEquals(40, BlockMarkerScanner.IdleTracker.IDLE_TRIGGER_TICKS, "连续 40 tick（2 秒）无位移进入静止");
+		assertEquals(0.0025, BlockMarkerScanner.IdleTracker.MOVE_EPSILON_SQ, 1.0e-12, "0.05 格的平方值");
+		assertEquals(10, BlockMarkerScanner.BARRIER_INTERVAL_TICKS);
+		assertEquals(20, BlockMarkerScanner.BEDROCK_INTERVAL_TICKS);
+		assertEquals(40, BlockMarkerScanner.IDLE_BARRIER_INTERVAL_TICKS);
+		assertEquals(80, BlockMarkerScanner.IDLE_BEDROCK_INTERVAL_TICKS);
 	}
 
 	@Test
@@ -126,6 +137,43 @@ class BlockMarkerScannerTest {
 		assertFalse(tracker.update(1.0, 2.0, 3.0), "失活后第一次观测只重建基线");
 	}
 
+	// ===== 扫描调度判定 =====
+
+	@Test
+	void scanDueIgnoresDisabledFeatures() {
+		assertFalse(BlockMarkerScanner.isScanDue(false, false, false, 0, false, 10, 40));
+		assertFalse(BlockMarkerScanner.isScanDue(false, true, true, 0, true, 10, 40),
+			"开关/维度变化也不能让关闭的功能到期");
+	}
+
+	@Test
+	void scanDueFiresImmediatelyOnToggleOrStartedMoving() {
+		assertTrue(BlockMarkerScanner.isScanDue(true, true, false, 1, false, 10, 40));
+		assertTrue(BlockMarkerScanner.isScanDue(true, true, false, 1, true, 10, 40));
+		assertTrue(BlockMarkerScanner.isScanDue(true, false, true, 1, false, 10, 40));
+		assertTrue(BlockMarkerScanner.isScanDue(true, false, true, 1, true, 10, 40),
+			"静止中起步应在非间隔 tick 也立即到期");
+	}
+
+	@Test
+	void scanDueUsesBaseIntervalWhileMoving() {
+		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 9, false, 10, 40));
+		assertTrue(BlockMarkerScanner.isScanDue(true, false, false, 10, false, 10, 40));
+		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 19, false, 20, 80));
+		assertTrue(BlockMarkerScanner.isScanDue(true, false, false, 20, false, 20, 80));
+	}
+
+	@Test
+	void scanDueUsesIdleIntervalWhileIdle() {
+		// 静止后屏障按 40 tick、基岩按 80 tick 到期，基础间隔内的 tick 不再触发。
+		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 10, true, 10, 40));
+		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 20, true, 10, 40));
+		assertTrue(BlockMarkerScanner.isScanDue(true, false, false, 40, true, 10, 40));
+		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 20, true, 20, 80));
+		assertFalse(BlockMarkerScanner.isScanDue(true, false, false, 40, true, 20, 80));
+		assertTrue(BlockMarkerScanner.isScanDue(true, false, false, 80, true, 20, 80));
+	}
+
 	// ===== section 预筛 =====
 
 	@Test
@@ -169,5 +217,23 @@ class BlockMarkerScannerTest {
 			assertFalse(BlockMarkerScanner.sectionNeedsScan(false, false, target),
 				"空 section 在 " + target + " 下都应跳过");
 		}
+	}
+
+	@Test
+	void sectionIndexBoundsAreRejected() {
+		assertFalse(BlockMarkerScanner.isValidSectionIndex(-1, 24), "世界底部以下的越界索引");
+		assertFalse(BlockMarkerScanner.isValidSectionIndex(24, 24), "世界顶部以上的越界索引");
+		assertFalse(BlockMarkerScanner.isValidSectionIndex(0, 0), "没有 section 的空区块");
+		assertTrue(BlockMarkerScanner.isValidSectionIndex(0, 24));
+		assertTrue(BlockMarkerScanner.isValidSectionIndex(23, 24));
+	}
+
+	@Test
+	void nullSectionIsSkipped() {
+		for (BlockMarkerScanner.ScanTarget target : BlockMarkerScanner.ScanTarget.values()) {
+			assertFalse(BlockMarkerScanner.sectionNeedsScan((LevelChunkSection) null, target),
+				"缺失 section 在 " + target + " 下都应跳过");
+		}
+		assertFalse(BlockMarkerScanner.sectionNeedsScan((LevelChunkSection) null, null));
 	}
 }
