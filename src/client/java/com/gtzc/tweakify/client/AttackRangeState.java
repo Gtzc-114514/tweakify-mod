@@ -17,6 +17,7 @@ import net.minecraft.world.phys.AABB;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 攻击范围：按每秒 12 次的频率收集附近的生物与玩家并计算原版攻击距离，
@@ -93,7 +94,8 @@ public final class AttackRangeState {
 		List<Entry> visible = found.subList(0, Math.min(found.size(), maxTargets));
 		int hash = contentHash(visible);
 		// 摘要只作预筛，再用几何字段精确比对：哈希碰撞不会让几何停在旧内容。
-		if (publishedHash != null && publishedHash == hash && sameGeometry(entries, visible)) {
+		// Objects.equals 对 null 安全，也避开可空 Integer 与 int 直接比较的引用退化风险。
+		if (Objects.equals(publishedHash, hash) && sameGeometry(entries, visible)) {
 			return;
 		}
 		publishedHash = hash;

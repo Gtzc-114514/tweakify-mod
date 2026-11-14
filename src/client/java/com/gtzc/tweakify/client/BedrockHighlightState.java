@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 单层基岩高亮状态：记录哪些面朝向空气，供渲染层填充标记。
@@ -76,8 +77,9 @@ public final class BedrockHighlightState {
 		// 内容摘要未变时保留旧列表引用：BedrockGeometryCache 按引用失效，
 		// 跳过发布即可避免每秒 6 次仍然整表重建顶点数组。
 		// 摘要只作预筛，再用 equals 精确比对，哈希碰撞不会让几何停在旧内容。
+		// Objects.equals 对 null 安全，也避开可空 Integer 与 int 直接比较的引用退化风险。
 		int hash = contentHash(accepted);
-		if (publishedHash != null && publishedHash == hash && markers.equals(accepted)) {
+		if (Objects.equals(publishedHash, hash) && markers.equals(accepted)) {
 			return;
 		}
 		publishedHash = hash;
