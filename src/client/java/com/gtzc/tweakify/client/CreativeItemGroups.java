@@ -360,7 +360,13 @@ public final class CreativeItemGroups {
 			return null;
 		}
 		Identifier id = Identifier.tryParse(normalized);
-		CreativeModeTab tab = id == null || lookup == null ? null : lookup.apply(id);
+		CreativeModeTab tab;
+		try {
+			tab = id == null || lookup == null ? null : lookup.apply(id);
+		} catch (RuntimeException e) {
+			// 契约：查找失败一律按未知处理，避免异常从切页/渲染路径向上冒。
+			return CustomTabWarning.UNKNOWN;
+		}
 		if (tab == null) {
 			return CustomTabWarning.UNKNOWN;
 		}
@@ -394,13 +400,39 @@ public final class CreativeItemGroups {
 	}
 
 	// 检查配置中的全部自定义组（不受当前页类型限制）：切页与列表重建都调用。
+	// 同时报告格式错误行（字段不足/空 tabId/空包含项），避免“配了却无效”的完全静默。
 	public static void warnUnsupportedCustomGroups() {
 		if (!isEnabled()) {
 			return;
 		}
-		for (GroupDefinition definition : parseCustomGroups(customGroupEntries())) {
+		List<String> entries = customGroupEntries();
+		warnInvalidCustomRows(entries);
+		for (GroupDefinition definition : parseCustomGroups(entries)) {
 			warnUnsupportedCustomTab(definition.tabId());
 		}
+	}
+
+	// 已告警过的格式错误行：避免每次列表重建都重复写日志。
+	private static final Set<String> WARNED_INVALID_ROWS = new HashSet<>();
+
+	private static void warnInvalidCustomRows(List<String> entries) {
+		for (String entry : entries) {
+			if (entry == null) {
+				continue;
+			}
+			String[] parts = entry.split(CUSTOM_FIELD_SEPARATOR, -1);
+			String tabId = parts.length > 0 ? parts[0].trim() : "";
+			List<String> contained = parts.length > 2 ? splitItems(parts[2]) : List.of();
+			boolean invalid = parts.length < 3 || tabId.isEmpty() || contained.isEmpty();
+			if (invalid && WARNED_INVALID_ROWS.add(entry)) {
+				TweakifyMod.LOGGER.warn("Ignoring malformed custom item group row: {}", entry);
+			}
+		}
+	}
+
+	// 包私有：测试断言格式错误行只告警一次。
+	static boolean isInvalidRowWarnedForTest(String entry) {
+		return WARNED_INVALID_ROWS.contains(entry);
 	}
 
 	// 已告警过的标签页：避免每次列表重建都重复写日志（状态只在客户端主线程读写）。
@@ -617,6 +649,7 @@ public final class CreativeItemGroups {
 		GROUPS.clear();
 		baseItems = new ArrayList<>();
 		WARNED_CUSTOM_TABS.clear();
+		WARNED_INVALID_ROWS.clear();
 		resetRenderState();
 	}
 
