@@ -70,6 +70,9 @@ public final class BedrockHighlightState {
 			sorted.sort(Comparator.comparingDouble(marker -> marker.pos().distSqr(center)));
 			accepted = sorted.subList(0, maxMarkers);
 		}
+		// 必须是新列表实例：BedrockGeometryCache 用引用变化判断是否重建顶点。
+		// List.copyOf 对已经是不可变列表的入参会返回同一实例，
+		// 以后若改成先构造不可变列表再发布，缓存将静默不再失效。
 		markers = List.copyOf(accepted);
 	}
 
