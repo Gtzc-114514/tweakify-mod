@@ -100,7 +100,7 @@
 | # | 位置 | 内容 | 不修理由 |
 | --- | --- | --- | --- |
 | L1 | `release.yml` 的 `find` 行 | ~~`find ... 2>/dev/null` 让 ENOENT 与 EACCES 无法区分~~ **已修（`c1d1a8c`）**：去掉 `2>/dev/null` 并新增 `[ ! -d ]` 预检，拆为「目录不存在」「枚举失败」两条注解 | 已完成，保留作历史记录 |
-| L2 | `release.yml` 的 `JAR=$(printf ... \| head -n1)` | 保留了管道路径（可用 `${JAR_LIST%%$'\n'*}` 替代） | 已验证不会触发 141；仅「理论上更健壮」 |
+| L2 | `release.yml` 的 `JAR=$(printf ... \| head -n1)` | ~~保留了管道路径~~ **已修**：改为纯 bash 参数展开 `${JAR_LIST%%$'\n'*}`，无子进程、无 SIGPIPE 面 | 已完成，保留作历史记录 |
 | L3 | `release.yml` 的 `No main jar found in build/libs` 与 `Version mismatch:` 两条注解 | `No main jar found` 为英文、其余中文；`"version": ""` 的 jar 会归因为 mismatch | 既有文案；空 version 的 jar 现实中不会出现 |
 | H1 | 3 个 Mixin 中的 8 个 `require = 0` 注入点 | **已补齐（51/51）**：`LevelRendererOutlineStyleMixin`×1、`VillagerMixin`×6、`mixin/modmenu/ModsScreenScrollMixin`×1 均已配 `HookProbe` 探针，全仓 51 个注入点 1:1 覆盖 | 已完成，保留作历史记录 |
 | H2 | `release.yml` 的 jar 读取分支 | 内容问题的三种原因（无清单/损坏/缺字段）合并为一条注解 | stderr 被刻意收敛；如需细分可改为落临时文件后 `cat` |
