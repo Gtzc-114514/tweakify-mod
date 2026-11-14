@@ -110,6 +110,36 @@ class BedrockHighlightStateTest {
 		assertEquals(1, BedrockHighlightState.markers().size(), "clear 后重新开启应再次发布");
 	}
 
+	@Test
+	void truncationKeepsNearestMarkersAndDeduplicates() {
+		BedrockHighlightState.setMarkers(new ArrayList<>(List.of(
+			marker(10, true, false), marker(1, true, false), marker(20, true, false))), CENTER, 2);
+		List<BedrockHighlightState.Marker> first = BedrockHighlightState.markers();
+		assertEquals(2, first.size());
+		assertEquals(1, first.get(0).pos().getX(), "最近的排在前");
+		assertEquals(10, first.get(1).pos().getX());
+
+		// 被截断的远处标记变化不影响前两个：摘要与 equals 都相同，复用旧列表。
+		BedrockHighlightState.setMarkers(new ArrayList<>(List.of(
+			marker(20, true, true), marker(1, true, false), marker(10, true, false))), CENTER, 2);
+
+		assertSame(first, BedrockHighlightState.markers());
+	}
+
+	@Test
+	void truncatedNearestSetChangePublishesNewList() {
+		BedrockHighlightState.setMarkers(new ArrayList<>(List.of(
+			marker(1, true, false), marker(10, true, false), marker(20, true, false))), CENTER, 2);
+		List<BedrockHighlightState.Marker> first = BedrockHighlightState.markers();
+
+		// 最近的换成 x=2：截断后的前两个集合变化，必须重发。
+		BedrockHighlightState.setMarkers(new ArrayList<>(List.of(
+			marker(2, true, false), marker(10, true, false), marker(20, true, false))), CENTER, 2);
+
+		assertNotSame(first, BedrockHighlightState.markers());
+		assertEquals(2, BedrockHighlightState.markers().get(0).pos().getX());
+	}
+
 	private static BedrockHighlightState.Marker marker(int x, boolean top, boolean bottom) {
 		return new BedrockHighlightState.Marker(new BlockPos(x, 64, 0), top, bottom);
 	}

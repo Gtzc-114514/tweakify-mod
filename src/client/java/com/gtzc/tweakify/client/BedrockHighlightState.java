@@ -75,8 +75,9 @@ public final class BedrockHighlightState {
 		}
 		// 内容摘要未变时保留旧列表引用：BedrockGeometryCache 按引用失效，
 		// 跳过发布即可避免每秒 6 次仍然整表重建顶点数组。
+		// 摘要只作预筛，再用 equals 精确比对，哈希碰撞不会让几何停在旧内容。
 		int hash = contentHash(accepted);
-		if (hasPublishedMarkers && hash == markersHash) {
+		if (hasPublishedMarkers && hash == markersHash && markers.equals(accepted)) {
 			return;
 		}
 		hasPublishedMarkers = true;

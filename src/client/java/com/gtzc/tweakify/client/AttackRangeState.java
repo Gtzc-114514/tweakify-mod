@@ -29,8 +29,14 @@ public final class AttackRangeState {
 						double distanceSq) {
 	}
 
-	// 按距离从近到远：比较器只建一次，不再每个刷新周期新建 lambda。
-	private static final Comparator<Entry> BY_DISTANCE = Comparator.comparingDouble(Entry::distanceSq);
+	// 按距离从近到远；并列时用坐标/半径做确定性次序，
+	// 避免等距实体因迭代顺序不同导致摘要变化与展示拖动。
+	private static final Comparator<Entry> BY_DISTANCE = Comparator
+		.comparingDouble(Entry::distanceSq)
+		.thenComparingDouble(Entry::x)
+		.thenComparingDouble(Entry::feetY)
+		.thenComparingDouble(Entry::z)
+		.thenComparingDouble(Entry::radius);
 
 	private static List<Entry> entries = List.of();
 	// 已发布内容的摘要：相同则跳过发布，让 AttackRangeGeometryCache 保持旧引用、不重建顶点。
@@ -90,13 +96,32 @@ public final class AttackRangeState {
 		found.sort(BY_DISTANCE);
 		List<Entry> visible = found.subList(0, Math.min(found.size(), maxTargets));
 		int hash = contentHash(visible);
-		if (hasPublishedEntries && hash == entriesHash) {
+		// 摘要只作预筛，再用几何字段精确比对：哈希碰撞不会让几何停在旧内容。
+		if (hasPublishedEntries && hash == entriesHash && sameGeometry(entries, visible)) {
 			return;
 		}
 		hasPublishedEntries = true;
 		entriesHash = hash;
 		// 内容变化时必须发布新列表实例：缓存的失效条件就是引用变化。
 		entries = List.copyOf(visible);
+	}
+
+	// 精确兜底：摘要相同后再逐条比较几何字段，排除 distanceSq 与 bounds，
+	// 使哈希碰撞不会把已变化的坐标/半径误判为相同。
+	private static boolean sameGeometry(List<Entry> published, List<Entry> current) {
+		if (published.size() != current.size()) {
+			return false;
+		}
+		for (int i = 0; i < published.size(); i++) {
+			Entry before = published.get(i);
+			Entry after = current.get(i);
+			if (before.x() != after.x() || before.feetY() != after.feetY()
+				|| before.centerY() != after.centerY() || before.z() != after.z()
+				|| before.radius() != after.radius()) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	// 轻量内容摘要：只含决定几何的坐标与半径；

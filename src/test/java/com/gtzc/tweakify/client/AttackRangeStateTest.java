@@ -81,6 +81,63 @@ class AttackRangeStateTest {
 		assertEquals(1, AttackRangeState.entries().size(), "重置后应再次发布");
 	}
 
+	@Test
+	void inputOrderDoesNotMatterAfterSorting() {
+		AttackRangeState.publishEntries(new ArrayList<>(List.of(
+			entry(0.0, 1.0f, 20.0), entry(4.0, 1.0f, 10.0))), 64);
+		List<AttackRangeState.Entry> first = AttackRangeState.entries();
+
+		// 输入顺序交换，排序后顺序一致，摘要与精确比对都判定相同。
+		AttackRangeState.publishEntries(new ArrayList<>(List.of(
+			entry(4.0, 1.0f, 10.0), entry(0.0, 1.0f, 20.0))), 64);
+
+		assertSame(first, AttackRangeState.entries());
+	}
+
+	@Test
+	void tiedDistancesUseDeterministicOrder() {
+		// distanceSq 相同：并列规则按 x 排序，输入顺序不影响结果。
+		AttackRangeState.publishEntries(new ArrayList<>(List.of(
+			entry(4.0, 1.0f, 10.0), entry(1.0, 1.0f, 10.0))), 64);
+		List<AttackRangeState.Entry> first = AttackRangeState.entries();
+		assertEquals(1.0, first.get(0).x(), 1.0e-6);
+
+		AttackRangeState.publishEntries(new ArrayList<>(List.of(
+			entry(1.0, 1.0f, 10.0), entry(4.0, 1.0f, 10.0))), 64);
+
+		assertSame(first, AttackRangeState.entries());
+	}
+
+	@Test
+	void maxTargetsTruncationKeepsNearestAndDeduplicates() {
+		AttackRangeState.publishEntries(new ArrayList<>(List.of(
+			entry(0.0, 1.0f, 30.0), entry(4.0, 1.0f, 10.0), entry(8.0, 1.0f, 20.0))), 2);
+		List<AttackRangeState.Entry> first = AttackRangeState.entries();
+		assertEquals(2, first.size());
+		assertEquals(4.0, first.get(0).x(), 1.0e-6);
+		assertEquals(8.0, first.get(1).x(), 1.0e-6);
+
+		// 被截断的远处条目变化不影响前两个：复用旧列表。
+		AttackRangeState.publishEntries(new ArrayList<>(List.of(
+			entry(0.0, 2.0f, 30.0), entry(4.0, 1.0f, 10.0), entry(8.0, 1.0f, 20.0))), 2);
+
+		assertSame(first, AttackRangeState.entries());
+	}
+
+	@Test
+	void maxTargetsTruncationChangePublishesNewList() {
+		AttackRangeState.publishEntries(new ArrayList<>(List.of(
+			entry(0.0, 1.0f, 30.0), entry(4.0, 1.0f, 10.0), entry(8.0, 1.0f, 20.0))), 2);
+		List<AttackRangeState.Entry> first = AttackRangeState.entries();
+
+		// 第三个条目变近：截断后的前两个集合变化，必须重发。
+		AttackRangeState.publishEntries(new ArrayList<>(List.of(
+			entry(0.0, 1.0f, 5.0), entry(4.0, 1.0f, 10.0), entry(8.0, 1.0f, 20.0))), 2);
+
+		assertNotSame(first, AttackRangeState.entries());
+		assertEquals(0.0, AttackRangeState.entries().get(0).x(), 1.0e-6);
+	}
+
 	private static AttackRangeState.Entry entry(double x, float radius, double distanceSq) {
 		double y = 64.0;
 		return new AttackRangeState.Entry(x, y, y + 0.9, 0.0, radius,
