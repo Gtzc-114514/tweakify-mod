@@ -326,6 +326,8 @@ class CreativeItemGroupsTest {
 
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:"),
 			"空 path 的 tabId 必须告警");
+		assertFalse(CreativeItemGroups.warnUnsupportedCustomTab("minecraft:"),
+			"两行归一化后只告警一次");
 		List<ItemStack> stripped = CreativeItemGroups.stripMembers(
 			List.of(stack(Items.STONE), stack(Items.STONE_BRICKS), stack(Items.SMOOTH_STONE)));
 		assertEquals(3, stripped.size(), "空 path 的自定义组不得摘除物品");
@@ -747,19 +749,25 @@ class CreativeItemGroupsTest {
 			"rebuildGroups 必须检查自定义组");
 	}
 
-	// 格式错误行（字段不足/空 tabId/空包含项）必须留下一次告警，clear 后复位。
+	// 格式错误行（字段不足/空 tabId/空包含项）必须留下一次告警，合法行与空白行不得误报。
 	@Test
 	void malformedCustomRowsWarnOnce() {
-		String shortRow = "字段不足";
+		String shortRow = "bad row";
 		String emptyTab = "|没有标签页|stairs";
 		String emptyContained = "minecraft:building_blocks|名|,,";
+		String validRow = "minecraft:building_blocks|名|stone";
+		String blankRow = "   ";
 		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
-			List.of(shortRow, emptyTab, emptyContained));
+			List.of(shortRow, emptyTab, emptyContained, validRow, blankRow));
 
 		CreativeItemGroups.warnUnsupportedCustomGroups();
 		assertTrue(CreativeItemGroups.isInvalidRowWarnedForTest(shortRow));
 		assertTrue(CreativeItemGroups.isInvalidRowWarnedForTest(emptyTab));
 		assertTrue(CreativeItemGroups.isInvalidRowWarnedForTest(emptyContained));
+		assertFalse(CreativeItemGroups.isInvalidRowWarnedForTest(validRow), "合法行不得告警");
+		assertFalse(CreativeItemGroups.isInvalidRowWarnedForTest(blankRow), "整行空白视为未配置");
+		assertTrue(CreativeItemGroups.isInvalidRowWarnedForTest("  " + shortRow.toUpperCase()),
+			"大小写/空白变体共用去重键");
 
 		CreativeItemGroups.clear();
 		assertFalse(CreativeItemGroups.isInvalidRowWarnedForTest(shortRow), "clear 后应复位");
@@ -794,6 +802,7 @@ class CreativeItemGroupsTest {
 		// 非分类页只告警，不得清空既有组状态。
 		assertFalse(CreativeItemGroups.onConfigChanged(search), "非分类页不重建列表");
 		assertNotNull(CreativeItemGroups.iconGroup(0), "非分类页不得清空既有组状态");
+		assertTrue(CreativeItemGroups.groupCountForTest() > 0, "非分类页不得清空组表");
 
 		assertFalse(CreativeItemGroups.onConfigChanged(null));
 	}
