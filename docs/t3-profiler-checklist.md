@@ -1,6 +1,7 @@
 # T3 实机 profiler 验证检查表
 
-本清单对应 [`docs/tech-debt.md`](tech-debt.md) 的 T3（扫描与收集仍在主线程分帧执行）。
+本清单对应 [`docs/tech-debt.md`](tech-debt.md) 的 T3（扫描与收集仍在主线程分帧执行）；
+T1 的版本间对比复用本文 §二 的 A/B/C/D 场景。
 T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRangeState.tick` 占主线程超过约 5%，
 或收到“开启屏障可见后卡顿”的可复现反馈。两者是独立触发路径：未收到复现反馈且占比未达 5% 之前，T3 保持暂缓。
 

@@ -248,4 +248,4 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 | `docs/release-notes/README.md` | 发布说明文件的命名与提交时序约定 |
 | `docs/release-notes/v1.0.1.md` | 1.0.1 的发布正文 |
 | `gradle.properties` | `version` 单一来源（标签与 jar 都以它为准） |
-| `docs/tech-debt.md` | 技术债台账（含测试覆盖缺口 T1 的评估结论） |
+| `docs/tech-debt.md` | 技术债台账（测试覆盖与性能取舍类，T1–T3；T2 已修复） |
