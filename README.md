@@ -99,15 +99,20 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `highlightSingleLayerBedrock` 高亮单层基岩 | 关 | 在周围 32 格内的单层基岩朝向空气的顶面/底面显示凸出 1 像素的金色实心小方块，便于寻找下界顶棚的可击穿薄弱点；每秒刷新 6 次，扫描结果未变时复用已有顶点缓存 |
 | `highlightSingleLayerBedrockMaxMarkers` 基岩标记最大数量 | 32 | 单次最多显示的标记数（1 ~ 256）；超出时保留最近的 |
 | `barrierVisibility` 屏障可见 | 关 | 周围屏障方块显示与手持屏障物品时相同的原版标记粒子，粒子固定在方块中心并逐方块冷却，不会偏移或重叠；扫描半径 32 格，每秒刷新 6 次 |
+| `barrierVisibilityMaxMarkers` 屏障标记最大数量 | 256 | 单次扫描最多保留的标记数（16 ~ 256）；超出时保留离玩家最近的 |
 | `durabilityOverlay` 装备耐久显示 | 关 | 在物品栏的耐久条上方叠加耐久文字；满耐久不显示，颜色随剩余耐久由绿转白、黄、红 |
 | `durabilityDisplayMode` 耐久显示内容 | `percent` | `percent` 耐久百分比 / `value` 剩余耐久数值（只显示当前剩余，不显示初始耐久）；两者字号一致 |
 | `durabilityOverlayHotbarOnly` 仅快捷栏显示 | 关 | 只在快捷栏显示耐久文字，背包格子里不显示 |
 | `durabilityOverlayLowThreshold` 低耐久提醒阈值 | 0 | 剩余耐久低于该百分比（0 ~ 100）时才显示；0 表示始终显示 |
+| `durabilityOverlayColorMode` 耐久文字配色 | `auto` | `auto` 随剩余耐久由绿转白、黄、红 / `white` / `yellow` / `red` 固定单色 |
 | `statusEffectDurationDisplay` 药水效果时间显示 | 关 | 在 HUD 右侧药水效果图标下方显示剩余时间（秒 / 分:秒 / 2h05 / 2d05）；无尽效果不显示 |
+| `statusEffectDurationAlwaysSeconds` 固定按秒显示 | 关 | 始终使用秒数（如 125），不使用分:秒与小时/天缩写；长时间效果会缩小字号避免溢出 |
 | `attackRangeDisplay` 生物攻击范围 | 关 | 以生物或玩家为中心显示半透明蓝色线框攻击范围，半径按原版攻击距离计算；每秒刷新 12 次，条目几何未变时复用已有顶点缓存 |
 | `attackRangeDisplayMode` 范围显示方式 | `flat` | `flat` 脚下双圆环 / `sphere` 经纬线框球体 |
 | `attackRangeRenderMode` 范围渲染方式 | `wireframe` | `wireframe` 蓝色线框（无 OIT，性能更好）/ `filled` 半透明实心（观感更完整，可能掉帧） |
 | `attackRangeIncludeSelf` 显示自己的范围 | 关 | 是否显示本地玩家自己的攻击范围；关闭后只显示其他生物与玩家 |
+| `attackRangeHostileOnly` 只显示敌对生物 | 关 | 只显示僵尸、骷髅等敌对生物；玩家与被动生物不再显示范围 |
+| `attackRangeIncludeInvisible` 显示隐身实体 | 关 | 默认不显示隐身实体；开启后隐身生物同样显示攻击范围 |
 | `attackRangeMaxDistance` 范围收集距离 | 48 | 收集攻击范围的最大距离（8 ~ 128 格） |
 | `attackRangeMaxTargets` 最大显示数量 | 64 | 单次最多显示的数量（8 ~ 256）；超出时保留最近的实体 |
 | `attackRangeEntities` 攻击范围实体 | 空 | 需要显示范围的生物/玩家 ID 列表；为空时显示全部生物与玩家 |
@@ -190,6 +195,7 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `copyItemId` 复制物体 ID | 关 | 总开关；开启后用「复制目标 ID 快捷键」对准方块/实体、或在容器界面里悬停物品复制 ID，聊天栏里的 ID 可点击再次复制 |
 | `copyTargetId` 复制目标 ID 快捷键 | 未绑定 | 对准方块/实体或在容器界面悬停物品时按下，复制其 ID；需开启 `copyItemId` 总开关 |
 | `copyItemIdFormat` 复制格式 | `plain` | `plain` 纯 ID / `typed` 带类型前缀（物品/方块/实体）/ `counted` 附带数量 |
+| `copyItemIdNamespace` 保留命名空间 | 开 | 复制时保留命名空间前缀（`minecraft:stone`）；关闭后只复制路径部分（`stone`） |
 | `copyItemIdCloseContainer` 复制后关闭界面 | 关 | 在容器界面复制物品 ID 后自动关闭该界面 |
 | `copyItemIdChatMessage` 聊天栏提示 | 开 | 复制成功后在聊天栏显示可点击复制的 ID；关闭后只写入剪贴板 |
 | `chatTextSelection` 聊天文字框选 | 关 | 在聊天界面按住左键拖动选择消息文字，Ctrl+C 复制 |
@@ -328,8 +334,15 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `debugInfoOverlay` 调试信息叠加层 | 关 | 在 HUD 左下角显示坐标、朝向、维度与脚下方块 |
 | `debugInfoShowPerformance` 显示性能 | 开 | 追加帧率与内存占用 |
 | `debugInfoShowTarget` 显示准星目标 | 开 | 追加准星指向的方块/实体 ID |
+| `debugInfoShowBiome` 显示生物群系 | 关 | 追加玩家所在生物群系的 ID |
+| `debugInfoShowSpeed` 显示移动速度 | 关 | 追加水平/垂直速度（格每秒），便于确认飞行、攀爬、如履平地是否生效 |
+| `debugInfoShowEntities` 显示附近实体 | 关 | 按 32 格范围统计附近生物、掉落物与其他实体数量；每 500ms 刷新一次 |
+| `debugInfoShowConfigStats` 显示配置统计 | 关 | 统计功能标签下已开启与已修改的布尔开关数量；每 500ms 刷新一次 |
+| `debugInfoShowEffects` 显示药水效果 | 关 | 追加当前药水效果数量与最短剩余时间 |
 | `debugInfoShowHooks` 显示钩子探针 | 关 | 追加已激活的 Mixin 行为探针列表 |
-| `debugProbeReport` 钩子探针报表 | 未绑定 | 纯快捷键动作：按下后把已激活的探针输出到聊天栏 |
+| `debugProbeReport` 钩子探针报表 | 未绑定 | 纯快捷键动作：按下后把已激活的探针输出到聊天栏（或剪贴板，见下一项） |
+| `debugProbeReportCopy` 探针输出到剪贴板 | 关 | 开启后探针报表写入剪贴板（每行一个钩子），不再输出到聊天栏 |
+| `debugEnabledFeaturesReport` 已启用功能报表 | 未绑定 | 纯快捷键动作：按下后把已启用的根功能开关名称输出到聊天栏 |
 
 > **服务端判定**：下列功能由集成服务端执行，仅在单人游戏或自己开设的局域网世界生效——诅咒附魔、附魔过于昂贵、移除附魔冲突、可见交易、中键获得液体桶、生存模式中键取物、锹单层铲雪、锻造模板、掉落物与经验球寿命、超平坦史莱姆、疣块分解、床距离、放置覆盖、耕地踩踏、骨粉催熟、刷怪蛋投掷、雪傀儡不受群系影响、维度传送、蛛网/液体/粘液块/蜂蜜块物理、冰霜行者跳跃修复。
 
@@ -360,7 +373,8 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 
 - **打开/关闭配置界面**：默认 **G + C**（对应配置项 `openConfigGui`），任意界面可用
 - **切换快捷键**：带快捷键槽的根功能可以绑定一个按键，按下即切换该开关，默认全部未绑定；除「修改」标签的「禁用屏幕覆盖层」与「测试」标签的「调试信息叠加层」外，带切换键的都是「功能」标签的根功能，子设置不提供
-- **钩子探针报表**：给「测试」标签的「钩子探针报表」绑定按键后，按下即把已激活的 Mixin 行为探针打到聊天栏（纯动作，没有开关）
+- **钩子探针报表**：给「测试」标签的「钩子探针报表」绑定按键后，按下即把已激活的 Mixin 行为探针打到聊天栏；开启「探针输出到剪贴板」后改为写入剪贴板（纯动作，没有开关）
+- **已启用功能报表**：给「测试」标签的「已启用功能报表」绑定按键后，按下即把已启用的根功能开关打到聊天栏（纯动作，没有开关）
 - **主动爬行**：需要先在配置界面开启「主动爬行」总开关，并给子项「爬行按键」绑定一个按键；按住爬行、松开站起
 - **复制物体 ID**：需要先在配置界面里给「复制目标 ID 快捷键」绑定按键（默认未绑定），且「复制物体 ID」开关为开启状态；总开关所在行的快捷键只负责切换开关
 
