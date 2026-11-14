@@ -3,7 +3,7 @@
 本文档说明 `.github/workflows/release.yml` 的触发条件、步骤顺序、失败语义与已知取舍，
 方便回看而不用翻提交记录与聊天记录。
 
-**基线**：`release.yml` 以提交 `bbce75a`（2026-11-14，v1.0.2 后的 CI 脚本细化）为准；本文件随 main 演进，
+**基线**：`release.yml` 以提交 `45f363d`（2026-11-14，工具链预检移除已不再使用的 head，即 v1.0.2 后最后一次 CI 脚本改动）为准；本文件随 main 演进，
 该文件后续变动时以实际文件为准，步骤名与数量请以 `- name:` 原文重新核对。
 
 ## 触发条件
@@ -95,6 +95,32 @@
 
 产物：`tweakify-mod-1.0.2.jar`（557,981 字节）、`tweakify-mod-1.0.2-sources.jar`（406,450 字节）。
 
+## 验证记录：v1.0.3 发布（CI 细化首次生效）
+
+v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致性校验链与 notes 机制再次完整通过：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `43543826316` |
+| 对应提交 | `84edc61`（`v1.0.3` 标签提交；含手写 notes 与 1.0.3 版本号） |
+| 触发 | push tag `v1.0.3` |
+| 结论 | **success**，总耗时 42 秒（job 42 秒） |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面另含 `Set up job`、3 个 `Post` 步骤与 `Complete job`，共 16 行，均通过） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.0.3` 并写入 `$GITHUB_OUTPUT` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.0.3` 去前缀后与版本 `1.0.3` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.0.3` 与版本一致；无 head 预检与 6 类归因正常通过 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.0.3.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.0.3` 开头（946 字符），含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.0.3.jar`（562,825 字节）、`tweakify-mod-1.0.3-sources.jar`（410,179 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `43543809341`）同为 success。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
@@ -131,7 +157,8 @@
 
 ### 三、CI 首次验证
 
-> `c1d1a8c` 之后的 CI 改动（6 类归因、参数展开取首行、无 head 预检）尚未被真实发布验证，下次发布是首次生效。
+> `c1d1a8c` 之后的 CI 改动（6 类归因、参数展开取首行、无 head 预检）已在 v1.0.3 发布中首次生效并通过
+> （run `43543826316`，详见「验证记录」）；后续发布按本节逐项核对即可。
 
 - [ ] 6 类归因首次生效：正常构建下不会触发枚举失败分支，确认步骤名与顺序与本文档一致即可；
 - [ ] 参数展开取首行（`${JAR_LIST%%$'\n'*}`）与无 head 预检通过；
@@ -142,7 +169,7 @@
 
 - [ ] Release 正文以手写标题 `## Tweakify Mod X.Y.Z` 开头（非自动生成的 Full Changelog 单行）；
 - [ ] 产物：`tweakify-mod-X.Y.Z.jar` + `sources.jar`，文件名与版本一致；
-- [ ] 更新本文档：基线锚点 → 本次发布提交；「验证记录」追加本次 run 的 ID / 耗时 / 步骤结果 / 产物大小；
+- [ ] 更新本文档：基线锚点 → main 上最后一次修改 `release.yml` 的提交；「验证记录」追加本次 run 的 ID / 耗时 / 步骤结果 / 产物大小；
 - [ ] 若本次改动了 `release.yml`：核对 6 类表与注解文本；
 - [ ] 「已知不改」清单：L3/H2 仍在，若触及 jar 读取分支可顺带处理 H2。
 
