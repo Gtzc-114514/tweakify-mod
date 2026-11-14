@@ -23,7 +23,7 @@
 | --- | --- | --- | --- |
 | T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest（最近复评 2026-11-15，见详情） |
 | T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（摘要去重 + 精确比对，见详情） |
-| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高 |
+| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，未达触发条件（快照方案复杂度高） |
 
 ## T1 详情：section 预筛的集成测试缺口
 
@@ -40,13 +40,14 @@
   再按本口径做版本间对比定位是否回退。
 - **判定口径**：同一场景、同一版本对 `Render thread` 采样 `BlockMarkerScanner.tick`（含 `ScanJob.step`/`scanLayer`），
   占比相对上一版本上升 > 2 个百分点，或单层耗时（`avgLayerUs`，同场景同层数）相对上一版本上升 > 50%；
-  场景取 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) 的 A/B/C/D，上一版本与当前版本各跑 3 轮取中位。
+  场景取 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) 的 A/B/C（D 为两项全关的对照基线，不参与回退判读），
+  上一版本与当前版本各跑 3 轮取中位。
   不使用绝对 `scanMs` 与 v1.0.3 对比：v1.0.3 为半径 16（33 层/轮、每层 1089 格），现为半径 32（65 层/轮、每层 4225 格），
   单轮遍历量约 7.6 倍，且半径/层数是编译期常量、无法回退到 1.0.3 配置。
   与 T3 的口径关系：T3 用绝对占比（> 5% 触发 / 2%–5% 观察 / < 2% 维持现状），本条用相对上一版本的增量（> 2 个百分点）；
   两者度量同一指标但回答不同问题（绝对成本过高 vs 相对回退），一次采样可分别判读，结论各自记录。
-- **闭环动作**：重新评估后把详情里的「最近评估（YYYY-MM-DD）」改为「评估（YYYY-MM-DD）」并追加新行
-  （旧的标为「历史评估（YYYY-MM-DD）」），同步 T1 表格状态为
+- **闭环动作**：重新评估后把详情里的「最近评估（YYYY-MM-DD）」改为「历史评估（YYYY-MM-DD）」，
+  并在末尾追加新的「最近评估（YYYY-MM-DD）」，同步 T1 表格状态为
   「暂缓，不补 GameTest（最近复评 YYYY-MM-DD，见详情）」；若该次评估仍有未完成的抽样，在「待办」注明。
 - **不补 GameTest 的理由**：
   1. 功能正确性风险为零：被跳过的 section 在原逐方块逻辑下也不会产出任何标记（纯函数决策 + `maybeHas` 语义已论证）；
@@ -81,7 +82,7 @@
   默认上限（基岩 32、攻击范围 64）下量级很小。
 - **采用方案**：方案 1（发布处内容摘要 + 精确比对），未采用 `geometryVersion` 与缓存侧摘要两种备选；
   实施见「修复记录」。
-- **修复记录（v1.0.5，`82f68e8`…`2bd00ff`）**：`BedrockHighlightState.setMarkers` 与 `AttackRangeState.publishEntries`
+- **修复记录（v1.0.5，`081383c`…`2bd00ff`）**：`BedrockHighlightState.setMarkers` 与 `AttackRangeState.publishEntries`
   在发布前计算内容摘要（基岩：size + `Marker.hashCode()`；攻击范围：size + 坐标/半径，不含随玩家移动变化的 `distanceSq`），
   摘要相同后再做一次精确比对（基岩逐条 `equals`，攻击范围只比几何字段），两者都相同才保留旧引用；
   因此哈希碰撞不会漏判内容变化，最多损失一次重建收益，几何不会停在旧内容。
@@ -104,11 +105,11 @@
   section 预筛后真实方块读取更少）；`AttackRangeState` 的实体范围查询依赖 `ClientLevel`，只能在客户端主线程执行。
   两者都未线程化，也不使用原版 `Util.backgroundExecutor()`。
 - **影响**：屏障/基岩密集场景（冒险地图、下界顶棚）按 65³ 全量遍历粗估每 tick 2–5 ms，未按 section 预筛命中率折算、
-  也未经采样确认；若实测确在该区间，`BlockMarkerScanner.tick` 占比将越过 5% 触发线，此时以
-  `docs/t3-profiler-checklist.md` §五 判定为准。普通场景 section 预筛后开销很低。
+  也未经采样确认；若实测落在该区间上半段（≥ 2.5 ms，约占 50 ms tick 的 5%），`BlockMarkerScanner.tick`
+  占比即触及 5% 触发线；具体以 `docs/t3-profiler-checklist.md` §五 判定为准。普通场景 section 预筛后开销很低。
   直接后台读 `ClientLevel`/`LevelChunk`/`PalettedContainer` 会与区块加载、卸载、光照写入竞争，
   可能读到半更新数据甚至越界，因此不能简单“把循环丢到线程池”。
-- **采用方案**：暂不线程化，保持 section 预筛 + 每 tick 有界分帧；触发后先按建议方案 3 降负，再评估快照方案。
+- **采用方案**：暂不线程化，保持 section 预筛 + 每 tick 有界分帧；触发后先按建议方案 3 降负，再评估快照方案（P3 观察）。
 - **建议方案**：
   1. 保持现状：section 预筛 + 每 tick 有界分帧是当前性价比最高的方案；
   2. 若将来需要线程化，采用“主线程快照 + 后台解析”：主线程分帧调用 `LevelChunkSection.copy()`
@@ -123,8 +124,8 @@
   与 T1 的关系：T1 用相对上一版本的增量判回退，本条用绝对占比判总成本，一次采样可分别判读。
 - **闭环动作**：达标先按建议方案 3 降负，不足再按“主线程快照 + 后台解析”预案实施；
   不达标把 T3 状态写为「复测未达触发条件（YYYY-MM-DD，见详情）」；重评后同步表格状态与日期（详见检查表 §七）。
-- **最近评估**：不适用（尚未做任何实机复评，检查表记录模板为空）。
 - **缓解措施**：保持现状（section 预筛 + 每 tick 有界分帧）；触发后优先降负，见「建议方案」第 3 条。
+- **最近评估**：不适用（尚未做任何实机复评，检查表记录模板为空）。
 - **待办**：按检查表完成 A–E 采集并回填记录模板；未完成前 T3 维持暂缓。
 - **验证清单**：实机 profiler 采集步骤、场景矩阵、数据清单与判定标准见
   [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)。
@@ -135,6 +136,6 @@
 | --- | --- |
 | `docs/release-pipeline.md`「已知但决定不改的点」 | CI/发布流水线（L1–L3、H1–H2） |
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
-| `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T1 判定口径复用其 A/B/C/D 场景与 3 轮取中位 |
+| `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T1 判定口径复用其 A/B/C 场景（D 作对照）与 3 轮取中位 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
 | 本文件 | 测试覆盖与性能取舍类技术债（T1–T3）；不搬运上述条目，避免两处维护漂移 |
