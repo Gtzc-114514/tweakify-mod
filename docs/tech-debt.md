@@ -107,10 +107,11 @@
 
 ## T3 详情：扫描与收集仍在主线程分帧执行
 
-- **现状**：`BlockMarkerScanner` 的 65³ 方块扫描每 tick 推进 22 层（约 3 tick 一轮，单 tick 最多 9.3 万次位置遍历，
-  section 预筛后真实方块读取更少）；`AttackRangeState` 的实体范围查询依赖 `ClientLevel`，只能在客户端主线程执行。
+- **现状**：`BlockMarkerScanner` 的默认 65³（半径 32，可配置 8 ~ 32）方块扫描每 tick 推进 22 层
+  （约 3 tick 一轮，单 tick 最多 9.3 万次位置遍历，section 预筛后真实方块读取更少）；
+  `AttackRangeState` 的实体范围查询依赖 `ClientLevel`，只能在客户端主线程执行。
   两者都未线程化，也不使用原版 `Util.backgroundExecutor()`。
-- **影响**：屏障/基岩密集场景（冒险地图、下界顶棚）按 65³ 全量遍历粗估每 tick 2–5 ms，未按 section 预筛命中率折算、
+- **影响**：屏障/基岩密集场景（冒险地图、下界顶棚）按 65³（默认半径 32）全量遍历粗估每 tick 2–5 ms，未按 section 预筛命中率折算、
   也未经采样确认；若实测落在该区间上半段（≥ 2.5 ms，约占 50 ms tick 的 5%），`BlockMarkerScanner.tick`
   占比即触及 5% 触发线；具体以 `docs/t3-profiler-checklist.md` §五 判定为准。普通场景 section 预筛后开销很低。
   直接后台读 `ClientLevel`/`LevelChunk`/`PalettedContainer` 会与区块加载、卸载、光照写入竞争，
@@ -121,7 +122,7 @@
   2. 若将来需要线程化，采用“主线程快照 + 后台解析”：主线程分帧调用 `LevelChunkSection.copy()`
      （内部为 `PalettedContainer.copy()`）取 section 快照（65³ 体积约 125 个 section，每 tick 约 42 个、84–168 KB），
      后台线程解析快照产出标记，结果回主线程应用；快照记录基准 center，玩家移动超阈值或换世界时丢弃结果；
-  3. 更简单的降负手段优先：降低刷新频率、缩小扫描半径或降低标记上限。
+  3. 更简单的降负手段优先：降低刷新频率、缩小扫描半径（配置项 8 ~ 32）或降低标记上限。
 - **触发条件**：实机在屏障/基岩密集或实体密集场景帧率明显下降，且 profiler 确认 `BlockMarkerScanner.tick`
   或 `AttackRangeState.tick` 占主线程超过约 5%；或收到“开启屏障可见后卡顿”的可复现反馈。
   在此之前不引入线程与快照生命周期管理。
