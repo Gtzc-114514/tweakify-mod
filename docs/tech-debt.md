@@ -21,71 +21,38 @@
 
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
-| T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest（最近复评 2026-11-16，见详情） |
+| T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 已修复（真实 LevelChunk GameTest，见详情） |
 | T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（摘要去重 + 精确比对，见详情） |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-16，见详情） |
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-16，见详情） |
 
-> v1.1.0 复评（2026-11-16）：T2 维持“已修复”；T1/T3/T4 均未达到闭环条件
-> （分别缺少 GameTest、实机 profiler 与 Mixin 集成测试），本轮只更新评估记录与缓解说明。
+> v1.1.0 复评（2026-11-16）：T1 已通过真实 LevelChunk GameTest 闭环；T2 维持“已修复”；
+> T3/T4 仍未达到闭环条件（分别缺少实机 profiler 与 Mixin 集成测试），本轮只更新 T3/T4 的评估记录与缓解说明。
 > release action 的 Node.js 20 弃用项已闭环，记入 [`docs/release-pipeline.md`](release-pipeline.md)「已知但决定不改的点」L4。
 
 ## T1 详情：section 预筛的集成测试缺口
 
-- **现状**：`sectionNeedsScan(...)` 的纯函数决策（屏障/基岩开关组合、section 索引越界、null section）由
-  `BlockMarkerScannerTest` 中 7 个用例（20 处调用断言）覆盖；该类现有 8 个用例，v1.0.4 移除静止降频时
-  删掉的是 14 个调度类用例（10 个静止判定、4 个 `isScanDue`），section 覆盖未减少。未覆盖的是 `ScanJob` 中一行接线
-  `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`，
-  以及它与真实 `LevelChunk.getSectionIndex/getSectionsCount/getSection` 的交互。
-- **失败模式**：把该行改成 `= true` 只是取消预筛，扫描到的方块与最终标记结果仍然正确，
-  只会让方块读取量与耗时回到优化前的水平——属于**性能回退**，不是功能错误。
-- **触发条件**：实机出现可感知的扫描性能回退（判定口径见下），
-  或为其他高价值端到端场景重建 GameTest 基础设施。
-  同一份「开启屏障可见后卡顿」反馈同时命中本条与 T3 时，先按检查表 §五 判读绝对占比、决定是否降负，
-  再按本口径做版本间对比定位是否回退。
-- **判定口径**：同一场景对 `Render thread` 采样 `BlockMarkerScanner.tick`（含 `ScanJob.step`/`scanLayer`），
-  占比相对基线上升 > 2 个百分点，或单层耗时（`avgLayerUs`，同场景同层数）相对基线上升 > 50%；
-  基线取 v1.0.4（`2e4d87c`，半径 32、22 层/tick、每秒 6 次）；当前默认半径 32，采样时需显式固定 32，
-  场景取 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) 的 A/B/C（D 为两项全关的对照基线，不参与回退判读），
-  基线版本与当前版本各跑 3 轮（冷启动 1 轮 + 热缓存 2 轮，构成见检查表 §二）取中位。
-  本判据用于检测 `chunkMayContain` 接线是否失效（当前 vs v1.0.4）；
-  1.0.4 改造本身（v1.0.3 半径 16 → 1.0.4 半径 32）的收益不在判据内：两者每层格数不同（1089 vs 4225），
-  `avgLayerUs` 不可直接比较；1.1.0 起半径可配置，但 T1 对比仍固定使用 32。
-  与 T3 的口径关系：T3 用绝对占比（> 5% 触发 / 2%–5% 观察 / < 2% 维持现状），本条用相对基线的增量（> 2 个百分点）；
-  两者度量同一指标但回答不同问题（绝对成本过高 vs 相对回退），一次采样可分别判读，结论各自记录。
-- **闭环动作**：重新评估后把详情里的「最近评估（YYYY-MM-DD）」改为「历史评估（YYYY-MM-DD）」，
-  并在末尾追加新的「最近评估（YYYY-MM-DD）」，同步 T1 表格状态为
-  「暂缓，不补 GameTest（最近复评 YYYY-MM-DD，见详情）」；若该次评估仍有未完成的抽样，在「待办」注明。
-- **不补 GameTest 的理由**：
-  1. 功能正确性风险为零：被跳过的 section 在原逐方块逻辑下也不会产出任何标记（纯函数决策 + `maybeHas` 语义已论证）；
-  2. 项目已刻意移除自动 GameTest（客户端启动、依赖与测试世界构造都要重建，CI 不再启动客户端），
-     为捕获一个常量变异重建整套基础设施，维护成本远高于收益；
-  3. 该变异只可能由人为删除优化引入，diff 中只有一行，代码审查成本极低。
-- **缓解措施**：
-  - `ScanJob.chunkMayContain` 字段声明处与 `scanLayer` 跳过分支都有「整段跳过方块读取」注释，误改时容易被审查注意到；
-  - 若未来重建 GameTest 基础设施（见「触发条件」），顺带补一条「屏障/基岩 section 跳过」场景，边际成本才低；
-  - 采样方式：v1.0.3 验证期间使用过 `[perf-sample]`（合入前已移除，当前无性能遥测），
-    当前采集按 T3 检查表的 Spark/JFR 步骤执行。
-- **历史评估（2026-11-15）**：暂无回退证据——`chunkMayContain` 赋值仍在 `ScanJob.scanLayer` 的
-  `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`；
-  该行最后一次文本变更为 `bdbd765`（已含在 v1.0.3 中，此后未再变动），
-  1.0.4 的扫描改造（半径 16→32、刷新 10/20 tick（屏障 2 次/秒、基岩 1 次/秒，静止降频 40/80 tick）→ 每秒 6 次）
-  未触碰该行，1.0.5 未改扫描（只改发布侧缓存去重、排序并列规则与状态清理）；
-  1.0.6 仅升级 Fabric Loader 与文档、未改 Java 源码与注入点（见 [`docs/release-notes/v1.0.6.md`](release-notes/v1.0.6.md)），扫描相关代码同样未动。
-  期间未收到回退反馈，但项目已无性能遥测，「无反馈」不等于「无回退」，
-  需按「判定口径」以 v1.0.4 为基线抽样确认接线仍生效。
-  项目未重建 GameTest。
-  结论：暂无回退证据，维持“暂缓，不补 GameTest”（P3）；抽样后如未达触发，
-  状态改为「复测未达触发条件（YYYY-MM-DD，见详情）」。
-- **最近评估（2026-11-16）**：v1.0.5–v1.1.0 未改动 `ScanJob.chunkMayContain` 接线，当前仍为
-  `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`；
-  v1.1.0 将屏障/基岩扫描半径改为可配置（8 ~ 32，默认 32），采样时必须记录实际半径，
-  与基线 v1.0.4 的固定 32 对齐后才能比较 `avgLayerUs`。未重建 GameTest，A/B/C 抽样仍未完成，
-  维持“暂缓，不补 GameTest”（P3）。
-- **待办（抽样未完成）**：按「判定口径」在 A/B/C 场景由基线 v1.0.4 与当前版本各跑 3 轮
-  （冷启动 1 轮 + 热缓存 2 轮，同检查表 §二）、各取中位，并记录实际扫描半径（默认 32）；
-  占比增量 ≤ 2 个百分点且 `avgLayerUs` 增量 ≤ 50% 后，才把表格状态改为
-  「复测未达触发条件（YYYY-MM-DD，见详情）」。
+- **修复前现状**：`sectionNeedsScan(...)` 的纯函数决策由 `BlockMarkerScannerTest` 覆盖；未覆盖的是
+  `ScanJob` 中 `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(...)` 与真实
+  `LevelChunk.getSectionIndex/getSectionsCount/getSection` 的接线。把该行改成 `= true` 只会取消预筛，
+  标记结果仍正确，因此原缺口属于性能回退而非功能错误。
+- **原影响**：section 预筛失效时，屏障/基岩扫描会退化为逐方块读取，单层读取量可从命中 section 的 16×16
+  扩大到整个 65×65，帧时间上升但功能测试仍全绿。
+- **采用方案**：重建 Fabric Loom server GameTest（`fabricApi.configureTests`），在
+  `src/gametest/java/.../BlockMarkerScannerGameTest` 中使用真实 `ServerLevel`/`LevelChunk`，
+  分别覆盖 A（只开屏障）、B（只开基岩）、C（两者全开）：
+  - 测试在固定世界坐标放置分属不同 section 的屏障与基岩，扫描 49³ 体积；
+  - `ScanJob` 暴露实际逐方块读取计数，断言读取数等于命中 section 层数 × 目标区块 16×16；
+  - 若 `chunkMayContain` 被改成 `true`，读取数变为 117,649，A/B/C 分别以
+    expected 1024/3328/4352、actual 117649 失败，证明测试不是假通过。
+- **修复记录**：`build.gradle` 增加 GameTest 源集配置；新增
+  `src/gametest/java/com/gtzc/tweakify/client/BlockMarkerScannerGameTest.java` 与
+  `src/gametest/resources/fabric.mod.json`；`BlockMarkerScanner.ScanJob` 改用 `Level`，
+  新增读取计数与测试访问器；`check` 自动执行 `runGameTest`。
+- **验证**：`gradlew test` 通过；`gradlew build` 运行 4 个 required GameTest 全部通过；
+  临时把预筛赋值改为 `true` 后 A/B/C 全部按读取数断言失败，随后恢复并再次构建通过。
+- **回归条件**：若删除或绕过 `src/gametest`、改动 `ScanJob` 的 section 预筛、或 GameTest 读取计数与
+  命中 section 的预期不一致，重新评估本条并保留 GameTest 作为基线。
 
 ## T2 详情：顶点缓存的失效粒度过粗
 
@@ -187,6 +154,6 @@
 | --- | --- |
 | `docs/release-pipeline.md`「已知但决定不改的点」 | CI/发布流水线（L1–L4、H1–H2） |
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
-| `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T1 判定口径复用其 A/B/C 场景（D 作对照）、基线 v1.0.4 与 3 轮（冷启动 1 + 热缓存 2）取中位 |
+| `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
 | 本文件 | 测试覆盖与性能取舍类技术债（T1–T4）；不搬运上述条目，避免两处维护漂移 |
