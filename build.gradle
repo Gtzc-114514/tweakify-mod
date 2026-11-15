@@ -50,6 +50,17 @@ loom {
 	}
 }
 
+// T1：重建真实 LevelChunk 的 server GameTest；`build` 通过 `check` 自动执行。
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "tweakify-mod-test"
+		enableGameTests = true
+		enableClientGameTests = false
+		eula = true
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
