@@ -1,0 +1,12 @@
+{
+	"schemaVersion": 1,
+	"id": "tweakify-mod-test",
+	"version": "1.0.0",
+	"name": "Tweakify Mod Game Tests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"com.gtzc.tweakify.client.BlockMarkerScannerGameTest"
+		]
+	}
+}

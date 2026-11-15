@@ -5,6 +5,7 @@ import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -156,7 +157,7 @@ final class BlockMarkerScanner {
 		// 每 tick 都推进刷新额度；窗口到期且没有进行中的扫描时才启动新一轮。
 		boolean refreshDue = REFRESH.tick();
 		if (activeJob == null && (toggled || refreshDue)) {
-			activeJob = new ScanJob(level, client.player.blockPosition(), barrier, bedrock);
+			activeJob = createJob(level, client.player.blockPosition(), barrier, bedrock);
 		}
 		if (activeJob != null && activeJob.step()) {
 			activeJob.finish();
@@ -167,9 +168,18 @@ final class BlockMarkerScanner {
 		}
 	}
 
+	// 按当前配置创建扫描任务；ScanJob 本身只依赖 Level，便于真实 LevelChunk GameTest 复用。
+	private static ScanJob createJob(ClientLevel level, BlockPos center, boolean barrier, boolean bedrock) {
+		return new ScanJob(level, center, barrier, bedrock,
+			barrier ? barrierScanRadius() : 0,
+			bedrock ? bedrockScanRadius() : 0,
+			bedrock ? maxBedrockMarkers() : 0);
+	}
+
 	// 一次分帧扫描：从下到上逐层处理 y，扫描期间世界与开关都不可变。
-	private static final class ScanJob {
-		private final ClientLevel level;
+	// 包私有：GameTest 用真实 ServerLevel/LevelChunk 直接驱动它，验证 section 预筛接线。
+	static final class ScanJob {
+		private final Level level;
 		private final int centerX;
 		private final int centerY;
 		private final int centerZ;
@@ -194,8 +204,11 @@ final class BlockMarkerScanner {
 		private final boolean[] chunkMayContain = new boolean[MAX_CHUNKS_PER_AXIS * MAX_CHUNKS_PER_AXIS];
 		// 目标方块类型：按开关组合决定 section 预筛只关心哪些方块。
 		private final ScanTarget target;
+		// 实际逐方块读取次数：GameTest 用它判别 section 预筛是否真的跳过了非目标区块。
+		private int blockReads;
 
-		ScanJob(ClientLevel level, BlockPos center, boolean barrier, boolean bedrock) {
+		ScanJob(Level level, BlockPos center, boolean barrier, boolean bedrock,
+				int barrierRadius, int bedrockRadius, int maxBedrockMarkers) {
 			this.level = level;
 			this.centerX = center.getX();
 			this.centerY = center.getY();
@@ -204,9 +217,9 @@ final class BlockMarkerScanner {
 			this.bedrock = bedrock;
 			// 至少有一个功能开启才会创建扫描任务。
 			this.target = ScanTarget.of(barrier, bedrock);
-			this.maxBedrockMarkers = bedrock ? maxBedrockMarkers() : 0;
-			this.barrierRadius = barrier ? barrierScanRadius() : 0;
-			this.bedrockRadius = bedrock ? bedrockScanRadius() : 0;
+			this.maxBedrockMarkers = maxBedrockMarkers;
+			this.barrierRadius = barrierRadius;
+			this.bedrockRadius = bedrockRadius;
 			// 两种功能共用一次扫描：盒子取较大半径，各自再按自身半径过滤。
 			this.radius = Math.max(this.barrierRadius, this.bedrockRadius);
 			this.nextOffsetY = -this.radius;
@@ -254,6 +267,7 @@ final class BlockMarkerScanner {
 					}
 					LevelChunk chunk = this.layerChunks[slot];
 					this.cursor.set(x, y, z);
+					this.blockReads++;
 					BlockState state = chunk.getBlockState(this.cursor);
 					if (this.barrier && BarrierVisibilityState.isBarrier(state)) {
 						this.barriers.add(this.cursor.immutable());
@@ -278,6 +292,19 @@ final class BlockMarkerScanner {
 			if (this.bedrock) {
 				BedrockHighlightState.setMarkers(this.markers, center, this.maxBedrockMarkers, this.bedrockRadius);
 			}
+		}
+
+		// 以下三个包私有访问器仅供真实 LevelChunk GameTest 使用。
+		int blockReadsForTest() {
+			return this.blockReads;
+		}
+
+		List<BlockPos> barriersForTest() {
+			return this.barriers;
+		}
+
+		List<BedrockHighlightState.Marker> markersForTest() {
+			return this.markers;
 		}
 	}
 
