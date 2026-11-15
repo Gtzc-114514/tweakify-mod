@@ -3,7 +3,7 @@
 本文档说明 `.github/workflows/release.yml` 的触发条件、步骤顺序、失败语义与已知取舍，
 方便回看而不用翻提交记录与聊天记录。
 
-**基线**：`release.yml` 以提交 `45f363d`（2026-11-14，工具链预检移除已不再使用的 head，即 v1.0.2 后最后一次 CI 脚本改动）为准；本文件随 main 演进，
+**基线**：`release.yml` 以提交 `414f1ec`（2026-11-16，`action-gh-release` v2 → v3）为准；本文件随 main 演进，
 该文件后续变动时以实际文件为准，步骤名与数量请以 `- name:` 原文重新核对。
 
 ## 触发条件
@@ -273,6 +273,36 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 
 > 备注：本次沿用本地代理 `-c http.proxy=http://127.0.0.1:26561`，main 与标签均首次推送成功。
 
+## 验证记录：v1.1.0 发布
+
+本次无 `release.yml` 改动；版本一致性校验链与 notes 机制按既有流程再次通过（七轮子设置补齐与全局开关审计）：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `43738777693` |
+| 对应提交 | `2262ee0`（`v1.1.0` 标签提交；含 1.1.0 版本号、notes 与版本索引） |
+| 触发 | push tag `v1.1.0` |
+| 结论 | **success**，job 耗时 46 秒（run 50 秒） |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过** |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.1.0` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.1.0` 去前缀后与版本 `1.1.0` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.1.0` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.1.0.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文与仓库内 notes 逐字一致（1,733 字符），含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.1.0.jar`（720,879 字节）、`tweakify-mod-1.1.0-sources.jar`（545,187 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `43738760447`）同为 success。
+
+> 备注：本次运行仍使用 `action-gh-release@v2`，Actions 出现 Node.js 20 弃用注解；发布后已将 action 升级到
+> `@v3`（v3.0.4，`runs.using: node24`，提交 `414f1ec`），inputs 与 permissions 兼容，下一次标签发布验证该注解消失。
+> 升级后的 main 构建（run `43741195244`）为 success。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
@@ -280,6 +310,7 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 | L1 | `release.yml` 的 `find` 行 | ~~`find ... 2>/dev/null` 让 ENOENT 与 EACCES 无法区分~~ **已修（`c1d1a8c`）**：去掉 `2>/dev/null` 并新增 `[ ! -d ]` 预检，拆为「目录不存在」「枚举失败」两条注解 | 已完成，保留作历史记录 |
 | L2 | `release.yml` 的 `JAR=$(printf ... \| head -n1)` | ~~保留了管道路径~~ **已修（`5ea1ab9`）**：改为纯 bash 参数展开 `${JAR_LIST%%$'\n'*}`，无子进程、无 SIGPIPE 面 | 已完成，保留作历史记录 |
 | L3 | `release.yml` 的 `No main jar found in build/libs` 与 `Version mismatch:` 两条注解 | `No main jar found` 为英文、其余中文；`"version": ""` 的 jar 会归因为 mismatch | 既有文案；空 version 的 jar 现实中不会出现 |
+| L4 | `release.yml` 的 `create GitHub Release` | ~~`action-gh-release@v2`（node20）触发 Node.js 20 弃用注解~~ **已修（`414f1ec`）**：升级 v3（v3.0.4，`runs.using: node24`），inputs 与 permissions 兼容 | 已完成，保留作历史记录 |
 | H1 | 3 个 Mixin 中的 8 个 `require = 0` 注入点 | **已补齐（58/58）**：`LevelRendererOutlineStyleMixin`×1、`VillagerMixin`×6、`mixin/modmenu/ModsScreenScrollMixin`×1 均已配 `HookProbe` 探针，全仓 58 个注入点 1:1 覆盖 | 已完成，保留作历史记录 |
 | H2 | `release.yml` 的 jar 读取分支 | 内容问题的三种原因（无清单/损坏/缺字段）合并为一条注解 | stderr 被刻意收敛；如需细分可改为落临时文件后 `cat` |
 
@@ -323,6 +354,7 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 - [ ] Release 正文以手写标题 `## Tweakify Mod X.Y.Z` 开头（非自动生成的 Full Changelog 单行）；
 - [ ] 产物：`tweakify-mod-X.Y.Z.jar` + `sources.jar`，文件名与版本一致；
 - [ ] 更新本文档：基线锚点 → main 上最后一次修改 `release.yml` 的提交；「验证记录」追加本次 run 的 ID / 耗时 / 步骤结果 / 产物大小；
+- [ ] release 运行无 Node.js 20 弃用注解（`action-gh-release` v3 / node24）；
 - [ ] 若本次改动了 `release.yml`：核对 6 类表与注解文本；
 - [ ] 「已知不改」清单：L3/H2 仍在，若触及 jar 读取分支可顺带处理 H2。
 
@@ -340,5 +372,5 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 | `docs/release-notes/README.md` | 发布说明文件的命名与提交时序约定 |
 | `docs/release-notes/v1.0.1.md` | 1.0.1 的发布正文 |
 | `gradle.properties` | `version` 单一来源（标签与 jar 都以它为准） |
-| `docs/tech-debt.md` | 技术债台账（测试覆盖与性能取舍类，T1–T3；条目状态以该文件为准） |
+| `docs/tech-debt.md` | 技术债台账（测试覆盖与性能取舍类，T1–T4；条目状态以该文件为准） |
 | `docs/t3-profiler-checklist.md` | T3 实机 profiler 采集与判定（T1 复用其 A/B/C 场景） |

@@ -21,10 +21,14 @@
 
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
-| T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest（最近复评 2026-11-15，见详情） |
+| T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 暂缓，不补 GameTest（最近复评 2026-11-16，见详情） |
 | T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（摘要去重 + 精确比对，见详情） |
-| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高 |
-| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-15，见详情） |
+| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-16，见详情） |
+| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-16，见详情） |
+
+> v1.1.0 复评（2026-11-16）：T2 维持“已修复”；T1/T3/T4 均未达到闭环条件
+> （分别缺少 GameTest、实机 profiler 与 Mixin 集成测试），本轮只更新评估记录与缓解说明。
+> release action 的 Node.js 20 弃用项已闭环，记入 [`docs/release-pipeline.md`](release-pipeline.md)「已知但决定不改的点」L4。
 
 ## T1 详情：section 预筛的集成测试缺口
 
@@ -41,12 +45,12 @@
   再按本口径做版本间对比定位是否回退。
 - **判定口径**：同一场景对 `Render thread` 采样 `BlockMarkerScanner.tick`（含 `ScanJob.step`/`scanLayer`），
   占比相对基线上升 > 2 个百分点，或单层耗时（`avgLayerUs`，同场景同层数）相对基线上升 > 50%；
-  基线取 v1.0.4（`2e4d87c`，扫描参数与当前一致：半径 32、22 层/tick、每秒 6 次），
+  基线取 v1.0.4（`2e4d87c`，半径 32、22 层/tick、每秒 6 次）；当前默认半径 32，采样时需显式固定 32，
   场景取 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) 的 A/B/C（D 为两项全关的对照基线，不参与回退判读），
   基线版本与当前版本各跑 3 轮（冷启动 1 轮 + 热缓存 2 轮，构成见检查表 §二）取中位。
   本判据用于检测 `chunkMayContain` 接线是否失效（当前 vs v1.0.4）；
   1.0.4 改造本身（v1.0.3 半径 16 → 1.0.4 半径 32）的收益不在判据内：两者每层格数不同（1089 vs 4225），
-  `avgLayerUs` 不可直接比较，且半径/层数是编译期常量、无法回退到 1.0.3 配置。
+  `avgLayerUs` 不可直接比较；1.1.0 起半径可配置，但 T1 对比仍固定使用 32。
   与 T3 的口径关系：T3 用绝对占比（> 5% 触发 / 2%–5% 观察 / < 2% 维持现状），本条用相对基线的增量（> 2 个百分点）；
   两者度量同一指标但回答不同问题（绝对成本过高 vs 相对回退），一次采样可分别判读，结论各自记录。
 - **闭环动作**：重新评估后把详情里的「最近评估（YYYY-MM-DD）」改为「历史评估（YYYY-MM-DD）」，
@@ -62,7 +66,7 @@
   - 若未来重建 GameTest 基础设施（见「触发条件」），顺带补一条「屏障/基岩 section 跳过」场景，边际成本才低；
   - 采样方式：v1.0.3 验证期间使用过 `[perf-sample]`（合入前已移除，当前无性能遥测），
     当前采集按 T3 检查表的 Spark/JFR 步骤执行。
-- **最近评估（2026-11-15）**：暂无回退证据——`chunkMayContain` 赋值仍在 `ScanJob.scanLayer` 的
+- **历史评估（2026-11-15）**：暂无回退证据——`chunkMayContain` 赋值仍在 `ScanJob.scanLayer` 的
   `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`；
   该行最后一次文本变更为 `bdbd765`（已含在 v1.0.3 中，此后未再变动），
   1.0.4 的扫描改造（半径 16→32、刷新 10/20 tick（屏障 2 次/秒、基岩 1 次/秒，静止降频 40/80 tick）→ 每秒 6 次）
@@ -73,8 +77,13 @@
   项目未重建 GameTest。
   结论：暂无回退证据，维持“暂缓，不补 GameTest”（P3）；抽样后如未达触发，
   状态改为「复测未达触发条件（YYYY-MM-DD，见详情）」。
+- **最近评估（2026-11-16）**：v1.0.5–v1.1.0 未改动 `ScanJob.chunkMayContain` 接线，当前仍为
+  `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target)`；
+  v1.1.0 将屏障/基岩扫描半径改为可配置（8 ~ 32，默认 32），采样时必须记录实际半径，
+  与基线 v1.0.4 的固定 32 对齐后才能比较 `avgLayerUs`。未重建 GameTest，A/B/C 抽样仍未完成，
+  维持“暂缓，不补 GameTest”（P3）。
 - **待办（抽样未完成）**：按「判定口径」在 A/B/C 场景由基线 v1.0.4 与当前版本各跑 3 轮
-  （冷启动 1 轮 + 热缓存 2 轮，同检查表 §二）、各取中位，
+  （冷启动 1 轮 + 热缓存 2 轮，同检查表 §二）、各取中位，并记录实际扫描半径（默认 32）；
   占比增量 ≤ 2 个百分点且 `avgLayerUs` 增量 ≤ 50% 后，才把表格状态改为
   「复测未达触发条件（YYYY-MM-DD，见详情）」。
 
@@ -104,6 +113,9 @@
   或把基岩/攻击范围上限调到 256 并同时开启多个渲染功能时。复现时重开为暂缓条目并沿用本阈值。
   与 T3 的关系：T3 用 > 5% 判扫描/收集总占比，本条只看几何重建占比，两者互不替代；
   同时超过时先按 T3 建议方案 3 降负。
+- **v1.1.0 复评（2026-11-16）**：基岩高亮新增扫描半径与标记颜色，攻击范围新增颜色调色板；
+  颜色已作为缓存键参与失效判定，仅在配置变化时重建，默认路径仍走摘要去重。
+  相关几何缓存与状态测试通过，未发现回归，状态维持“已修复”。
 
 ## T3 详情：扫描与收集仍在主线程分帧执行
 
@@ -132,7 +144,11 @@
 - **闭环动作**：达标先按建议方案 3 降负，不足再按“主线程快照 + 后台解析”预案实施；
   不达标把 T3 状态写为「复测未达触发条件（YYYY-MM-DD，见详情）」；重评后同步表格状态与日期（详见检查表 §七）。
 - **缓解措施**：保持现状（section 预筛 + 每 tick 有界分帧）；触发后优先降负，见「建议方案」第 3 条。
-- **最近评估**：不适用（尚未做任何实机复评，检查表记录模板为空）。
+- **历史评估**：不适用（尚未做任何实机复评，检查表记录模板为空）。
+- **最近评估（2026-11-16）**：v1.1.0 新增屏障/基岩扫描半径 8 ~ 32、基岩标记上限 1 ~ 256、
+  屏障标记上限 16 ~ 256、粒子间隔 20 ~ 200 tick、攻击范围收集距离 8 ~ 128 与上限 8 ~ 256，
+  为用户侧提供了更多降负手段；默认值仍为半径 32、上限 256/32、间隔 60 tick、收集 48/64，
+  扫描与收集仍在主线程分帧执行，架构未变。未完成 A–E 实机采样，维持暂缓（P3）。
 - **待办**：按检查表完成 A–E 采集并回填记录模板；未完成前 T3 维持暂缓。
 - **验证清单**：实机 profiler 采集步骤、场景矩阵、数据清单与判定标准见
   [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)。
@@ -158,15 +174,18 @@
   否则每次改动该 mixin 按判定口径手动回归。
 - **缓解措施**：转发保持单条语句 `if (selectedTab != null && onConfigChanged(selectedTab)) refreshCurrentTabContents(...)`，
   决策与副作用集中在可单测的 `onConfigChanged`；`itemGroups` 的 HookProbe 只能确认点击钩子，转发链路仍需按判定口径手动回归。
-- **最近评估（2026-11-15）**：`onConfigChanged` 的三个分支已由单测覆盖；mixin 转发在一行内，
+- **历史评估（2026-11-15）**：`onConfigChanged` 的三个分支已由单测覆盖；mixin 转发在一行内，
   本次重构已核对与抽取前逐分支等价。项目未引入 Mixin 集成测试，维持暂缓。
+- **最近评估（2026-11-16）**：v1.1.0 未修改 `CreativeModeInventoryGroupingMixin` 与
+  `CreativeItemGroups.onConfigChanged`，本轮新增的 51 个子设置也不涉及物品分组热更新。
+  项目仍未引入 Mixin 集成测试，mixin 转发链路继续依赖手动回归，维持暂缓。
 - **待办**：实机回归一次搜索/快捷栏/背包页的配置变化路径并记录结果。
 
 ## 与既有清单的关系
 
 | 文件 | 范围 |
 | --- | --- |
-| `docs/release-pipeline.md`「已知但决定不改的点」 | CI/发布流水线（L1–L3、H1–H2） |
+| `docs/release-pipeline.md`「已知但决定不改的点」 | CI/发布流水线（L1–L4、H1–H2） |
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
 | `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T1 判定口径复用其 A/B/C 场景（D 作对照）、基线 v1.0.4 与 3 轮（冷启动 1 + 热缓存 2）取中位 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
