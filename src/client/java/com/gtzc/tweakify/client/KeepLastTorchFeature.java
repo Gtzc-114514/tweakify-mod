@@ -1,5 +1,6 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -20,9 +21,16 @@ public final class KeepLastTorchFeature {
 			|| item == Items.COPPER_TORCH || item == Items.REDSTONE_TORCH;
 	}
 
-	// 当前是否应该阻止放置：手里是火把且背包里总共不超过一根。
-	public static boolean shouldBlockPlacement(Item held, int totalCount) {
-		return isTorch(held) && totalCount <= 1;
+	// 当前是否应该阻止放置：兼容旧调用，默认阈值 1（只阻止最后一根）。
+	static boolean shouldBlockPlacement(Item held, int totalCount) {
+		return shouldBlockPlacement(held, totalCount, TweakifyModConfig.DEFAULT_KEEP_LAST_TORCH_COUNT);
+	}
+
+	// 当前是否应该阻止放置：手里是火把且剩余数量不超过阈值（阈值夹紧到 1 ~ 8）。
+	public static boolean shouldBlockPlacement(Item held, int totalCount, int minCount) {
+		int threshold = Math.max(TweakifyModConfig.MIN_KEEP_LAST_TORCH_COUNT,
+			Math.min(TweakifyModConfig.MAX_KEEP_LAST_TORCH_COUNT, minCount));
+		return isTorch(held) && totalCount <= threshold;
 	}
 
 	// 统计背包（主背包 + 快捷栏 + 副手）里某种火把的总数量。

@@ -1,9 +1,15 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.HurtShakeState;
 import com.gtzc.tweakify.client.NightVisionCurve;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.state.level.CameraEntityRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -16,11 +22,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
 	// 受伤抖动由 bobHurt 单独施加在视角矩阵上，取消它不会影响行走晃动（bobView）。
+	// 子设置开启时只取消受伤部分：先按原版公式补上死亡镜头倾斜，再取消整个方法。
 	@Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
-	private void tweakify$disableHurtShake(CallbackInfo ci) {
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.modified.disableHurtShake) {
-			ci.cancel();
+	private void tweakify$disableHurtShake(CameraRenderState camera, PoseStack pose, CallbackInfo ci) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (config == null || !config.modified.disableHurtShake) {
+			return;
 		}
+		if (config.modified.hurtShakeKeepDeathTilt) {
+			CameraEntityRenderState entityState = camera.entityRenderState;
+			if (entityState.isLiving && entityState.isDeadOrDying) {
+				pose.rotateDegrees(Axis.ZP, HurtShakeState.deathTiltDegrees(entityState.deathTime));
+			}
+		}
+		ci.cancel();
 	}
 
 	// 夜视淡出：原版在剩余时间内用正弦值闪烁，改为按剩余时间平滑淡出。

@@ -60,6 +60,16 @@ public final class ChatInputMemoryState {
 		return prefill == null || prefill.isBlank() || !prefill.equals(current);
 	}
 
+	// 命令草稿：以 / 开头（忽略前导空白）的输入。
+	public static boolean isCommandDraft(String text) {
+		return text != null && text.stripLeading().startsWith("/");
+	}
+
+	// 是否保留为草稿：开启“不记忆命令”时丢弃命令草稿，避免下次打开时误执行。
+	public static boolean shouldKeepDraft(String text, boolean ignoreCommands) {
+		return !(ignoreCommands && isCommandDraft(text));
+	}
+
 	// 清空待匹配的发送标记（输入变化、新建界面等使标记失效的场景）。
 	public static void clearSubmitted() {
 		submittedText = null;

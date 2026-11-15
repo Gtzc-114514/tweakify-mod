@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -42,6 +44,12 @@ public final class SpawnEggThrower {
 			return InteractionResult.PASS;
 		}
 
+		// 潜行放行：开启后潜行时交回原版放置，不改成投掷。
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (config != null && config.functions.throwSpawnEggSneakBypass && player.isShiftKeyDown()) {
+			return InteractionResult.PASS;
+		}
+
 		EntityType<?> type = SpawnEggItem.getType(stack);
 		if (type == null || !type.canSpawn(level)) {
 			return InteractionResult.PASS;
@@ -50,7 +58,8 @@ public final class SpawnEggThrower {
 		if (level instanceof ServerLevel serverLevel) {
 			ThrownEgg egg = new ThrownEgg(serverLevel, player, stack.copyWithCount(1));
 			egg.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
-			egg.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 1.5F, 1.0F);
+			egg.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F,
+				TweakifyModConfig.spawnEggThrowVelocity(throwVelocityPercent()), 1.0F);
 			serverLevel.addFreshEntity(egg);
 
 			level.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -61,6 +70,13 @@ public final class SpawnEggThrower {
 		}
 
 		return InteractionResult.SUCCESS;
+	}
+
+	// 投掷速度百分比：配置缺失时回退默认值（100 = 原版鸡蛋速度）。
+	private static int throwVelocityPercent() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config == null ? TweakifyModConfig.DEFAULT_SPAWN_EGG_VELOCITY
+			: config.functions.throwSpawnEggVelocity;
 	}
 
 	/**

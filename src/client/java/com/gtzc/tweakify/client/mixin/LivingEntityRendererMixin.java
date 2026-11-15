@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.HurtTintState;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
@@ -30,6 +31,8 @@ public class LivingEntityRendererMixin {
 			return original;
 		}
 		// 保留白色 overlay 进度（受伤闪白等），仅关闭红色 overlay。
-		return OverlayTexture.pack(whiteOverlayProgress, false);
+		// 子设置关闭时把白闪进度也归零，即受伤时完全不叠加 overlay。
+		return OverlayTexture.pack(HurtTintState.whiteFlashProgress(
+			whiteOverlayProgress, TweakifyMod.CONFIG.modified.hurtTintKeepWhiteFlash), false);
 	}
 }

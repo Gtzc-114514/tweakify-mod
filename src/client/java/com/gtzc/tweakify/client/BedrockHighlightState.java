@@ -68,7 +68,22 @@ public final class BedrockHighlightState {
 
 	// 接收扫描结果：超出上限时保留离玩家最近的标记，避免扫描窗口角落抢占名额。
 	static void setMarkers(List<Marker> found, BlockPos center, int maxMarkers) {
+		setMarkers(found, center, maxMarkers, 0);
+	}
+
+	// 接收扫描结果：radius > 0 时先丢弃扫描盒角落（距离超出半径）的标记。
+	static void setMarkers(List<Marker> found, BlockPos center, int maxMarkers, int radius) {
 		List<Marker> accepted = found;
+		if (radius > 0) {
+			long maxDistanceSq = (long) radius * radius;
+			List<Marker> withinRadius = new ArrayList<>(accepted.size());
+			for (Marker marker : accepted) {
+				if (marker.pos().distSqr(center) <= maxDistanceSq) {
+					withinRadius.add(marker);
+				}
+			}
+			accepted = withinRadius;
+		}
 		if (accepted.size() > maxMarkers) {
 			List<Marker> sorted = new ArrayList<>(accepted);
 			sorted.sort(Comparator.comparingDouble(marker -> marker.pos().distSqr(center)));

@@ -39,6 +39,11 @@ public class CreativeModeInventoryScreenQuickBurnMixin {
 		if (client.player == null) {
 			return;
 		}
+		// 需要潜行确认时，未潜行不焚烧（也不拦截原版点击）。
+		if (!QuickBurnFeature.isTriggerAllowed(
+			config.functions.quickBurnItemRequireSneak, client.player.isShiftKeyDown())) {
+			return;
+		}
 		AbstractContainerMenu menu = ((CreativeModeInventoryScreen) (Object) this).getMenu();
 		if (QuickBurnFeature.canBurn(menu, slot) && QuickBurnFeature.tryBurnCreative(client, menu)) {
 			ci.cancel();

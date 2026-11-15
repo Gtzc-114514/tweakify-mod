@@ -37,10 +37,16 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 
 	private ConfigTab currentTab = initialTab();
 
-	// 标签记忆关闭时总是从“全部”开始。
+	// 标签记忆关闭时按配置的默认标签开始；无配置时回到“全部”。
 	private static ConfigTab initialTab() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.general.rememberSelectedTab ? rememberedTab : ConfigTab.ALL;
+		if (config == null) {
+			return ConfigTab.ALL;
+		}
+		if (config.general.rememberSelectedTab) {
+			return rememberedTab;
+		}
+		return ConfigGuiTab.fromCode(config.general.rememberSelectedTabFallback).tab();
 	}
 	private final List<Button> tabButtons = new ArrayList<>();
 

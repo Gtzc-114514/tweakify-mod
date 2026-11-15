@@ -17,7 +17,18 @@ public final class IronGolemMinecartState {
 
 	public static boolean shouldPickUp(boolean enabled, boolean clientSide, boolean hasPassenger,
 									   boolean plainMinecart) {
-		return enabled && !clientSide && !hasPassenger && plainMinecart;
+		return shouldPickUp(enabled, clientSide, hasPassenger, plainMinecart, true);
+	}
+
+	// playerNearby 由调用方按距离配置计算；0 格视为不限制。
+	public static boolean shouldPickUp(boolean enabled, boolean clientSide, boolean hasPassenger,
+								   boolean plainMinecart, boolean playerNearby) {
+		return enabled && !clientSide && !hasPassenger && plainMinecart && playerNearby;
+	}
+
+	// 距离限制判定：0 或负数表示不限制，否则必须有玩家在范围内。
+	public static boolean isPlayerInRange(int maxDistance, boolean playerFound) {
+		return maxDistance <= 0 || playerFound;
 	}
 
 	// 只认普通矿车：漏斗/运输/动力/TNT/刷怪笼/命令方块矿车都是 AbstractMinecart 的其它子类，

@@ -55,6 +55,11 @@ public class AbstractContainerScreenQuickBurnMixin {
 		if (client.player == null) {
 			return;
 		}
+		// 需要潜行确认时，未潜行不焚烧（也不拦截原版点击）。
+		if (!QuickBurnFeature.isTriggerAllowed(
+			config.functions.quickBurnItemRequireSneak, client.player.isShiftKeyDown())) {
+			return;
+		}
 		AbstractContainerMenu menu = ((AbstractContainerScreen<?>) (Object) this).getMenu();
 		if (QuickBurnFeature.canBurn(menu, slot) && QuickBurnFeature.tryBurn(client, menu)) {
 			ci.cancel();
@@ -67,6 +72,12 @@ public class AbstractContainerScreenQuickBurnMixin {
 		HookProbe.markOnce(TWEAKIFY$QUICK_BURN_HINT_PROBE, "quickBurnHint");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.functions.quickBurnItem) {
+			return;
+		}
+		Minecraft client = Minecraft.getInstance();
+		// 提示与实际触发保持同一条件：需要潜行时，未潜行不显示提示。
+		if (client.player == null || !QuickBurnFeature.isTriggerAllowed(
+			config.functions.quickBurnItemRequireSneak, client.player.isShiftKeyDown())) {
 			return;
 		}
 		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;

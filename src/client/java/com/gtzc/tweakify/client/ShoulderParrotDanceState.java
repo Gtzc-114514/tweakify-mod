@@ -31,6 +31,13 @@ public final class ShoulderParrotDanceState {
 		if (config == null || !config.fix.parrotDanceOnShoulder || playerState == null) {
 			return false;
 		}
+		// 可选的本地玩家限定：其它玩家肩膀上的鹦鹉保持原版姿态。
+		if (config.fix.parrotDanceOnShoulderLocalPlayerOnly) {
+			var localPlayer = Minecraft.getInstance().player;
+			if (!isEligiblePlayer(true, localPlayer != null && localPlayer.getId() == playerState.id)) {
+				return false;
+			}
+		}
 		ClientLevel level = Minecraft.getInstance().level;
 		if (level == null) {
 			return false;
@@ -51,5 +58,10 @@ public final class ShoulderParrotDanceState {
 		return CACHE.computeIfAbsent(playerState.id,
 			id -> JukeboxMusicTracker.isPlayingNear(level, playerState.x,
 				playerState.y + playerState.eyeHeight, playerState.z));
+	}
+
+	// 纯判定：未开启“仅本地玩家”时所有玩家都可跳舞。
+	public static boolean isEligiblePlayer(boolean localOnly, boolean localPlayer) {
+		return !localOnly || localPlayer;
 	}
 }

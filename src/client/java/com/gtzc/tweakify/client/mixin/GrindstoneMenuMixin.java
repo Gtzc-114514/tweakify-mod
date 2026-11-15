@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.CurseRemovalScope;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.core.component.DataComponents;
@@ -28,8 +29,10 @@ public class GrindstoneMenuMixin {
 
 		// 复制后再清理，避免改动对比槽里的原物品；清空后附魔书按原版逻辑变为普通书。
 		ItemStack result = original.copy();
+		String scope = config.modified.curseRemovalScope;
 		ItemEnchantments remaining = EnchantmentHelper.updateEnchantments(result,
-			enchantments -> enchantments.removeIf(holder -> true));
+			enchantments -> enchantments.removeIf(holder -> CurseRemovalScope.shouldRemove(scope,
+				holder.unwrapKey().map(key -> key.identifier().getPath()).orElse(""))));
 		if (result.is(Items.ENCHANTED_BOOK) && remaining.isEmpty()) {
 			result = result.transmuteCopy(Items.BOOK);
 		}

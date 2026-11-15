@@ -24,6 +24,11 @@ public final class BetterBlockPlacementState {
 		if (config == null || !config.functions.betterBlockPlacement || state == null || context == null) {
 			return false;
 		}
+		// 潜行放行：开启时潜行交回原版，先打掉植物再放置。
+		if (context.getPlayer() != null && shouldBypassForSneak(
+			config.functions.betterBlockPlacementSneakBypass, context.getPlayer().isShiftKeyDown())) {
+			return false;
+		}
 		// 只处理植物类方块；有碰撞的（如甜浆果丛）保持原样，避免误拆交互方块。
 		// 26.3 的 BlockStateBase.isSolid() 已标记为 legacy，改用碰撞形状判断。
 		if (!(state.getBlock() instanceof VegetationBlock)
@@ -43,6 +48,11 @@ public final class BetterBlockPlacementState {
 		}
 		// 手持同种植物时沿用原版行为（放回同种植物而不是覆盖）。
 		return !held.is(state.getBlock().asItem());
+	}
+
+	// 潜行放行：开启且玩家正在潜行时，不覆盖植物（保持原版交互）。
+	public static boolean shouldBypassForSneak(boolean bypassEnabled, boolean sneaking) {
+		return bypassEnabled && sneaking;
 	}
 
 	// 覆盖范围：花草（花 + 高草/蕨/灌木）/ 额外包含作物 / 全部无碰撞植物。

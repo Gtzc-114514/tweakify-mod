@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin.minihud;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.MiniHudState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.minihud.event.RenderHandler;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,9 +23,6 @@ public class MiniHudRenderHandlerMixin {
 	}
 
 	@Unique
-	private static final long TWEAKIFY$UPDATE_INTERVAL_NANOS = 150_000_000L;
-
-	@Unique
 	private static volatile long tweakify$lastUpdateNanos;
 
 	@Redirect(method = "onExtractGuiOverlayPost", at = @At(value = "INVOKE",
@@ -37,7 +35,7 @@ public class MiniHudRenderHandlerMixin {
 		}
 
 		long now = System.nanoTime();
-		if (now - tweakify$lastUpdateNanos < TWEAKIFY$UPDATE_INTERVAL_NANOS) {
+		if (now - tweakify$lastUpdateNanos < MiniHudState.intervalNanos(config.optimization.miniHudRefreshIntervalMs)) {
 			return;
 		}
 		tweakify$lastUpdateNanos = now;

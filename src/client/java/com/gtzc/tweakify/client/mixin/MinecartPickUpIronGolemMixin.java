@@ -39,9 +39,13 @@ public class MinecartPickUpIronGolemMixin {
 		HookProbe.markOnce(TWEAKIFY$GOLEM_MINECART_PROBE, "ironGolemMinecart");
 		AbstractMinecart minecart = (AbstractMinecart) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
+		int maxDistance = config == null ? 0 : config.modified.ironGolemRideMinecartMaxDistance;
+		boolean playerFound = maxDistance > 0
+			&& minecart.level().getNearestPlayer(minecart, maxDistance) != null;
 		if (!IronGolemMinecartState.shouldPickUp(config != null && config.modified.ironGolemRideMinecart,
 			minecart.level().isClientSide(), !minecart.getPassengers().isEmpty(),
-			IronGolemMinecartState.isPlainMinecart(minecart))) {
+			IronGolemMinecartState.isPlainMinecart(minecart),
+			IronGolemMinecartState.isPlayerInRange(maxDistance, playerFound))) {
 			return;
 		}
 		// 每 4 tick 检查一次；用实体 ID 错开相位，避免所有空矿车在同一 tick 集中查询。

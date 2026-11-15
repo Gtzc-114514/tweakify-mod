@@ -1,5 +1,6 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -23,8 +24,8 @@ import java.util.Map;
 public final class BarrierVisibilityState {
 	// 每 tick 最多生成的粒子数；配合逐方块冷却，均匀覆盖而不会堆叠。
 	private static final int PARTICLES_PER_TICK = 8;
-	// 同一方块两次标记粒子之间的冷却（3 秒），确保旧粒子已经消失。
-	private static final int PARTICLE_COOLDOWN_TICKS = 60;
+	// 同一方块两次标记粒子之间的默认冷却（3 秒）；实际值由 barrierVisibilityParticleInterval 控制。
+	private static final int DEFAULT_PARTICLE_COOLDOWN_TICKS = 60;
 
 	private static List<BlockPos> markers = List.of();
 	private static long tickCounter;
@@ -48,13 +49,29 @@ public final class BarrierVisibilityState {
 
 	// 接收扫描结果（默认上限）：超出时保留离玩家最近的，并清理已离开范围的粒子冷却记录。
 	static void setMarkers(List<BlockPos> found, BlockPos center) {
-		setMarkers(found, center, TweakifyModConfig.DEFAULT_BARRIER_MARKERS);
+		setMarkers(found, center, TweakifyModConfig.DEFAULT_BARRIER_MARKERS,
+			TweakifyModConfig.DEFAULT_BARRIER_SCAN_RADIUS);
 	}
 
 	// 接收扫描结果：上限由 barrierVisibilityMaxMarkers 控制，非正数时回退到默认值。
 	static void setMarkers(List<BlockPos> found, BlockPos center, int maxMarkers) {
+		setMarkers(found, center, maxMarkers, TweakifyModConfig.DEFAULT_BARRIER_SCAN_RADIUS);
+	}
+
+	// 接收扫描结果：先按半径过滤（扫描盒大于配置半径时丢弃角落），再按数量保留最近的。
+	static void setMarkers(List<BlockPos> found, BlockPos center, int maxMarkers, int radius) {
 		int limit = maxMarkers > 0 ? maxMarkers : TweakifyModConfig.DEFAULT_BARRIER_MARKERS;
 		List<BlockPos> accepted = found;
+		if (radius > 0) {
+			long maxDistanceSq = (long) radius * radius;
+			List<BlockPos> withinRadius = new ArrayList<>(accepted.size());
+			for (BlockPos pos : accepted) {
+				if (pos.distSqr(center) <= maxDistanceSq) {
+					withinRadius.add(pos);
+				}
+			}
+			accepted = withinRadius;
+		}
 		if (accepted.size() > limit) {
 			List<BlockPos> sorted = new ArrayList<>(accepted);
 			sorted.sort(Comparator.comparingDouble(pos -> pos.distSqr(center)));
@@ -82,6 +99,7 @@ public final class BarrierVisibilityState {
 			return;
 		}
 		BlockParticleOption marker = barrierMarker();
+		int cooldownTicks = particleCooldownTicks();
 		int markerCount = markers.size();
 		if (particleCursor >= markerCount) {
 			particleCursor = 0;
@@ -97,13 +115,24 @@ public final class BarrierVisibilityState {
 			if (next != null && tickCounter < next) {
 				continue;
 			}
-			nextParticleAt.put(pos, tickCounter + PARTICLE_COOLDOWN_TICKS);
+			nextParticleAt.put(pos, tickCounter + cooldownTicks);
 			// 固定在方块中心，不再使用随机偏移，保证上下左右对称。
 			client.level.addParticle(marker,
 				pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
 				0.0, 0.0, 0.0);
 			spawned++;
 		}
+	}
+
+	// 逐方块粒子冷却：由 barrierVisibilityParticleInterval 控制，配置缺失时用默认值。
+	private static int particleCooldownTicks() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (config == null) {
+			return DEFAULT_PARTICLE_COOLDOWN_TICKS;
+		}
+		return Math.max(TweakifyModConfig.MIN_BARRIER_PARTICLE_INTERVAL,
+			Math.min(TweakifyModConfig.MAX_BARRIER_PARTICLE_INTERVAL,
+				config.functions.barrierVisibilityParticleInterval));
 	}
 
 	// 与手持屏障物品时相同的原版方块标记粒子。

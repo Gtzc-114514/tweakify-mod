@@ -1,12 +1,15 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.SmithingTemplateState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.inventory.SmithingMenu;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 锻造模板不消耗：原版 onTake 会依次收缩模板/base/添加物槽，
@@ -26,7 +29,9 @@ public class SmithingMenuMixin {
 	private void tweakify$skipTemplateShrink(SmithingMenu menu, int slot) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && config.modified.disableSmithingTemplateConsumption
-			&& slot == SmithingMenu.TEMPLATE_SLOT) {
+			&& slot == SmithingMenu.TEMPLATE_SLOT
+			&& SmithingTemplateState.shouldKeepTemplate(true, config.modified.smithingTemplateKeepChance,
+				ThreadLocalRandom.current().nextInt(100))) {
 			return;
 		}
 		this.shrinkStackInSlot(slot);

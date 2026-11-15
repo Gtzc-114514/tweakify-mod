@@ -10,7 +10,16 @@ public final class SelfNameVisibility {
 	public static boolean shouldShowSelfName(boolean enabled, boolean localPlayer,
 											boolean firstPerson, boolean hudHidden,
 											boolean invisible, boolean spectator) {
+		return shouldShowSelfName(enabled, localPlayer, firstPerson, hudHidden, invisible, spectator,
+			false, false);
+	}
+
+	// 新增潜行门控：开启“仅潜行时显示”后，未潜行不显示。
+	public static boolean shouldShowSelfName(boolean enabled, boolean localPlayer,
+											boolean firstPerson, boolean hudHidden,
+											boolean invisible, boolean spectator,
+											boolean sneakOnly, boolean sneaking) {
 		return enabled && localPlayer && !firstPerson && !hudHidden
-			&& !invisible && !spectator;
+			&& !invisible && !spectator && (!sneakOnly || sneaking);
 	}
 }

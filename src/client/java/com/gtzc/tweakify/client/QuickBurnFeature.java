@@ -36,6 +36,11 @@ public final class QuickBurnFeature {
 		return item == Items.LAVA_BUCKET || item == Items.FLINT_AND_STEEL;
 	}
 
+	// 触发条件：需要潜行时，未潜行既不焚烧也不显示提示，避免整理背包时误触。
+	public static boolean isTriggerAllowed(boolean requireSneak, boolean sneaking) {
+		return !requireSneak || sneaking;
+	}
+
 	// 右键目标槽位是否为可焚烧工具，且光标上确实拿着物品。
 	public static boolean canBurn(AbstractContainerMenu menu, Slot slot) {
 		return menu != null && slot != null && slot.hasItem()

@@ -59,6 +59,7 @@ public class SignOpenContainerMixin {
 		}
 		BlockPos signPos = blockHit.getBlockPos();
 		if (!SignContainerTargets.shouldOpenContainer(config.modified.signOpenContainer,
+			config.modified.signOpenContainerSneakBypass,
 			SignContainerTargets.isSign(this.level.getBlockState(signPos)),
 			this.player.isShiftKeyDown())) {
 			return;

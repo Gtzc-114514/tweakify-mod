@@ -176,11 +176,14 @@ public final class ChatSelectionState {
 		}
 	}
 
-	// 框选颜色由配置决定，读取失败时回退到默认蓝色。
+	// 框选颜色由配置决定，读取失败时回退到默认蓝色；透明度由 chatSelectionOpacity 覆盖。
 	private static int selectionColor() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config == null ? SELECTION_COLOR
-			: ChatSelectionColor.fromCode(config.functions.chatSelectionColor).argb();
+		if (config == null) {
+			return SELECTION_COLOR;
+		}
+		int argb = ChatSelectionColor.fromCode(config.functions.chatSelectionColor).argb();
+		return TweakifyModConfig.withOpacity(argb, config.functions.chatSelectionOpacity);
 	}
 
 	private record Layout(double scale, int bottom, double rowHeight, double textLeft) {

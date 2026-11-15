@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.EnchantmentDescriptionState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -52,6 +53,11 @@ public class ItemStackEnchantmentTooltipMixin {
 			Item.TooltipContext context, Player player, TooltipFlag flag) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.modified.enchantmentDescriptions) {
+			return original;
+		}
+		// 可选的潜行门控：只在按住潜行键时追加，避免提示过长。
+		if (!EnchantmentDescriptionState.shouldAppend(true, config.modified.enchantmentDescriptionsSneakOnly,
+			player != null && player.isShiftKeyDown())) {
 			return original;
 		}
 		// hide_tooltip 分支返回空列表：不能在这里凭空造出提示。

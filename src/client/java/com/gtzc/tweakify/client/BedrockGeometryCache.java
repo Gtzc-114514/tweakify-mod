@@ -25,19 +25,27 @@ final class BedrockGeometryCache {
 	// 与基岩表面留出的极小间距，避免共面 z-fighting。
 	private static final float SURFACE_GAP = 0.002f;
 	static final int VERTICES_PER_BOX = 24;
-	private static final int FILL_COLOR = 0xFFFFC800;
+	// 旧版固定金色：作为不带颜色参数的入口的默认值，保持测试与兼容调用不变。
+	private static final int DEFAULT_FILL_COLOR = 0xFFFFC800;
 
 	private List<BedrockHighlightState.Marker> cachedMarkers = List.of();
+	private int cachedColor = -1;
 	private final CachedGeometry geometry = new CachedGeometry();
 	private final List<Segment> segments = new ArrayList<>();
 
 	// 返回本次调用是否重建了缓存。
 	boolean ensure(List<BedrockHighlightState.Marker> markers) {
-		if (markers == this.cachedMarkers) {
+		return ensure(markers, DEFAULT_FILL_COLOR);
+	}
+
+	// 颜色变化也重建：颜色烘在顶点里，不能只靠渲染帧改值。
+	boolean ensure(List<BedrockHighlightState.Marker> markers, int color) {
+		if (markers == this.cachedMarkers && color == this.cachedColor) {
 			return false;
 		}
 		this.cachedMarkers = markers;
-		rebuild(markers);
+		this.cachedColor = color;
+		rebuild(markers, color);
 		return true;
 	}
 
@@ -49,7 +57,7 @@ final class BedrockGeometryCache {
 		return this.geometry;
 	}
 
-	private void rebuild(List<BedrockHighlightState.Marker> markers) {
+	private void rebuild(List<BedrockHighlightState.Marker> markers, int color) {
 		this.segments.clear();
 		this.geometry.begin(false, false, markers.size() * VERTICES_PER_BOX * 2);
 		for (BedrockHighlightState.Marker marker : markers) {
@@ -57,14 +65,14 @@ final class BedrockGeometryCache {
 			if (marker.topExposed()) {
 				// 顶面：方块顶面之上凸起 1 像素。
 				int start = this.geometry.vertexCount();
-				addBox(this.geometry, 1.0f + SURFACE_GAP, THICKNESS);
+				addBox(this.geometry, 1.0f + SURFACE_GAP, THICKNESS, color);
 				this.segments.add(new Segment(start, VERTICES_PER_BOX,
 					pos.getX(), pos.getY(), pos.getZ(), true));
 			}
 			if (marker.bottomExposed()) {
 				// 底面：方块底面之下凸起 1 像素。
 				int start = this.geometry.vertexCount();
-				addBox(this.geometry, -SURFACE_GAP - THICKNESS, THICKNESS);
+				addBox(this.geometry, -SURFACE_GAP - THICKNESS, THICKNESS, color);
 				this.segments.add(new Segment(start, VERTICES_PER_BOX,
 					pos.getX(), pos.getY(), pos.getZ(), false));
 			}
@@ -72,29 +80,30 @@ final class BedrockGeometryCache {
 	}
 
 	// 实心长方体：六个面各写一个四边形（debugFilledBox 不剔除背面，正反面都能看到）。
-	private static void addBox(CachedGeometry geometry, float bottomY, float height) {
+	private static void addBox(CachedGeometry geometry, float bottomY, float height, int color) {
 		float x1 = MIN_OFFSET;
 		float x2 = MAX_OFFSET;
 		float z1 = MIN_OFFSET;
 		float z2 = MAX_OFFSET;
 		float y1 = bottomY;
 		float y2 = bottomY + height;
-		addQuad(geometry, x1, y2, z1, x1, y2, z2, x2, y2, z2, x2, y2, z1);
-		addQuad(geometry, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2);
-		addQuad(geometry, x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1);
-		addQuad(geometry, x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2);
-		addQuad(geometry, x1, y1, z1, x1, y2, z1, x2, y2, z1, x2, y1, z1);
-		addQuad(geometry, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2);
+		addQuad(geometry, x1, y2, z1, x1, y2, z2, x2, y2, z2, x2, y2, z1, color);
+		addQuad(geometry, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, color);
+		addQuad(geometry, x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1, color);
+		addQuad(geometry, x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2, color);
+		addQuad(geometry, x1, y1, z1, x1, y2, z1, x2, y2, z1, x2, y1, z1, color);
+		addQuad(geometry, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, color);
 	}
 
 	private static void addQuad(CachedGeometry geometry,
 								float ax, float ay, float az,
 								float bx, float by, float bz,
 								float cx, float cy, float cz,
-								float dx, float dy, float dz) {
-		geometry.add(ax, ay, az, FILL_COLOR, 0.0f, 0.0f, 0.0f, 0.0f);
-		geometry.add(bx, by, bz, FILL_COLOR, 0.0f, 0.0f, 0.0f, 0.0f);
-		geometry.add(cx, cy, cz, FILL_COLOR, 0.0f, 0.0f, 0.0f, 0.0f);
-		geometry.add(dx, dy, dz, FILL_COLOR, 0.0f, 0.0f, 0.0f, 0.0f);
+								float dx, float dy, float dz,
+								int color) {
+		geometry.add(ax, ay, az, color, 0.0f, 0.0f, 0.0f, 0.0f);
+		geometry.add(bx, by, bz, color, 0.0f, 0.0f, 0.0f, 0.0f);
+		geometry.add(cx, cy, cz, color, 0.0f, 0.0f, 0.0f, 0.0f);
+		geometry.add(dx, dy, dz, color, 0.0f, 0.0f, 0.0f, 0.0f);
 	}
 }

@@ -1,11 +1,13 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.SnowGolemBiomeState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.attribute.EnvironmentAttributeSystem;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.animal.golem.SnowGolem;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,9 +34,13 @@ public class SnowGolemBiomeImmunityMixin {
 	private Object tweakify$skipBiomeMelting(EnvironmentAttributeSystem system,
 			EnvironmentAttribute<?> attribute, Vec3 pos) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.modified.snowGolemBiomeImmunity
-				&& attribute == EnvironmentAttributes.SNOW_GOLEM_MELTS) {
-			return Boolean.FALSE;
+		if (config != null && attribute == EnvironmentAttributes.SNOW_GOLEM_MELTS) {
+			SnowGolem self = (SnowGolem) (Object) this;
+			boolean overworld = self.level().dimension() == Level.OVERWORLD;
+			if (SnowGolemBiomeState.shouldSuppressMelting(config.modified.snowGolemBiomeImmunity,
+				config.modified.snowGolemBiomeImmunityOverworldOnly, overworld)) {
+				return Boolean.FALSE;
+			}
 		}
 		return system.getValue(attribute, pos);
 	}

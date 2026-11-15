@@ -50,13 +50,24 @@ public class ServerGamePacketListenerImplPickMixin {
 		if (creative ? !config.functions.pickFluidBucket : !config.functions.survivalPickBlock) {
 			return cloneStack;
 		}
+		// 生存取物关闭液体分支时，液体方块继续按原版返回空结果。
+		if (!creative && !config.functions.survivalPickBlockIncludeFluids) {
+			return cloneStack;
+		}
 		if (!(state.getBlock() instanceof LiquidBlock)) {
 			return cloneStack;
 		}
-		if (state.is(Blocks.WATER)) {
+		boolean water = state.is(Blocks.WATER);
+		boolean lava = state.is(Blocks.LAVA);
+		// 液体范围只约束创造模式的“中键获得液体桶”；生存取物保持两种液体都可取。
+		if (creative && !TweakifyModConfig.fluidPickAllows(
+			config.functions.pickFluidBucketFluids, water, lava)) {
+			return cloneStack;
+		}
+		if (water) {
 			return new ItemStack(Items.WATER_BUCKET);
 		}
-		if (state.is(Blocks.LAVA)) {
+		if (lava) {
 			return new ItemStack(Items.LAVA_BUCKET);
 		}
 		return cloneStack;

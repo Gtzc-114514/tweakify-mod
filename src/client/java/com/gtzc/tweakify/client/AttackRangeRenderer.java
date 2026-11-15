@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -24,7 +26,7 @@ public final class AttackRangeRenderer {
 	public static void drawLines(VertexConsumer vertices, PoseStack.Pose pose,
 								 List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
 								 Frustum frustum) {
-		CACHE.ensure(entries, sphere, false);
+		CACHE.ensure(entries, sphere, false, paletteRgb());
 		writeVisible(vertices, pose, entries, camera, sphere, frustum);
 	}
 
@@ -32,7 +34,7 @@ public final class AttackRangeRenderer {
 	public static void drawFilled(VertexConsumer vertices, PoseStack.Pose pose,
 								  List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
 								  Frustum frustum) {
-		CACHE.ensure(entries, sphere, true);
+		CACHE.ensure(entries, sphere, true, paletteRgb());
 		writeVisible(vertices, pose, entries, camera, sphere, frustum);
 	}
 
@@ -48,6 +50,13 @@ public final class AttackRangeRenderer {
 
 	private static boolean isVisible(AttackRangeState.Entry entry, Frustum frustum) {
 		return frustum == null || frustum.isVisible(entry.bounds());
+	}
+
+	// 调色板由配置决定；配置缺失时用旧版蓝色。
+	private static int paletteRgb() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return AttackRangePalette.rgbOf(config == null ? TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE
+			: config.functions.attackRangePalette);
 	}
 
 	private static void writeVisible(VertexConsumer vertices, PoseStack.Pose pose,

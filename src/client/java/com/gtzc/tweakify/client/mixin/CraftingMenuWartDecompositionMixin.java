@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.WartDecompositionState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -58,7 +59,8 @@ public class CraftingMenuWartDecompositionMixin {
 			return;
 		}
 
-		ItemStack output = new ItemStack(Items.NETHER_WART, 9);
+		ItemStack output = new ItemStack(Items.NETHER_WART,
+			WartDecompositionState.outputCount(config.modified.wartBlockDecompositionOutput));
 		// 产物不是原版配方，清掉可能残留的 recipeUsed，避免取出时错记合成记录。
 		result.setRecipeUsed(null);
 		result.setItem(0, output);

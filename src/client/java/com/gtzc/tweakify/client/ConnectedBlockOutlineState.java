@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.AbstractBedBlock;
@@ -94,8 +96,18 @@ public final class ConnectedBlockOutlineState {
 		return half == DoubleBlockHalf.LOWER ? pos.above() : pos.below();
 	}
 
+	// 配置缺失时保持 2 格视觉高度（旧行为）。
+	private static boolean doorFullHeightEnabled() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config == null || config.modified.connectedBlockOutlineDoorFullHeight;
+	}
+
 	// 门：保留原版形状的 x/z 范围，把 y 范围扩到两格（下半 0..2，上半 -1..1）。
+	// 子设置关闭时返回 null，门保持原版轮廓。
 	private static VoxelShape mergedDoorShape(BlockState state, BlockPos pos, BlockGetter level) {
+		if (!doorFullHeightEnabled()) {
+			return null;
+		}
 		List<BlockPos> others = connectedPositions(state, pos);
 		if (others.isEmpty() || !isCounterpart(state, level.getBlockState(others.get(0)))) {
 			return null;

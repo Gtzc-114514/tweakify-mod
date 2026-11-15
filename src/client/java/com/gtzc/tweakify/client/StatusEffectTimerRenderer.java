@@ -35,7 +35,12 @@ public final class StatusEffectTimerRenderer {
 	// 默认格式最多 5 个字符；改为“始终按秒”后可能更长，超出图标宽度时再按比例缩小。
 	private static final float TEXT_SCALE = 0.5f;
 	private static final float MIN_TEXT_SCALE = 0.3f;
-	private static final int TEXT_COLOR = 0xFFFFFFFF;
+	private static final int COLOR_WHITE = 0xFFFFFFFF;
+	private static final int COLOR_YELLOW = 0xFFFFFF55;
+	private static final int COLOR_RED = 0xFFFF5555;
+	// auto 配色分档：剩余 10 秒内变红，30 秒内变黄，其余白色。
+	private static final int AUTO_RED_SECONDS = 10;
+	private static final int AUTO_YELLOW_SECONDS = 30;
 
 	// 复用的排序缓冲：效果集合很小，每帧清空重填即可，
 	// 避免每帧复制集合与排序时新建列表（渲染线程单线程访问）。
@@ -71,10 +76,16 @@ public final class StatusEffectTimerRenderer {
 		SORTED_EFFECTS.clear();
 		SORTED_EFFECTS.addAll(activeEffects);
 		SORTED_EFFECTS.sort(DESCENDING);
+		int thresholdSeconds = config.functions.statusEffectDurationLowThreshold;
+		String colorMode = config.functions.statusEffectDurationColorMode;
 		int beneficialCount = 0;
 		int harmfulCount = 0;
 		for (MobEffectInstance effect : SORTED_EFFECTS) {
 			if (!effect.showIcon()) {
+				continue;
+			}
+			// 低时长过滤：阈值 0 时全部显示；只留下即将结束的效果。
+			if (!shouldShowForThreshold(effect.getDuration(), thresholdSeconds)) {
 				continue;
 			}
 			int x = gui.guiWidth();
@@ -90,7 +101,7 @@ public final class StatusEffectTimerRenderer {
 				x -= EFFECT_SLOT_WIDTH * harmfulCount;
 				y += EFFECT_ROW_OFFSET;
 			}
-			renderTimer(gui, client.font, effect, x, y);
+			renderTimer(gui, client.font, effect, x, y, timerColorArgb(colorMode, effect.getDuration()));
 		}
 	}
 
@@ -123,7 +134,8 @@ public final class StatusEffectTimerRenderer {
 		return new TextPlacement(text, drawX, drawY, scaledWidth, scaledHeight);
 	}
 
-	private static void renderTimer(GuiGraphicsExtractor gui, Font font, MobEffectInstance effect, int x, int y) {
+	private static void renderTimer(GuiGraphicsExtractor gui, Font font, MobEffectInstance effect, int x, int y,
+									int color) {
 		TextPlacement placement = placementFor(font, effect, x, y);
 		if (placement == null) {
 			return;
@@ -133,7 +145,26 @@ public final class StatusEffectTimerRenderer {
 		pose.pushMatrix();
 		pose.translate(placement.x(), placement.y());
 		pose.scale(scale, scale);
-		gui.text(font, placement.text(), 0, 0, TEXT_COLOR, true);
+		gui.text(font, placement.text(), 0, 0, color, true);
 		pose.popMatrix();
+	}
+
+	// 低时长过滤：阈值 0 表示不过滤；无尽效果（duration ≤ 0）由 placementFor 处理，这里放行。
+	public static boolean shouldShowForThreshold(int durationTicks, int thresholdSeconds) {
+		return thresholdSeconds <= 0 || durationTicks <= 0 || durationTicks <= thresholdSeconds * 20;
+	}
+
+	// 剩余时间文字颜色：auto 在 10 秒内变红、30 秒内变黄，其余白色。
+	public static int timerColorArgb(String colorMode, int durationTicks) {
+		return switch (StatusDurationColorMode.fromCode(colorMode)) {
+			case WHITE -> COLOR_WHITE;
+			case YELLOW -> COLOR_YELLOW;
+			case RED -> COLOR_RED;
+			case AUTO -> {
+				int seconds = Math.max(0, durationTicks / 20);
+				yield seconds <= AUTO_RED_SECONDS ? COLOR_RED
+					: seconds <= AUTO_YELLOW_SECONDS ? COLOR_YELLOW : COLOR_WHITE;
+			}
+		};
 	}
 }

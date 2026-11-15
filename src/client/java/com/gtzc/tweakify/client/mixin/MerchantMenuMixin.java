@@ -2,6 +2,7 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.MerchantMenuAccess;
+import com.gtzc.tweakify.client.VisibleTradersState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -54,14 +55,18 @@ public abstract class MerchantMenuMixin implements MerchantMenuAccess {
 	private MerchantOffers tweakify$combineLockedOffers(MerchantOffers original) {
 		HookProbe.markOnce(TWEAKIFY$COMBINE_PROBE, "visibleTradersCombine");
 		// 每次都用最新的真实列表数量，避免补货/声望刷新后 originalCount 过时。
-		this.tweakify$originalCount = original.size();
+		// 只显示锁定交易时原始数量按 0 计算，所有行都会被标记为锁定。
 		TweakifyModConfig config = TweakifyMod.CONFIG;
+		boolean onlyLocked = config != null && config.modified.visibleTradersOnlyLocked;
+		this.tweakify$originalCount = VisibleTradersState.originalCount(onlyLocked, original.size());
 		if (config == null || !config.modified.visibleTraders
 			|| this.tweakify$lockedOffers == null || this.tweakify$lockedOffers.isEmpty()) {
 			return original;
 		}
 		MerchantOffers combined = new MerchantOffers();
-		combined.addAll(original);
+		if (!onlyLocked) {
+			combined.addAll(original);
+		}
 		combined.addAll(this.tweakify$lockedOffers);
 		return combined;
 	}

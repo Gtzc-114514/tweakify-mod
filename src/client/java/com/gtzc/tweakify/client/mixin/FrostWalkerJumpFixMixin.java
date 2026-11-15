@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.FrostWalkerJumpState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -46,7 +47,11 @@ public class FrostWalkerJumpFixMixin {
 		// 位置上下文由 Enchantment.locationContext 构造，THIS_ENTITY 即穿戴该附魔的实体。
 		Entity entity = context.getOptional(LootContextParams.THIS_ENTITY);
 		// 骑乘中仍按原版处理：否则船上/矿车上会凭空在载具下方刷冰。
-		if (!(entity instanceof Player) || entity.isPassenger() || entity.onGround()) {
+		if (!(entity instanceof Player)) {
+			return false;
+		}
+		if (!FrostWalkerJumpState.shouldRelax(true, config.fix.frostWalkerJumpFixJumpOnly,
+			entity.isPassenger(), entity.onGround(), entity.getDeltaMovement().y)) {
 			return false;
 		}
 		HookProbe.markOnce("frostWalkerJumpFix");

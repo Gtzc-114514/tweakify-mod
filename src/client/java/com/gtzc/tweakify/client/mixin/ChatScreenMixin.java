@@ -62,7 +62,8 @@ public class ChatScreenMixin {
 			return;
 		}
 		String saved = ChatInputMemoryState.savedText();
-		if (!saved.isEmpty()) {
+		if (!saved.isEmpty() && ChatInputMemoryState.shouldKeepDraft(
+			saved, config.functions.chatInputMemoryIgnoreCommands)) {
 			this.initial = saved;
 			// 与原版恢复草稿一致：让草稿专用按键/保存分支生效。
 			this.isDraft = true;
@@ -139,6 +140,12 @@ public class ChatScreenMixin {
 		}
 		// 按 / 等方式打开时，未编辑的预填内容不应覆盖已有草稿。
 		if (!ChatInputMemoryState.shouldRemember(current, this.tweakify$prefill)) {
+			return;
+		}
+		// 命令草稿不记忆：清空旧草稿，避免下次打开时恢复到更早的内容。
+		if (!ChatInputMemoryState.shouldKeepDraft(
+			current, config.functions.chatInputMemoryIgnoreCommands)) {
+			ChatInputMemoryState.remember("");
 			return;
 		}
 		ChatInputMemoryState.remember(current);

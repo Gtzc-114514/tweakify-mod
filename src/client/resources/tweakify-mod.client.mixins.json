@@ -79,6 +79,7 @@
 		"LevelEventHandlerJukeboxMixin",
 		"GlyphInfoBoldMixin",
 		"EntityRendererSelfNameMixin",
+		"EntityRendererOutlineMixin",
 		"SnowGolemBiomeImmunityMixin",
 		"CameraMotionMixin",
 		"ExplosionShakeMixin",

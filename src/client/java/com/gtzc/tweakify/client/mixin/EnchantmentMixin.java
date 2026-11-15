@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.EnchantmentLevelStyle;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -20,6 +21,7 @@ public class EnchantmentMixin {
 			return original;
 		}
 		return enchantment.value().description().copy()
-			.append(" ").append(Component.literal(Integer.toString(level)));
+			.append(Component.literal(EnchantmentLevelStyle.suffix(
+				TweakifyMod.CONFIG.modified.enchantmentLevelArabicStyle, level)));
 	}
 }

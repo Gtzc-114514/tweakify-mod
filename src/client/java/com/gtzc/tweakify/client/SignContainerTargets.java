@@ -25,8 +25,14 @@ public final class SignContainerTargets {
 	}
 
 	// 只有“非潜行 + 对准告示牌”才改写交互：潜行时保留告示牌的原版编辑行为。
+	// 兼容旧调用：默认开启潜行放行。
 	public static boolean shouldOpenContainer(boolean enabled, boolean sign, boolean sneaking) {
-		return enabled && sign && !sneaking;
+		return shouldOpenContainer(enabled, true, sign, sneaking);
+	}
+
+	// 潜行放行开关：开启时潜行保留告示牌原版行为；关闭后潜行也会穿牌开容器。
+	public static boolean shouldOpenContainer(boolean enabled, boolean sneakBypass, boolean sign, boolean sneaking) {
+		return enabled && sign && !(sneakBypass && sneaking);
 	}
 
 	public static boolean isSign(BlockState state) {

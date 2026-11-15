@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.ClimbablePassState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -60,7 +61,8 @@ public abstract class LivingEntityClimbingMixin {
 		HookProbe.markOnce(TWEAKIFY$NO_SLOWDOWN_PROBE, "climbablePassNoSlowdown");
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.modified.climbablePassNoSlowdown
+		if (config != null && ClimbablePassState.shouldSkipClamp(config.modified.climbablePassNoSlowdown,
+			config.modified.climbablePassNoSlowdownSneakOnly, self.isShiftKeyDown())
 			&& self instanceof LocalPlayer && self.level().isClientSide()) {
 			return speed;
 		}

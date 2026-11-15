@@ -32,6 +32,8 @@ public abstract class AutoStepUpMixin {
 		if (config == null || !config.functions.autoStepUp || !((Object) this instanceof LocalPlayer)) {
 			return original;
 		}
-		return Math.max(original, 1.0f);
+		// 跨步高度由子设置决定（默认 1.0 = 像马一样跨上 1 格），仍只抬高不压低原值。
+		float height = (float) TweakifyModConfig.autoStepUpHeight(config.functions.autoStepUpHeight);
+		return Math.max(original, height);
 	}
 }

@@ -13,6 +13,15 @@ public final class BoatStepHeightState {
 
 	// 纯函数：便于单测覆盖关闭、原值为 0 与原值更大的情况。
 	public static float stepHeight(boolean enabled, float original) {
-		return enabled ? Math.max(original, DIRT_PATH_STEP) : original;
+		return stepHeight(enabled, false, true, original);
+	}
+
+	// 限定只在船上有玩家时生效；空船与动物船保持原版。
+	public static float stepHeight(boolean enabled, boolean playerOnly, boolean playerRidden,
+								   float original) {
+		if (!enabled || (playerOnly && !playerRidden)) {
+			return original;
+		}
+		return Math.max(original, DIRT_PATH_STEP);
 	}
 }

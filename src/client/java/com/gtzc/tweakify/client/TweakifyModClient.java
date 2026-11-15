@@ -241,6 +241,13 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 					Component.literal("[Tweakify] no root toggle is enabled"), false);
 				return true;
 			}
+			// 可选输出到剪贴板：与服务端探针报表的行为保持一致。
+			if (TweakifyModConfigOptions.DEBUG_ENABLED_FEATURES_REPORT_COPY.getBooleanValue()) {
+				client.keyboardHandler.setClipboard(String.join("\n", enabled));
+				client.gui.chatListener().handleSystemMessage(Component.literal(
+					"[Tweakify] copied " + enabled.size() + " enabled root toggles to the clipboard"), false);
+				return true;
+			}
 			client.gui.chatListener().handleSystemMessage(
 				Component.literal("[Tweakify] enabled root toggles: " + enabled.size()), false);
 			for (String name : enabled) {

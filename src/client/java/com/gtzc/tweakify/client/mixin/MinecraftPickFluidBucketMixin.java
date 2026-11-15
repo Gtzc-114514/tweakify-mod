@@ -5,7 +5,9 @@ import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -38,6 +40,10 @@ public class MinecraftPickFluidBucketMixin {
 		if (creative ? !config.functions.pickFluidBucket : !config.functions.survivalPickBlock) {
 			return;
 		}
+		// 生存取物可关闭液体分支：关闭后退回原版，只处理方块与实体。
+		if (!creative && !config.functions.survivalPickBlockIncludeFluids) {
+			return;
+		}
 		// 准星正对着实体时交给原版，避免抢走实体取物。
 		if (client.hitResult instanceof EntityHitResult) {
 			return;
@@ -52,7 +58,13 @@ public class MinecraftPickFluidBucketMixin {
 		if (!(fluidHit instanceof BlockHitResult blockHit) || blockHit.getType() != HitResult.Type.BLOCK) {
 			return;
 		}
-		if (!(client.level.getBlockState(blockHit.getBlockPos()).getBlock() instanceof LiquidBlock)) {
+		BlockState state = client.level.getBlockState(blockHit.getBlockPos());
+		if (!(state.getBlock() instanceof LiquidBlock)) {
+			return;
+		}
+		// 液体范围只约束“中键获得液体桶”（创造模式）；生存取物保持两种液体都可用。
+		if (creative && !TweakifyModConfig.fluidPickAllows(config.functions.pickFluidBucketFluids,
+			state.is(Blocks.WATER), state.is(Blocks.LAVA))) {
 			return;
 		}
 		HookProbe.markOnce("pickFluidBucket");

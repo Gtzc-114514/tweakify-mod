@@ -15,7 +15,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * 世界标记扫描调度：基岩高亮与屏障可见共用一次 65³ 方块遍历。
+ * 世界标记扫描调度：基岩高亮与屏障可见共用一次以两者较大半径为边长的方块遍历
+ * （两者半径分别由 barrierVisibilityScanRadius / highlightSingleLayerBedrockScanRadius 控制）。
  *
  * <p>刷新频率：每秒 6 次（20/6 ≈ 3.33 tick），由 {@link RefreshScheduler} 累计调度，
  * 间隔在 3/4 tick 之间交替；开关或世界变化时立即补扫一次。
@@ -28,8 +29,9 @@ import java.util.function.Predicate;
  * 不含（如纯石头/空气/越界层）则整段跳过，不再逐方块读取。
  */
 final class BlockMarkerScanner {
-	// 可见半径：屏障与基岩共用（原 16 格的两倍）。
-	private static final int SCAN_RADIUS = 32;
+	// 可见半径上限：两种功能的扫描半径都可配置（8 ~ 32），数组按上限分配，
+	// 因此调小半径不会越界，也不会超出容量。
+	private static final int MAX_SCAN_RADIUS = 32;
 	// 刷新频率：每秒 6 次（20/6 ≈ 3.33 tick 一次）。
 	// 包私有：单测需要把频率数值与需求固定下来。
 	static final int REFRESHES_PER_SECOND = 6;
@@ -38,7 +40,7 @@ final class BlockMarkerScanner {
 	private static final int LAYERS_PER_TICK = 22;
 	// 单层最多跨几个区块：跨度 2R+1 格，最坏情况下起点落在区块末格，
 	// 覆盖的区块数为 floor((跨度+14)/16) + 1（R=32 时为 5）。
-	private static final int MAX_CHUNKS_PER_AXIS = (SCAN_RADIUS * 2 + 1 + 14) / 16 + 1;
+	private static final int MAX_CHUNKS_PER_AXIS = (MAX_SCAN_RADIUS * 2 + 1 + 14) / 16 + 1;
 
 	// 目标方块谓词：section 的 palette 完全不包含它们时整段跳过读取。
 	private static final Predicate<BlockState> IS_BARRIER = state -> state.is(Blocks.BARRIER);
@@ -176,7 +178,11 @@ final class BlockMarkerScanner {
 		private final List<BlockPos> barriers = new ArrayList<>();
 		private final List<BedrockHighlightState.Marker> markers = new ArrayList<>();
 		private final int maxBedrockMarkers;
-		private int nextOffsetY = -SCAN_RADIUS;
+		// 本任务的扫描盒半径（取启用功能的最大半径）与各自功能的过滤半径。
+		private final int radius;
+		private final int barrierRadius;
+		private final int bedrockRadius;
+		private int nextOffsetY;
 		// 复用同一个可变坐标：整个体积扫描（每 tick 最多 9.3 万格）只在命中时才创建不可变副本，
 		// 避免每秒数十万次临时对象分配。可变实例不能存进列表，命中处必须 immutable()。
 		private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -199,27 +205,32 @@ final class BlockMarkerScanner {
 			// 至少有一个功能开启才会创建扫描任务。
 			this.target = ScanTarget.of(barrier, bedrock);
 			this.maxBedrockMarkers = bedrock ? maxBedrockMarkers() : 0;
+			this.barrierRadius = barrier ? barrierScanRadius() : 0;
+			this.bedrockRadius = bedrock ? bedrockScanRadius() : 0;
+			// 两种功能共用一次扫描：盒子取较大半径，各自再按自身半径过滤。
+			this.radius = Math.max(this.barrierRadius, this.bedrockRadius);
+			this.nextOffsetY = -this.radius;
 		}
 
 		// 处理最多 LAYERS_PER_TICK 层，返回是否已完成。
 		boolean step() {
 			int layers = 0;
-			while (layers < LAYERS_PER_TICK && this.nextOffsetY <= SCAN_RADIUS) {
+			while (layers < LAYERS_PER_TICK && this.nextOffsetY <= this.radius) {
 				scanLayer(this.centerY + this.nextOffsetY);
 				this.nextOffsetY++;
 				layers++;
 			}
-			return this.nextOffsetY > SCAN_RADIUS;
+			return this.nextOffsetY > this.radius;
 		}
 
 		// 单层扫描：先预取本层涉及的区块并预检 section，再按原来的 x 主序、z 次序逐方块遍历。
 		// 遍历顺序与逐方块 getBlockState 完全一致（标记写入顺序不变），
 		// 但区块查找从每层 4225 次降到最多 25 次，palette 不含目标方块的 section 整段跳过。
 		private void scanLayer(int y) {
-			int minX = this.centerX - SCAN_RADIUS;
-			int maxX = this.centerX + SCAN_RADIUS;
-			int minZ = this.centerZ - SCAN_RADIUS;
-			int maxZ = this.centerZ + SCAN_RADIUS;
+			int minX = this.centerX - this.radius;
+			int maxX = this.centerX + this.radius;
+			int minZ = this.centerZ - this.radius;
+			int maxZ = this.centerZ + this.radius;
 			int baseChunkX = minX >> 4;
 			int baseChunkZ = minZ >> 4;
 			int chunkCountX = (maxX >> 4) - baseChunkX + 1;
@@ -262,10 +273,10 @@ final class BlockMarkerScanner {
 		void finish() {
 			BlockPos center = new BlockPos(this.centerX, this.centerY, this.centerZ);
 			if (this.barrier) {
-				BarrierVisibilityState.setMarkers(this.barriers, center, maxBarrierMarkers());
+				BarrierVisibilityState.setMarkers(this.barriers, center, maxBarrierMarkers(), this.barrierRadius);
 			}
 			if (this.bedrock) {
-				BedrockHighlightState.setMarkers(this.markers, center, this.maxBedrockMarkers);
+				BedrockHighlightState.setMarkers(this.markers, center, this.maxBedrockMarkers, this.bedrockRadius);
 			}
 		}
 	}
@@ -284,5 +295,23 @@ final class BlockMarkerScanner {
 			: config.functions.highlightSingleLayerBedrockMaxMarkers;
 		return Math.max(TweakifyModConfig.MIN_BEDROCK_MARKERS,
 			Math.min(TweakifyModConfig.MAX_BEDROCK_MARKERS, configured));
+	}
+
+	// 屏障扫描半径：配置缺失或越界时夹紧到允许范围。
+	private static int barrierScanRadius() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		int configured = config == null ? TweakifyModConfig.DEFAULT_BARRIER_SCAN_RADIUS
+			: config.functions.barrierVisibilityScanRadius;
+		return Math.max(TweakifyModConfig.MIN_BARRIER_SCAN_RADIUS,
+			Math.min(TweakifyModConfig.MAX_BARRIER_SCAN_RADIUS, configured));
+	}
+
+	// 基岩扫描半径：配置缺失或越界时夹紧到允许范围。
+	private static int bedrockScanRadius() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		int configured = config == null ? TweakifyModConfig.DEFAULT_BEDROCK_SCAN_RADIUS
+			: config.functions.highlightSingleLayerBedrockScanRadius;
+		return Math.max(TweakifyModConfig.MIN_BEDROCK_SCAN_RADIUS,
+			Math.min(TweakifyModConfig.MAX_BEDROCK_SCAN_RADIUS, configured));
 	}
 }

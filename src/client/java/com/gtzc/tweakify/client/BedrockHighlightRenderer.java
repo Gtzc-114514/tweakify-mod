@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.world.phys.Vec3;
@@ -38,7 +40,7 @@ public final class BedrockHighlightRenderer {
 	// 由 WorldOverlayRenderer 统一提交：把可见面的缓存顶点写进共享顶点缓冲。
 	public static void drawGeometry(VertexConsumer vertices, PoseStack.Pose pose,
 									List<BedrockHighlightState.Marker> markers, Vec3 camera) {
-		CACHE.ensure(markers);
+		CACHE.ensure(markers, markerColor());
 		CachedGeometry geometry = CACHE.geometry();
 		for (BedrockGeometryCache.Segment segment : CACHE.segments()) {
 			// 相机看不到的那一面在提交前就跳过，和原实现一致。
@@ -52,5 +54,12 @@ public final class BedrockHighlightRenderer {
 				(float) (segment.blockY() - camera.y),
 				(float) (segment.blockZ() - camera.z));
 		}
+	}
+
+	// 标记颜色由配置决定，配置缺失时用旧版固定金色。
+	private static int markerColor() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return BedrockMarkerColor.argbOf(config == null ? TweakifyModConfig.BEDROCK_COLOR_GOLD
+			: config.functions.highlightSingleLayerBedrockColor);
 	}
 }

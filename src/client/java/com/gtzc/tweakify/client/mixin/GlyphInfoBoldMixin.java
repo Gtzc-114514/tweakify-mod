@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.BetterBoldState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.font.GlyphInfo;
@@ -16,6 +17,9 @@ public interface GlyphInfoBoldMixin {
 	@ModifyReturnValue(method = "getBoldOffset", at = @At("RETURN"))
 	default float tweakify$betterBold(float original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.fix.betterBold ? 0.5F : original;
+		if (config == null || !config.fix.betterBold) {
+			return original;
+		}
+		return BetterBoldState.offset(true, config.fix.betterBoldOffsetPercent, original);
 	}
 }

@@ -41,7 +41,8 @@ public class EntityRendererSelfNameMixin {
 		boolean showSelfName = SelfNameVisibility.shouldShowSelfName(
 			config.modified.thirdPersonPlayerName, true,
 			client.options.getCameraType().isFirstPerson(), client.gui.hud.isHidden(),
-			entity.isInvisible(), entity.isSpectator());
+			entity.isInvisible(), entity.isSpectator(),
+			config.modified.thirdPersonPlayerNameSneakOnly, entity.isShiftKeyDown());
 		if (!showSelfName) {
 			// 第一/隐藏 HUD/隐身/旁观都不要把本地玩家名字强行补回来。
 			state.nameTag = null;

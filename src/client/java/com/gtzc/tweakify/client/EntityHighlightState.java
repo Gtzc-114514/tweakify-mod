@@ -22,6 +22,30 @@ public final class EntityHighlightState {
 		if (level == null || !level.isClientSide()) {
 			return false;
 		}
-		return config.shouldHighlightEntity(entity.getType());
+		if (!config.shouldHighlightEntity(entity.getType())) {
+			return false;
+		}
+		// 闪烁样式：半个周期显示、半个周期隐藏；常亮样式直接命中。
+		if (EntityHighlightStyle.fromCode(config.functions.entityHighlightStyle) == EntityHighlightStyle.BLINK) {
+			return isBlinkOn(level.getGameTime(), config.functions.entityHighlightBlinkPeriod);
+		}
+		return true;
+	}
+
+	// 闪烁相位：周期夹紧到允许范围，前一半时间为显示状态。
+	public static boolean isBlinkOn(long gameTime, int periodTicks) {
+		int period = Math.max(TweakifyModConfig.MIN_ENTITY_HIGHLIGHT_BLINK_PERIOD,
+			Math.min(TweakifyModConfig.MAX_ENTITY_HIGHLIGHT_BLINK_PERIOD, periodTicks));
+		return Math.floorMod(gameTime, period) < period / 2;
+	}
+
+	// 配置的描边颜色；未命中、配置缺失或 vanilla 时返回原值（保留原版队伍色）。
+	public static int outlineColor(Entity entity, int original) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (config == null || !shouldGlow(entity)) {
+			return original;
+		}
+		int configured = EntityHighlightColor.argbOf(config.functions.entityHighlightColor);
+		return configured != 0 ? configured : original;
 	}
 }

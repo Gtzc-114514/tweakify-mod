@@ -1,10 +1,12 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.KeepMiningProgressState;
 import com.gtzc.tweakify.client.MiningCooldownState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -54,13 +56,17 @@ public class MultiPlayerGameModeMixin {
 
 	// 切换物品不打断挖掘：原版 sameDestroyTarget 同时比较位置与手持物品，
 	// 切换物品时返回 false，continueDestroyBlock 会重新 startDestroyBlock 并清空进度。
-	// 开关开启时只比较位置，保留当前破坏进度。
+	// 开关开启时只比较位置；距离子设置大于 0 时还要求玩家仍在指定距离内。
 	@ModifyReturnValue(method = "sameDestroyTarget", at = @At("RETURN"), require = 0)
 	private boolean tweakify$keepMiningProgress(boolean original, BlockPos pos) {
 		HookProbe.markOnce(TWEAKIFY$SAME_TARGET_PROBE, "keepMiningProgressOnItemSwitch");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && config.modified.keepMiningProgressOnItemSwitch) {
-			return pos.equals(this.destroyBlockPos);
+			Minecraft client = Minecraft.getInstance();
+			double distanceSq = client.player == null ? 0.0
+				: client.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+			return KeepMiningProgressState.shouldKeep(true, pos.equals(this.destroyBlockPos),
+				distanceSq, config.modified.keepMiningProgressMaxDistance);
 		}
 		return original;
 	}
