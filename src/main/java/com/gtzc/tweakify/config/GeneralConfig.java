@@ -14,8 +14,8 @@ import java.util.List;
 public final class GeneralConfig extends ConfigSection {
 	private static final Logger LOGGER = LoggerFactory.getLogger("tweakify-mod-config");
 
-	// 已登记字段级校验器的字段名：language 需要回退到支持的语言。
-	private static final List<String> SANITIZED_FIELDS = List.of("language");
+	// 已登记字段级校验器的字段名：language 需要回退到支持的语言，标签回退需要合法代码。
+	private static final List<String> SANITIZED_FIELDS = List.of("language", "rememberSelectedTabFallback");
 
 	// 模组界面语言代码（zh_cn / en_us / ru_ru / fr_fr）；跟随系统语言时忽略。
 	public volatile String language = "zh_cn";
@@ -38,6 +38,9 @@ public final class GeneralConfig extends ConfigSection {
 	// 标签记忆：记住上次选择的分类标签，下次打开配置界面直接停在该标签。
 	public volatile boolean rememberSelectedTab = false;
 
+	// 未记忆（关闭标签记忆或首次打开）时停在哪个标签。
+	public volatile String rememberSelectedTabFallback = TweakifyModConfig.CONFIG_TAB_ALL;
+
 	// 打开配置界面的快捷键，默认 G + C。
 	public volatile String hotkeyOpenConfigGui = "G,C";
 
@@ -48,7 +51,9 @@ public final class GeneralConfig extends ConfigSection {
 
 	@Override
 	boolean sanitize() {
-		return sanitizeLanguage();
+		boolean changed = sanitizeLanguage();
+		changed |= sanitizeTabFallback();
+		return changed;
 	}
 
 	@Override
@@ -63,6 +68,17 @@ public final class GeneralConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported language in config: {}", language);
 		language = "zh_cn";
+		return true;
+	}
+
+	// 修正不合法的默认标签代码，回退到“全部”。
+	private boolean sanitizeTabFallback() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_CONFIG_TABS, rememberSelectedTabFallback)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported config tab fallback: {}", rememberSelectedTabFallback);
+		rememberSelectedTabFallback = TweakifyModConfig.CONFIG_TAB_ALL;
 		return true;
 	}
 }

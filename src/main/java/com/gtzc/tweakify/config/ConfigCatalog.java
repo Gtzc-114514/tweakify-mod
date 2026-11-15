@@ -60,6 +60,7 @@ public final class ConfigCatalog {
 		entries.add(root("openConfigGui"));
 		// 标签记忆（通用标签）
 		entries.add(root("rememberSelectedTab"));
+		entries.add(child("rememberSelectedTab", "rememberSelectedTabFallback"));
 		// 掉落物
 		entries.add(modified("itemDespawnTime"));
 		entries.add(child("itemDespawnTime", "itemDespawnPlayerDroppedOnly"));
@@ -86,12 +87,16 @@ public final class ConfigCatalog {
 		// 移动与视角
 		entries.add(modified("disableUseItemSlowdown", true));
 		entries.add(child("disableUseItemSlowdown", "useItemSlowdownExceptions"));
+		entries.add(child("disableUseItemSlowdown", "useItemSlowdownKeepPercent"));
 		entries.add(modified("disableHurtShake", true));
+		entries.add(child("disableHurtShake", "hurtShakeKeepDeathTilt"));
 		entries.add(modified("disableHurtTint", true));
+		entries.add(child("disableHurtTint", "hurtTintKeepWhiteFlash"));
 		entries.add(function("disableFlightDrift", true));
 		entries.add(child("disableFlightDrift", "flightDriftVertical", true));
-		// 如履平地（功能标签）
+		// 如履平地（功能标签，子项为跨步高度）
 		entries.add(function("autoStepUp", true));
+		entries.add(child("autoStepUp", "autoStepUpHeight"));
 		// 更好的攀爬（功能标签，子开关）
 		entries.add(function("betterClimbing", true));
 		entries.add(child("betterClimbing", "climbingFastDescend"));
@@ -103,6 +108,7 @@ public final class ConfigCatalog {
 		entries.add(child("forceCrawl", "forceCrawlKey"));
 		// 经过可攀爬方块不减速（修改标签）
 		entries.add(modified("climbablePassNoSlowdown", true));
+		entries.add(child("climbablePassNoSlowdown", "climbablePassNoSlowdownSneakOnly"));
 		// 维度传送
 		entries.add(function("disableDimensionTeleport", true));
 		entries.add(child("disableDimensionTeleport", "dimensionTeleportPlayersOnly"));
@@ -118,42 +124,56 @@ public final class ConfigCatalog {
 		entries.add(child("netherPortalTeleportDelay", "netherPortalCreativeDelayedTeleport"));
 		// 世界交互
 		entries.add(modified("disableUnderwaterMiningPenalty", true));
+		entries.add(child("disableUnderwaterMiningPenalty", "underwaterMiningPenaltyKeep"));
 		entries.add(modified("disableAirMiningPenalty", true));
+		entries.add(child("disableAirMiningPenalty", "airMiningPenaltyKeep"));
 		// 剑穿草打生物（功能标签）
 		entries.add(function("swordCutThroughPlants", true));
 		entries.add(child("swordCutThroughPlants", "cutThroughItems"));
 		entries.add(child("swordCutThroughPlants", "cutThroughPlants"));
 		entries.add(child("swordCutThroughPlants", "cutThroughSneakBypass"));
-		// 中键获得液体桶（功能标签）
+		// 中键获得液体桶（功能标签，子项为液体范围）
 		entries.add(function("pickFluidBucket", true));
-		// 生存模式中键取物（功能标签，独立功能）
+		entries.add(child("pickFluidBucket", "pickFluidBucketFluids"));
+		// 生存模式中键取物（功能标签，子项为液体分支）
 		entries.add(function("survivalPickBlock", true));
+		entries.add(child("survivalPickBlock", "survivalPickBlockIncludeFluids"));
 		// 防猪灵装备切换（功能标签）
 		entries.add(function("piglinGoldArmorSwap", true));
 		entries.add(child("piglinGoldArmorSwap", "piglinGoldArmorSwapMode"));
-		// 聊天框内容记忆（功能标签）
+		// 聊天框内容记忆（功能标签，子项为命令草稿放行）
 		entries.add(function("chatInputMemory", true));
+		entries.add(child("chatInputMemory", "chatInputMemoryIgnoreCommands"));
 		entries.add(function("disableShovelSnowFullBreak", true));
 		entries.add(child("disableShovelSnowFullBreak", "shovelSnowDropSnowball"));
 		entries.add(child("disableShovelSnowFullBreak", "shovelSnowConsumeDurability"));
 		// 不使用最后一根火把（修改标签）
 		entries.add(modified("keepLastTorch", true));
-		// 便捷焚烧（功能标签）
+		entries.add(child("keepLastTorch", "keepLastTorchMinCount"));
+		// 便捷焚烧（功能标签，子项为潜行确认）
 		entries.add(function("quickBurnItem", true));
+		entries.add(child("quickBurnItem", "quickBurnItemRequireSneak"));
 		// 草径卡船修复（修复标签）
 		entries.add(fix("fixBoatStuckOnDirtPath", true));
+		entries.add(child("fixBoatStuckOnDirtPath", "fixBoatStuckOnDirtPathPlayerOnly"));
 		// 鹦鹉肩膀跳舞（修复标签）
 		entries.add(fix("parrotDanceOnShoulder", true));
+		entries.add(child("parrotDanceOnShoulder", "parrotDanceOnShoulderLocalPlayerOnly"));
 		// 更好的粗体（修复标签）
 		entries.add(fix("betterBold", true));
+		entries.add(child("betterBold", "betterBoldOffsetPercent"));
 		// 冰霜行者跳跃修复（修复标签）
 		entries.add(fix("frostWalkerJumpFix", true));
+		entries.add(child("frostWalkerJumpFix", "frostWalkerJumpFixJumpOnly"));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
+		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));
 		// 第三人称自身名字（修改标签）
 		entries.add(modified("thirdPersonPlayerName", true));
+		entries.add(child("thirdPersonPlayerName", "thirdPersonPlayerNameSneakOnly"));
 		// 雪傀儡不受群系影响（修改标签）
 		entries.add(modified("snowGolemBiomeImmunity", true));
+		entries.add(child("snowGolemBiomeImmunity", "snowGolemBiomeImmunityOverworldOnly"));
 		// 相机运动（功能标签，参考 CameraOverhaul：转向/横移/俯仰/晃动/震动/平滑）
 		entries.add(function("cameraMotion", true));
 		entries.add(child("cameraMotion", "cameraMotionIntensity"));
@@ -195,16 +215,26 @@ public final class ConfigCatalog {
 		entries.add(child("forceCloseLoadingScreen", "forceCloseLoadingScreenKeepFirst"));
 		entries.add(child("forceCloseLoadingScreen", "forceCloseLoadingScreenSkipResourcePackFade"));
 		entries.add(modified("disableResourcePackCompatibilityCheck", true));
+		entries.add(child("disableResourcePackCompatibilityCheck", "resourcePackCompatibilityAlsoDataPacks"));
 		entries.add(modified("disableCurseEnchantmentRestriction", true));
+		entries.add(child("disableCurseEnchantmentRestriction", "curseRemovalScope"));
 		entries.add(modified("disableTooExpensive", true));
+		entries.add(child("disableTooExpensive", "tooExpensiveMaxLevelCost"));
+		entries.add(child("disableTooExpensive", "tooExpensiveWarnOnly"));
 		// 移除附魔冲突（修改标签）
 		entries.add(modified("removeEnchantmentConflicts", true));
+		entries.add(child("removeEnchantmentConflicts", "removeEnchantmentConflictsSameGroupOnly"));
 		// 附魔描述（修改标签）
 		entries.add(modified("enchantmentDescriptions", true));
+		entries.add(child("enchantmentDescriptions", "enchantmentDescriptionsSneakOnly"));
 		// 可见交易显示（修改标签）
 		entries.add(modified("visibleTraders", true));
+		entries.add(child("visibleTraders", "visibleTradersOnlyLocked"));
 		// 实体高亮（prettyName 使用 highlight 前缀）
 		entries.add(function("entityHighlight", true));
+		entries.add(child("entityHighlight", "entityHighlightStyle"));
+		entries.add(child("entityHighlight", "entityHighlightBlinkPeriod"));
+		entries.add(child("entityHighlight", "entityHighlightColor"));
 		entries.add(child("entityHighlight", "highlightPreset1", true));
 		entries.add(child("highlightPreset1", "highlightPreset1Entities"));
 		entries.add(child("entityHighlight", "highlightPreset2", true));
@@ -214,8 +244,12 @@ public final class ConfigCatalog {
 		// 渲染
 		entries.add(function("highlightSingleLayerBedrock", true));
 		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockMaxMarkers"));
+		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockScanRadius"));
+		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockColor"));
 		entries.add(function("barrierVisibility", true));
 		entries.add(child("barrierVisibility", "barrierVisibilityMaxMarkers"));
+		entries.add(child("barrierVisibility", "barrierVisibilityScanRadius"));
+		entries.add(child("barrierVisibility", "barrierVisibilityParticleInterval"));
 		entries.add(function("durabilityOverlay", true));
 		entries.add(child("durabilityOverlay", "durabilityDisplayMode"));
 		entries.add(child("durabilityOverlay", "durabilityOverlayColorMode"));
@@ -223,6 +257,8 @@ public final class ConfigCatalog {
 		entries.add(child("durabilityOverlay", "durabilityOverlayLowThreshold"));
 		entries.add(function("statusEffectDurationDisplay", true));
 		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationAlwaysSeconds"));
+		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationLowThreshold"));
+		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationColorMode"));
 		entries.add(function("elytraFireworkCooldown", true));
 		entries.add(child("elytraFireworkCooldown", "elytraFireworkCooldownTicks"));
 		entries.add(modified("disableFlatWorldSlimeSpawn", true));
@@ -236,19 +272,24 @@ public final class ConfigCatalog {
 		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterEntities"));
 		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterSpawn"));
 		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterNoAttack"));
-		// 刷怪蛋投掷（功能标签）
+		// 刷怪蛋投掷（功能标签，子项为速度与潜行放行）
 		entries.add(function("throwSpawnEgg", true));
+		entries.add(child("throwSpawnEgg", "throwSpawnEggVelocity"));
+		entries.add(child("throwSpawnEgg", "throwSpawnEggSneakBypass"));
 		entries.add(modified("betterInvisibility", true));
 		entries.add(child("betterInvisibility", "betterInvisibilityEffectParticles"));
 		entries.add(child("betterInvisibility", "betterInvisibilityLayers"));
 		entries.add(child("betterInvisibility", "betterInvisibilityLlamaCarpet"));
 		entries.add(modified("disableSmithingTemplateConsumption", true));
+		entries.add(child("disableSmithingTemplateConsumption", "smithingTemplateKeepChance"));
 		entries.add(function("chatTextSelection", true));
 		entries.add(child("chatTextSelection", "chatSelectionColor"));
+		entries.add(child("chatTextSelection", "chatSelectionOpacity"));
 		entries.add(child("chatTextSelection", "chatSelectionAutoCopy"));
 		entries.add(function("attackRangeDisplay", true));
 		entries.add(child("attackRangeDisplay", "attackRangeDisplayMode"));
 		entries.add(child("attackRangeDisplay", "attackRangeRenderMode"));
+		entries.add(child("attackRangeDisplay", "attackRangePalette"));
 		entries.add(child("attackRangeDisplay", "attackRangeIncludeSelf", true));
 		entries.add(child("attackRangeDisplay", "attackRangeHostileOnly"));
 		entries.add(child("attackRangeDisplay", "attackRangeIncludeInvisible"));
@@ -259,8 +300,10 @@ public final class ConfigCatalog {
 		entries.add(child("nightVisionFadeOut", "nightVisionFadeOutDuration"));
 		entries.add(child("nightVisionFadeOut", "nightVisionFadeOutCurve"));
 		entries.add(modified("enchantmentLevelArabic", true));
+		entries.add(child("enchantmentLevelArabic", "enchantmentLevelArabicStyle"));
 		// 世界交互与移动
 		entries.add(modified("wartBlockDecomposition", true));
+		entries.add(child("wartBlockDecomposition", "wartBlockDecompositionOutput"));
 		entries.add(modified("elytraWaterFlight", true));
 		entries.add(child("elytraWaterFlight", "elytraWaterFlightOnlyWater"));
 		entries.add(modified("disableNetherPortalEffect", true));
@@ -268,9 +311,12 @@ public final class ConfigCatalog {
 		entries.add(child("disableNetherPortalEffect", "disableNetherPortalCamera"));
 		entries.add(child("disableNetherPortalEffect", "disableNetherPortalSound"));
 		entries.add(modified("disableBedTooFar", true));
+		entries.add(child("disableBedTooFar", "bedTooFarMaxDistance"));
 		entries.add(modified("ironGolemRideMinecart", true));
+		entries.add(child("ironGolemRideMinecart", "ironGolemRideMinecartMaxDistance"));
 		// 穿牌打开容器（修改标签）
 		entries.add(modified("signOpenContainer", true));
+		entries.add(child("signOpenContainer", "signOpenContainerSneakBypass"));
 		// 禁用蛛网减速（修改标签）
 		entries.add(modified("disableCobwebSlowdown", true));
 		entries.add(child("disableCobwebSlowdown", "cobwebSlowdownAllEntities"));
@@ -285,12 +331,14 @@ public final class ConfigCatalog {
 		entries.add(modified("disableHoneyBlockSlowdown", true));
 		entries.add(child("disableHoneyBlockSlowdown", "disableHoneyBlockStick"));
 		entries.add(modified("connectedBlockOutline", true));
+		entries.add(child("connectedBlockOutline", "connectedBlockOutlineDoorFullHeight"));
 		entries.add(function("customBlockOutline", true));
 		entries.add(child("customBlockOutline", TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD));
 		entries.add(child("customBlockOutline", "blockOutlineAnimationSpeed"));
 		entries.add(child("customBlockOutline", "blockOutlinePalette"));
 		entries.add(child("customBlockOutline", "blockOutlineColorMode"));
 		entries.add(function("betterBlockPlacement", true));
+		entries.add(child("betterBlockPlacement", "betterBlockPlacementSneakBypass"));
 		entries.add(child("betterBlockPlacement", "betterBlockPlacementMode"));
 		// 更好的骨粉催熟（功能标签）
 		entries.add(function("betterBoneMeal", true));
@@ -306,7 +354,9 @@ public final class ConfigCatalog {
 		entries.add(child("disableOverlayEffects", "disablePowderSnowFog"));
 		// 移动与挖掘
 		entries.add(modified("disableSprintFov", true));
+		entries.add(child("disableSprintFov", "sprintFovIntensity"));
 		entries.add(modified("keepMiningProgressOnItemSwitch", true));
+		entries.add(child("keepMiningProgressOnItemSwitch", "keepMiningProgressMaxDistance"));
 		entries.add(modified("disableFarmlandTrampling", true));
 		entries.add(child("disableFarmlandTrampling", "farmlandTramplingPlayerOnly"));
 		// 滚动列表记忆（通用标签）
@@ -329,6 +379,7 @@ public final class ConfigCatalog {
 		entries.add(child("debugProbeReport", "debugProbeReportCopy"));
 		// 已启用功能报表（测试标签，纯快捷键动作）
 		entries.add(testing("debugEnabledFeaturesReport", false));
+		entries.add(child("debugEnabledFeaturesReport", "debugEnabledFeaturesReportCopy"));
 		validate(entries);
 		return entries;
 	}

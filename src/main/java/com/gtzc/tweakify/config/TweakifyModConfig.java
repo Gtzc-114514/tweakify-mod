@@ -202,6 +202,19 @@ public class TweakifyModConfig {
 	public static final List<String> SUPPORTED_ATTACK_RANGE_RENDER_MODES = List.of(
 		ATTACK_RANGE_RENDER_WIREFRAME, ATTACK_RANGE_RENDER_FILLED);
 
+	// 攻击范围颜色调色板：只决定 RGB，透明度沿用各模式的固定档位。
+	public static final String ATTACK_RANGE_PALETTE_BLUE = "blue";
+	public static final String ATTACK_RANGE_PALETTE_RED = "red";
+	public static final String ATTACK_RANGE_PALETTE_GREEN = "green";
+	public static final String ATTACK_RANGE_PALETTE_YELLOW = "yellow";
+	public static final String ATTACK_RANGE_PALETTE_CYAN = "cyan";
+	public static final String ATTACK_RANGE_PALETTE_MAGENTA = "magenta";
+	public static final String ATTACK_RANGE_PALETTE_WHITE = "white";
+	public static final List<String> SUPPORTED_ATTACK_RANGE_PALETTES = List.of(
+		ATTACK_RANGE_PALETTE_BLUE, ATTACK_RANGE_PALETTE_RED, ATTACK_RANGE_PALETTE_GREEN,
+		ATTACK_RANGE_PALETTE_YELLOW, ATTACK_RANGE_PALETTE_CYAN, ATTACK_RANGE_PALETTE_MAGENTA,
+		ATTACK_RANGE_PALETTE_WHITE);
+
 	// 攻击范围的显示数量/距离限制。
 	public static final int MIN_ATTACK_RANGE_DISTANCE = 8;
 	public static final int MAX_ATTACK_RANGE_DISTANCE = 128;
@@ -215,10 +228,52 @@ public class TweakifyModConfig {
 	public static final int MAX_BEDROCK_MARKERS = 256;
 	public static final int DEFAULT_BEDROCK_MARKERS = 32;
 
+	// 单层基岩高亮的扫描半径与标记颜色；半径上限与 BlockMarkerScanner 的数组容量一致。
+	public static final int MIN_BEDROCK_SCAN_RADIUS = 8;
+	public static final int MAX_BEDROCK_SCAN_RADIUS = 32;
+	public static final int DEFAULT_BEDROCK_SCAN_RADIUS = 32;
+	public static final String BEDROCK_COLOR_GOLD = "gold";
+	public static final String BEDROCK_COLOR_WHITE = "white";
+	public static final String BEDROCK_COLOR_RED = "red";
+	public static final String BEDROCK_COLOR_GREEN = "green";
+	public static final String BEDROCK_COLOR_BLUE = "blue";
+	public static final String BEDROCK_COLOR_CYAN = "cyan";
+	public static final List<String> SUPPORTED_BEDROCK_COLORS = List.of(
+		BEDROCK_COLOR_GOLD, BEDROCK_COLOR_WHITE, BEDROCK_COLOR_RED,
+		BEDROCK_COLOR_GREEN, BEDROCK_COLOR_BLUE, BEDROCK_COLOR_CYAN);
+
 	// 屏障可见的标记数量限制：默认 256 与旧版固定上限一致。
 	public static final int MIN_BARRIER_MARKERS = 16;
 	public static final int MAX_BARRIER_MARKERS = 256;
 	public static final int DEFAULT_BARRIER_MARKERS = 256;
+
+	// 屏障可见的扫描半径（格）与同一方块两次标记粒子的间隔（tick）。
+	// 上限 32 与 BlockMarkerScanner 的数组容量一致，避免改配置后越界。
+	public static final int MIN_BARRIER_SCAN_RADIUS = 8;
+	public static final int MAX_BARRIER_SCAN_RADIUS = 32;
+	public static final int DEFAULT_BARRIER_SCAN_RADIUS = 32;
+	public static final int MIN_BARRIER_PARTICLE_INTERVAL = 20;
+	public static final int MAX_BARRIER_PARTICLE_INTERVAL = 200;
+	public static final int DEFAULT_BARRIER_PARTICLE_INTERVAL = 60;
+
+	// 如履平地：可跨上的最大步高。原版玩家步高为 0.6，1.0 即“像马一样”跨上 1 格。
+	public static final String AUTO_STEP_UP_HEIGHT_ONE_BLOCK = "one_block";
+	public static final String AUTO_STEP_UP_HEIGHT_ONE_AND_HALF = "one_and_half";
+	public static final String AUTO_STEP_UP_HEIGHT_TWO_BLOCKS = "two_blocks";
+	public static final List<String> SUPPORTED_AUTO_STEP_UP_HEIGHTS = List.of(
+		AUTO_STEP_UP_HEIGHT_ONE_BLOCK, AUTO_STEP_UP_HEIGHT_ONE_AND_HALF,
+		AUTO_STEP_UP_HEIGHT_TWO_BLOCKS);
+
+	// 枚举代码 → 实际步高（未知取值回退 1.0，与旧版固定值一致）。
+	public static double autoStepUpHeight(String code) {
+		if (AUTO_STEP_UP_HEIGHT_ONE_AND_HALF.equals(code)) {
+			return 1.5;
+		}
+		if (AUTO_STEP_UP_HEIGHT_TWO_BLOCKS.equals(code)) {
+			return 2.0;
+		}
+		return 1.0;
+	}
 
 	// 更好的放置覆盖：可覆盖的植物范围（仅花草 / 含作物 / 全部植物）。
 	public static final String BLOCK_PLACEMENT_FLOWERS = "flowers";
@@ -361,6 +416,164 @@ public class TweakifyModConfig {
 	// 鞘翅烟花最短间隔（tick）：0 表示等本次加速结束（原行为）。
 	public static final int MIN_ELYTRA_FIREWORK_TICKS = 0;
 	public static final int MAX_ELYTRA_FIREWORK_TICKS = 200;
+
+	// 药水时间显示：低时长过滤阈值（秒，0 = 不过滤）与文字配色模式。
+	public static final int MIN_STATUS_DURATION_THRESHOLD = 0;
+	public static final int MAX_STATUS_DURATION_THRESHOLD = 600;
+	public static final int DEFAULT_STATUS_DURATION_THRESHOLD = 0;
+	public static final String STATUS_COLOR_AUTO = "auto";
+	public static final String STATUS_COLOR_WHITE = "white";
+	public static final String STATUS_COLOR_YELLOW = "yellow";
+	public static final String STATUS_COLOR_RED = "red";
+	public static final List<String> SUPPORTED_STATUS_COLOR_MODES = List.of(
+		STATUS_COLOR_AUTO, STATUS_COLOR_WHITE, STATUS_COLOR_YELLOW, STATUS_COLOR_RED);
+
+	// 聊天框选背景透明度（百分比）与透明通道重写：保留调色板的 RGB，只替换 alpha。
+	public static final int MIN_CHAT_SELECTION_OPACITY = 10;
+	public static final int MAX_CHAT_SELECTION_OPACITY = 100;
+	public static final int DEFAULT_CHAT_SELECTION_OPACITY = 33;
+
+	public static int withOpacity(int argb, int percent) {
+		int clamped = Math.max(MIN_CHAT_SELECTION_OPACITY,
+			Math.min(MAX_CHAT_SELECTION_OPACITY, percent));
+		int alpha = Math.round(clamped * 255.0F / 100.0F);
+		return (alpha << 24) | (argb & 0xFFFFFF);
+	}
+
+	// 刷怪蛋投掷：速度百分比（100 = 原版鸡蛋的 1.5 格/刻）与基础速度。
+	public static final int MIN_SPAWN_EGG_VELOCITY = 50;
+	public static final int MAX_SPAWN_EGG_VELOCITY = 200;
+	public static final int DEFAULT_SPAWN_EGG_VELOCITY = 100;
+	public static final float SPAWN_EGG_BASE_VELOCITY = 1.5F;
+
+	// 百分比 → 投掷速度：先夹紧再换算，手工改坏配置也不会掷出离谱速度。
+	public static float spawnEggThrowVelocity(int percent) {
+		int clamped = Math.max(MIN_SPAWN_EGG_VELOCITY, Math.min(MAX_SPAWN_EGG_VELOCITY, percent));
+		return SPAWN_EGG_BASE_VELOCITY * clamped / 100.0F;
+	}
+
+	// 中键获得液体桶的范围：水与岩浆 / 仅水 / 仅岩浆。
+	public static final String FLUID_PICK_WATER_AND_LAVA = "water_and_lava";
+	public static final String FLUID_PICK_WATER_ONLY = "water_only";
+	public static final String FLUID_PICK_LAVA_ONLY = "lava_only";
+	public static final List<String> SUPPORTED_FLUID_PICK_SCOPES = List.of(
+		FLUID_PICK_WATER_AND_LAVA, FLUID_PICK_WATER_ONLY, FLUID_PICK_LAVA_ONLY);
+
+	// 实体高亮：描边样式（常亮 / 闪烁）、闪烁周期（tick）与描边颜色。
+	public static final String ENTITY_HIGHLIGHT_STYLE_OUTLINE = "outline";
+	public static final String ENTITY_HIGHLIGHT_STYLE_BLINK = "blink";
+	public static final List<String> SUPPORTED_ENTITY_HIGHLIGHT_STYLES = List.of(
+		ENTITY_HIGHLIGHT_STYLE_OUTLINE, ENTITY_HIGHLIGHT_STYLE_BLINK);
+	public static final int MIN_ENTITY_HIGHLIGHT_BLINK_PERIOD = 10;
+	public static final int MAX_ENTITY_HIGHLIGHT_BLINK_PERIOD = 200;
+	public static final int DEFAULT_ENTITY_HIGHLIGHT_BLINK_PERIOD = 60;
+	// 颜色为 vanilla 时保留原版队伍色（无队伍即白色），其余使用固定调色板。
+	public static final String ENTITY_HIGHLIGHT_COLOR_VANILLA = "vanilla";
+	public static final String ENTITY_HIGHLIGHT_COLOR_WHITE = "white";
+	public static final String ENTITY_HIGHLIGHT_COLOR_RED = "red";
+	public static final String ENTITY_HIGHLIGHT_COLOR_GREEN = "green";
+	public static final String ENTITY_HIGHLIGHT_COLOR_BLUE = "blue";
+	public static final String ENTITY_HIGHLIGHT_COLOR_YELLOW = "yellow";
+	public static final String ENTITY_HIGHLIGHT_COLOR_CYAN = "cyan";
+	public static final String ENTITY_HIGHLIGHT_COLOR_MAGENTA = "magenta";
+	public static final List<String> SUPPORTED_ENTITY_HIGHLIGHT_COLORS = List.of(
+		ENTITY_HIGHLIGHT_COLOR_VANILLA, ENTITY_HIGHLIGHT_COLOR_WHITE, ENTITY_HIGHLIGHT_COLOR_RED,
+		ENTITY_HIGHLIGHT_COLOR_GREEN, ENTITY_HIGHLIGHT_COLOR_BLUE, ENTITY_HIGHLIGHT_COLOR_YELLOW,
+		ENTITY_HIGHLIGHT_COLOR_CYAN, ENTITY_HIGHLIGHT_COLOR_MAGENTA);
+
+	// 禁用疾跑 FOV 时保留的原版强度百分比（0 = 完全禁用，100 = 等同原版）。
+	public static final int MIN_SPRINT_FOV_INTENSITY = 0;
+	public static final int MAX_SPRINT_FOV_INTENSITY = 100;
+	public static final int DEFAULT_SPRINT_FOV_INTENSITY = 0;
+
+	// 不使用最后一根火把：剩余数量阈值（≤ 该值时阻止放置）。
+	public static final int MIN_KEEP_LAST_TORCH_COUNT = 1;
+	public static final int MAX_KEEP_LAST_TORCH_COUNT = 8;
+	public static final int DEFAULT_KEEP_LAST_TORCH_COUNT = 1;
+
+	// 切换物品保留挖掘进度的最大距离（格，0 = 不限制）。
+	public static final int MIN_KEEP_MINING_PROGRESS_DISTANCE = 0;
+	public static final int MAX_KEEP_MINING_PROGRESS_DISTANCE = 16;
+	public static final int DEFAULT_KEEP_MINING_PROGRESS_DISTANCE = 0;
+
+	// 铁砧“过于昂贵”的费用上限（经验等级，0 = 不限制）。
+	public static final int MIN_TOO_EXPENSIVE_MAX_LEVEL_COST = 0;
+	public static final int MAX_TOO_EXPENSIVE_MAX_LEVEL_COST = 1000;
+	public static final int DEFAULT_TOO_EXPENSIVE_MAX_LEVEL_COST = 0;
+
+	// 疣块分解产出数量（1 ~ 9）。
+	public static final int MIN_WART_DECOMPOSITION_OUTPUT = 1;
+	public static final int MAX_WART_DECOMPOSITION_OUTPUT = 9;
+	public static final int DEFAULT_WART_DECOMPOSITION_OUTPUT = 9;
+
+	// 挖掘惩罚保留百分比（0 = 完全去掉惩罚，100 = 与原版相同）。
+	public static final int MIN_MINING_PENALTY_KEEP_PERCENT = 0;
+	public static final int MAX_MINING_PENALTY_KEEP_PERCENT = 100;
+	public static final int DEFAULT_MINING_PENALTY_KEEP_PERCENT = 0;
+
+	// 允许入睡的最大距离（格，0 = 不限制）。
+	public static final int MIN_BED_TOO_FAR_DISTANCE = 0;
+	public static final int MAX_BED_TOO_FAR_DISTANCE = 128;
+	public static final int DEFAULT_BED_TOO_FAR_DISTANCE = 0;
+
+	// 诅咒附魔移除范围：全部 / 仅绑定诅咒 / 仅消失诅咒。
+	public static final String CURSE_SCOPE_ALL = "all";
+	public static final String CURSE_SCOPE_BINDING_ONLY = "binding_only";
+	public static final String CURSE_SCOPE_VANISHING_ONLY = "vanishing_only";
+	public static final List<String> SUPPORTED_CURSE_SCOPES = List.of(
+		CURSE_SCOPE_ALL, CURSE_SCOPE_BINDING_ONLY, CURSE_SCOPE_VANISHING_ONLY);
+
+	// 锻造模板保留概率（0 ~ 100，默认 100 = 必定保留）。
+	public static final int MIN_SMITHING_TEMPLATE_KEEP_CHANCE = 0;
+	public static final int MAX_SMITHING_TEMPLATE_KEEP_CHANCE = 100;
+	public static final int DEFAULT_SMITHING_TEMPLATE_KEEP_CHANCE = 100;
+
+	// 附魔等级阿拉伯数字样式：plain（锋利 3）/ parentheses（锋利 (3)）。
+	public static final String ENCHANTMENT_LEVEL_STYLE_PLAIN = "plain";
+	public static final String ENCHANTMENT_LEVEL_STYLE_PARENTHESES = "parentheses";
+	public static final List<String> SUPPORTED_ENCHANTMENT_LEVEL_STYLES = List.of(
+		ENCHANTMENT_LEVEL_STYLE_PLAIN, ENCHANTMENT_LEVEL_STYLE_PARENTHESES);
+
+	// 更好的粗体偏移百分比（10 ~ 100，默认 50 = 0.5 像素）。
+	public static final int MIN_BETTER_BOLD_OFFSET_PERCENT = 10;
+	public static final int MAX_BETTER_BOLD_OFFSET_PERCENT = 100;
+	public static final int DEFAULT_BETTER_BOLD_OFFSET_PERCENT = 50;
+
+	// MiniHUD HUD 行刷新间隔（毫秒，50 ~ 1000，默认 150）。
+	public static final int MIN_MINIHUD_REFRESH_INTERVAL_MS = 50;
+	public static final int MAX_MINIHUD_REFRESH_INTERVAL_MS = 1000;
+	public static final int DEFAULT_MINIHUD_REFRESH_INTERVAL_MS = 150;
+
+	// 使用物品时的移动减速保留百分比（0 ~ 100，默认 0 = 完全取消）。
+	public static final int MIN_USE_ITEM_SLOWDOWN_KEEP_PERCENT = 0;
+	public static final int MAX_USE_ITEM_SLOWDOWN_KEEP_PERCENT = 100;
+	public static final int DEFAULT_USE_ITEM_SLOWDOWN_KEEP_PERCENT = 0;
+
+	// 配置界面默认标签代码（关闭标签记忆时使用）。
+	public static final String CONFIG_TAB_ALL = "all";
+	public static final String CONFIG_TAB_GENERAL = "general";
+	public static final String CONFIG_TAB_FUNCTIONS = "functions";
+	public static final String CONFIG_TAB_MODIFIED = "modified";
+	public static final String CONFIG_TAB_FIX = "fix";
+	public static final String CONFIG_TAB_OPTIMIZATION = "optimization";
+	public static final String CONFIG_TAB_TESTING = "testing";
+	public static final List<String> SUPPORTED_CONFIG_TABS = List.of(
+		CONFIG_TAB_ALL, CONFIG_TAB_GENERAL, CONFIG_TAB_FUNCTIONS, CONFIG_TAB_MODIFIED,
+		CONFIG_TAB_FIX, CONFIG_TAB_OPTIMIZATION, CONFIG_TAB_TESTING);
+
+	// 铁傀儡自动上车的最大玩家距离（0 ~ 64 格，0 = 不限制）。
+	public static final int MIN_IRON_GOLEM_PICKUP_DISTANCE = 0;
+	public static final int MAX_IRON_GOLEM_PICKUP_DISTANCE = 64;
+	public static final int DEFAULT_IRON_GOLEM_PICKUP_DISTANCE = 0;
+
+	// 范围判定：客户端与服务端注入点共用同一份规则，未知取值按“都允许”处理。
+	public static boolean fluidPickAllows(String scope, boolean water, boolean lava) {
+		return switch (scope == null ? "" : scope) {
+			case FLUID_PICK_WATER_ONLY -> water;
+			case FLUID_PICK_LAVA_ONLY -> lava;
+			default -> water || lava;
+		};
+	}
 
 	// 配置文件路径。测试时可通过包私有构造器注入；反序列化（Gson）时不参与。
 	private transient Path configPath;

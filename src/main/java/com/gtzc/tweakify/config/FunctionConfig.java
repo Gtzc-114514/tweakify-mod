@@ -25,14 +25,23 @@ public final class FunctionConfig extends ConfigSection {
 			FieldSanitizer.of("betterBlockPlacementMode", this::sanitizeBlockPlacementMode),
 			FieldSanitizer.of("copyItemIdFormat", this::sanitizeCopyIdFormat),
 			FieldSanitizer.of("chatSelectionColor", this::sanitizeChatSelectionColor),
+			FieldSanitizer.of("chatSelectionOpacity", this::sanitizeChatSelectionOpacity),
 			FieldSanitizer.of("durabilityDisplayMode", this::sanitizeDurabilityDisplayMode),
 			FieldSanitizer.of("durabilityOverlayColorMode", this::sanitizeDurabilityColorMode),
 			FieldSanitizer.of("attackRangeDisplayMode", this::sanitizeAttackRangeDisplayMode),
 			new FieldSanitizer(List.of("attackRangeMaxDistance", "attackRangeMaxTargets"),
 				this::sanitizeAttackRangeLimits),
 			FieldSanitizer.of("attackRangeRenderMode", this::sanitizeAttackRangeRenderMode),
+			FieldSanitizer.of("attackRangePalette", this::sanitizeAttackRangePalette),
 			FieldSanitizer.of("highlightSingleLayerBedrockMaxMarkers", this::sanitizeBedrockMarkerLimit),
+			FieldSanitizer.of("highlightSingleLayerBedrockScanRadius", this::sanitizeBedrockScanRadius),
+			FieldSanitizer.of("highlightSingleLayerBedrockColor", this::sanitizeBedrockMarkerColor),
 			FieldSanitizer.of("barrierVisibilityMaxMarkers", this::sanitizeBarrierMarkerLimit),
+			new FieldSanitizer(List.of("barrierVisibilityScanRadius", "barrierVisibilityParticleInterval"),
+				this::sanitizeBarrierScanAndInterval),
+			FieldSanitizer.of("autoStepUpHeight", this::sanitizeAutoStepUpHeight),
+			FieldSanitizer.of("throwSpawnEggVelocity", this::sanitizeSpawnEggVelocity),
+			FieldSanitizer.of("pickFluidBucketFluids", this::sanitizeFluidPickScope),
 			FieldSanitizer.of("cutThroughItems", this::sanitizeCutThroughItems),
 			FieldSanitizer.of("cutThroughPlants", this::sanitizeCutThroughPlants),
 			FieldSanitizer.of("elytraFireworkCooldownTicks", this::sanitizeElytraFireworkTicks),
@@ -49,7 +58,12 @@ public final class FunctionConfig extends ConfigSection {
 			FieldSanitizer.of("locatorBarHeadNames", this::sanitizeLocatorHeadNames),
 			FieldSanitizer.of("locatorBarHeadFilter", this::sanitizeLocatorHeadFilter),
 			FieldSanitizer.of("locatorBarCompassColor", this::sanitizeLocatorCompassColor),
-			FieldSanitizer.of("cameraMotionIntensity", this::sanitizeCameraMotionIntensity));
+			FieldSanitizer.of("entityHighlightStyle", this::sanitizeEntityHighlightStyle),
+			FieldSanitizer.of("entityHighlightBlinkPeriod", this::sanitizeEntityHighlightBlinkPeriod),
+			FieldSanitizer.of("entityHighlightColor", this::sanitizeEntityHighlightColor),
+			FieldSanitizer.of("cameraMotionIntensity", this::sanitizeCameraMotionIntensity),
+			FieldSanitizer.of("statusEffectDurationLowThreshold", this::sanitizeStatusDurationThreshold),
+			FieldSanitizer.of("statusEffectDurationColorMode", this::sanitizeStatusDurationColorMode));
 		// 启动期校验：新增数值/枚举字段忘记登记校验器时直接失败。
 		assertSanitizerCoverage(fieldNamesOf(this.sanitizers));
 	}
@@ -140,6 +154,10 @@ public final class FunctionConfig extends ConfigSection {
 	// 单层基岩单次最多显示的标记数量（超出时保留最近的）。
 	public volatile int highlightSingleLayerBedrockMaxMarkers = TweakifyModConfig.DEFAULT_BEDROCK_MARKERS;
 
+	// 扫描半径（8 ~ 32 格）与标记颜色（gold / white / red / green / blue / cyan）。
+	public volatile int highlightSingleLayerBedrockScanRadius = TweakifyModConfig.DEFAULT_BEDROCK_SCAN_RADIUS;
+	public volatile String highlightSingleLayerBedrockColor = TweakifyModConfig.BEDROCK_COLOR_GOLD;
+
 	// 锹单层铲雪：手持锹破坏多层雪层时一次只减少一层，而非整块移除。
 	public volatile boolean disableShovelSnowFullBreak = false;
 
@@ -221,6 +239,12 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile boolean throwSpawnEgg = false;
 	public volatile String hotkeyThrowSpawnEgg = "";
 
+	// 投掷速度百分比（50 ~ 200，100 = 原版鸡蛋速度）。
+	public volatile int throwSpawnEggVelocity = TweakifyModConfig.DEFAULT_SPAWN_EGG_VELOCITY;
+
+	// 潜行时保持原版放置，不改成投掷（与“剑穿草打生物”的潜行放行一致）。
+	public volatile boolean throwSpawnEggSneakBypass = false;
+
 	// 鞘翅烟花使用限制：滑翔中使用烟花后，等烟花加速结束才能再次使用。
 	public volatile boolean elytraFireworkCooldown = false;
 
@@ -233,6 +257,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 框选颜色：blue / green / orange / purple / gray。
 	public volatile String chatSelectionColor = TweakifyModConfig.CHAT_SELECTION_BLUE;
 
+	// 框选背景透明度百分比（10 ~ 100）。
+	public volatile int chatSelectionOpacity = TweakifyModConfig.DEFAULT_CHAT_SELECTION_OPACITY;
+
 	// 松开鼠标时自动复制选中文字。
 	public volatile boolean chatSelectionAutoCopy = false;
 
@@ -244,6 +271,9 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 聊天框内容记忆：关闭聊天框后保留未发送的输入内容，再次打开时恢复。
 	public volatile boolean chatInputMemory = false;
+
+	// 以 / 开头的命令草稿不记忆（避免把未发送的命令带回来误执行）。
+	public volatile boolean chatInputMemoryIgnoreCommands = false;
 
 	// 生物攻击范围显示：以生物为中心画半透明蓝色范围，列表为空时作用于全部生物与玩家。
 	public volatile boolean attackRangeDisplay = false;
@@ -268,6 +298,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 攻击范围渲染方式：wireframe（蓝色线框，性能更好）/ filled（半透明实心，可能掉帧）。
 	public volatile String attackRangeRenderMode = TweakifyModConfig.ATTACK_RANGE_RENDER_WIREFRAME;
 
+	// 攻击范围颜色调色板：只决定 RGB，透明度沿用各模式的固定档位。
+	public volatile String attackRangePalette = TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE;
+
 	// 自定义方块轮廓：总开关、线宽、调色板与彩色模式。
 	public volatile boolean customBlockOutline = false;
 	public volatile double blockOutlineWidth = TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH;
@@ -277,6 +310,9 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 更好的放置覆盖：手持方块右键时可直接替换花、高草等植物（仅单人/局域网生效）。
 	public volatile boolean betterBlockPlacement = false;
+
+	// 潜行时保持原版：不覆盖植物，按原版流程先打掉植物。
+	public volatile boolean betterBlockPlacementSneakBypass = true;
 
 	// 可覆盖的植物范围：flowers（仅花草）/ crops（含作物）/ all（全部植物）。
 	public volatile String betterBlockPlacementMode = TweakifyModConfig.BLOCK_PLACEMENT_FLOWERS;
@@ -305,14 +341,26 @@ public final class FunctionConfig extends ConfigSection {
 	// 中键获得液体桶：准星指向水/岩浆时，中键得到对应的液体桶（仅创造模式）。
 	public volatile boolean pickFluidBucket = false;
 
+	// 液体范围：水与岩浆 / 仅水 / 仅岩浆。
+	public volatile String pickFluidBucketFluids = TweakifyModConfig.FLUID_PICK_WATER_AND_LAVA;
+
 	// 生存模式中键取物：准星指向方块/液体/实体时，背包里有对应物品就切换到主手。
 	public volatile boolean survivalPickBlock = false;
+
+	// 生存取物也处理液体（水/岩浆 → 已有的桶）；关闭后退回原版，只取方块与实体。
+	public volatile boolean survivalPickBlockIncludeFluids = true;
 
 	// 便捷焚烧：背包/容器里拿着物品，右键点击岩浆桶或打火石即焚烧该物品。
 	public volatile boolean quickBurnItem = false;
 
-	// 如履平地：自动跨上 1 格高的方块（像马一样）。
+	// 需要潜行才焚烧：避免在整理背包时误触销毁物品。
+	public volatile boolean quickBurnItemRequireSneak = false;
+
+	// 如履平地：自动跨上 1 格及以上的方块（像马一样）；步高由子设置控制。
 	public volatile boolean autoStepUp = false;
+
+	// 跨步高度：one_block（1.0）/ one_and_half（1.5）/ two_blocks（2.0）。
+	public volatile String autoStepUpHeight = TweakifyModConfig.AUTO_STEP_UP_HEIGHT_ONE_BLOCK;
 
 	// 更好的攀爬：攀爬方块相关的移动优化（子开关见下）。
 	public volatile boolean betterClimbing = false;
@@ -338,6 +386,10 @@ public final class FunctionConfig extends ConfigSection {
 	// 单次扫描最多保留的屏障标记数量（超出时保留离玩家最近的）。
 	public volatile int barrierVisibilityMaxMarkers = TweakifyModConfig.DEFAULT_BARRIER_MARKERS;
 
+	// 扫描半径（8 ~ 32 格）与同一方块两次标记粒子的间隔（20 ~ 200 tick）。
+	public volatile int barrierVisibilityScanRadius = TweakifyModConfig.DEFAULT_BARRIER_SCAN_RADIUS;
+	public volatile int barrierVisibilityParticleInterval = TweakifyModConfig.DEFAULT_BARRIER_PARTICLE_INTERVAL;
+
 	// 装备耐久显示：在物品栏耐久条上方叠加耐久文字，满耐久时不显示。
 	public volatile boolean durabilityOverlay = false;
 
@@ -358,6 +410,12 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 时间格式固定为秒（不使用分:秒 / h / d 缩写）。
 	public volatile boolean statusEffectDurationAlwaysSeconds = false;
+
+	// 只在剩余时间不高于该秒数时显示（0 = 不过滤）。
+	public volatile int statusEffectDurationLowThreshold = TweakifyModConfig.DEFAULT_STATUS_DURATION_THRESHOLD;
+
+	// 文字配色：auto（按剩余时间分档）/ white / yellow / red。
+	public volatile String statusEffectDurationColorMode = TweakifyModConfig.STATUS_COLOR_AUTO;
 
 	// 各功能根开关的切换快捷键，默认无快捷键（空字符串）。
 	// 功能标签只给根功能提供快捷键，子设置不占快捷键栏。
@@ -404,6 +462,15 @@ public final class FunctionConfig extends ConfigSection {
 	// 实体高亮总开关：开启后按当前启用的预设列表显示发光描边。
 	public volatile boolean entityHighlight = false;
 	public volatile String hotkeyEntityHighlight = "";
+
+	// 描边样式：outline（常亮，默认）/ blink（按周期闪烁）。
+	public volatile String entityHighlightStyle = TweakifyModConfig.ENTITY_HIGHLIGHT_STYLE_OUTLINE;
+
+	// 闪烁周期（tick，10 ~ 200）：一半时间显示、一半时间隐藏。
+	public volatile int entityHighlightBlinkPeriod = TweakifyModConfig.DEFAULT_ENTITY_HIGHLIGHT_BLINK_PERIOD;
+
+	// 描边颜色：vanilla（原版队伍色，默认）或固定调色板。
+	public volatile String entityHighlightColor = TweakifyModConfig.ENTITY_HIGHLIGHT_COLOR_VANILLA;
 
 	// 三个互斥的高亮预设：开启一个会自动关闭其他两个。
 	public volatile boolean highlightPreset1 = false;
@@ -548,6 +615,77 @@ public final class FunctionConfig extends ConfigSection {
 		return true;
 	}
 
+	// 修正基岩扫描半径，手工改坏配置时夹回允许范围。
+	private boolean sanitizeBedrockScanRadius() {
+		int clamped = Math.max(TweakifyModConfig.MIN_BEDROCK_SCAN_RADIUS,
+			Math.min(TweakifyModConfig.MAX_BEDROCK_SCAN_RADIUS, highlightSingleLayerBedrockScanRadius));
+		if (clamped == highlightSingleLayerBedrockScanRadius) {
+			return false;
+		}
+		LOGGER.warn("Clamping highlightSingleLayerBedrockScanRadius from {} to {}",
+			highlightSingleLayerBedrockScanRadius, clamped);
+		highlightSingleLayerBedrockScanRadius = clamped;
+		return true;
+	}
+
+	// 修正基岩标记颜色，回退到金色。
+	private boolean sanitizeBedrockMarkerColor() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_BEDROCK_COLORS, highlightSingleLayerBedrockColor)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported bedrock marker color: {}", highlightSingleLayerBedrockColor);
+		highlightSingleLayerBedrockColor = TweakifyModConfig.BEDROCK_COLOR_GOLD;
+		return true;
+	}
+
+	// 修正攻击范围调色板，回退到蓝色。
+	private boolean sanitizeAttackRangePalette() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_ATTACK_RANGE_PALETTES, attackRangePalette)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported attack range palette: {}", attackRangePalette);
+		attackRangePalette = TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE;
+		return true;
+	}
+
+	// 修正聊天框选透明度。
+	private boolean sanitizeChatSelectionOpacity() {
+		int clamped = Math.max(TweakifyModConfig.MIN_CHAT_SELECTION_OPACITY,
+			Math.min(TweakifyModConfig.MAX_CHAT_SELECTION_OPACITY, chatSelectionOpacity));
+		if (clamped == chatSelectionOpacity) {
+			return false;
+		}
+		LOGGER.warn("Clamping chatSelectionOpacity from {} to {}", chatSelectionOpacity, clamped);
+		chatSelectionOpacity = clamped;
+		return true;
+	}
+
+	// 修正药水时间的低时长过滤阈值。
+	private boolean sanitizeStatusDurationThreshold() {
+		int clamped = Math.max(TweakifyModConfig.MIN_STATUS_DURATION_THRESHOLD,
+			Math.min(TweakifyModConfig.MAX_STATUS_DURATION_THRESHOLD, statusEffectDurationLowThreshold));
+		if (clamped == statusEffectDurationLowThreshold) {
+			return false;
+		}
+		LOGGER.warn("Clamping statusEffectDurationLowThreshold from {} to {}",
+			statusEffectDurationLowThreshold, clamped);
+		statusEffectDurationLowThreshold = clamped;
+		return true;
+	}
+
+	// 修正药水时间文字配色，回退到自动分档。
+	private boolean sanitizeStatusDurationColorMode() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_STATUS_COLOR_MODES, statusEffectDurationColorMode)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported status duration color mode: {}", statusEffectDurationColorMode);
+		statusEffectDurationColorMode = TweakifyModConfig.STATUS_COLOR_AUTO;
+		return true;
+	}
+
 	// 修正屏障标记数量，手工改坏配置时夹回允许范围。
 	private boolean sanitizeBarrierMarkerLimit() {
 		int clamped = Math.max(TweakifyModConfig.MIN_BARRIER_MARKERS,
@@ -558,6 +696,57 @@ public final class FunctionConfig extends ConfigSection {
 		LOGGER.warn("Clamping barrierVisibilityMaxMarkers from {} to {}",
 			barrierVisibilityMaxMarkers, clamped);
 		barrierVisibilityMaxMarkers = clamped;
+		return true;
+	}
+
+	// 修正屏障扫描半径与标记间隔，手工改坏配置时夹回允许范围。
+	private boolean sanitizeBarrierScanAndInterval() {
+		int radius = Math.max(TweakifyModConfig.MIN_BARRIER_SCAN_RADIUS,
+			Math.min(TweakifyModConfig.MAX_BARRIER_SCAN_RADIUS, barrierVisibilityScanRadius));
+		int interval = Math.max(TweakifyModConfig.MIN_BARRIER_PARTICLE_INTERVAL,
+			Math.min(TweakifyModConfig.MAX_BARRIER_PARTICLE_INTERVAL, barrierVisibilityParticleInterval));
+		if (radius == barrierVisibilityScanRadius
+			&& interval == barrierVisibilityParticleInterval) {
+			return false;
+		}
+		LOGGER.warn("Clamping barrier scan settings: radius {} -> {}, interval {} -> {}",
+			barrierVisibilityScanRadius, radius, barrierVisibilityParticleInterval, interval);
+		barrierVisibilityScanRadius = radius;
+		barrierVisibilityParticleInterval = interval;
+		return true;
+	}
+
+	// 修正不合法的跨步高度，回退到 1 格。
+	private boolean sanitizeAutoStepUpHeight() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_AUTO_STEP_UP_HEIGHTS, autoStepUpHeight)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported auto step-up height: {}", autoStepUpHeight);
+		autoStepUpHeight = TweakifyModConfig.AUTO_STEP_UP_HEIGHT_ONE_BLOCK;
+		return true;
+	}
+
+	// 修正刷怪蛋投掷速度，手工改坏配置时夹回允许范围。
+	private boolean sanitizeSpawnEggVelocity() {
+		int clamped = Math.max(TweakifyModConfig.MIN_SPAWN_EGG_VELOCITY,
+			Math.min(TweakifyModConfig.MAX_SPAWN_EGG_VELOCITY, throwSpawnEggVelocity));
+		if (clamped == throwSpawnEggVelocity) {
+			return false;
+		}
+		LOGGER.warn("Clamping throwSpawnEggVelocity from {} to {}", throwSpawnEggVelocity, clamped);
+		throwSpawnEggVelocity = clamped;
+		return true;
+	}
+
+	// 修正中键取液体的范围，回退到水与岩浆。
+	private boolean sanitizeFluidPickScope() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_FLUID_PICK_SCOPES, pickFluidBucketFluids)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported fluid pick scope: {}", pickFluidBucketFluids);
+		pickFluidBucketFluids = TweakifyModConfig.FLUID_PICK_WATER_AND_LAVA;
 		return true;
 	}
 
@@ -757,6 +946,41 @@ public final class FunctionConfig extends ConfigSection {
 		}
 		LOGGER.warn("Clamping cameraMotionIntensity from {} to {}", cameraMotionIntensity, clamped);
 		cameraMotionIntensity = clamped;
+		return true;
+	}
+
+	// 修正高亮描边样式，回退到常亮。
+	private boolean sanitizeEntityHighlightStyle() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_ENTITY_HIGHLIGHT_STYLES, entityHighlightStyle)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported entity highlight style: {}", entityHighlightStyle);
+		entityHighlightStyle = TweakifyModConfig.ENTITY_HIGHLIGHT_STYLE_OUTLINE;
+		return true;
+	}
+
+	// 修正闪烁周期，手工改坏配置时夹回允许范围。
+	private boolean sanitizeEntityHighlightBlinkPeriod() {
+		int clamped = Math.max(TweakifyModConfig.MIN_ENTITY_HIGHLIGHT_BLINK_PERIOD,
+			Math.min(TweakifyModConfig.MAX_ENTITY_HIGHLIGHT_BLINK_PERIOD, entityHighlightBlinkPeriod));
+		if (clamped == entityHighlightBlinkPeriod) {
+			return false;
+		}
+		LOGGER.warn("Clamping entityHighlightBlinkPeriod from {} to {}",
+			entityHighlightBlinkPeriod, clamped);
+		entityHighlightBlinkPeriod = clamped;
+		return true;
+	}
+
+	// 修正描边颜色，回退到原版队伍色。
+	private boolean sanitizeEntityHighlightColor() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_ENTITY_HIGHLIGHT_COLORS, entityHighlightColor)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported entity highlight color: {}", entityHighlightColor);
+		entityHighlightColor = TweakifyModConfig.ENTITY_HIGHLIGHT_COLOR_VANILLA;
 		return true;
 	}
 }

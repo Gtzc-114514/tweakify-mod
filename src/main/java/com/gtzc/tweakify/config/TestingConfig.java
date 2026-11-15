@@ -49,4 +49,7 @@ public final class TestingConfig extends ConfigSection {
 
 	// 已启用功能报表的纯快捷键动作：把启用的功能根开关列表输出到聊天栏。
 	public volatile String hotkeyDebugEnabledFeaturesReport = "";
+
+	// 已启用功能报表输出到剪贴板（关闭时输出到聊天栏）。
+	public volatile boolean debugEnabledFeaturesReportCopy = false;
 }

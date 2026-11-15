@@ -1,26 +1,71 @@
 package com.gtzc.tweakify.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
 /**
  * 修复分区：只修正原版瑕疵，不新增行为。
  *
- * <p>字段全部是布尔开关，由 facade 的按类型清洗统一兜底，因此不登记字段级校验器。
+ * <p>布尔字段由 facade 的按类型清洗统一兜底；数值字段需要登记字段级校验器。
  */
 public final class FixConfig extends ConfigSection {
+	private static final Logger LOGGER = LoggerFactory.getLogger("tweakify-mod-config");
+
+	// 校验器绑定到当前实例：方法引用需要接收者，静态字段无法绑定。
+	private final transient List<FieldSanitizer> sanitizers;
+
 	FixConfig() {
-		// 全部字段都是布尔开关，这里只需要确认没有漏登记的数值/枚举字段。
-		assertSanitizerCoverage(java.util.List.of());
+		this.sanitizers = List.of(
+			FieldSanitizer.of("betterBoldOffsetPercent", this::sanitizeBoldOffset));
+		assertSanitizerCoverage(fieldNamesOf(this.sanitizers));
 	}
 
 	// 草径卡船修复：土径对船的碰撞按满方块处理，消除土径与完整方块之间的 1/16 台阶。
 	public volatile boolean fixBoatStuckOnDirtPath = false;
 
+	// 只对载有玩家的船生效（空船与动物船保持原版）。
+	public volatile boolean fixBoatStuckOnDirtPathPlayerOnly = false;
+
 	// 鹦鹉肩膀跳舞：唱片机播放音乐时，站在玩家肩膀上的鹦鹉也会跳舞（与基岩版一致）。
 	public volatile boolean parrotDanceOnShoulder = false;
 
-	// 更好的粗体：把粗体偏移从原版 1.0 改为 0.5（与 MCPatcher/OptiFine 一致）。
+	// 只让本地玩家肩膀上的鹦鹉跳舞（其它玩家保持原版姿态）。
+	public volatile boolean parrotDanceOnShoulderLocalPlayerOnly = false;
+
+	// 更好的粗体：把粗体偏移从原版 1.0 改为配置百分比（默认 0.5，与 MCPatcher/OptiFine 一致）。
 	public volatile boolean betterBold = false;
+
+	// 粗体偏移百分比（10 ~ 100，默认 50 = 0.5 像素）。
+	public volatile int betterBoldOffsetPercent = TweakifyModConfig.DEFAULT_BETTER_BOLD_OFFSET_PERCENT;
 
 	// 冰霜行者跳跃修复：跳跃时（离地状态）也继续在脚下结冰，
 	// 修正原版只在站地帧结冰、跳着过水面时会踩空落水的问题。
 	public volatile boolean frostWalkerJumpFix = false;
+
+	// 只在向上跳跃时放宽（下落过程仍按原版不结冰）。
+	public volatile boolean frostWalkerJumpFixJumpOnly = false;
+
+	@Override
+	boolean sanitize() {
+		return runSanitizers(this.sanitizers);
+	}
+
+	@Override
+	List<String> sanitizedFieldNames() {
+		return fieldNamesOf(this.sanitizers);
+	}
+
+	// 修正粗体偏移百分比，手工改坏配置时夹回允许范围。
+	private boolean sanitizeBoldOffset() {
+		int clamped = Math.max(TweakifyModConfig.MIN_BETTER_BOLD_OFFSET_PERCENT,
+			Math.min(TweakifyModConfig.MAX_BETTER_BOLD_OFFSET_PERCENT, betterBoldOffsetPercent));
+		if (clamped == betterBoldOffsetPercent) {
+			return false;
+		}
+		LOGGER.warn("Clamping betterBoldOffsetPercent from {} to {}", betterBoldOffsetPercent, clamped);
+		betterBoldOffsetPercent = clamped;
+		return true;
+	}
 }
