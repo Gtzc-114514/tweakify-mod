@@ -521,9 +521,9 @@ Windows 下使用 `gradlew.bat`。需要环境变量 `JAVA_HOME` 指向 JDK 25�
 
 ## 许可证
 
-CC0-1.0
+MIT
 
-> 例外：`src/main/resources/assets/tweakify-mod/textures/gui/sprites/container/` 下的
+> 说明：`src/main/resources/assets/tweakify-mod/textures/gui/sprites/container/` 下的
 > `icon_slot.png` / `item_slot.png` / `plus.png` / `minus.png` 四张精灵图来自
 > [BizCub/inventory-item-groups](https://github.com/BizCub/inventory-item-groups)（MIT），
-> 为保持与其完全一致的视觉效果而原样保留，不受上面的 CC0 约束。
+> 与项目整体使用相同的 MIT 许可。
