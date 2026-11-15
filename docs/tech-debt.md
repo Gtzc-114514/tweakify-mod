@@ -40,17 +40,20 @@
   扩大到整个 65×65，帧时间上升但功能测试仍全绿。
 - **采用方案**：重建 Fabric Loom server GameTest（`fabricApi.configureTests`），在
   `src/gametest/java/.../BlockMarkerScannerGameTest` 中使用真实 `ServerLevel`/`LevelChunk`，
-  分别覆盖 A（只开屏障）、B（只开基岩）、C（两者全开）：
-  - 测试在固定世界坐标放置分属不同 section 的屏障与基岩，扫描 49³ 体积；
-  - `ScanJob` 暴露实际逐方块读取计数，断言读取数等于命中 section 层数 × 目标区块 16×16；
-  - 若 `chunkMayContain` 被改成 `true`，读取数变为 117,649，A/B/C 分别以
-    expected 1024/3328/4352、actual 117649 失败，证明测试不是假通过。
-- **修复记录**：`build.gradle` 增加 GameTest 源集配置；新增
+  分别覆盖 A（只开屏障）、B（只开基岩）、C（两者全开），并增加负 y 场景：
+  - 测试在固定世界坐标放置分属不同 section 的屏障与基岩，正 y 场景扫描 49³，负 y 场景扫描 17³；
+  - `ScanJob` 暴露逐方块读取计数与读取过的 section 集合；读取数必须等于命中 section 层数 × 目标区块 16×16，
+    section 集合必须精确等于目标组合（防止 target 写反或漏扫）；
+  - 若 `chunkMayContain` 被改成 `true`，正 y A/B/C 读取数变为 117,649，负 y 场景变为 4,913，
+    分别对 expected 1024/3328/4352/4352 失败，证明测试不是假通过。
+- **修复记录**：`build.gradle` 增加 GameTest 源集配置（只启用 server 测试，不涉及 eula；`runGameTest`
+  不可缓存，构建注释标注 `-x runGameTest` 逃生口）；新增
   `src/gametest/java/com/gtzc/tweakify/client/BlockMarkerScannerGameTest.java` 与
   `src/gametest/resources/fabric.mod.json`；`BlockMarkerScanner.ScanJob` 改用 `Level`，
-  新增读取计数与测试访问器；`check` 自动执行 `runGameTest`。
-- **验证**：`gradlew test` 通过；`gradlew build` 运行 4 个 required GameTest 全部通过；
-  临时把预筛赋值改为 `true` 后 A/B/C 全部按读取数断言失败，随后恢复并再次构建通过。
+  新增读取计数、读取 section 集合与测试访问器；`BlockMarkerScannerTest` 增加
+  `scanParamsFollowEnabledTargets` 覆盖 `createJob` 的开关/半径/上限参数接线；`check` 自动执行 `runGameTest`。
+- **验证**：`gradlew test` 通过；`gradlew build` 运行 4 个自研 GameTest（日志总计 5 个 required tests）全部通过；
+  临时把预筛赋值改为 `true` 后 A/B/C 与负 y 场景全部按读取数断言失败，随后恢复并再次构建通过。
 - **回归条件**：若删除或绕过 `src/gametest`、改动 `ScanJob` 的 section 预筛、或 GameTest 读取计数与
   命中 section 的预期不一致，重新评估本条并保留 GameTest 作为基线。
 
@@ -107,7 +110,7 @@
   在此之前不引入线程与快照生命周期管理。
 - **判定口径（详见检查表）**：绝对占比 > 5% 触发 / 2%–5% 观察 / < 2% 且无复现反馈维持现状；
   「开启屏障可见后卡顿」的可复现反馈为独立触发路径，不要求占比达标。
-  与 T1 的关系：T1 用相对基线 v1.0.4 的增量判回退，本条用绝对占比判总成本，一次采样可分别判读。
+  与 T1 的关系：T1 已由 GameTest 覆盖 section 预筛接线；本条仍用绝对占比判总成本，两者度量不同问题。
 - **闭环动作**：达标先按建议方案 3 降负，不足再按“主线程快照 + 后台解析”预案实施；
   不达标把 T3 状态写为「复测未达触发条件（YYYY-MM-DD，见详情）」；重评后同步表格状态与日期（详见检查表 §七）。
 - **缓解措施**：保持现状（section 预筛 + 每 tick 有界分帧）；触发后优先降负，见「建议方案」第 3 条。
