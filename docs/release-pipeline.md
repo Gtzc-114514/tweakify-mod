@@ -61,6 +61,13 @@
 
 各分支互斥：任一运行只输出一条 `::error::`，且不会出现「失败但无注解」的路径。
 
+## GitHub Release Action 版本
+
+- `create GitHub Release` 使用 `softprops/action-gh-release@v3`（当前 v3.0.4，`runs.using: node24`）；
+- 与 v2 的 inputs 兼容：继续使用 `files`、`body_path`、`generate_release_notes`、`fail_on_unmatched_files`；
+  `permissions.contents: write` 保持不变；
+- v2 在 Actions 上会触发 Node.js 20 弃用注解；v3 起改用 Node.js 24，该注解应在下一次标签发布时消失。
+
 ## 发布正文机制（resolve release notes）
 
 - 优先使用 `docs/release-notes/<tag>.md`（`-s` + `grep -q '[^[:space:]]'` 双条件，0 字节或纯空白都视为无效）；
