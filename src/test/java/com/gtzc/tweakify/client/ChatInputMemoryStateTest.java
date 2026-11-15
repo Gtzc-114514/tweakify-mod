@@ -235,4 +235,17 @@ class ChatInputMemoryStateTest {
 		assertEquals("", ChatInputMemoryState.savedText());
 		assertFalse(ChatInputMemoryState.consumeSubmitted("sent"));
 	}
+
+	// “不记忆命令”只丢弃以 / 开头的草稿（允许前导空白），普通消息照常保留。
+	@Test
+	void commandDraftsAreIgnoredOnlyWhenEnabled() {
+		assertTrue(ChatInputMemoryState.isCommandDraft("/give @s stone"));
+		assertTrue(ChatInputMemoryState.isCommandDraft("   /help"));
+		assertFalse(ChatInputMemoryState.isCommandDraft("hello /help"));
+		assertFalse(ChatInputMemoryState.isCommandDraft(null));
+
+		assertFalse(ChatInputMemoryState.shouldKeepDraft("/help", true));
+		assertTrue(ChatInputMemoryState.shouldKeepDraft("/help", false));
+		assertTrue(ChatInputMemoryState.shouldKeepDraft("hello", true));
+	}
 }

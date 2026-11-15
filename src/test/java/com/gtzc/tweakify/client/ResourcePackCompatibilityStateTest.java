@@ -26,4 +26,15 @@ class ResourcePackCompatibilityStateTest {
 		assertFalse(ResourcePackCompatibilityState.shouldHideCompatibility(
 			true, RESOURCE_PACK_DIR, null));
 	}
+
+	// 开启“同时忽略数据包”后不再要求目录匹配；关闭时仍只作用于资源包目录。
+	@Test
+	void alsoDataPacksExtendsScopeToAnyPackDirectory() {
+		assertTrue(ResourcePackCompatibilityState.shouldHideCompatibility(
+			true, true, DATA_PACK_DIR, RESOURCE_PACK_DIR));
+		assertFalse(ResourcePackCompatibilityState.shouldHideCompatibility(
+			false, true, DATA_PACK_DIR, RESOURCE_PACK_DIR));
+		assertFalse(ResourcePackCompatibilityState.shouldHideCompatibility(
+			true, true, null, RESOURCE_PACK_DIR));
+	}
 }

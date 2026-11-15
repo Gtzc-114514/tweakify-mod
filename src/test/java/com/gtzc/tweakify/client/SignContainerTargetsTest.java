@@ -26,6 +26,13 @@ class SignContainerTargetsTest {
 			"潜行右键必须保留告示牌的编辑/放置行为");
 	}
 
+	// 关闭潜行放行后，潜行也会把交互转给告示牌背后的容器。
+	@Test
+	void disablingSneakBypassAllowsSneaking() {
+		assertTrue(SignContainerTargets.shouldOpenContainer(true, false, true, true));
+		assertFalse(SignContainerTargets.shouldOpenContainer(true, true, true, true));
+	}
+
 	@Test
 	void disabledSwitchDoesNothing() {
 		assertFalse(SignContainerTargets.shouldOpenContainer(false, true, false));

@@ -143,4 +143,14 @@ class BedrockHighlightStateTest {
 	private static BedrockHighlightState.Marker marker(int x, boolean top, boolean bottom) {
 		return new BedrockHighlightState.Marker(new BlockPos(x, 64, 0), top, bottom);
 	}
+
+	// 扫描半径：盒子大于配置半径时，超出半径的标记必须被丢弃。
+	@Test
+	void scanRadiusFiltersMarkersOutsideRadius() {
+		BedrockHighlightState.setMarkers(new ArrayList<>(List.of(
+			marker(3, true, false), marker(9, true, false), marker(20, true, false))), CENTER, 256, 8);
+
+		assertEquals(1, BedrockHighlightState.markers().size(), "半径 8 时只保留 3 格与 8 格内的标记");
+		assertEquals(3, BedrockHighlightState.markers().get(0).pos().getX());
+	}
 }

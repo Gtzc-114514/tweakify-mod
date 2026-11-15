@@ -1376,4 +1376,151 @@ class TweakifyModConfigTest {
 		assertTrue(config.isEndGatewayTeleportBlacklisted(EntityTypes.PLAYER));
 		assertFalse(config.isEndGatewayTeleportBlacklisted(EntityTypes.ITEM));
 	}
+
+	// --- 功能子设置：步高 / 投掷速度 / 液体范围 / 屏障扫描 ---
+
+	// 跨步高度代码 → 实际步高，未知值回退 1 格（与旧版固定值一致）。
+	@Test
+	void autoStepUpHeightMapsCodesToStepHeights() {
+		assertEquals(1.0, TweakifyModConfig.autoStepUpHeight(
+			TweakifyModConfig.AUTO_STEP_UP_HEIGHT_ONE_BLOCK), 1.0e-9);
+		assertEquals(1.5, TweakifyModConfig.autoStepUpHeight(
+			TweakifyModConfig.AUTO_STEP_UP_HEIGHT_ONE_AND_HALF), 1.0e-9);
+		assertEquals(2.0, TweakifyModConfig.autoStepUpHeight(
+			TweakifyModConfig.AUTO_STEP_UP_HEIGHT_TWO_BLOCKS), 1.0e-9);
+		assertEquals(1.0, TweakifyModConfig.autoStepUpHeight("unknown"), 1.0e-9,
+			"unknown codes must fall back to the 1-block step height");
+		assertEquals(1.0, TweakifyModConfig.autoStepUpHeight(null), 1.0e-9);
+	}
+
+	// 投掷速度百分比先夹紧再换算：手工改坏配置也不能掷出离谱速度。
+	@Test
+	void spawnEggThrowVelocityClampsPercent() {
+		assertEquals(TweakifyModConfig.SPAWN_EGG_BASE_VELOCITY,
+			TweakifyModConfig.spawnEggThrowVelocity(100), 1.0e-6);
+		assertEquals(TweakifyModConfig.SPAWN_EGG_BASE_VELOCITY * 2.0F,
+			TweakifyModConfig.spawnEggThrowVelocity(999), 1.0e-6, "percent clamps to the max");
+		assertEquals(TweakifyModConfig.SPAWN_EGG_BASE_VELOCITY * 0.5F,
+			TweakifyModConfig.spawnEggThrowVelocity(-10), 1.0e-6, "percent clamps to the min");
+	}
+
+	// 液体范围真值表：只水时岩浆被拒、只岩浆时水被拒，未知取值两项都放行。
+	@Test
+	void fluidPickScopeCoversWaterAndLavaMatrix() {
+		assertTrue(TweakifyModConfig.fluidPickAllows(
+			TweakifyModConfig.FLUID_PICK_WATER_AND_LAVA, true, false));
+		assertTrue(TweakifyModConfig.fluidPickAllows(
+			TweakifyModConfig.FLUID_PICK_WATER_AND_LAVA, false, true));
+		assertTrue(TweakifyModConfig.fluidPickAllows(
+			TweakifyModConfig.FLUID_PICK_WATER_ONLY, true, false));
+		assertFalse(TweakifyModConfig.fluidPickAllows(
+			TweakifyModConfig.FLUID_PICK_WATER_ONLY, false, true));
+		assertTrue(TweakifyModConfig.fluidPickAllows(
+			TweakifyModConfig.FLUID_PICK_LAVA_ONLY, false, true));
+		assertFalse(TweakifyModConfig.fluidPickAllows(
+			TweakifyModConfig.FLUID_PICK_LAVA_ONLY, true, false));
+		assertTrue(TweakifyModConfig.fluidPickAllows(null, true, false),
+			"unknown scopes fall back to allowing both fluids");
+	}
+
+	// 新增的数值/枚举子设置必须在 load() 被夹紧或回退，而不是原样接受。
+	@Test
+	void loadSanitizesFunctionSubSettings() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, """
+			{
+			  "autoStepUpHeight": "not-a-height",
+			  "throwSpawnEggVelocity": 999,
+			  "pickFluidBucketFluids": "not-a-scope",
+			  "barrierVisibilityScanRadius": 1,
+			  "barrierVisibilityParticleInterval": 9999,
+			  "highlightSingleLayerBedrockScanRadius": 999,
+			  "highlightSingleLayerBedrockColor": "not-a-color",
+			  "attackRangePalette": "not-a-palette",
+			  "statusEffectDurationLowThreshold": 9999,
+			  "statusEffectDurationColorMode": "not-a-mode",
+			  "chatSelectionOpacity": 999,
+			  "entityHighlightStyle": "not-a-style",
+			  "entityHighlightBlinkPeriod": 9999,
+			  "entityHighlightColor": "not-a-color",
+			  "sprintFovIntensity": 999,
+			  "keepLastTorchMinCount": 99,
+			  "keepMiningProgressMaxDistance": 99,
+			  "tooExpensiveMaxLevelCost": 99999,
+			  "wartBlockDecompositionOutput": 99,
+			  "curseRemovalScope": "not-a-scope",
+			  "underwaterMiningPenaltyKeep": 999,
+			  "airMiningPenaltyKeep": 999,
+			  "bedTooFarMaxDistance": 999,
+			  "enchantmentLevelArabicStyle": "not-a-style",
+			  "smithingTemplateKeepChance": 999,
+			  "betterBoldOffsetPercent": 999,
+			  "miniHudRefreshIntervalMs": 1,
+			  "useItemSlowdownKeepPercent": 999,
+			  "rememberSelectedTabFallback": "not-a-tab",
+			  "ironGolemRideMinecartMaxDistance": 999
+			}
+			""");
+
+		TweakifyModConfig config = TweakifyModConfig.load(path);
+
+		assertEquals(TweakifyModConfig.AUTO_STEP_UP_HEIGHT_ONE_BLOCK, config.functions.autoStepUpHeight);
+		assertEquals(TweakifyModConfig.MAX_SPAWN_EGG_VELOCITY, config.functions.throwSpawnEggVelocity);
+		assertEquals(TweakifyModConfig.FLUID_PICK_WATER_AND_LAVA, config.functions.pickFluidBucketFluids);
+		assertEquals(TweakifyModConfig.MIN_BARRIER_SCAN_RADIUS, config.functions.barrierVisibilityScanRadius);
+		assertEquals(TweakifyModConfig.MAX_BARRIER_PARTICLE_INTERVAL,
+			config.functions.barrierVisibilityParticleInterval);
+		assertEquals(TweakifyModConfig.MAX_BEDROCK_SCAN_RADIUS,
+			config.functions.highlightSingleLayerBedrockScanRadius);
+		assertEquals(TweakifyModConfig.BEDROCK_COLOR_GOLD, config.functions.highlightSingleLayerBedrockColor);
+		assertEquals(TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE, config.functions.attackRangePalette);
+		assertEquals(TweakifyModConfig.MAX_STATUS_DURATION_THRESHOLD,
+			config.functions.statusEffectDurationLowThreshold);
+		assertEquals(TweakifyModConfig.STATUS_COLOR_AUTO, config.functions.statusEffectDurationColorMode);
+		assertEquals(TweakifyModConfig.MAX_CHAT_SELECTION_OPACITY, config.functions.chatSelectionOpacity);
+		assertEquals(TweakifyModConfig.ENTITY_HIGHLIGHT_STYLE_OUTLINE, config.functions.entityHighlightStyle);
+		assertEquals(TweakifyModConfig.MAX_ENTITY_HIGHLIGHT_BLINK_PERIOD,
+			config.functions.entityHighlightBlinkPeriod);
+		assertEquals(TweakifyModConfig.ENTITY_HIGHLIGHT_COLOR_VANILLA, config.functions.entityHighlightColor);
+		assertEquals(TweakifyModConfig.MAX_SPRINT_FOV_INTENSITY, config.modified.sprintFovIntensity);
+		assertEquals(TweakifyModConfig.MAX_KEEP_LAST_TORCH_COUNT, config.modified.keepLastTorchMinCount);
+		assertEquals(TweakifyModConfig.MAX_KEEP_MINING_PROGRESS_DISTANCE,
+			config.modified.keepMiningProgressMaxDistance);
+		assertEquals(TweakifyModConfig.MAX_TOO_EXPENSIVE_MAX_LEVEL_COST,
+			config.modified.tooExpensiveMaxLevelCost);
+		assertEquals(TweakifyModConfig.MAX_WART_DECOMPOSITION_OUTPUT,
+			config.modified.wartBlockDecompositionOutput);
+		assertEquals(TweakifyModConfig.CURSE_SCOPE_ALL, config.modified.curseRemovalScope);
+		assertEquals(TweakifyModConfig.MAX_MINING_PENALTY_KEEP_PERCENT,
+			config.modified.underwaterMiningPenaltyKeep);
+		assertEquals(TweakifyModConfig.MAX_MINING_PENALTY_KEEP_PERCENT,
+			config.modified.airMiningPenaltyKeep);
+		assertEquals(TweakifyModConfig.MAX_BED_TOO_FAR_DISTANCE, config.modified.bedTooFarMaxDistance);
+		assertEquals(TweakifyModConfig.ENCHANTMENT_LEVEL_STYLE_PLAIN,
+			config.modified.enchantmentLevelArabicStyle);
+		assertEquals(TweakifyModConfig.MAX_SMITHING_TEMPLATE_KEEP_CHANCE,
+			config.modified.smithingTemplateKeepChance);
+		assertEquals(TweakifyModConfig.MAX_BETTER_BOLD_OFFSET_PERCENT,
+			config.fix.betterBoldOffsetPercent);
+		assertEquals(TweakifyModConfig.MIN_MINIHUD_REFRESH_INTERVAL_MS,
+			config.optimization.miniHudRefreshIntervalMs);
+		assertEquals(TweakifyModConfig.MAX_USE_ITEM_SLOWDOWN_KEEP_PERCENT,
+			config.modified.useItemSlowdownKeepPercent);
+		assertEquals(TweakifyModConfig.CONFIG_TAB_ALL, config.general.rememberSelectedTabFallback);
+		assertEquals(TweakifyModConfig.MAX_IRON_GOLEM_PICKUP_DISTANCE,
+			config.modified.ironGolemRideMinecartMaxDistance);
+	}
+
+	// 透明度重写：百分比夹紧到 10 ~ 100，只改 alpha，RGB 保持不变。
+	@Test
+	void withOpacityClampsPercentAndKeepsRgb() {
+		int minimum = TweakifyModConfig.withOpacity(0x123456, 0);
+		assertEquals(Math.round(TweakifyModConfig.MIN_CHAT_SELECTION_OPACITY * 255.0F / 100.0F),
+			minimum >>> 24, "低于下限时夹紧到 10%");
+		assertEquals(0x123456, minimum & 0xFFFFFF, "RGB 必须保留");
+
+		int maximum = TweakifyModConfig.withOpacity(0x123456, 999);
+		assertEquals(255, maximum >>> 24, "高于上限时夹紧到 100%");
+		assertEquals(0x123456, maximum & 0xFFFFFF);
+	}
 }

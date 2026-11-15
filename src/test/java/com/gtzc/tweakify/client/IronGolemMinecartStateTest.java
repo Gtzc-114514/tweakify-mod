@@ -36,6 +36,17 @@ class IronGolemMinecartStateTest {
 		assertFalse(IronGolemMinecartState.shouldPickUp(true, false, false, false));
 	}
 
+	// 距离限制：0 表示不限制；大于 0 时必须有玩家在范围内。
+	@Test
+	void distanceGateRequiresNearbyPlayer() {
+		assertTrue(IronGolemMinecartState.isPlayerInRange(0, false), "0 = 不限制");
+		assertTrue(IronGolemMinecartState.isPlayerInRange(16, true));
+		assertFalse(IronGolemMinecartState.isPlayerInRange(16, false));
+		assertTrue(IronGolemMinecartState.isPlayerInRange(-1, false), "负数按不限制处理");
+		assertFalse(IronGolemMinecartState.shouldPickUp(true, false, false, true, false));
+		assertTrue(IronGolemMinecartState.shouldPickUp(true, false, false, true, true));
+	}
+
 	@Test
 	void searchBoxExpandsInAllThreeAxes() {
 		AABB cart = new AABB(0.0, 0.0, 0.0, 1.0, 0.7, 1.0);

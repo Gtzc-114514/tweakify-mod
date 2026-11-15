@@ -42,4 +42,13 @@ class SelfNameVisibilityTest {
 		assertFalse(SelfNameVisibility.shouldShowSelfName(true, true, false, false, true, false));
 		assertFalse(SelfNameVisibility.shouldShowSelfName(true, true, false, false, false, true));
 	}
+
+	// 潜行门控：开启“仅潜行时显示”后，未潜行不显示。
+	@Test
+	void sneakOnlyRequiresSneaking() {
+		assertTrue(SelfNameVisibility.shouldShowSelfName(true, true, false, false, false, false, true, true));
+		assertFalse(SelfNameVisibility.shouldShowSelfName(true, true, false, false, false, false, true, false));
+		assertTrue(SelfNameVisibility.shouldShowSelfName(true, true, false, false, false, false, false, false),
+			"关闭仅潜行时不受潜行影响");
+	}
 }

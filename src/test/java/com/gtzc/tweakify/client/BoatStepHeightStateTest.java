@@ -24,4 +24,15 @@ class BoatStepHeightStateTest {
 		assertEquals(0.0f, BoatStepHeightState.stepHeight(false, 0.0f), EPSILON);
 		assertEquals(0.5f, BoatStepHeightState.stepHeight(false, 0.5f), EPSILON);
 	}
+
+	// 仅玩家模式：空船与动物船保持原版，载人船才抬高。
+	@Test
+	void playerOnlyKeepsEmptyBoatsVanilla() {
+		assertEquals(0.0f, BoatStepHeightState.stepHeight(true, true, false, 0.0f), EPSILON);
+		assertEquals(BoatStepHeightState.DIRT_PATH_STEP,
+			BoatStepHeightState.stepHeight(true, true, true, 0.0f), EPSILON);
+		assertEquals(BoatStepHeightState.DIRT_PATH_STEP,
+			BoatStepHeightState.stepHeight(true, false, false, 0.0f), EPSILON,
+			"关闭仅玩家模式时空船也抬高");
+	}
 }

@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -92,6 +94,26 @@ class ConnectedBlockOutlineStateTest {
 		assertFalse(ConnectedBlockOutlineState.isSupported(stone));
 		assertTrue(ConnectedBlockOutlineState.connectedPositions(stone, POS).isEmpty());
 		assertNull(ConnectedBlockOutlineState.mergedShape(stone, POS, levelOf(Map.of(POS, stone))));
+	}
+
+	// 关闭“门 2 格视觉高度”后，门不再合并，保持原版轮廓。
+	@Test
+	void doorFullHeightCanBeDisabled() {
+		TweakifyModConfig previous = TweakifyMod.CONFIG;
+		TweakifyModConfig config = new TweakifyModConfig();
+		config.modified.connectedBlockOutlineDoorFullHeight = false;
+		TweakifyMod.CONFIG = config;
+		try {
+			BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
+				.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+			BlockState upper = lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+			BlockGetter level = levelOf(Map.of(POS, lower, POS.above(), upper));
+
+			assertNull(ConnectedBlockOutlineState.mergedShape(lower, POS, level),
+				"关闭 2 格视觉高度后门保持原版轮廓");
+		} finally {
+			TweakifyMod.CONFIG = previous;
+		}
 	}
 
 	@Test

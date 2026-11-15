@@ -64,4 +64,18 @@ class BarrierVisibilityStateTest {
 		assertEquals(1, BarrierVisibilityState.markers().size(), "非正数上限回退到默认值，不会清空标记");
 		BarrierVisibilityState.clear();
 	}
+
+	// 扫描半径：扫描盒大于配置半径时，角落方块必须被丢弃，只保留圆内标记。
+	@Test
+	void scanRadiusFiltersOutCornerMarkers() {
+		BlockPos center = new BlockPos(0, 64, 0);
+		List<BlockPos> found = List.of(
+			center.offset(3, 0, 0), center.offset(9, 0, 9), center.offset(20, 0, 0));
+
+		BarrierVisibilityState.setMarkers(found, center, 256, 8);
+
+		assertEquals(List.of(center.offset(3, 0, 0)), BarrierVisibilityState.markers(),
+			"半径 8 时只保留距离不超出 8 格的方块");
+		BarrierVisibilityState.clear();
+	}
 }

@@ -113,4 +113,19 @@ class AttackRangeGeometryCacheTest {
 		return new AttackRangeState.Entry(x, y, y + 0.9, 0.0, radius,
 			new AABB(x - radius, y - radius, -radius, x + radius, y + radius, radius), 0.0);
 	}
+
+	// 调色板变化必须重建顶点，颜色仍按模式的透明度档位拼上。
+	@Test
+	void paletteChangeRebuildsWithNewRgb() {
+		AttackRangeGeometryCache cache = new AttackRangeGeometryCache();
+		List<AttackRangeState.Entry> entries = List.of(entry(0.0, 64.0, 1.0f));
+
+		assertTrue(cache.ensure(entries, false, false, 0x3388FF));
+		assertEquals(0xAA3388FF, cache.geometry(entries.get(0)).step1().color(0),
+			"平面线框使用 0xAA 透明度");
+		assertFalse(cache.ensure(entries, false, false, 0x3388FF), "颜色未变不重建");
+
+		assertTrue(cache.ensure(entries, false, false, 0xFF5555), "颜色变化要重建");
+		assertEquals(0xAAFF5555, cache.geometry(entries.get(0)).step1().color(0));
+	}
 }

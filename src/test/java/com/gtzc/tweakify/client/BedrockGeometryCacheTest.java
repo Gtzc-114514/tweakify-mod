@@ -8,6 +8,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -75,5 +76,22 @@ class BedrockGeometryCacheTest {
 		assertEquals(64, segment.blockY());
 		assertEquals(-5, segment.blockZ());
 		assertTrue(segment.top());
+	}
+
+	// 颜色烘在顶点里：颜色变化必须触发重建，新顶点使用新颜色。
+	@Test
+	void colorChangeRebuildsVertices() {
+		BedrockGeometryCache cache = new BedrockGeometryCache();
+		List<BedrockHighlightState.Marker> markers =
+			List.of(new BedrockHighlightState.Marker(new BlockPos(0, 64, 0), true, false));
+
+		assertTrue(cache.ensure(markers, 0xFFFFC800));
+		int gold = cache.geometry().color(0);
+		assertEquals(0xFFFFC800, gold);
+		assertFalse(cache.ensure(markers, 0xFFFFC800), "同一颜色与列表引用不重建");
+
+		assertTrue(cache.ensure(markers, 0xFFFF5555), "颜色变化要重建");
+		assertEquals(0xFFFF5555, cache.geometry().color(0));
+		assertNotEquals(gold, cache.geometry().color(0));
 	}
 }

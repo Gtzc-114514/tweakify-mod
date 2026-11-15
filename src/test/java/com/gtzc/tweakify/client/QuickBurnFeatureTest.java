@@ -23,4 +23,12 @@ class QuickBurnFeatureTest {
 		assertFalse(QuickBurnFeature.isBurnTool(Items.TORCH));
 		assertFalse(QuickBurnFeature.isBurnTool(Items.AIR));
 	}
+
+	// 潜行门控：开启要求后，未潜行不触发（提示也同一条件），关闭时不需要潜行。
+	@Test
+	void sneakRequirementGatesTheTrigger() {
+		assertTrue(QuickBurnFeature.isTriggerAllowed(false, false));
+		assertFalse(QuickBurnFeature.isTriggerAllowed(true, false));
+		assertTrue(QuickBurnFeature.isTriggerAllowed(true, true));
+	}
 }
