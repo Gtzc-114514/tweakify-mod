@@ -7,22 +7,26 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * T1 的真实 LevelChunk 集成测试。
  *
  * <p>每个场景在服务器世界里放置一个屏障与一个基岩（分属不同 section），
- * 用 {@link BlockMarkerScanner.ScanJob} 实际扫描 49³ 体积：
- * 只开屏障时基岩 section 必须被跳过，只开基岩时屏障 section 必须被跳过，两者全开时只扫描两个命中 section。
- * 断言实际逐方块读取数等于命中 section 的层数 × 目标区块的 16×16，
- * 若 {@code chunkMayContain} 被改成 {@code true}，读取数会变成完整体积（117649），测试立即失败。
+ * 用 {@link BlockMarkerScanner.ScanJob} 实际扫描 49³（负 y 场景为 17³）体积：
+ * 只开屏障时基岩 section 必须被跳过，只开基岩时屏障 section 必须被跳过，两者全开时只扫描两个命中 section；
+ * 另有一个负 y 场景覆盖负 section 索引与边界。
+ * 断言实际逐方块读取数与“读取过的 section 集合”都精确匹配目标组合；
+ * 若 {@code chunkMayContain} 被改成 {@code true}，读取数会变成完整体积，测试立即失败。
  *
- * <p>GameTest 结构本身不参与扫描：测试区域在结构外 100 个区块处，避免默认结构边界与方块干扰。
+ * <p>测试区域远离 GameTest 结构网格，避免默认结构边界与方块干扰。
  */
 public class BlockMarkerScannerGameTest {
 	private static final int RADIUS = 24;
 	// 目标区块按 16×16 计算：中心固定在区块中心，扫描盒完整覆盖该区块。
 	private static final int CHUNK_AREA = 16 * 16;
-	// 三个场景固定在世界坐标上，彼此间隔 256 格，扫描盒不会互相覆盖。
+	// 场景固定在世界坐标上，彼此间隔 256 格，扫描盒不会互相覆盖。
 	private static final int BASE_X = 100_000;
 	private static final int BASE_Z = 100_000;
 	private static final int SCENARIO_SPACING = 256;
@@ -42,67 +46,100 @@ public class BlockMarkerScannerGameTest {
 		runScenario(helper, true, true, 2);
 	}
 
+	// 负 y：中心 -24、半径 8，屏障 -32 与基岩 -16 覆盖负 section 索引；
+	// 刻意避开世界底部自然基岩层，避免自然基岩使所有区块都命中预筛。
+	@GameTest(maxTicks = 100)
+	public void negativeYSectionsUseSectionBoundary(GameTestHelper helper) {
+		runScenario(helper, true, true, 4, -24, 8);
+	}
+
 	private static void runScenario(GameTestHelper helper, boolean barrier, boolean bedrock, int scenarioIndex) {
+		runScenario(helper, barrier, bedrock, scenarioIndex, 100, RADIUS);
+	}
+
+	private static void runScenario(GameTestHelper helper, boolean barrier, boolean bedrock, int scenarioIndex,
+			int centerY, int radius) {
+		helper.assertTrue(radius >= 8, "radius must cover the full target chunk");
 		ServerLevel level = helper.getLevel();
-		// 固定 y=100，并让 x/z 落在目标区块中心：49 宽扫描盒覆盖目标区块的 16×16 全部列。
+		// 让 x/z 落在目标区块中心：扫描盒完整覆盖目标区块的 16×16 全部列。
 		BlockPos center = new BlockPos(
 			BASE_X + scenarioIndex * SCENARIO_SPACING + 8,
-			100,
+			centerY,
 			BASE_Z + 8);
-		BlockPos barrierPos = center.offset(0, -RADIUS, 0);
-		BlockPos bedrockPos = center.offset(0, RADIUS, 0);
+		BlockPos barrierPos = center.offset(0, -radius, 0);
+		BlockPos bedrockPos = center.offset(0, radius, 0);
 
 		loadAndPlace(level, barrierPos, Blocks.BARRIER.defaultBlockState());
 		loadAndPlace(level, bedrockPos, Blocks.BEDROCK.defaultBlockState());
 
 		BlockMarkerScanner.ScanJob job = new BlockMarkerScanner.ScanJob(
-			level, center, barrier, bedrock, RADIUS, RADIUS, 64);
+			level, center, barrier, bedrock, radius, radius, 64);
 		int guard = 0;
 		while (!job.step()) {
 			if (++guard > 10) {
 				helper.assertTrue(false, "scan job did not finish");
-				return;
 			}
 		}
 
 		// 目标 section 的命中层数：扫描盒与 section 的 y 重叠部分。
-		int scanMinY = center.getY() - RADIUS;
-		int scanMaxY = center.getY() + RADIUS;
+		int scanMinY = center.getY() - radius;
+		int scanMaxY = center.getY() + radius;
 		int barrierLayers = overlapLayers(level, barrierPos.getY(), scanMinY, scanMaxY);
 		int bedrockLayers = overlapLayers(level, bedrockPos.getY(), scanMinY, scanMaxY);
 		int expectedReads = (barrier ? barrierLayers : 0) * CHUNK_AREA
 			+ (bedrock ? bedrockLayers : 0) * CHUNK_AREA;
-		int fullVolume = (RADIUS * 2 + 1) * (RADIUS * 2 + 1) * (RADIUS * 2 + 1);
+		int fullVolume = (radius * 2 + 1) * (radius * 2 + 1) * (radius * 2 + 1);
 
-		// 关键判别：预筛正确时只读命中 section；被改成 true 时会读满 117649 格。
+		// 关键判别一：读取数只应包含命中 section 的层；改成 true 时会读满完整体积。
 		helper.assertTrue(job.blockReadsForTest() == expectedReads,
 			"section prefilter read count mismatch: expected=" + expectedReads
 				+ " actual=" + job.blockReadsForTest() + " full=" + fullVolume);
 
+		// 关键判别二：读取过的 section 集合必须精确等于目标组合，防止 target 写反或漏扫。
+		Set<BlockMarkerScanner.ScanJob.SectionKey> expectedSections = new HashSet<>();
+		if (barrier) {
+			expectedSections.add(sectionKey(level, barrierPos));
+		}
+		if (bedrock) {
+			expectedSections.add(sectionKey(level, bedrockPos));
+		}
+		helper.assertTrue(job.sectionsReadForTest().equals(expectedSections),
+			"section set mismatch: expected=" + expectedSections
+				+ " actual=" + job.sectionsReadForTest());
+
 		if (barrier) {
 			helper.assertTrue(job.barriersForTest().contains(barrierPos), "barrier was not discovered");
-		} else {
-			helper.assertTrue(job.barriersForTest().isEmpty(), "barrier must be ignored when only bedrock is enabled");
 		}
 		if (bedrock) {
 			helper.assertTrue(job.markersForTest().stream()
 				.anyMatch(marker -> marker.pos().equals(bedrockPos)), "bedrock marker was not discovered");
-		} else {
-			helper.assertTrue(job.markersForTest().isEmpty(),
-				"bedrock must be ignored when only barrier is enabled");
 		}
 		helper.succeed();
 	}
 
 	private static void loadAndPlace(ServerLevel level, BlockPos pos, BlockState state) {
-		// 先确保区块已加载；重复运行时目标方块可能已存在，此时 setBlockAndUpdate 会返回 false。
+		// 先确保区块已加载，再清空自身与上下邻居并回读校验；
+		// 负 y 场景需要上下为空气，BedrockHighlightState.markerAt 才会把基岩视为单层暴露。
 		level.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
-		if (level.getBlockState(pos).equals(state)) {
-			return;
-		}
+		level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+		level.setBlockAndUpdate(pos.offset(0, 1, 0), Blocks.AIR.defaultBlockState());
+		level.setBlockAndUpdate(pos.offset(0, -1, 0), Blocks.AIR.defaultBlockState());
 		if (!level.setBlockAndUpdate(pos, state)) {
 			throw new IllegalStateException("Could not place " + state + " at " + pos);
 		}
+		if (!level.getBlockState(pos).equals(state)) {
+			throw new IllegalStateException("Block state mismatch after placing at " + pos);
+		}
+		if (state.is(Blocks.BEDROCK)
+			&& (!level.getBlockState(pos.offset(0, 1, 0)).isAir()
+				|| !level.getBlockState(pos.offset(0, -1, 0)).isAir())) {
+			throw new IllegalStateException("Bedrock neighbors are not air at " + pos);
+		}
+	}
+
+	private static BlockMarkerScanner.ScanJob.SectionKey sectionKey(ServerLevel level, BlockPos pos) {
+		return new BlockMarkerScanner.ScanJob.SectionKey(
+			pos.getX() >> 4, pos.getZ() >> 4, level.getSectionIndex(pos.getY()));
 	}
 
 	// 扫描盒 [scanMinY, scanMaxY] 与该方块所在 section [bottom, bottom+15] 的重叠层数。

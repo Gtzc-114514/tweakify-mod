@@ -84,4 +84,28 @@ class BlockMarkerScannerTest {
 		}
 		assertFalse(BlockMarkerScanner.sectionNeedsScan((LevelChunkSection) null, null));
 	}
+
+	// createJob 的参数接线：关闭的功能必须把半径/上限归零，避免把两侧参数写反。
+	@Test
+	void scanParamsFollowEnabledTargets() {
+		BlockMarkerScanner.ScanParams none = BlockMarkerScanner.scanParams(false, false, 11, 22, 33);
+		assertEquals(0, none.barrierRadius());
+		assertEquals(0, none.bedrockRadius());
+		assertEquals(0, none.maxBedrockMarkers());
+
+		BlockMarkerScanner.ScanParams barrierOnly = BlockMarkerScanner.scanParams(true, false, 11, 22, 33);
+		assertEquals(11, barrierOnly.barrierRadius());
+		assertEquals(0, barrierOnly.bedrockRadius());
+		assertEquals(0, barrierOnly.maxBedrockMarkers());
+
+		BlockMarkerScanner.ScanParams bedrockOnly = BlockMarkerScanner.scanParams(false, true, 11, 22, 33);
+		assertEquals(0, bedrockOnly.barrierRadius());
+		assertEquals(22, bedrockOnly.bedrockRadius());
+		assertEquals(33, bedrockOnly.maxBedrockMarkers());
+
+		BlockMarkerScanner.ScanParams both = BlockMarkerScanner.scanParams(true, true, 11, 22, 33);
+		assertEquals(11, both.barrierRadius());
+		assertEquals(22, both.bedrockRadius());
+		assertEquals(33, both.maxBedrockMarkers());
+	}
 }

@@ -12,7 +12,9 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -72,6 +74,17 @@ final class BlockMarkerScanner {
 			}
 			return bedrock ? BEDROCK : null;
 		}
+	}
+
+	// 按开关组合选出的扫描参数；独立成可测纯函数，避免 createJob 的三目接线被写反。
+	record ScanParams(int barrierRadius, int bedrockRadius, int maxBedrockMarkers) {
+	}
+
+	static ScanParams scanParams(boolean barrier, boolean bedrock, int barrierRadius,
+			int bedrockRadius, int maxBedrockMarkers) {
+		return new ScanParams(barrier ? barrierRadius : 0,
+			bedrock ? bedrockRadius : 0,
+			bedrock ? maxBedrockMarkers : 0);
 	}
 
 	// section 是否包含目标方块：纯函数，便于覆盖各种开关组合下的跳过逻辑。
@@ -170,10 +183,10 @@ final class BlockMarkerScanner {
 
 	// 按当前配置创建扫描任务；ScanJob 本身只依赖 Level，便于真实 LevelChunk GameTest 复用。
 	private static ScanJob createJob(ClientLevel level, BlockPos center, boolean barrier, boolean bedrock) {
+		ScanParams params = scanParams(barrier, bedrock, barrierScanRadius(), bedrockScanRadius(),
+			maxBedrockMarkers());
 		return new ScanJob(level, center, barrier, bedrock,
-			barrier ? barrierScanRadius() : 0,
-			bedrock ? bedrockScanRadius() : 0,
-			bedrock ? maxBedrockMarkers() : 0);
+			params.barrierRadius(), params.bedrockRadius(), params.maxBedrockMarkers());
 	}
 
 	// 一次分帧扫描：从下到上逐层处理 y，扫描期间世界与开关都不可变。
@@ -206,6 +219,12 @@ final class BlockMarkerScanner {
 		private final ScanTarget target;
 		// 实际逐方块读取次数：GameTest 用它判别 section 预筛是否真的跳过了非目标区块。
 		private int blockReads;
+		// 实际读取过的 section：GameTest 用精确集合断言目标组合，避免只读总数掩盖 target 写反。
+		private final Set<SectionKey> sectionsRead = new HashSet<>();
+
+		// 目标 section 的稳定标识；仅用于 GameTest 行为断言。
+		record SectionKey(int chunkX, int chunkZ, int sectionIndex) {
+		}
 
 		ScanJob(Level level, BlockPos center, boolean barrier, boolean bedrock,
 				int barrierRadius, int bedrockRadius, int maxBedrockMarkers) {
@@ -254,7 +273,12 @@ final class BlockMarkerScanner {
 					// 未加载区块返回空区块，读取结果是空气，与原版 getBlockState 行为一致。
 					LevelChunk chunk = this.level.getChunk(baseChunkX + chunkX, baseChunkZ + chunkZ);
 					this.layerChunks[slot] = chunk;
-					this.chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target);
+					boolean mayContain = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target);
+					this.chunkMayContain[slot] = mayContain;
+					if (mayContain) {
+						this.sectionsRead.add(new SectionKey(baseChunkX + chunkX, baseChunkZ + chunkZ,
+							chunk.getSectionIndex(y)));
+					}
 				}
 			}
 			for (int x = minX; x <= maxX; x++) {
@@ -294,17 +318,21 @@ final class BlockMarkerScanner {
 			}
 		}
 
-		// 以下三个包私有访问器仅供真实 LevelChunk GameTest 使用。
+		// 以下四个包私有访问器仅供真实 LevelChunk GameTest 使用。
 		int blockReadsForTest() {
 			return this.blockReads;
 		}
 
+		Set<SectionKey> sectionsReadForTest() {
+			return Set.copyOf(this.sectionsRead);
+		}
+
 		List<BlockPos> barriersForTest() {
-			return this.barriers;
+			return List.copyOf(this.barriers);
 		}
 
 		List<BedrockHighlightState.Marker> markersForTest() {
-			return this.markers;
+			return List.copyOf(this.markers);
 		}
 	}
 
