@@ -72,6 +72,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 标签记忆：打开配置界面时停在上次选择的分类标签。
 	public static final ConfigBoolean REMEMBER_SELECTED_TAB = new ConfigBoolean(
 		"rememberSelectedTab", false).apply(GENERAL_KEY);
+	// 未记忆时的默认标签（关闭标签记忆或首次打开）。
+	public static final ConfigOptionList REMEMBER_SELECTED_TAB_FALLBACK = new ConfigOptionList(
+		"rememberSelectedTabFallback", ConfigGuiTab.ALL).apply(GENERAL_KEY);
 	public static final ConfigHotkey OPEN_CONFIG_GUI = new ConfigHotkey(
 		"openConfigGui", "G,C", OPEN_CONFIG_GUI_SETTINGS).apply(GENERAL_KEY);
 	// 掉落物消失时间（tick）：默认 6000 = 原版 5 分钟，滑块范围 3 秒 ~ 30 分钟。
@@ -103,16 +106,27 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"offhandUseCooldown", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_USE_ITEM_SLOWDOWN = new ConfigBoolean(
 		"disableUseItemSlowdown", false).apply(GENERAL_KEY);
+	// 保留原版使用减速的百分比（0 = 完全取消，100 = 原版相同）。
+	public static final ConfigInteger USE_ITEM_SLOWDOWN_KEEP_PERCENT = new ConfigInteger(
+		"useItemSlowdownKeepPercent", TweakifyModConfig.DEFAULT_USE_ITEM_SLOWDOWN_KEEP_PERCENT,
+		TweakifyModConfig.MIN_USE_ITEM_SLOWDOWN_KEEP_PERCENT,
+		TweakifyModConfig.MAX_USE_ITEM_SLOWDOWN_KEEP_PERCENT).apply(GENERAL_KEY);
 	public static final ConfigStringList USE_ITEM_SLOWDOWN_EXCEPTIONS = new ItemIdConfigStringList(
 		"useItemSlowdownExceptions", ImmutableList.of()).apply(LISTS_KEY);
 	public static final ConfigBoolean DISABLE_HURT_SHAKE = new ConfigBoolean(
 		"disableHurtShake", false).apply(GENERAL_KEY);
+	// 关闭受伤抖动时保留死亡镜头倾斜。
+	public static final ConfigBoolean HURT_SHAKE_KEEP_DEATH_TILT = new ConfigBoolean(
+		"hurtShakeKeepDeathTilt", false).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed DISABLE_FLIGHT_DRIFT = new ConfigBooleanHotkeyed(
 		"disableFlightDrift", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigBoolean FLIGHT_DRIFT_VERTICAL = new ConfigBoolean(
 		"flightDriftVertical", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_HURT_TINT = new ConfigBoolean(
 		"disableHurtTint", false).apply(GENERAL_KEY);
+	// 关闭红色覆盖时保留受伤闪白。
+	public static final ConfigBoolean HURT_TINT_KEEP_WHITE_FLASH = new ConfigBoolean(
+		"hurtTintKeepWhiteFlash", true).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed DISABLE_DIMENSION_TELEPORT = new ConfigBooleanHotkeyed(
 		"disableDimensionTeleport", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigBoolean DIMENSION_TELEPORT_PLAYERS_ONLY = new ConfigBoolean(
@@ -130,14 +144,31 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"disableEndPortalTeleport", true).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_UNDERWATER_MINING_PENALTY = new ConfigBoolean(
 		"disableUnderwaterMiningPenalty", false).apply(GENERAL_KEY);
+	// 保留的水下挖掘惩罚百分比（0 = 完全去掉，100 = 原版）。
+	public static final ConfigInteger UNDERWATER_MINING_PENALTY_KEEP = new ConfigInteger(
+		"underwaterMiningPenaltyKeep", TweakifyModConfig.DEFAULT_MINING_PENALTY_KEEP_PERCENT,
+		TweakifyModConfig.MIN_MINING_PENALTY_KEEP_PERCENT,
+		TweakifyModConfig.MAX_MINING_PENALTY_KEEP_PERCENT).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_AIR_MINING_PENALTY = new ConfigBoolean(
 		"disableAirMiningPenalty", false).apply(GENERAL_KEY);
+	// 保留的空中挖掘惩罚百分比（0 = 完全去掉，100 = 原版）。
+	public static final ConfigInteger AIR_MINING_PENALTY_KEEP = new ConfigInteger(
+		"airMiningPenaltyKeep", TweakifyModConfig.DEFAULT_MINING_PENALTY_KEEP_PERCENT,
+		TweakifyModConfig.MIN_MINING_PENALTY_KEEP_PERCENT,
+		TweakifyModConfig.MAX_MINING_PENALTY_KEEP_PERCENT).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed HIGHLIGHT_SINGLE_LAYER_BEDROCK = new ConfigBooleanHotkeyed(
 		"highlightSingleLayerBedrock", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	public static final ConfigInteger HIGHLIGHT_SINGLE_LAYER_BEDROCK_MAX_MARKERS = new ConfigInteger(
 		"highlightSingleLayerBedrockMaxMarkers", TweakifyModConfig.DEFAULT_BEDROCK_MARKERS,
 		TweakifyModConfig.MIN_BEDROCK_MARKERS,
 		TweakifyModConfig.MAX_BEDROCK_MARKERS).apply(GENERAL_KEY);
+	// 基岩扫描半径（8 ~ 32 格）与标记颜色。
+	public static final ConfigInteger HIGHLIGHT_SINGLE_LAYER_BEDROCK_SCAN_RADIUS = new ConfigInteger(
+		"highlightSingleLayerBedrockScanRadius", TweakifyModConfig.DEFAULT_BEDROCK_SCAN_RADIUS,
+		TweakifyModConfig.MIN_BEDROCK_SCAN_RADIUS,
+		TweakifyModConfig.MAX_BEDROCK_SCAN_RADIUS).apply(GENERAL_KEY);
+	public static final ConfigOptionList HIGHLIGHT_SINGLE_LAYER_BEDROCK_COLOR = new ConfigOptionList(
+		"highlightSingleLayerBedrockColor", BedrockMarkerColor.GOLD).apply(GENERAL_KEY);
 	// 屏障可见：不手持屏障物品也能看到周围屏障，条目自带快捷键用于切换开关。
 	public static final ConfigBooleanHotkeyed BARRIER_VISIBILITY = new ConfigBooleanHotkeyed(
 		"barrierVisibility", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -146,6 +177,15 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"barrierVisibilityMaxMarkers", TweakifyModConfig.DEFAULT_BARRIER_MARKERS,
 		TweakifyModConfig.MIN_BARRIER_MARKERS,
 		TweakifyModConfig.MAX_BARRIER_MARKERS).apply(GENERAL_KEY);
+	// 扫描半径（8 ~ 32 格）与同一方块两次标记粒子的间隔（20 ~ 200 tick）。
+	public static final ConfigInteger BARRIER_VISIBILITY_SCAN_RADIUS = new ConfigInteger(
+		"barrierVisibilityScanRadius", TweakifyModConfig.DEFAULT_BARRIER_SCAN_RADIUS,
+		TweakifyModConfig.MIN_BARRIER_SCAN_RADIUS,
+		TweakifyModConfig.MAX_BARRIER_SCAN_RADIUS).apply(GENERAL_KEY);
+	public static final ConfigInteger BARRIER_VISIBILITY_PARTICLE_INTERVAL = new ConfigInteger(
+		"barrierVisibilityParticleInterval", TweakifyModConfig.DEFAULT_BARRIER_PARTICLE_INTERVAL,
+		TweakifyModConfig.MIN_BARRIER_PARTICLE_INTERVAL,
+		TweakifyModConfig.MAX_BARRIER_PARTICLE_INTERVAL).apply(GENERAL_KEY);
 	// 装备耐久显示：耐久条上叠加耐久百分比 / 剩余耐久数值，显示内容由子项切换。
 	public static final ConfigBooleanHotkeyed DURABILITY_OVERLAY = new ConfigBooleanHotkeyed(
 		"durabilityOverlay", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -156,38 +196,79 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"durabilityOverlayColorMode", DurabilityColorMode.AUTO).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_CURSE_ENCHANTMENT_RESTRICTION = new ConfigBoolean(
 		"disableCurseEnchantmentRestriction", false).apply(GENERAL_KEY);
+	// 诅咒移除范围：全部 / 仅绑定诅咒 / 仅消失诅咒。
+	public static final ConfigOptionList CURSE_REMOVAL_SCOPE = new ConfigOptionList(
+		"curseRemovalScope", CurseRemovalScope.ALL).apply(GENERAL_KEY);
 	// 禁用附魔过于昂贵：铁砧花费达到 40 级时仍可取出结果。
 	public static final ConfigBoolean DISABLE_TOO_EXPENSIVE = new ConfigBoolean(
 		"disableTooExpensive", false).apply(GENERAL_KEY);
+	// 可承受的最大经验花费（0 = 不限制）与超出时仅提示不阻止。
+	public static final ConfigInteger TOO_EXPENSIVE_MAX_LEVEL_COST = new ConfigInteger(
+		"tooExpensiveMaxLevelCost", TweakifyModConfig.DEFAULT_TOO_EXPENSIVE_MAX_LEVEL_COST,
+		TweakifyModConfig.MIN_TOO_EXPENSIVE_MAX_LEVEL_COST,
+		TweakifyModConfig.MAX_TOO_EXPENSIVE_MAX_LEVEL_COST).apply(GENERAL_KEY);
+	public static final ConfigBoolean TOO_EXPENSIVE_WARN_ONLY = new ConfigBoolean(
+		"tooExpensiveWarnOnly", false).apply(GENERAL_KEY);
 	// 移除附魔冲突：铁砧合并时忽略附魔互斥限制。
 	public static final ConfigBoolean REMOVE_ENCHANTMENT_CONFLICTS = new ConfigBoolean(
 		"removeEnchantmentConflicts", false).apply(GENERAL_KEY);
+	// 仅解除同一互斥组（同类附魔）内部的冲突。
+	public static final ConfigBoolean REMOVE_ENCHANTMENT_CONFLICTS_SAME_GROUP_ONLY = new ConfigBoolean(
+		"removeEnchantmentConflictsSameGroupOnly", false).apply(GENERAL_KEY);
 	// 附魔描述：在物品提示中为每个附魔追加一行描述。
 	public static final ConfigBoolean ENCHANTMENT_DESCRIPTIONS = new ConfigBoolean(
 		"enchantmentDescriptions", false).apply(GENERAL_KEY);
+	// 只在按住潜行键时追加附魔描述。
+	public static final ConfigBoolean ENCHANTMENT_DESCRIPTIONS_SNEAK_ONLY = new ConfigBoolean(
+		"enchantmentDescriptionsSneakOnly", false).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed DISABLE_SHOVEL_SNOW_FULL_BREAK = new ConfigBooleanHotkeyed(
 		"disableShovelSnowFullBreak", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
 	// 草径卡船修复：土径对船使用满方块碰撞。
 	public static final ConfigBoolean FIX_BOAT_STUCK_ON_DIRT_PATH = new ConfigBoolean(
 		"fixBoatStuckOnDirtPath", false).apply(GENERAL_KEY);
+	// 只对载有玩家的船只生效。
+	public static final ConfigBoolean FIX_BOAT_STUCK_ON_DIRT_PATH_PLAYER_ONLY = new ConfigBoolean(
+		"fixBoatStuckOnDirtPathPlayerOnly", false).apply(GENERAL_KEY);
 	// 鹦鹉肩膀跳舞：唱片机播放音乐时，肩膀上的鹦鹉也跳舞。
 	public static final ConfigBoolean PARROT_DANCE_ON_SHOULDER = new ConfigBoolean(
 		"parrotDanceOnShoulder", false).apply(GENERAL_KEY);
+	// 只让本地玩家肩膀上的鹦鹉跳舞。
+	public static final ConfigBoolean PARROT_DANCE_ON_SHOULDER_LOCAL_PLAYER_ONLY = new ConfigBoolean(
+		"parrotDanceOnShoulderLocalPlayerOnly", false).apply(GENERAL_KEY);
 	// 更好的粗体：粗体偏移从 1.0 改为 0.5。
 	public static final ConfigBoolean BETTER_BOLD = new ConfigBoolean(
 		"betterBold", false).apply(GENERAL_KEY);
+	// 粗体偏移百分比（10 ~ 100，默认 50 = 0.5 像素）。
+	public static final ConfigInteger BETTER_BOLD_OFFSET_PERCENT = new ConfigInteger(
+		"betterBoldOffsetPercent", TweakifyModConfig.DEFAULT_BETTER_BOLD_OFFSET_PERCENT,
+		TweakifyModConfig.MIN_BETTER_BOLD_OFFSET_PERCENT,
+		TweakifyModConfig.MAX_BETTER_BOLD_OFFSET_PERCENT).apply(GENERAL_KEY);
 	// 冰霜行者跳跃修复：跳跃途中也继续在脚下结冰。
 	public static final ConfigBoolean FROST_WALKER_JUMP_FIX = new ConfigBoolean(
 		"frostWalkerJumpFix", false).apply(GENERAL_KEY);
+	// 只在向上跳跃时放宽。
+	public static final ConfigBoolean FROST_WALKER_JUMP_FIX_JUMP_ONLY = new ConfigBoolean(
+		"frostWalkerJumpFixJumpOnly", false).apply(GENERAL_KEY);
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(GENERAL_KEY);
+	// HUD 行刷新间隔（毫秒，50 ~ 1000）。
+	public static final ConfigInteger MINI_HUD_REFRESH_INTERVAL_MS = new ConfigInteger(
+		"miniHudRefreshIntervalMs", TweakifyModConfig.DEFAULT_MINIHUD_REFRESH_INTERVAL_MS,
+		TweakifyModConfig.MIN_MINIHUD_REFRESH_INTERVAL_MS,
+		TweakifyModConfig.MAX_MINIHUD_REFRESH_INTERVAL_MS).apply(GENERAL_KEY);
 	// 第三人称自身名字：第三/第二人称显示玩家自己的名字。
 	public static final ConfigBoolean THIRD_PERSON_PLAYER_NAME = new ConfigBoolean(
 		"thirdPersonPlayerName", false).apply(GENERAL_KEY);
+	// 只在潜行时显示自己的名字。
+	public static final ConfigBoolean THIRD_PERSON_PLAYER_NAME_SNEAK_ONLY = new ConfigBoolean(
+		"thirdPersonPlayerNameSneakOnly", false).apply(GENERAL_KEY);
 	// 雪傀儡不受群系影响：温暖/干燥群系不再因群系属性融化；雨/水仍会伤害，仅单人/局域网生效。
 	public static final ConfigBoolean SNOW_GOLEM_BIOME_IMMUNITY = new ConfigBoolean(
 		"snowGolemBiomeImmunity", false).apply(GENERAL_KEY);
+	// 只在主世界生效。
+	public static final ConfigBoolean SNOW_GOLEM_BIOME_IMMUNITY_OVERWORLD_ONLY = new ConfigBoolean(
+		"snowGolemBiomeImmunityOverworldOnly", false).apply(GENERAL_KEY);
 	// 相机运动：参考 CameraOverhaul 的转向/横移/俯仰/静止晃动与屏幕震动。
 	public static final ConfigBooleanHotkeyed CAMERA_MOTION = new ConfigBooleanHotkeyed(
 		"cameraMotion", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -288,6 +369,13 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 刷怪蛋投掷：像鸡蛋/雪球一样投掷刷怪蛋，命中后生成生物。
 	public static final ConfigBooleanHotkeyed THROW_SPAWN_EGG = new ConfigBooleanHotkeyed(
 		"throwSpawnEgg", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 投掷速度百分比（50 ~ 200）与潜行时保持原版放置。
+	public static final ConfigInteger THROW_SPAWN_EGG_VELOCITY = new ConfigInteger(
+		"throwSpawnEggVelocity", TweakifyModConfig.DEFAULT_SPAWN_EGG_VELOCITY,
+		TweakifyModConfig.MIN_SPAWN_EGG_VELOCITY,
+		TweakifyModConfig.MAX_SPAWN_EGG_VELOCITY).apply(GENERAL_KEY);
+	public static final ConfigBoolean THROW_SPAWN_EGG_SNEAK_BYPASS = new ConfigBoolean(
+		"throwSpawnEggSneakBypass", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean PEACEFUL_MODE_MONSTER_SPAWN = new ConfigBoolean(
 		"peacefulModeMonsterSpawn", true).apply(GENERAL_KEY);
 	public static final ConfigBoolean PEACEFUL_MODE_MONSTER_NO_ATTACK = new ConfigBoolean(
@@ -298,6 +386,11 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 锻造模板不消耗：锻造台取出成品时保留模板。
 	public static final ConfigBoolean DISABLE_SMITHING_TEMPLATE_CONSUMPTION = new ConfigBoolean(
 		"disableSmithingTemplateConsumption", false).apply(GENERAL_KEY);
+	// 锻造模板保留概率（0 ~ 100）。
+	public static final ConfigInteger SMITHING_TEMPLATE_KEEP_CHANCE = new ConfigInteger(
+		"smithingTemplateKeepChance", TweakifyModConfig.DEFAULT_SMITHING_TEMPLATE_KEEP_CHANCE,
+		TweakifyModConfig.MIN_SMITHING_TEMPLATE_KEEP_CHANCE,
+		TweakifyModConfig.MAX_SMITHING_TEMPLATE_KEEP_CHANCE).apply(GENERAL_KEY);
 	// 聊天框文字框选：聊天界面拖动选择文字并复制。
 	public static final ConfigBooleanHotkeyed CHAT_TEXT_SELECTION = new ConfigBooleanHotkeyed(
 		"chatTextSelection", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -310,6 +403,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 攻击范围渲染方式：蓝色线框 / 半透明实心。
 	public static final ConfigOptionList ATTACK_RANGE_RENDER_MODE = new ConfigOptionList(
 		"attackRangeRenderMode", AttackRangeRenderMode.WIREFRAME).apply(GENERAL_KEY);
+	// 攻击范围颜色调色板。
+	public static final ConfigOptionList ATTACK_RANGE_PALETTE = new ConfigOptionList(
+		"attackRangePalette", AttackRangePalette.BLUE).apply(GENERAL_KEY);
 	// 是否显示本地玩家自己的攻击范围。
 	public static final ConfigBoolean ATTACK_RANGE_INCLUDE_SELF = new ConfigBoolean(
 		"attackRangeIncludeSelf", false).apply(GENERAL_KEY);
@@ -336,9 +432,17 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 附魔等级使用阿拉伯数字。
 	public static final ConfigBoolean ENCHANTMENT_LEVEL_ARABIC = new ConfigBoolean(
 		"enchantmentLevelArabic", false).apply(GENERAL_KEY);
+	// 数字样式：plain（锋利 3）/ parentheses（锋利 (3)）。
+	public static final ConfigOptionList ENCHANTMENT_LEVEL_ARABIC_STYLE = new ConfigOptionList(
+		"enchantmentLevelArabicStyle", EnchantmentLevelStyle.PLAIN).apply(GENERAL_KEY);
 	// 疣块分解：合成格里单独放下界疣块时产出 9 个下界疣。
 	public static final ConfigBoolean WART_BLOCK_DECOMPOSITION = new ConfigBoolean(
 		"wartBlockDecomposition", false).apply(GENERAL_KEY);
+	// 疣块分解产出数量（1 ~ 9）。
+	public static final ConfigInteger WART_BLOCK_DECOMPOSITION_OUTPUT = new ConfigInteger(
+		"wartBlockDecompositionOutput", TweakifyModConfig.DEFAULT_WART_DECOMPOSITION_OUTPUT,
+		TweakifyModConfig.MIN_WART_DECOMPOSITION_OUTPUT,
+		TweakifyModConfig.MAX_WART_DECOMPOSITION_OUTPUT).apply(GENERAL_KEY);
 	// 鞘翅水中飞行：滑翔时不再被流体移动逻辑接管。
 	public static final ConfigBoolean ELYTRA_WATER_FLIGHT = new ConfigBoolean(
 		"elytraWaterFlight", false).apply(GENERAL_KEY);
@@ -350,12 +454,25 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 禁用床太远：离床太远时也能直接入睡。
 	public static final ConfigBoolean DISABLE_BED_TOO_FAR = new ConfigBoolean(
 		"disableBedTooFar", false).apply(GENERAL_KEY);
+	// 允许入睡的最大距离（格，0 = 不限制）。
+	public static final ConfigInteger BED_TOO_FAR_MAX_DISTANCE = new ConfigInteger(
+		"bedTooFarMaxDistance", TweakifyModConfig.DEFAULT_BED_TOO_FAR_DISTANCE,
+		TweakifyModConfig.MIN_BED_TOO_FAR_DISTANCE,
+		TweakifyModConfig.MAX_BED_TOO_FAR_DISTANCE).apply(GENERAL_KEY);
 	// 铁傀儡进矿车：空矿车碰到铁傀儡时让铁傀儡坐进矿车。
 	public static final ConfigBoolean IRON_GOLEM_RIDE_MINECART = new ConfigBoolean(
 		"ironGolemRideMinecart", false).apply(GENERAL_KEY);
+	// 只在玩家附近自动上车（0 ~ 64 格，0 = 不限制）。
+	public static final ConfigInteger IRON_GOLEM_RIDE_MINECART_MAX_DISTANCE = new ConfigInteger(
+		"ironGolemRideMinecartMaxDistance", TweakifyModConfig.DEFAULT_IRON_GOLEM_PICKUP_DISTANCE,
+		TweakifyModConfig.MIN_IRON_GOLEM_PICKUP_DISTANCE,
+		TweakifyModConfig.MAX_IRON_GOLEM_PICKUP_DISTANCE).apply(GENERAL_KEY);
 	// 穿牌打开容器：准星对准告示牌时直接打开它背后的容器。
 	public static final ConfigBoolean SIGN_OPEN_CONTAINER = new ConfigBoolean(
 		"signOpenContainer", false).apply(GENERAL_KEY);
+	// 潜行时保持原版告示牌交互。
+	public static final ConfigBoolean SIGN_OPEN_CONTAINER_SNEAK_BYPASS = new ConfigBoolean(
+		"signOpenContainerSneakBypass", true).apply(GENERAL_KEY);
 	// 禁用蛛网减速：蜘蛛网不再粘住并限制移动。
 	public static final ConfigBoolean DISABLE_COBWEB_SLOWDOWN = new ConfigBoolean(
 		"disableCobwebSlowdown", false).apply(GENERAL_KEY);
@@ -381,6 +498,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 连接方块轮廓：准星对准门/床/双箱等连接方块时显示整体轮廓。
 	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE = new ConfigBoolean(
 		"connectedBlockOutline", false).apply(GENERAL_KEY);
+	// 门使用 2 格视觉高度（关闭时门保持原版轮廓）。
+	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE_DOOR_FULL_HEIGHT = new ConfigBoolean(
+		"connectedBlockOutlineDoorFullHeight", true).apply(GENERAL_KEY);
 	// 自定义方块轮廓：总开关与色调/线宽子项。
 	public static final ConfigBooleanHotkeyed CUSTOM_BLOCK_OUTLINE = new ConfigBooleanHotkeyed(
 		"customBlockOutline", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -421,6 +541,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 放置覆盖范围。
 	public static final ConfigOptionList BETTER_BLOCK_PLACEMENT_MODE = new ConfigOptionList(
 		"betterBlockPlacementMode", BlockPlacementMode.FLOWERS).apply(GENERAL_KEY);
+	// 潜行时保持原版放置，不覆盖植物。
+	public static final ConfigBoolean BETTER_BLOCK_PLACEMENT_SNEAK_BYPASS = new ConfigBoolean(
+		"betterBlockPlacementSneakBypass", true).apply(GENERAL_KEY);
 	// 耐久文字子项。
 	public static final ConfigBoolean DURABILITY_OVERLAY_HOTBAR_ONLY = new ConfigBoolean(
 		"durabilityOverlayHotbarOnly", false).apply(GENERAL_KEY);
@@ -433,6 +556,13 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 时间格式固定为秒（不使用分:秒 / h / d 缩写）。
 	public static final ConfigBoolean STATUS_EFFECT_DURATION_ALWAYS_SECONDS = new ConfigBoolean(
 		"statusEffectDurationAlwaysSeconds", false).apply(GENERAL_KEY);
+	// 低时长过滤阈值（秒，0 = 不过滤）与文字配色。
+	public static final ConfigInteger STATUS_EFFECT_DURATION_LOW_THRESHOLD = new ConfigInteger(
+		"statusEffectDurationLowThreshold", TweakifyModConfig.DEFAULT_STATUS_DURATION_THRESHOLD,
+		TweakifyModConfig.MIN_STATUS_DURATION_THRESHOLD,
+		TweakifyModConfig.MAX_STATUS_DURATION_THRESHOLD).apply(GENERAL_KEY);
+	public static final ConfigOptionList STATUS_EFFECT_DURATION_COLOR_MODE = new ConfigOptionList(
+		"statusEffectDurationColorMode", StatusDurationColorMode.AUTO).apply(GENERAL_KEY);
 	// 复制 ID 子项。
 	public static final ConfigOptionList COPY_ITEM_ID_FORMAT = new ConfigOptionList(
 		"copyItemIdFormat", CopyIdFormat.PLAIN).apply(GENERAL_KEY);
@@ -464,6 +594,11 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 聊天框选子项。
 	public static final ConfigOptionList CHAT_SELECTION_COLOR = new ConfigOptionList(
 		"chatSelectionColor", ChatSelectionColor.BLUE).apply(GENERAL_KEY);
+	// 框选背景透明度百分比。
+	public static final ConfigInteger CHAT_SELECTION_OPACITY = new ConfigInteger(
+		"chatSelectionOpacity", TweakifyModConfig.DEFAULT_CHAT_SELECTION_OPACITY,
+		TweakifyModConfig.MIN_CHAT_SELECTION_OPACITY,
+		TweakifyModConfig.MAX_CHAT_SELECTION_OPACITY).apply(GENERAL_KEY);
 	public static final ConfigBoolean CHAT_SELECTION_AUTO_COPY = new ConfigBoolean(
 		"chatSelectionAutoCopy", false).apply(GENERAL_KEY);
 	// 屏幕覆盖层总开关与子项。
@@ -484,8 +619,18 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 移动与挖掘。
 	public static final ConfigBoolean DISABLE_SPRINT_FOV = new ConfigBoolean(
 		"disableSprintFov", false).apply(GENERAL_KEY);
+	// 保留原版疾跑视野强度的百分比（0 = 完全禁用）。
+	public static final ConfigInteger SPRINT_FOV_INTENSITY = new ConfigInteger(
+		"sprintFovIntensity", TweakifyModConfig.DEFAULT_SPRINT_FOV_INTENSITY,
+		TweakifyModConfig.MIN_SPRINT_FOV_INTENSITY,
+		TweakifyModConfig.MAX_SPRINT_FOV_INTENSITY).apply(GENERAL_KEY);
 	public static final ConfigBoolean KEEP_MINING_PROGRESS_ON_ITEM_SWITCH = new ConfigBoolean(
 		"keepMiningProgressOnItemSwitch", false).apply(GENERAL_KEY);
+	// 保留挖掘进度的最大距离（格，0 = 不限制）。
+	public static final ConfigInteger KEEP_MINING_PROGRESS_MAX_DISTANCE = new ConfigInteger(
+		"keepMiningProgressMaxDistance", TweakifyModConfig.DEFAULT_KEEP_MINING_PROGRESS_DISTANCE,
+		TweakifyModConfig.MIN_KEEP_MINING_PROGRESS_DISTANCE,
+		TweakifyModConfig.MAX_KEEP_MINING_PROGRESS_DISTANCE).apply(GENERAL_KEY);
 	// 剑穿草打生物：持剑时跳过花草直接选中生物。
 	public static final ConfigBooleanHotkeyed SWORD_CUT_THROUGH_PLANTS = new ConfigBooleanHotkeyed(
 		"swordCutThroughPlants", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -498,18 +643,35 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 中键获得液体桶：准星指向水/岩浆时中键得到对应液体桶（仅创造模式）。
 	public static final ConfigBooleanHotkeyed PICK_FLUID_BUCKET = new ConfigBooleanHotkeyed(
 		"pickFluidBucket", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 液体范围：水与岩浆 / 仅水 / 仅岩浆。
+	public static final ConfigOptionList PICK_FLUID_BUCKET_FLUIDS = new ConfigOptionList(
+		"pickFluidBucketFluids", FluidPickScope.WATER_AND_LAVA).apply(GENERAL_KEY);
 	// 生存模式中键取物：背包里有对应物品就切换到主手。
 	public static final ConfigBooleanHotkeyed SURVIVAL_PICK_BLOCK = new ConfigBooleanHotkeyed(
 		"survivalPickBlock", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 生存取物是否也处理液体分支（水/岩浆 → 已有的桶）。
+	public static final ConfigBoolean SURVIVAL_PICK_BLOCK_INCLUDE_FLUIDS = new ConfigBoolean(
+		"survivalPickBlockIncludeFluids", true).apply(GENERAL_KEY);
 	// 便捷焚烧：右键点击岩浆桶或打火石焚烧光标上的物品。
 	public static final ConfigBooleanHotkeyed QUICK_BURN_ITEM = new ConfigBooleanHotkeyed(
 		"quickBurnItem", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 需要潜行才焚烧，避免整理背包时误触。
+	public static final ConfigBoolean QUICK_BURN_ITEM_REQUIRE_SNEAK = new ConfigBoolean(
+		"quickBurnItemRequireSneak", false).apply(GENERAL_KEY);
 	// 不使用最后一根火把：只剩一根时不允许放置。
 	public static final ConfigBoolean KEEP_LAST_TORCH = new ConfigBoolean(
 		"keepLastTorch", false).apply(GENERAL_KEY);
+	// 剩余不超过该数量时阻止放置。
+	public static final ConfigInteger KEEP_LAST_TORCH_MIN_COUNT = new ConfigInteger(
+		"keepLastTorchMinCount", TweakifyModConfig.DEFAULT_KEEP_LAST_TORCH_COUNT,
+		TweakifyModConfig.MIN_KEEP_LAST_TORCH_COUNT,
+		TweakifyModConfig.MAX_KEEP_LAST_TORCH_COUNT).apply(GENERAL_KEY);
 	// 如履平地：自动跨上 1 格高的方块。
 	public static final ConfigBooleanHotkeyed AUTO_STEP_UP = new ConfigBooleanHotkeyed(
 		"autoStepUp", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 跨步高度：1 格 / 1.5 格 / 2 格。
+	public static final ConfigOptionList AUTO_STEP_UP_HEIGHT = new ConfigOptionList(
+		"autoStepUpHeight", AutoStepUpHeight.ONE_BLOCK).apply(GENERAL_KEY);
 	// 更好的攀爬：攀爬方块相关的移动优化。
 	public static final ConfigBooleanHotkeyed BETTER_CLIMBING = new ConfigBooleanHotkeyed(
 		"betterClimbing", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -530,9 +692,15 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 经过可攀爬方块不减速：蹭到梯子/藤蔓边缘时不再夹紧水平速度。
 	public static final ConfigBoolean CLIMBABLE_PASS_NO_SLOWDOWN = new ConfigBoolean(
 		"climbablePassNoSlowdown", false).apply(GENERAL_KEY);
+	// 只在潜行时生效。
+	public static final ConfigBoolean CLIMBABLE_PASS_NO_SLOWDOWN_SNEAK_ONLY = new ConfigBoolean(
+		"climbablePassNoSlowdownSneakOnly", false).apply(GENERAL_KEY);
 	// 可见交易显示：村民/流浪商人头顶显示交易结果物品。
 	public static final ConfigBoolean VISIBLE_TRADERS = new ConfigBoolean(
 		"visibleTraders", false).apply(GENERAL_KEY);
+	// 只显示未解锁（锁定）的交易。
+	public static final ConfigBoolean VISIBLE_TRADERS_ONLY_LOCKED = new ConfigBoolean(
+		"visibleTradersOnlyLocked", false).apply(GENERAL_KEY);
 	// 防猪灵装备切换：附近有猪灵时把背包里的金制装备换到身上，猪灵离开后换回。
 	public static final ConfigBooleanHotkeyed PIGLIN_GOLD_ARMOR_SWAP = new ConfigBooleanHotkeyed(
 		"piglinGoldArmorSwap", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
@@ -542,6 +710,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 聊天框内容记忆：关闭聊天框后保留未发送的输入内容。
 	public static final ConfigBooleanHotkeyed CHAT_INPUT_MEMORY = new ConfigBooleanHotkeyed(
 		"chatInputMemory", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 以 / 开头的命令草稿不记忆。
+	public static final ConfigBoolean CHAT_INPUT_MEMORY_IGNORE_COMMANDS = new ConfigBoolean(
+		"chatInputMemoryIgnoreCommands", false).apply(GENERAL_KEY);
 	// 强制关闭加载屏幕：加载世界时立即关闭加载界面。
 	public static final ConfigBoolean FORCE_CLOSE_LOADING_SCREEN = new ConfigBoolean(
 		"forceCloseLoadingScreen", false).apply(GENERAL_KEY);
@@ -554,6 +725,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 关闭资源包兼容性提示：不显示不兼容标记，也不弹确认框。
 	public static final ConfigBoolean DISABLE_RESOURCE_PACK_COMPATIBILITY_CHECK = new ConfigBoolean(
 		"disableResourcePackCompatibilityCheck", false).apply(GENERAL_KEY);
+	// 同时忽略数据包的兼容性提示。
+	public static final ConfigBoolean RESOURCE_PACK_COMPATIBILITY_ALSO_DATA_PACKS = new ConfigBoolean(
+		"resourcePackCompatibilityAlsoDataPacks", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean DISABLE_FARMLAND_TRAMPLING = new ConfigBoolean(
 		"disableFarmlandTrampling", false).apply(GENERAL_KEY);
 	public static final ConfigBoolean FARMLAND_TRAMPLING_PLAYER_ONLY = new ConfigBoolean(
@@ -595,8 +769,20 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 已启用功能报表：纯快捷键动作，把启用的功能根开关输出到聊天栏。
 	public static final ConfigHotkey DEBUG_ENABLED_FEATURES_REPORT = new ConfigHotkey(
 		"debugEnabledFeaturesReport", "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	// 已启用功能报表输出到剪贴板。
+	public static final ConfigBoolean DEBUG_ENABLED_FEATURES_REPORT_COPY = new ConfigBoolean(
+		"debugEnabledFeaturesReportCopy", false).apply(GENERAL_KEY);
 	public static final ConfigBooleanHotkeyed ENTITY_HIGHLIGHT = new ConfigBooleanHotkeyed(
 		"entityHighlight", false, "", TOGGLE_HOTKEY_SETTINGS).apply(HIGHLIGHT_KEY);
+	// 描边样式（常亮/闪烁）、闪烁周期与描边颜色。
+	public static final ConfigOptionList ENTITY_HIGHLIGHT_STYLE = new ConfigOptionList(
+		"entityHighlightStyle", EntityHighlightStyle.OUTLINE).apply(HIGHLIGHT_KEY);
+	public static final ConfigInteger ENTITY_HIGHLIGHT_BLINK_PERIOD = new ConfigInteger(
+		"entityHighlightBlinkPeriod", TweakifyModConfig.DEFAULT_ENTITY_HIGHLIGHT_BLINK_PERIOD,
+		TweakifyModConfig.MIN_ENTITY_HIGHLIGHT_BLINK_PERIOD,
+		TweakifyModConfig.MAX_ENTITY_HIGHLIGHT_BLINK_PERIOD).apply(HIGHLIGHT_KEY);
+	public static final ConfigOptionList ENTITY_HIGHLIGHT_COLOR = new ConfigOptionList(
+		"entityHighlightColor", EntityHighlightColor.VANILLA).apply(HIGHLIGHT_KEY);
 	public static final ConfigBoolean HIGHLIGHT_PRESET_1 = new ConfigBoolean(
 		"highlightPreset1", false).apply(HIGHLIGHT_KEY);
 	public static final ConfigBoolean HIGHLIGHT_PRESET_2 = new ConfigBoolean(
