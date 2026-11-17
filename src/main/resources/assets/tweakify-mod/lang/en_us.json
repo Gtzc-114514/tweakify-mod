@@ -1243,5 +1243,9 @@
   "tweakify-mod.config.general.name.shieldBlockHurtSoundFix": "Shield block hurt sound fix",
   "tweakify-mod.config.general.prettyName.shieldBlockHurtSoundFix": "Shield block hurt sound fix",
   "tweakify-mod.config.general.comment.shieldBlockHurtSoundFix": "Fixes MC-105068: a fully blocked hit no longer plays the player hurt sound over the shield block/disable sounds; partial blocks that still deal damage keep vanilla behavior.",
-  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Shield block hurt sound fix"
+  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Shield block hurt sound fix",
+  "tweakify-mod.config.general.name.spectatorOverlayFix": "Spectator overlay fix",
+  "tweakify-mod.config.general.prettyName.spectatorOverlayFix": "Spectator overlay fix",
+  "tweakify-mod.config.general.comment.spectatorOverlayFix": "Fixes MC-217716: nausea and Nether portal overlays are no longer rendered in spectator mode; other game modes stay vanilla.",
+  "tweakify-mod.command.label.spectatorOverlayFix": "Spectator overlay fix"
 }

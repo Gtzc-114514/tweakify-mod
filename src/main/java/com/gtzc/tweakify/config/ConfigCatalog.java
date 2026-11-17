@@ -177,6 +177,8 @@ public final class ConfigCatalog {
 		entries.add(fix("potionTooltipCategoryFix", true));
 		// 举盾受伤音效（MC-105068）
 		entries.add(fix("shieldBlockHurtSoundFix", true));
+		// 旁观者覆盖层（MC-217716）
+		entries.add(fix("spectatorOverlayFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

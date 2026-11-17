@@ -65,6 +65,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-105068：完全格挡攻击时不再播放玩家受伤音效，保留盾牌格挡/禁用音效。
 	public volatile boolean shieldBlockHurtSoundFix = false;
 
+	// MC-217716：旁观者模式下隐藏反胃与下界传送门覆盖层。
+	public volatile boolean spectatorOverlayFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

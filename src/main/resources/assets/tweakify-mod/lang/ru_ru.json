@@ -1243,5 +1243,9 @@
   "tweakify-mod.config.general.name.shieldBlockHurtSoundFix": "Исправление звука урона при блоке щитом",
   "tweakify-mod.config.general.prettyName.shieldBlockHurtSoundFix": "Исправление звука урона при блоке щитом",
   "tweakify-mod.config.general.comment.shieldBlockHurtSoundFix": "Исправляет MC-105068: при полном блоке удар больше не воспроизводит звук урона игрока поверх звуков блокировки/отключения щита; частичный блок с оставшимся уроном остаётся без изменений.",
-  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Звук урона при блоке щитом"
+  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Звук урона при блоке щитом",
+  "tweakify-mod.config.general.name.spectatorOverlayFix": "Исправление эффектов в режиме наблюдателя",
+  "tweakify-mod.config.general.prettyName.spectatorOverlayFix": "Исправление эффектов в режиме наблюдателя",
+  "tweakify-mod.config.general.comment.spectatorOverlayFix": "Исправляет MC-217716: в режиме наблюдателя больше не отображаются эффекты тошноты и портала Нижнего мира; в других режимах всё остаётся как в оригинале.",
+  "tweakify-mod.command.label.spectatorOverlayFix": "Эффекты в режиме наблюдателя"
 }

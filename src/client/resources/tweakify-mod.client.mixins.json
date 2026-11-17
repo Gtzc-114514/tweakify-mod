@@ -126,7 +126,8 @@
 		"BookViewScreenVerticalCenterMixin",
 		"BookEditScreenVerticalCenterMixin",
 		"PotionContentsTooltipCategoryMixin",
-		"LivingEntityShieldHurtSoundMixin"
+		"LivingEntityShieldHurtSoundMixin",
+		"LevelExtractorSpectatorOverlayMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

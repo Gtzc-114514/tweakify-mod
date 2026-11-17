@@ -1243,5 +1243,9 @@
   "tweakify-mod.config.general.name.shieldBlockHurtSoundFix": "Correction du son de blessure lors d'un blocage au bouclier",
   "tweakify-mod.config.general.prettyName.shieldBlockHurtSoundFix": "Correction du son de blessure lors d'un blocage au bouclier",
   "tweakify-mod.config.general.comment.shieldBlockHurtSoundFix": "Corrige MC-105068 : un coup entièrement bloqué ne joue plus le son de blessure du joueur par-dessus les sons de blocage/désactivation du bouclier ; un blocage partiel qui inflige encore des dégâts reste inchangé.",
-  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Son de blessure au bouclier"
+  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Son de blessure au bouclier",
+  "tweakify-mod.config.general.name.spectatorOverlayFix": "Correction des effets en mode spectateur",
+  "tweakify-mod.config.general.prettyName.spectatorOverlayFix": "Correction des effets en mode spectateur",
+  "tweakify-mod.config.general.comment.spectatorOverlayFix": "Corrige MC-217716 : les effets de nausée et de portail du Nether ne sont plus rendus en mode spectateur ; les autres modes restent inchangés.",
+  "tweakify-mod.command.label.spectatorOverlayFix": "Effets en mode spectateur"
 }

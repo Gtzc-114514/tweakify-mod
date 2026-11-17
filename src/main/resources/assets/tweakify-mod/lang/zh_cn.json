@@ -1243,5 +1243,9 @@
   "tweakify-mod.config.general.name.shieldBlockHurtSoundFix": "举盾受伤音效修复",
   "tweakify-mod.config.general.prettyName.shieldBlockHurtSoundFix": "举盾受伤音效修复",
   "tweakify-mod.config.general.comment.shieldBlockHurtSoundFix": "修复 MC-105068：完全格挡攻击时不再播放玩家受伤音效，避免叠在盾牌格挡/禁用音效上；部分格挡仍有伤害时保持原版。",
-  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "举盾受伤音效修复"
+  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "举盾受伤音效修复",
+  "tweakify-mod.config.general.name.spectatorOverlayFix": "旁观者覆盖层修复",
+  "tweakify-mod.config.general.prettyName.spectatorOverlayFix": "旁观者覆盖层修复",
+  "tweakify-mod.config.general.comment.spectatorOverlayFix": "修复 MC-217716：进入旁观者模式后不再渲染反胃与下界传送门覆盖层；其它游戏模式保持原版。",
+  "tweakify-mod.command.label.spectatorOverlayFix": "旁观者覆盖层修复"
 }
