@@ -124,7 +124,8 @@
 		"HudExperienceLevelMixin",
 		"MinecraftServicesUserApiServiceChatLagMixin",
 		"BookViewScreenVerticalCenterMixin",
-		"BookEditScreenVerticalCenterMixin"
+		"BookEditScreenVerticalCenterMixin",
+		"PotionContentsTooltipCategoryMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

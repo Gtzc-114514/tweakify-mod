@@ -1235,5 +1235,9 @@
   "tweakify-mod.config.general.name.bookGuiVerticalCenterFix": "Book GUI vertical centering",
   "tweakify-mod.config.general.prettyName.bookGuiVerticalCenterFix": "Book GUI vertical centering",
   "tweakify-mod.config.general.comment.bookGuiVerticalCenterFix": "Fixes MC-61489: vertically centers the book view and book editing screens so the bottom buttons no longer hug the screen edge.",
-  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Book GUI vertical centering"
+  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Book GUI vertical centering",
+  "tweakify-mod.config.general.name.potionTooltipCategoryFix": "Potion effect category fix",
+  "tweakify-mod.config.general.prettyName.potionTooltipCategoryFix": "Potion effect category fix",
+  "tweakify-mod.config.general.comment.potionTooltipCategoryFix": "Fixes MC-84661 and MC-170462: Glowing and Bad Omen are shown as harmful (red) in potion tooltips instead of the neutral blue.",
+  "tweakify-mod.command.label.potionTooltipCategoryFix": "Potion effect category fix"
 }

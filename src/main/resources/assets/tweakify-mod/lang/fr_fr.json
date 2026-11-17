@@ -1235,5 +1235,9 @@
   "tweakify-mod.config.general.name.bookGuiVerticalCenterFix": "Centrage vertical de l'interface du livre",
   "tweakify-mod.config.general.prettyName.bookGuiVerticalCenterFix": "Centrage vertical de l'interface du livre",
   "tweakify-mod.config.general.comment.bookGuiVerticalCenterFix": "Corrige MC-61489 : centre verticalement les écrans de lecture et d'édition de livre, pour que les boutons du bas ne collent plus au bord de l'écran.",
-  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Centrage vertical du livre"
+  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Centrage vertical du livre",
+  "tweakify-mod.config.general.name.potionTooltipCategoryFix": "Correction de la catégorie des effets de potion",
+  "tweakify-mod.config.general.prettyName.potionTooltipCategoryFix": "Correction de la catégorie des effets de potion",
+  "tweakify-mod.config.general.comment.potionTooltipCategoryFix": "Corrige MC-84661 et MC-170462 : « Luminescence » et « Mauvaise augure » s'affichent comme effets néfastes (rouge) dans les infobulles de potion, au lieu du bleu neutre.",
+  "tweakify-mod.command.label.potionTooltipCategoryFix": "Catégorie des effets de potion"
 }

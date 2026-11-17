@@ -173,6 +173,8 @@ public final class ConfigCatalog {
 		entries.add(fix("experienceBarHighLevelFix", true));
 		// 书本界面垂直居中（MC-61489）
 		entries.add(fix("bookGuiVerticalCenterFix", true));
+		// 药水效果分类（MC-84661 / MC-170462）
+		entries.add(fix("potionTooltipCategoryFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

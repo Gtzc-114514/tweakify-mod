@@ -261,6 +261,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// MC-61489：书本查看/编辑界面垂直居中。
 	public static final ConfigBoolean BOOK_GUI_VERTICAL_CENTER_FIX = new ConfigBoolean(
 		"bookGuiVerticalCenterFix", false).apply(GENERAL_KEY);
+	// MC-84661 / MC-170462：药水效果分类修复。
+	public static final ConfigBoolean POTION_TOOLTIP_CATEGORY_FIX = new ConfigBoolean(
+		"potionTooltipCategoryFix", false).apply(GENERAL_KEY);
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(GENERAL_KEY);

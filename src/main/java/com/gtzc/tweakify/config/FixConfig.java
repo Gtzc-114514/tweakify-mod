@@ -59,6 +59,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-61489：书本查看/编辑界面整体垂直居中，底部按钮不再贴着屏幕边缘。
 	public volatile boolean bookGuiVerticalCenterFix = false;
 
+	// MC-84661 / MC-170462：药水类物品提示把发光与不祥之兆按有害效果显示。
+	public volatile boolean potionTooltipCategoryFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

@@ -1235,5 +1235,9 @@
   "tweakify-mod.config.general.name.bookGuiVerticalCenterFix": "Вертикальное центрирование интерфейса книги",
   "tweakify-mod.config.general.prettyName.bookGuiVerticalCenterFix": "Вертикальное центрирование интерфейса книги",
   "tweakify-mod.config.general.comment.bookGuiVerticalCenterFix": "Исправляет MC-61489: экраны чтения и редактирования книги центрируются по вертикали, поэтому нижние кнопки больше не прижимаются к краю экрана.",
-  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Центрирование интерфейса книги"
+  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Центрирование интерфейса книги",
+  "tweakify-mod.config.general.name.potionTooltipCategoryFix": "Исправление категории эффектов зелий",
+  "tweakify-mod.config.general.prettyName.potionTooltipCategoryFix": "Исправление категории эффектов зелий",
+  "tweakify-mod.config.general.comment.potionTooltipCategoryFix": "Исправляет MC-84661 и MC-170462: «Свечение» и «Дурное предзнаменование» отображаются в подсказках зелий как вредные (красные), а не как нейтральные (синие).",
+  "tweakify-mod.command.label.potionTooltipCategoryFix": "Категория эффектов зелий"
 }
