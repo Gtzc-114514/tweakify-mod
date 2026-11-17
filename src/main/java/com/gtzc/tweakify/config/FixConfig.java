@@ -62,6 +62,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-84661 / MC-170462：药水类物品提示把发光与不祥之兆按有害效果显示。
 	public volatile boolean potionTooltipCategoryFix = false;
 
+	// MC-105068：完全格挡攻击时不再播放玩家受伤音效，保留盾牌格挡/禁用音效。
+	public volatile boolean shieldBlockHurtSoundFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

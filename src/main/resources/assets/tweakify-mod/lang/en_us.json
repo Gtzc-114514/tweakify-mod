@@ -1239,5 +1239,9 @@
   "tweakify-mod.config.general.name.potionTooltipCategoryFix": "Potion effect category fix",
   "tweakify-mod.config.general.prettyName.potionTooltipCategoryFix": "Potion effect category fix",
   "tweakify-mod.config.general.comment.potionTooltipCategoryFix": "Fixes MC-84661 and MC-170462: Glowing and Bad Omen are shown as harmful (red) in potion tooltips instead of the neutral blue.",
-  "tweakify-mod.command.label.potionTooltipCategoryFix": "Potion effect category fix"
+  "tweakify-mod.command.label.potionTooltipCategoryFix": "Potion effect category fix",
+  "tweakify-mod.config.general.name.shieldBlockHurtSoundFix": "Shield block hurt sound fix",
+  "tweakify-mod.config.general.prettyName.shieldBlockHurtSoundFix": "Shield block hurt sound fix",
+  "tweakify-mod.config.general.comment.shieldBlockHurtSoundFix": "Fixes MC-105068: a fully blocked hit no longer plays the player hurt sound over the shield block/disable sounds; partial blocks that still deal damage keep vanilla behavior.",
+  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Shield block hurt sound fix"
 }

@@ -175,6 +175,8 @@ public final class ConfigCatalog {
 		entries.add(fix("bookGuiVerticalCenterFix", true));
 		// 药水效果分类（MC-84661 / MC-170462）
 		entries.add(fix("potionTooltipCategoryFix", true));
+		// 举盾受伤音效（MC-105068）
+		entries.add(fix("shieldBlockHurtSoundFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

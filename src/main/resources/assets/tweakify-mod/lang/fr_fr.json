@@ -1239,5 +1239,9 @@
   "tweakify-mod.config.general.name.potionTooltipCategoryFix": "Correction de la catégorie des effets de potion",
   "tweakify-mod.config.general.prettyName.potionTooltipCategoryFix": "Correction de la catégorie des effets de potion",
   "tweakify-mod.config.general.comment.potionTooltipCategoryFix": "Corrige MC-84661 et MC-170462 : « Luminescence » et « Mauvaise augure » s'affichent comme effets néfastes (rouge) dans les infobulles de potion, au lieu du bleu neutre.",
-  "tweakify-mod.command.label.potionTooltipCategoryFix": "Catégorie des effets de potion"
+  "tweakify-mod.command.label.potionTooltipCategoryFix": "Catégorie des effets de potion",
+  "tweakify-mod.config.general.name.shieldBlockHurtSoundFix": "Correction du son de blessure lors d'un blocage au bouclier",
+  "tweakify-mod.config.general.prettyName.shieldBlockHurtSoundFix": "Correction du son de blessure lors d'un blocage au bouclier",
+  "tweakify-mod.config.general.comment.shieldBlockHurtSoundFix": "Corrige MC-105068 : un coup entièrement bloqué ne joue plus le son de blessure du joueur par-dessus les sons de blocage/désactivation du bouclier ; un blocage partiel qui inflige encore des dégâts reste inchangé.",
+  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Son de blessure au bouclier"
 }

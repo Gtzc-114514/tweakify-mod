@@ -1239,5 +1239,9 @@
   "tweakify-mod.config.general.name.potionTooltipCategoryFix": "药水效果分类修复",
   "tweakify-mod.config.general.prettyName.potionTooltipCategoryFix": "药水效果分类修复",
   "tweakify-mod.config.general.comment.potionTooltipCategoryFix": "修复 MC-84661 与 MC-170462：药水类物品提示中的「发光」与「不祥之兆」按有害效果显示为红色，不再误显示为中性效果的蓝色。",
-  "tweakify-mod.command.label.potionTooltipCategoryFix": "药水效果分类修复"
+  "tweakify-mod.command.label.potionTooltipCategoryFix": "药水效果分类修复",
+  "tweakify-mod.config.general.name.shieldBlockHurtSoundFix": "举盾受伤音效修复",
+  "tweakify-mod.config.general.prettyName.shieldBlockHurtSoundFix": "举盾受伤音效修复",
+  "tweakify-mod.config.general.comment.shieldBlockHurtSoundFix": "修复 MC-105068：完全格挡攻击时不再播放玩家受伤音效，避免叠在盾牌格挡/禁用音效上；部分格挡仍有伤害时保持原版。",
+  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "举盾受伤音效修复"
 }

@@ -1239,5 +1239,9 @@
   "tweakify-mod.config.general.name.potionTooltipCategoryFix": "Исправление категории эффектов зелий",
   "tweakify-mod.config.general.prettyName.potionTooltipCategoryFix": "Исправление категории эффектов зелий",
   "tweakify-mod.config.general.comment.potionTooltipCategoryFix": "Исправляет MC-84661 и MC-170462: «Свечение» и «Дурное предзнаменование» отображаются в подсказках зелий как вредные (красные), а не как нейтральные (синие).",
-  "tweakify-mod.command.label.potionTooltipCategoryFix": "Категория эффектов зелий"
+  "tweakify-mod.command.label.potionTooltipCategoryFix": "Категория эффектов зелий",
+  "tweakify-mod.config.general.name.shieldBlockHurtSoundFix": "Исправление звука урона при блоке щитом",
+  "tweakify-mod.config.general.prettyName.shieldBlockHurtSoundFix": "Исправление звука урона при блоке щитом",
+  "tweakify-mod.config.general.comment.shieldBlockHurtSoundFix": "Исправляет MC-105068: при полном блоке удар больше не воспроизводит звук урона игрока поверх звуков блокировки/отключения щита; частичный блок с оставшимся уроном остаётся без изменений.",
+  "tweakify-mod.command.label.shieldBlockHurtSoundFix": "Звук урона при блоке щитом"
 }

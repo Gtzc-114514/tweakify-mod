@@ -125,7 +125,8 @@
 		"MinecraftServicesUserApiServiceChatLagMixin",
 		"BookViewScreenVerticalCenterMixin",
 		"BookEditScreenVerticalCenterMixin",
-		"PotionContentsTooltipCategoryMixin"
+		"PotionContentsTooltipCategoryMixin",
+		"LivingEntityShieldHurtSoundMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
