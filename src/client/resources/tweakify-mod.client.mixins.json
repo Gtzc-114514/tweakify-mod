@@ -131,7 +131,8 @@
 		"HudCooldownIndicatorMixin",
 		"FishingHookRendererThirdPersonLineMixin",
 		"ClientPacketListenerRespawnHotbarMixin",
-		"ClientPacketListenerSneakAnimationMixin"
+		"ClientPacketListenerSneakAnimationMixin",
+		"RangedBowAttackGoalSkeletonAimingMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

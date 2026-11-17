@@ -1263,5 +1263,9 @@
   "tweakify-mod.config.general.name.sneakAnimationFix": "Исправление двойной анимации приседания",
   "tweakify-mod.config.general.prettyName.sneakAnimationFix": "Исправление двойной анимации приседания",
   "tweakify-mod.config.general.comment.sneakAnimationFix": "Исправляет MC-159163: быстрое нажатие клавиши приседания больше не воспроизводит анимацию дважды.",
-  "tweakify-mod.command.label.sneakAnimationFix": "Двойная анимация приседания"
+  "tweakify-mod.command.label.sneakAnimationFix": "Двойная анимация приседания",
+  "tweakify-mod.config.general.name.skeletonAimingFix": "Исправление прицеливания скелетов",
+  "tweakify-mod.config.general.prettyName.skeletonAimingFix": "Исправление прицеливания скелетов",
+  "tweakify-mod.config.general.comment.skeletonAimingFix": "Исправляет MC-121706: скелеты и иллюзионисты при стрельбе смотрят на цель вверх и вниз, а не только по горизонтали; только в одиночной игре/локальной сети.",
+  "tweakify-mod.command.label.skeletonAimingFix": "Прицеливание скелетов"
 }

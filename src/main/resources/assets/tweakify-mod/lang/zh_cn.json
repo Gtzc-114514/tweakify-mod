@@ -1263,5 +1263,9 @@
   "tweakify-mod.config.general.name.sneakAnimationFix": "潜行动画重复修复",
   "tweakify-mod.config.general.prettyName.sneakAnimationFix": "潜行动画重复修复",
   "tweakify-mod.config.general.comment.sneakAnimationFix": "修复 MC-159163：快速按潜行键时只播放一次潜行动画，不再重复播放。",
-  "tweakify-mod.command.label.sneakAnimationFix": "潜行动画重复修复"
+  "tweakify-mod.command.label.sneakAnimationFix": "潜行动画重复修复",
+  "tweakify-mod.config.general.name.skeletonAimingFix": "骷髅瞄准修复",
+  "tweakify-mod.config.general.prettyName.skeletonAimingFix": "骷髅瞄准修复",
+  "tweakify-mod.config.general.comment.skeletonAimingFix": "修复 MC-121706：骷髅与幻术师射箭时视线随目标上下，不再只看水平方向；仅在单人/局域网生效。",
+  "tweakify-mod.command.label.skeletonAimingFix": "骷髅瞄准修复"
 }

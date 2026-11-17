@@ -80,6 +80,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-159163：快速按潜行键时不再重复播放潜行动画。
 	public volatile boolean sneakAnimationFix = false;
 
+	// MC-121706：骷髅/幻术师射箭时视线跟随目标上下。
+	public volatile boolean skeletonAimingFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

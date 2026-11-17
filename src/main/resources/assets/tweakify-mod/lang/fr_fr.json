@@ -1263,5 +1263,9 @@
   "tweakify-mod.config.general.name.sneakAnimationFix": "Correction de la double animation d'accroupissement",
   "tweakify-mod.config.general.prettyName.sneakAnimationFix": "Correction de la double animation d'accroupissement",
   "tweakify-mod.config.general.comment.sneakAnimationFix": "Corrige MC-159163 : une pression rapide sur la touche d'accroupissement ne joue plus l'animation deux fois.",
-  "tweakify-mod.command.label.sneakAnimationFix": "Double animation d'accroupissement"
+  "tweakify-mod.command.label.sneakAnimationFix": "Double animation d'accroupissement",
+  "tweakify-mod.config.general.name.skeletonAimingFix": "Correction de la visée des squelettes",
+  "tweakify-mod.config.general.prettyName.skeletonAimingFix": "Correction de la visée des squelettes",
+  "tweakify-mod.config.general.comment.skeletonAimingFix": "Corrige MC-121706 : les squelettes et illusionnistes visent leur cible vers le haut et le bas en tirant, au lieu de regarder uniquement à l'horizontale ; uniquement en solo/LAN.",
+  "tweakify-mod.command.label.skeletonAimingFix": "Visée des squelettes"
 }

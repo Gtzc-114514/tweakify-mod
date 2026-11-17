@@ -187,6 +187,8 @@ public final class ConfigCatalog {
 		entries.add(fix("respawnHotbarFix", true));
 		// 潜行动画重复（MC-159163）
 		entries.add(fix("sneakAnimationFix", true));
+		// 骷髅瞄准（MC-121706）
+		entries.add(fix("skeletonAimingFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

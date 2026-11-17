@@ -282,6 +282,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// MC-159163：潜行动画重复修复。
 	public static final ConfigBoolean SNEAK_ANIMATION_FIX = new ConfigBoolean(
 		"sneakAnimationFix", false).apply(GENERAL_KEY);
+	// MC-121706：骷髅瞄准修复。
+	public static final ConfigBoolean SKELETON_AIMING_FIX = new ConfigBoolean(
+		"skeletonAimingFix", false).apply(GENERAL_KEY);
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(GENERAL_KEY);

@@ -1263,5 +1263,9 @@
   "tweakify-mod.config.general.name.sneakAnimationFix": "Sneak animation double-play fix",
   "tweakify-mod.config.general.prettyName.sneakAnimationFix": "Sneak animation double-play fix",
   "tweakify-mod.config.general.comment.sneakAnimationFix": "Fixes MC-159163: quickly pressing the sneak key no longer plays the sneak animation twice.",
-  "tweakify-mod.command.label.sneakAnimationFix": "Sneak animation double-play fix"
+  "tweakify-mod.command.label.sneakAnimationFix": "Sneak animation double-play fix",
+  "tweakify-mod.config.general.name.skeletonAimingFix": "Skeleton aiming fix",
+  "tweakify-mod.config.general.prettyName.skeletonAimingFix": "Skeleton aiming fix",
+  "tweakify-mod.config.general.comment.skeletonAimingFix": "Fixes MC-121706: skeletons and illusioners aim up and down at their target while shooting instead of only looking horizontally; single-player/LAN host only.",
+  "tweakify-mod.command.label.skeletonAimingFix": "Skeleton aiming fix"
 }
