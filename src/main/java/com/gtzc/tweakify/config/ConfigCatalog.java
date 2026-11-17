@@ -165,6 +165,10 @@ public final class ConfigCatalog {
 		// 冰霜行者跳跃修复（修复标签）
 		entries.add(fix("frostWalkerJumpFix", true));
 		entries.add(child("frostWalkerJumpFix", "frostWalkerJumpFixJumpOnly"));
+		// 物品栏鼠标按键（MC-577）
+		entries.add(fix("fixMouseButtonInventory", true));
+		// 聊天卡顿（MC-247973）
+		entries.add(fix("chatLagFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

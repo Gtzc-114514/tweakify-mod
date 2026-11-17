@@ -40,6 +40,7 @@
 		"BoatStepHeightMixin",
 		"AbstractContainerScreenAccessor",
 		"AbstractContainerScreenQuickBurnMixin",
+		"AbstractContainerScreenMouseInventoryFixMixin",
 		"CreativeModeInventoryScreenQuickBurnMixin",
 		"MultiPlayerGameModeKeepTorchMixin",
 		"ServerPlayerGameModeKeepTorchMixin",
@@ -119,7 +120,8 @@
 		"HudAlwaysShowXpMixin",
 		"ExperienceBarAlwaysShowXpMixin",
 		"HudDebugInfoMixin",
-		"HudExperienceLevelMixin"
+		"HudExperienceLevelMixin",
+		"MinecraftServicesUserApiServiceChatLagMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

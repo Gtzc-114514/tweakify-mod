@@ -249,6 +249,12 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 只在向上跳跃时放宽。
 	public static final ConfigBoolean FROST_WALKER_JUMP_FIX_JUMP_ONLY = new ConfigBoolean(
 		"frostWalkerJumpFixJumpOnly", false).apply(GENERAL_KEY);
+	// MC-577：物品栏里绑定到鼠标键的关闭/丢弃按键生效。
+	public static final ConfigBoolean FIX_MOUSE_BUTTON_INVENTORY = new ConfigBoolean(
+		"fixMouseButtonInventory", false).apply(GENERAL_KEY);
+	// MC-247973：聊天消息触发的屏蔽名单拉取改为后台执行。
+	public static final ConfigBoolean CHAT_LAG_FIX = new ConfigBoolean(
+		"chatLagFix", false).apply(GENERAL_KEY);
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(GENERAL_KEY);

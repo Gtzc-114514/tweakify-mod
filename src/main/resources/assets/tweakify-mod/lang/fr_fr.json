@@ -1219,5 +1219,13 @@
   "tweakify-mod.config.general.comment.debugProbeReportCopy": "Activé, le raccourci de rapport écrit le résultat dans le presse-papiers (un hook par ligne) au lieu du chat.",
   "tweakify-mod.config.general.name.debugEnabledFeaturesReport": "Rapport des fonctions actives",
   "tweakify-mod.config.general.prettyName.debugEnabledFeaturesReport": "Rapport des fonctions actives",
-  "tweakify-mod.config.general.comment.debugEnabledFeaturesReport": "Appuyer sur la touche configurée imprime dans le chat les noms des interrupteurs de fonctions racines activés."
+  "tweakify-mod.config.general.comment.debugEnabledFeaturesReport": "Appuyer sur la touche configurée imprime dans le chat les noms des interrupteurs de fonctions racines activés.",
+  "tweakify-mod.config.general.name.fixMouseButtonInventory": "Correction des boutons souris dans l'inventaire",
+  "tweakify-mod.config.general.prettyName.fixMouseButtonInventory": "Correction des boutons souris dans l'inventaire",
+  "tweakify-mod.config.general.comment.fixMouseButtonInventory": "Corrige MC-577 : les touches d'inventaire liées aux boutons de la souris (fermer l'inventaire / jeter un objet) ne sont plus ignorées.",
+  "tweakify-mod.command.label.fixMouseButtonInventory": "Boutons souris dans l'inventaire",
+  "tweakify-mod.config.general.name.chatLagFix": "Correction de la latence du chat",
+  "tweakify-mod.config.general.prettyName.chatLagFix": "Correction de la latence du chat",
+  "tweakify-mod.config.general.comment.chatLagFix": "Corrige MC-247973 : la liste des joueurs bloqués est récupérée en arrière-plan à la réception d'un message au lieu de bloquer le thread client.",
+  "tweakify-mod.command.label.chatLagFix": "Latence du chat"
 }

@@ -1219,5 +1219,13 @@
   "tweakify-mod.config.general.option.locatorHeadColor.yellow": "Yellow",
   "tweakify-mod.config.general.option.locatorHeadColor.green": "Green",
   "tweakify-mod.config.general.option.locatorHeadColor.blue": "Blue",
-  "tweakify-mod.config.general.option.locatorHeadColor.aqua": "Aqua"
+  "tweakify-mod.config.general.option.locatorHeadColor.aqua": "Aqua",
+  "tweakify-mod.config.general.name.fixMouseButtonInventory": "Inventory mouse button fix",
+  "tweakify-mod.config.general.prettyName.fixMouseButtonInventory": "Inventory mouse button fix",
+  "tweakify-mod.config.general.comment.fixMouseButtonInventory": "Fixes MC-577: inventory close and drop keys bound to mouse buttons are no longer swallowed.",
+  "tweakify-mod.command.label.fixMouseButtonInventory": "Inventory mouse button fix",
+  "tweakify-mod.config.general.name.chatLagFix": "Chat lag fix",
+  "tweakify-mod.config.general.prettyName.chatLagFix": "Chat lag fix",
+  "tweakify-mod.config.general.comment.chatLagFix": "Fixes MC-247973: fetch the blocked-player list asynchronously on chat messages instead of blocking the client thread.",
+  "tweakify-mod.command.label.chatLagFix": "Chat lag fix"
 }

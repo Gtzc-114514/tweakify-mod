@@ -1219,5 +1219,13 @@
   "tweakify-mod.config.general.comment.debugProbeReportCopy": "При включении отчёт проб пишется в буфер обмена (по одному хуку в строке) вместо чата.",
   "tweakify-mod.config.general.name.debugEnabledFeaturesReport": "Отчёт включённых функций",
   "tweakify-mod.config.general.prettyName.debugEnabledFeaturesReport": "Отчёт включённых функций",
-  "tweakify-mod.config.general.comment.debugEnabledFeaturesReport": "По нажатию привязанной клавиши выводит в чат названия включённых корневых переключателей функций."
+  "tweakify-mod.config.general.comment.debugEnabledFeaturesReport": "По нажатию привязанной клавиши выводит в чат названия включённых корневых переключателей функций.",
+  "tweakify-mod.config.general.name.fixMouseButtonInventory": "Исправление кнопок мыши в инвентаре",
+  "tweakify-mod.config.general.prettyName.fixMouseButtonInventory": "Исправление кнопок мыши в инвентаре",
+  "tweakify-mod.config.general.comment.fixMouseButtonInventory": "Исправляет MC-577: привязанные к кнопкам мыши действия инвентаря (закрыть инвентарь / выбросить предмет) больше не игнорируются.",
+  "tweakify-mod.command.label.fixMouseButtonInventory": "Кнопки мыши в инвентаре",
+  "tweakify-mod.config.general.name.chatLagFix": "Исправление задержки чата",
+  "tweakify-mod.config.general.prettyName.chatLagFix": "Исправление задержки чата",
+  "tweakify-mod.config.general.comment.chatLagFix": "Исправляет MC-247973: список заблокированных игроков загружается в фоне при получении сообщения, не блокируя клиентский поток.",
+  "tweakify-mod.command.label.chatLagFix": "Задержка чата"
 }

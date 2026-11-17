@@ -1219,5 +1219,13 @@
   "tweakify-mod.config.general.option.locatorHeadColor.yellow": "黄色",
   "tweakify-mod.config.general.option.locatorHeadColor.green": "绿色",
   "tweakify-mod.config.general.option.locatorHeadColor.blue": "蓝色",
-  "tweakify-mod.config.general.option.locatorHeadColor.aqua": "青色"
+  "tweakify-mod.config.general.option.locatorHeadColor.aqua": "青色",
+  "tweakify-mod.config.general.name.fixMouseButtonInventory": "物品栏鼠标按键修复",
+  "tweakify-mod.config.general.prettyName.fixMouseButtonInventory": "物品栏鼠标按键修复",
+  "tweakify-mod.config.general.comment.fixMouseButtonInventory": "修复 MC-577：物品栏里绑定到鼠标键的关闭背包与丢弃物品按键不再被吞掉。",
+  "tweakify-mod.command.label.fixMouseButtonInventory": "物品栏鼠标按键修复",
+  "tweakify-mod.config.general.name.chatLagFix": "聊天卡顿修复",
+  "tweakify-mod.config.general.prettyName.chatLagFix": "聊天卡顿修复",
+  "tweakify-mod.config.general.comment.chatLagFix": "修复 MC-247973：收到聊天消息时改为后台拉取屏蔽名单，避免主线程同步网络请求造成卡顿。",
+  "tweakify-mod.command.label.chatLagFix": "聊天卡顿修复"
 }

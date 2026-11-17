@@ -47,6 +47,12 @@ public final class FixConfig extends ConfigSection {
 	// 只在向上跳跃时放宽（下落过程仍按原版不结冰）。
 	public volatile boolean frostWalkerJumpFixJumpOnly = false;
 
+	// MC-577：物品栏里绑定到鼠标键的关闭背包与丢弃物品按键生效。
+	public volatile boolean fixMouseButtonInventory = false;
+
+	// MC-247973：收到聊天消息时改为后台拉取屏蔽名单，避免主线程同步网络请求卡顿。
+	public volatile boolean chatLagFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);
