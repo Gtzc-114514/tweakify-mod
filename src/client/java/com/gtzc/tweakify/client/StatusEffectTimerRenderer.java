@@ -83,7 +83,7 @@ public final class StatusEffectTimerRenderer {
 			CACHE.reset();
 			return;
 		}
-		int guiWidth = client.getWindow().getGuiScaledWidth();
+		int guiWidth = guiWidth(client);
 		boolean demo = client.isDemo();
 		CACHE.update(rebuildTimers(client, guiWidth, demo, config), client.player, client.font, guiWidth, demo);
 	}
@@ -94,7 +94,7 @@ public final class StatusEffectTimerRenderer {
 		if (config == null || !config.functions.statusEffectDurationDisplay || client.player == null) {
 			return;
 		}
-		int guiWidth = gui.guiWidth();
+		int guiWidth = guiWidth(client);
 		boolean demo = client.isDemo();
 		if (!CACHE.matches(client.player, client.font, guiWidth, demo)) {
 			// 窗口缩放、资源重载或首次启用：就地重建一次，避免等下一 tick 期间位置错误。
@@ -104,6 +104,11 @@ public final class StatusEffectTimerRenderer {
 		for (CachedTimer timer : CACHE.timers()) {
 			drawTimer(gui, client.font, timer);
 		}
+	}
+
+	// tick 与 render 共用窗口 GUI 缩放宽：避免 gui.guiWidth() 与窗口口径不一致时每帧 miss。
+	private static int guiWidth(Minecraft client) {
+		return client.getWindow().getGuiScaledWidth();
 	}
 
 	private static List<CachedTimer> rebuildTimers(Minecraft client, int guiWidth, boolean demo,
@@ -242,6 +247,7 @@ public final class StatusEffectTimerRenderer {
 
 	// 缓存有效性：玩家、字体、GUI 宽度与演示模式任一变化即失效；
 	// 失效时由 tick 或渲染侧重建一次，避免缩放窗口期间沿用旧坐标。
+	// 仅客户端渲染线程访问（客户端 tick 与 HUD extract 同线程）：不做同步。
 	static final class TimerCache {
 		private List<CachedTimer> timers = List.of();
 		private Object player;

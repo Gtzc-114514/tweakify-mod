@@ -143,9 +143,15 @@ public final class EnchantmentTooltipDescriptions {
 		return lines;
 	}
 
+	// 生产生命周期：断线/换世界时主动释放键里持有的 RegistryAccess 与 Component，
+	// 不必等 8 条 LRU 自然淘汰。
+	static void clearCache() {
+		CACHE.clear();
+	}
+
 	// 包私有：测试之间清空生产缓存，避免跨用例互相影响。
 	static void resetCacheForTest() {
-		CACHE.clear();
+		clearCache();
 	}
 
 	// 小型 LRU：tooltip 通常只查询悬停中的一个物品，8 条足够覆盖快捷切换；

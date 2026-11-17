@@ -199,6 +199,7 @@ public final class ConnectedBlockOutlineState {
 	}
 
 	// 小型 LRU：同一时刻只有一个准星目标，8 条足够覆盖快速切换；不持有世界/玩家引用。
+	// 仅客户端渲染线程访问（准星轮廓提取与渲染同线程）：不做同步。
 	private static final class MergedShapeCache {
 		private static final int MAX_ENTRIES = 8;
 		private final Map<CacheKey, CachedShape> entries =

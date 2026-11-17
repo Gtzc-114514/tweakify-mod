@@ -48,8 +48,11 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		// 聊天草稿属于当前世界/服务器会话：断线或切换世界后丢弃，避免跨存档/跨服泄漏。
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
 			ChatInputMemoryState.beginSession());
-		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-			ChatInputMemoryState.endSession());
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			ChatInputMemoryState.endSession();
+			// 附魔描述计划缓存键含 RegistryAccess/Component：断线时主动释放。
+			EnchantmentTooltipDescriptions.clearCache();
+		});
 		// 配置写盘节流后的兜底：tick 结束时提交尚未写盘的修改，并把后台写盘结果取回客户端线程；
 		// 命令改值后也在这里把 MaLiLib 选项同步一次（服务端线程 → 客户端线程）。
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {

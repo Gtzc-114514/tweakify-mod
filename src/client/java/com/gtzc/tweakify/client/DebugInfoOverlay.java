@@ -336,6 +336,7 @@ public final class DebugInfoOverlay {
 	}
 
 	// 整行文本缓存：签名变化或间隔到期时重建；返回不可变列表，渲染帧只读。
+	// 仅客户端渲染线程访问（客户端 tick 与 HUD extract 同线程）：不做同步。
 	static final class LineCache {
 		private boolean valid;
 		private long lastBuildNanos;
