@@ -1247,5 +1247,9 @@
   "tweakify-mod.config.general.name.spectatorOverlayFix": "Correction des effets en mode spectateur",
   "tweakify-mod.config.general.prettyName.spectatorOverlayFix": "Correction des effets en mode spectateur",
   "tweakify-mod.config.general.comment.spectatorOverlayFix": "Corrige MC-217716 : les effets de nausée et de portail du Nether ne sont plus rendus en mode spectateur ; les autres modes restent inchangés.",
-  "tweakify-mod.command.label.spectatorOverlayFix": "Effets en mode spectateur"
+  "tweakify-mod.command.label.spectatorOverlayFix": "Effets en mode spectateur",
+  "tweakify-mod.config.general.name.cooldownIndicatorFix": "Correction du clignotement de l'indicateur de recharge",
+  "tweakify-mod.config.general.prettyName.cooldownIndicatorFix": "Correction du clignotement de l'indicateur de recharge",
+  "tweakify-mod.config.general.comment.cooldownIndicatorFix": "Corrige MC-268420 : la progression du temps de recharge près du réticule ne clignote plus lors du changement d'objet à haute vitesse d'attaque.",
+  "tweakify-mod.command.label.cooldownIndicatorFix": "Indicateur de recharge"
 }

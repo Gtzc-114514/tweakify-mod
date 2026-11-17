@@ -179,6 +179,8 @@ public final class ConfigCatalog {
 		entries.add(fix("shieldBlockHurtSoundFix", true));
 		// 旁观者覆盖层（MC-217716）
 		entries.add(fix("spectatorOverlayFix", true));
+		// 冷却指示器闪烁（MC-268420）
+		entries.add(fix("cooldownIndicatorFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

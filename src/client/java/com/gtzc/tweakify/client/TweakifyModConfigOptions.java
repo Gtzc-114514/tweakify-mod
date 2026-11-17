@@ -270,6 +270,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// MC-217716：旁观者覆盖层修复。
 	public static final ConfigBoolean SPECTATOR_OVERLAY_FIX = new ConfigBoolean(
 		"spectatorOverlayFix", false).apply(GENERAL_KEY);
+	// MC-268420：冷却指示器闪烁修复。
+	public static final ConfigBoolean COOLDOWN_INDICATOR_FIX = new ConfigBoolean(
+		"cooldownIndicatorFix", false).apply(GENERAL_KEY);
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(GENERAL_KEY);

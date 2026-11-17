@@ -1247,5 +1247,9 @@
   "tweakify-mod.config.general.name.spectatorOverlayFix": "旁观者覆盖层修复",
   "tweakify-mod.config.general.prettyName.spectatorOverlayFix": "旁观者覆盖层修复",
   "tweakify-mod.config.general.comment.spectatorOverlayFix": "修复 MC-217716：进入旁观者模式后不再渲染反胃与下界传送门覆盖层；其它游戏模式保持原版。",
-  "tweakify-mod.command.label.spectatorOverlayFix": "旁观者覆盖层修复"
+  "tweakify-mod.command.label.spectatorOverlayFix": "旁观者覆盖层修复",
+  "tweakify-mod.config.general.name.cooldownIndicatorFix": "冷却指示器闪烁修复",
+  "tweakify-mod.config.general.prettyName.cooldownIndicatorFix": "冷却指示器闪烁修复",
+  "tweakify-mod.config.general.comment.cooldownIndicatorFix": "修复 MC-268420：高攻速下切换物品时，准星旁攻击冷却进度不再闪一帧。",
+  "tweakify-mod.command.label.cooldownIndicatorFix": "冷却指示器闪烁修复"
 }

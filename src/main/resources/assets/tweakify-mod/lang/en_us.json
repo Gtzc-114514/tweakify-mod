@@ -1247,5 +1247,9 @@
   "tweakify-mod.config.general.name.spectatorOverlayFix": "Spectator overlay fix",
   "tweakify-mod.config.general.prettyName.spectatorOverlayFix": "Spectator overlay fix",
   "tweakify-mod.config.general.comment.spectatorOverlayFix": "Fixes MC-217716: nausea and Nether portal overlays are no longer rendered in spectator mode; other game modes stay vanilla.",
-  "tweakify-mod.command.label.spectatorOverlayFix": "Spectator overlay fix"
+  "tweakify-mod.command.label.spectatorOverlayFix": "Spectator overlay fix",
+  "tweakify-mod.config.general.name.cooldownIndicatorFix": "Cooldown indicator flicker fix",
+  "tweakify-mod.config.general.prettyName.cooldownIndicatorFix": "Cooldown indicator flicker fix",
+  "tweakify-mod.config.general.comment.cooldownIndicatorFix": "Fixes MC-268420: the attack cooldown progress next to the crosshair no longer flashes when switching items with high attack speed.",
+  "tweakify-mod.command.label.cooldownIndicatorFix": "Cooldown indicator flicker fix"
 }

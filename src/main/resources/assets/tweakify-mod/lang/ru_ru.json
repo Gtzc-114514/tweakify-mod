@@ -1247,5 +1247,9 @@
   "tweakify-mod.config.general.name.spectatorOverlayFix": "Исправление эффектов в режиме наблюдателя",
   "tweakify-mod.config.general.prettyName.spectatorOverlayFix": "Исправление эффектов в режиме наблюдателя",
   "tweakify-mod.config.general.comment.spectatorOverlayFix": "Исправляет MC-217716: в режиме наблюдателя больше не отображаются эффекты тошноты и портала Нижнего мира; в других режимах всё остаётся как в оригинале.",
-  "tweakify-mod.command.label.spectatorOverlayFix": "Эффекты в режиме наблюдателя"
+  "tweakify-mod.command.label.spectatorOverlayFix": "Эффекты в режиме наблюдателя",
+  "tweakify-mod.config.general.name.cooldownIndicatorFix": "Исправление мигания индикатора перезарядки",
+  "tweakify-mod.config.general.prettyName.cooldownIndicatorFix": "Исправление мигания индикатора перезарядки",
+  "tweakify-mod.config.general.comment.cooldownIndicatorFix": "Исправляет MC-268420: индикатор перезарядки атаки рядом с прицелом больше не мигает при смене предмета с высокой скоростью атаки.",
+  "tweakify-mod.command.label.cooldownIndicatorFix": "Индикатор перезарядки"
 }

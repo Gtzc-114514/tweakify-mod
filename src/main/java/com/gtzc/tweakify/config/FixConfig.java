@@ -68,6 +68,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-217716：旁观者模式下隐藏反胃与下界传送门覆盖层。
 	public volatile boolean spectatorOverlayFix = false;
 
+	// MC-268420：高攻速切换物品时，攻击冷却指示器不再闪一帧。
+	public volatile boolean cooldownIndicatorFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);
