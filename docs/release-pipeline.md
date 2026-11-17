@@ -303,6 +303,34 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 > `@v3`（v3.0.4，`runs.using: node24`，提交 `414f1ec`），inputs 与 permissions 兼容，下一次标签发布验证该注解消失。
 > 升级后的 main 构建（run `43741195244`）为 success。
 
+## 验证记录：v1.1.1 发布
+
+本次无 `release.yml` 改动；首次验证 `action-gh-release@v3`（Node.js 24），也是 12 项原版修复与 T5 缓存的集中发布：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `44158909471` |
+| 对应提交 | `06d7639`（`v1.1.1` 标签提交；含 1.1.1 版本号、notes 与探针台账） |
+| 触发 | push tag `v1.1.1` |
+| 结论 | **success**，job 耗时 59 秒（run 1 分 04 秒） |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过** |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.1.1` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.1.1` 去前缀后与版本 `1.1.1` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.1.1` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.1.1.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文与仓库内 notes 逐字一致（2,576 字节），含 compare 链接；使用 `action-gh-release@v3` | ✅ |
+
+产物：`tweakify-mod-1.1.1.jar`（779,451 字节）、`tweakify-mod-1.1.1-sources.jar`（584,196 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `44158881891`）同为 success。
+
+> 备注：本次 main 与标签均通过本地代理首次推送成功；release 页面正文在 PowerShell 控制台显示为乱码属于终端解码问题，GitHub API 读取的正文与仓库 notes 完全一致。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
