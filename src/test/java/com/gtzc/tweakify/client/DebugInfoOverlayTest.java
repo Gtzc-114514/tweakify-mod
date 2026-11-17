@@ -1,5 +1,9 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.config.TweakifyModConfig;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.HitResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -8,6 +12,7 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 调试叠加层的纯文本格式：速度行把 tick 速度换算成格每秒，
@@ -87,5 +92,72 @@ class DebugInfoOverlayTest {
 		List<String> cached = cache.get(1_000_000_000L, "sig", 500_000_000L, builder);
 
 		assertEquals(builder.get(), cached);
+	}
+
+	// 签名工厂必须逐项使用入参：身份、坐标、朝向、方块、目标、命中、掩码与语言。
+	@Test
+	void signatureFactoryTakesEveryFieldFromArguments() {
+		Object language = new Object();
+		BlockPos hitPos = new BlockPos(4, 64, -6);
+		DebugInfoOverlay.LineSignature signature = DebugInfoOverlay.signature(
+			101, 202, 1.24, -2.26, 3.04, 89.96f, Direction.NORTH,
+			new BlockPos(4, 65, -6), 303, true, HitResult.Type.BLOCK, hitPos,
+			0b1010_1010, language);
+
+		assertEquals(101, signature.playerIdentity());
+		assertEquals(202, signature.levelIdentity());
+		assertEquals(12L, signature.xTenth());
+		assertEquals(-23L, signature.yTenth());
+		assertEquals(30L, signature.zTenth());
+		assertEquals(900L, signature.yRotTenth());
+		assertEquals(Direction.NORTH.ordinal(), signature.direction());
+		assertEquals(4, signature.blockX());
+		assertEquals(65, signature.blockY());
+		assertEquals(-6, signature.blockZ());
+		assertEquals(303, signature.targetIdentity());
+		assertTrue(signature.hasTarget());
+		assertEquals(HitResult.Type.BLOCK, signature.hitType());
+		assertEquals(hitPos, signature.hitPos());
+		assertEquals(0b1010_1010, signature.configMask());
+		assertSame(language, signature.language());
+	}
+
+	// 每个调试子开关都必须从配置读取并落到独立位。
+	@Test
+	void configMaskReflectsEverySubSwitch() {
+		TweakifyModConfig config = new TweakifyModConfig();
+		config.testing.debugInfoShowPerformance = false;
+		config.testing.debugInfoShowTarget = false;
+		config.testing.debugInfoShowBiome = false;
+		config.testing.debugInfoShowSpeed = false;
+		config.testing.debugInfoShowEntities = false;
+		config.testing.debugInfoShowConfigStats = false;
+		config.testing.debugInfoShowEffects = false;
+		config.testing.debugInfoShowHooks = false;
+		assertEquals(0, DebugInfoOverlay.configMask(config));
+
+		config.testing.debugInfoShowPerformance = true;
+		assertEquals(1, DebugInfoOverlay.configMask(config));
+		config.testing.debugInfoShowPerformance = false;
+		config.testing.debugInfoShowTarget = true;
+		assertEquals(1 << 1, DebugInfoOverlay.configMask(config));
+		config.testing.debugInfoShowTarget = false;
+		config.testing.debugInfoShowBiome = true;
+		assertEquals(1 << 2, DebugInfoOverlay.configMask(config));
+		config.testing.debugInfoShowBiome = false;
+		config.testing.debugInfoShowSpeed = true;
+		assertEquals(1 << 3, DebugInfoOverlay.configMask(config));
+		config.testing.debugInfoShowSpeed = false;
+		config.testing.debugInfoShowEntities = true;
+		assertEquals(1 << 4, DebugInfoOverlay.configMask(config));
+		config.testing.debugInfoShowEntities = false;
+		config.testing.debugInfoShowConfigStats = true;
+		assertEquals(1 << 5, DebugInfoOverlay.configMask(config));
+		config.testing.debugInfoShowConfigStats = false;
+		config.testing.debugInfoShowEffects = true;
+		assertEquals(1 << 6, DebugInfoOverlay.configMask(config));
+		config.testing.debugInfoShowEffects = false;
+		config.testing.debugInfoShowHooks = true;
+		assertEquals(1 << 7, DebugInfoOverlay.configMask(config));
 	}
 }

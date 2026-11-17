@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.contextualbar.ContextualBar;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.resources.Identifier;
@@ -144,18 +145,27 @@ public final class DebugInfoOverlay {
 		BlockPos hitPos = hit instanceof BlockHitResult blockHit ? blockHit.getBlockPos() : null;
 		HitResult.Type hitType = hit == null ? null : hit.getType();
 		Entity target = client.crosshairPickEntity;
-		return new LineSignature(
+		return signature(
 			System.identityHashCode(client.player), System.identityHashCode(client.level),
-			Math.round(client.player.getX() * 10.0), Math.round(client.player.getY() * 10.0),
-			Math.round(client.player.getZ() * 10.0), Math.round(client.player.getYRot() * 10.0f),
-			client.player.getDirection().ordinal(),
-			pos.getX(), pos.getY(), pos.getZ(),
+			client.player.getX(), client.player.getY(), client.player.getZ(), client.player.getYRot(),
+			client.player.getDirection(), pos,
 			System.identityHashCode(target), target != null, hitType, hitPos,
 			configMask(config), Language.getInstance());
 	}
 
+	// 包私有：测试用显式入参验证每个字段确实来自生产输入；生产签名只负责读取 Minecraft 状态。
+	static LineSignature signature(int playerIdentity, int levelIdentity, double x, double y, double z,
+			float yRot, Direction direction, BlockPos blockPos, int targetIdentity, boolean hasTarget,
+			HitResult.Type hitType, BlockPos hitPos, int mask, Object language) {
+		return new LineSignature(playerIdentity, levelIdentity,
+			Math.round(x * 10.0), Math.round(y * 10.0), Math.round(z * 10.0),
+			Math.round(yRot * 10.0f), direction.ordinal(),
+			blockPos.getX(), blockPos.getY(), blockPos.getZ(),
+			targetIdentity, hasTarget, hitType, hitPos, mask, language);
+	}
+
 	// 子开关决定追加哪些行；任一开关变化都要立即重建，不能等 500ms。
-	private static int configMask(TweakifyModConfig config) {
+	static int configMask(TweakifyModConfig config) {
 		int mask = 0;
 		if (config.testing.debugInfoShowPerformance) {
 			mask |= 1;
@@ -302,7 +312,7 @@ public final class DebugInfoOverlay {
 
 	// 签名只包含影响整行文本的轻量状态；世界/玩家/目标只存身份哈希，
 	// 避免静态缓存长期持有 ClientLevel、玩家或实体引用。
-	private record LineSignature(int playerIdentity, int levelIdentity, long xTenth, long yTenth,
+	record LineSignature(int playerIdentity, int levelIdentity, long xTenth, long yTenth,
 			long zTenth, long yRotTenth, int direction, int blockX, int blockY, int blockZ,
 			int targetIdentity, boolean hasTarget, HitResult.Type hitType, BlockPos hitPos,
 			int configMask, Object language) {

@@ -38,8 +38,8 @@ public final class EnchantmentTooltipDescriptions {
 
 	// 缓存键：字段用 Object 保存，比较语义沿用各值自身的 equals；
 	// 也便于单测用替身对象覆盖每个失效维度。
-	public record CacheKey(Object registries, Object item, Object enchantments, Object type,
-						   boolean sneaking, Object language) {
+	record CacheKey(Object registries, Object item, Object enchantments, Object type,
+					boolean sneaking, Object language) {
 	}
 
 	// 描述行与插入位置：先收集、再按位置降序插入，避免前面的插入让后面的索引偏移。
@@ -51,10 +51,18 @@ public final class EnchantmentTooltipDescriptions {
 	private EnchantmentTooltipDescriptions() {
 	}
 
-	// 由 mixin 调用：按缓存键取计划，未命中时用当前注册表构建。
-	public static List<Component> appendCached(List<Component> original, CacheKey key,
+	// 由 mixin 调用：按生产入参构造缓存键并取计划；键构造下沉到 cacheKey 便于单测。
+	public static List<Component> appendCached(List<Component> original, Object registries, Object item,
+			Object enchantments, Object type, boolean sneaking, Object language,
 			Supplier<List<DescriptionPlan>> builder) {
-		return append(original, CACHE.get(key, builder));
+		return append(original, CACHE.get(
+			cacheKey(registries, item, enchantments, type, sneaking, language), builder));
+	}
+
+	// 包私有：生产缓存键的唯一构造点，测试逐字段校验入参确实被写入。
+	static CacheKey cacheKey(Object registries, Object item, Object enchantments, Object type,
+			boolean sneaking, Object language) {
+		return new CacheKey(registries, item, enchantments, type, sneaking, language);
 	}
 
 	// 构建描述计划：顺序与原本的内联实现完全一致，只是把结果交给缓存。
@@ -162,7 +170,8 @@ public final class EnchantmentTooltipDescriptions {
 			return built;
 		}
 
-		int size() {
+		// 包私有：测试断言淘汰确实发生，而不是只看容量上界。
+		int sizeForTest() {
 			return this.entries.size();
 		}
 

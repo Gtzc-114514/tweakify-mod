@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,53 +25,81 @@ class EnchantmentTooltipDescriptionsTest {
 	}
 
 	@Test
+	void cacheKeyTakesEveryFieldFromArguments() {
+		Object registries = new Object();
+		Object item = new Object();
+		Object enchantments = new Object();
+		Object type = new Object();
+		Object language = new Object();
+		EnchantmentTooltipDescriptions.CacheKey key = EnchantmentTooltipDescriptions.cacheKey(
+			registries, item, enchantments, type, true, language);
+
+		assertSame(registries, key.registries());
+		assertSame(item, key.item());
+		assertSame(enchantments, key.enchantments());
+		assertSame(type, key.type());
+		assertTrue(key.sneaking());
+		assertSame(language, key.language());
+	}
+
+	@Test
 	void cacheKeyChangesWhenAnyInputChanges() {
 		Object registries = new Object();
 		Object item = new Object();
 		Object enchantments = new Object();
 		Object type = new Object();
 		Object language = new Object();
-		EnchantmentTooltipDescriptions.CacheKey base =
-			new EnchantmentTooltipDescriptions.CacheKey(registries, item, enchantments, type, false, language);
+		EnchantmentTooltipDescriptions.CacheKey base = EnchantmentTooltipDescriptions.cacheKey(
+			registries, item, enchantments, type, false, language);
 
-		assertEquals(base, new EnchantmentTooltipDescriptions.CacheKey(
+		assertEquals(base, EnchantmentTooltipDescriptions.cacheKey(
 			registries, item, enchantments, type, false, language));
-		assertNotEquals(base, new EnchantmentTooltipDescriptions.CacheKey(
+		assertNotEquals(base, EnchantmentTooltipDescriptions.cacheKey(
 			new Object(), item, enchantments, type, false, language), "注册表变化失效");
-		assertNotEquals(base, new EnchantmentTooltipDescriptions.CacheKey(
+		assertNotEquals(base, EnchantmentTooltipDescriptions.cacheKey(
 			registries, new Object(), enchantments, type, false, language), "物品变化失效");
-		assertNotEquals(base, new EnchantmentTooltipDescriptions.CacheKey(
+		assertNotEquals(base, EnchantmentTooltipDescriptions.cacheKey(
 			registries, item, new Object(), type, false, language), "附魔组件变化失效");
-		assertNotEquals(base, new EnchantmentTooltipDescriptions.CacheKey(
+		assertNotEquals(base, EnchantmentTooltipDescriptions.cacheKey(
 			registries, item, enchantments, new Object(), false, language), "组件类型变化失效");
-		assertNotEquals(base, new EnchantmentTooltipDescriptions.CacheKey(
+		assertNotEquals(base, EnchantmentTooltipDescriptions.cacheKey(
 			registries, item, enchantments, type, true, language), "潜行门控变化失效");
-		assertNotEquals(base, new EnchantmentTooltipDescriptions.CacheKey(
+		assertNotEquals(base, EnchantmentTooltipDescriptions.cacheKey(
 			registries, item, enchantments, type, false, new Object()), "语言变化失效");
 	}
 
 	@Test
-	void planCacheReusesSameKeyAndKeepsBoundedSize() {
+	void planCacheEvictsOldestAndRebuildsIt() {
 		EnchantmentTooltipDescriptions.PlanCache<String> cache =
 			new EnchantmentTooltipDescriptions.PlanCache<>();
 		AtomicInteger builds = new AtomicInteger();
 		Supplier<List<EnchantmentTooltipDescriptions.DescriptionPlan>> builder = () -> {
-			builds.incrementAndGet();
+			int call = builds.incrementAndGet();
 			return List.of(new EnchantmentTooltipDescriptions.DescriptionPlan(
-				"Sharpness I", Component.literal("  sharp")));
+				"name-" + call, Component.literal("desc-" + call)));
 		};
 
-		List<EnchantmentTooltipDescriptions.DescriptionPlan> first = cache.get("key", builder);
-		assertSame(first, cache.get("key", builder), "命中时复用同一计划实例");
-		assertEquals(1, builds.get());
-
-		cache.get("other", builder);
-		assertEquals(2, builds.get(), "不同键分别构建");
-
-		for (int i = 0; i < cache.maxEntries() * 2; i++) {
-			cache.get("evict-" + i, builder);
+		List<EnchantmentTooltipDescriptions.DescriptionPlan> evicted = cache.get("k1", builder);
+		for (String key : List.of("k0", "k2", "k3", "k4", "k5", "k6", "k7")) {
+			cache.get(key, builder);
 		}
-		assertTrue(cache.size() <= cache.maxEntries(), "超出上限时淘汰旧条目");
+		assertEquals(cache.maxEntries(), cache.sizeForTest());
+		assertEquals(8, builds.get());
+
+		List<EnchantmentTooltipDescriptions.DescriptionPlan> k0Hit = cache.get("k0", builder);
+		assertSame(k0Hit, cache.get("k0", builder), "命中时复用同一计划实例");
+		assertEquals(8, builds.get(), "命中不重建");
+
+		// k1 仍是最旧键；插入 k8 时被淘汰。
+		cache.get("k8", builder);
+		assertEquals(cache.maxEntries(), cache.sizeForTest());
+		assertEquals(9, builds.get());
+
+		List<EnchantmentTooltipDescriptions.DescriptionPlan> rebuilt = cache.get("k1", builder);
+		assertEquals(10, builds.get(), "被淘汰的键重新构建");
+		assertNotSame(evicted, rebuilt, "淘汰后返回新计划实例");
+		assertEquals("name-10", rebuilt.get(0).nameText());
+		assertEquals(cache.maxEntries(), cache.sizeForTest());
 	}
 
 	@Test
@@ -82,19 +111,15 @@ class EnchantmentTooltipDescriptionsTest {
 			return List.of(new EnchantmentTooltipDescriptions.DescriptionPlan(
 				"Sharpness I", Component.literal("  sharp")));
 		};
-		EnchantmentTooltipDescriptions.CacheKey firstKey =
-			new EnchantmentTooltipDescriptions.CacheKey("registries", "item", "enchantments", "type",
-				false, "language");
-		EnchantmentTooltipDescriptions.CacheKey sneakKey =
-			new EnchantmentTooltipDescriptions.CacheKey("registries", "item", "enchantments", "type",
-				true, "language");
-
-		List<Component> first = EnchantmentTooltipDescriptions.appendCached(original, firstKey, builder);
-		List<Component> second = EnchantmentTooltipDescriptions.appendCached(original, firstKey, builder);
+		List<Component> first = EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", false, "language", builder);
+		List<Component> second = EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", false, "language", builder);
 		assertEquals(texts(first), texts(second));
 		assertEquals(1, builds.get(), "同一键复用描述计划");
 
-		EnchantmentTooltipDescriptions.appendCached(original, sneakKey, builder);
+		EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", true, "language", builder);
 		assertEquals(2, builds.get(), "潜行门控变化后重新构建");
 	}
 
@@ -143,11 +168,8 @@ class EnchantmentTooltipDescriptionsTest {
 			return List.of(new EnchantmentTooltipDescriptions.DescriptionPlan(
 				"Sharpness I", Component.literal("  sharp")));
 		};
-		EnchantmentTooltipDescriptions.CacheKey key =
-			new EnchantmentTooltipDescriptions.CacheKey("registries", "item", "enchantments", "type",
-				false, "language");
-
-		List<Component> cached = EnchantmentTooltipDescriptions.appendCached(original, key, builder);
+		List<Component> cached = EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", false, "language", builder);
 		List<Component> uncached = EnchantmentTooltipDescriptions.append(original, builder.get());
 
 		assertEquals(texts(uncached), texts(cached), "缓存路径与无缓存构建结果一致");

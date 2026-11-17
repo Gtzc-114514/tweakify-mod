@@ -10,6 +10,7 @@ import java.util.function.ToIntFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -151,21 +152,50 @@ class LocatorBarHeadsTest {
 		assertEquals(3, measurements.get(), "字体实例变化后缓存失效");
 	}
 
-	// 淘汰只保证性能，不影响正确性：溢出后旧名字重新查仍得到真实宽度。
+	// 淘汰只保证性能，不影响正确性：溢出后旧名字重新查会重新测量，值仍正确。
 	@Test
-	void playerNameWidthCacheStaysCorrectAfterEviction() {
+	void playerNameWidthCacheEvictsHalfAndRecomputes() {
 		LocatorBarHeads.WidthCache cache = new LocatorBarHeads.WidthCache();
 		Object font = new Object();
-		ToIntFunction<String> measure = String::length;
-		for (int i = 0; i < LocatorBarHeads.MAX_NAME_WIDTH_ENTRIES; i++) {
+		AtomicInteger measurements = new AtomicInteger();
+		ToIntFunction<String> measure = name -> {
+			measurements.incrementAndGet();
+			return name.length();
+		};
+		int max = LocatorBarHeads.MAX_NAME_WIDTH_ENTRIES;
+		for (int i = 0; i < max; i++) {
 			String name = "player" + i;
 			assertEquals(name.length(), cache.widthForTest(font, name, measure));
 		}
+		assertEquals(max, cache.sizeForTest(), "填满后达到上限");
+		assertEquals(max, measurements.get());
 
-		assertEquals("player0".length(), cache.widthForTest(font, "player0", measure),
-			"淘汰后旧名字仍返回正确宽度");
 		assertEquals("overflow".length(), cache.widthForTest(font, "overflow", measure));
-		assertEquals("player1".length(), cache.widthForTest(font, "player1", measure));
+		assertEquals(max - max / 2 + 1, cache.sizeForTest(), "超出上限时只淘汰一半再加新键");
+		assertEquals(max + 1, measurements.get());
+
+		// HashMap 的淘汰顺序不固定：从现存键里找一个实际被淘汰的和一个仍保留的。
+		String evicted = null;
+		String retained = null;
+		for (int i = 0; i < max; i++) {
+			String name = "player" + i;
+			if (!cache.containsForTest(name)) {
+				evicted = name;
+			} else if (retained == null) {
+				retained = name;
+			}
+		}
+		assertNotNull(evicted, "溢出后必须有一半旧名字被淘汰");
+		assertNotNull(retained, "溢出后必须保留一半旧名字");
+
+		int beforeEvicted = measurements.get();
+		assertEquals(evicted.length(), cache.widthForTest(font, evicted, measure),
+			"被淘汰的旧名字重新测量后仍返回正确宽度");
+		assertEquals(beforeEvicted + 1, measurements.get(), "淘汰后的旧名字确实重新计算");
+
+		int afterEvicted = measurements.get();
+		assertEquals(retained.length(), cache.widthForTest(font, retained, measure));
+		assertEquals(afterEvicted, measurements.get(), "未被淘汰的旧名字仍命中");
 	}
 
 	@Test

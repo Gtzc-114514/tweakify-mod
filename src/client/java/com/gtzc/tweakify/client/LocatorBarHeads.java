@@ -418,6 +418,15 @@ public final class LocatorBarHeads {
 			this.widths.put(name, width);
 		}
 
+		// 包私有：测试断言淘汰确实发生，而不是只看返回值仍然正确。
+		int sizeForTest() {
+			return this.widths.size();
+		}
+
+		boolean containsForTest(String name) {
+			return this.widths.containsKey(name);
+		}
+
 		void reset() {
 			this.owner = null;
 			this.widths.clear();

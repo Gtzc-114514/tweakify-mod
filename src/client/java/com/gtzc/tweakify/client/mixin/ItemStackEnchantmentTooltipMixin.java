@@ -74,9 +74,8 @@ public class ItemStackEnchantmentTooltipMixin {
 		HolderLookup.Provider registries = context.registries();
 		// lambda 只能捕获 effectively final：enchantments 在上面可能被重新赋值。
 		ItemEnchantments cachedEnchantments = enchantments;
-		EnchantmentTooltipDescriptions.CacheKey key = new EnchantmentTooltipDescriptions.CacheKey(
-			registries, stack.getItem(), cachedEnchantments, type, sneaking, Language.getInstance());
-		return EnchantmentTooltipDescriptions.appendCached(original, key,
+		return EnchantmentTooltipDescriptions.appendCached(original, registries, stack.getItem(),
+			cachedEnchantments, type, sneaking, Language.getInstance(),
 			() -> EnchantmentTooltipDescriptions.buildPlan(registries, cachedEnchantments));
 	}
 }
