@@ -40,20 +40,22 @@
   扩大到整个 65×65，帧时间上升但功能测试仍全绿。
 - **采用方案**：重建 Fabric Loom server GameTest（`fabricApi.configureTests`），在
   `src/gametest/java/.../BlockMarkerScannerGameTest` 中使用真实 `ServerLevel`/`LevelChunk`，
-  分别覆盖 A（只开屏障）、B（只开基岩）、C（两者全开），并增加负 y 场景：
+  分别覆盖 A（只开屏障）、B（只开基岩）、C（两者全开），并增加两个负 y 场景
+  （世界最底层 section 0、扫描盒越过 minY 时的越界跳过）：
   - 测试在固定世界坐标放置分属不同 section 的屏障与基岩，正 y 场景扫描 49³，负 y 场景扫描 17³；
   - `ScanJob` 暴露逐方块读取计数与读取过的 section 集合；读取数必须等于命中 section 层数 × 目标区块 16×16，
-    section 集合必须精确等于目标组合（防止 target 写反或漏扫）；
-  - 若 `chunkMayContain` 被改成 `true`，正 y A/B/C 读取数变为 117,649，负 y 场景变为 4,913，
-    分别对 expected 1024/3328/4352/4352 失败，证明测试不是假通过。
+    section 集合必须精确等于目标组合（防止 target 写反或漏扫）；诊断集合只在 GameTest 构造时开启，
+    生产 `createJob` 不分配集合/键对象；
+  - 若 `chunkMayContain` 被改成 `true`，正 y A/B/C 读取数变为 117,649，两个负 y 场景变为 4,913，
+    分别对 expected 1024/3328/4352/4096/3328 失败，证明测试不是假通过。
 - **修复记录**：`build.gradle` 增加 GameTest 源集配置（只启用 server 测试，不涉及 eula；`runGameTest`
   不可缓存，构建注释标注 `-x runGameTest` 逃生口）；新增
   `src/gametest/java/com/gtzc/tweakify/client/BlockMarkerScannerGameTest.java` 与
   `src/gametest/resources/fabric.mod.json`；`BlockMarkerScanner.ScanJob` 改用 `Level`，
   新增读取计数、读取 section 集合与测试访问器；`BlockMarkerScannerTest` 增加
   `scanParamsFollowEnabledTargets` 覆盖 `createJob` 的开关/半径/上限参数接线；`check` 自动执行 `runGameTest`。
-- **验证**：`gradlew test` 通过；`gradlew build` 运行 4 个自研 GameTest（日志总计 5 个 required tests）全部通过；
-  临时把预筛赋值改为 `true` 后 A/B/C 与负 y 场景全部按读取数断言失败，随后恢复并再次构建通过。
+- **验证**：`gradlew test` 通过；`gradlew build` 运行 5 个自研 GameTest（日志总计 6 个 required tests）全部通过；
+  临时把预筛赋值改为 `true` 后 A/B/C 与两个负 y 场景全部按读取数断言失败，随后恢复并再次构建通过。
 - **回归条件**：若删除或绕过 `src/gametest`、改动 `ScanJob` 的 section 预筛、或 GameTest 读取计数与
   命中 section 的预期不一致，重新评估本条并保留 GameTest 作为基线。
 
