@@ -50,6 +50,7 @@ public class LevelExtractorBlockOutlineMixin {
 		}
 		BlockPos pos = outline.pos();
 		BlockState state = level.getBlockState(pos);
+		// 玩家身份是预留维度：不改变合并形状，仅用于隔离缓存生命周期。
 		VoxelShape merged = ConnectedBlockOutlineState.mergedShape(state, pos, level,
 			System.identityHashCode(client.player));
 		if (merged == null) {

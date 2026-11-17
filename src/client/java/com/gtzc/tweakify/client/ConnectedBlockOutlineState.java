@@ -76,6 +76,8 @@ public final class ConnectedBlockOutlineState {
 	}
 
 	// 重载：playerIdentity 由调用方传 System.identityHashCode(player)，避免缓存持有玩家引用。
+	// 该身份是预留维度：合并形状只由方块状态决定，不随玩家变化；保留它便于未来按玩家隔离
+	// 缓存生命周期，代价是换玩家时多一次构建，但形状结果不变。
 	public static VoxelShape mergedShape(BlockState state, BlockPos pos, BlockGetter level,
 			int playerIdentity) {
 		if (!isSupported(state)) {
@@ -194,6 +196,7 @@ public final class ConnectedBlockOutlineState {
 	private record Neighbor(BlockPos pos, BlockState state) {
 	}
 
+	// playerIdentity 为预留维度：不参与合并形状结果，只影响缓存命中/生命周期。
 	private record CacheKey(int levelIdentity, int playerIdentity, BlockPos pos, BlockState state,
 			List<Neighbor> neighbors, boolean doorFullHeight) {
 	}

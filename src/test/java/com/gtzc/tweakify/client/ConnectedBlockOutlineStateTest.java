@@ -263,7 +263,7 @@ class ConnectedBlockOutlineStateTest {
 	}
 
 	@Test
-	void mergedShapeCacheInvalidatesOnWorldOrPlayerChange() {
+	void mergedShapeCacheInvalidatesOnWorldChange() {
 		BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
 			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
 		BlockState upper = lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
@@ -273,10 +273,23 @@ class ConnectedBlockOutlineStateTest {
 		VoxelShape firstWorld = ConnectedBlockOutlineState.mergedShape(lower, POS, firstLevel);
 		VoxelShape secondWorld = ConnectedBlockOutlineState.mergedShape(lower, POS, secondLevel);
 		assertNotSame(firstWorld, secondWorld, "换世界后重新构建");
+		assertSameShape(firstWorld, secondWorld);
+	}
 
-		VoxelShape playerOne = ConnectedBlockOutlineState.mergedShape(lower, POS, firstLevel, 1);
-		VoxelShape playerTwo = ConnectedBlockOutlineState.mergedShape(lower, POS, firstLevel, 2);
-		assertNotSame(playerOne, playerTwo, "换玩家后重新构建");
+	// 玩家身份是预留维度：不同身份允许 miss，但形状结果必须相同。
+	@Test
+	void mergedShapeCacheKeepsSameShapeAcrossPlayerIdentities() {
+		BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
+			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+		BlockState upper = lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+		BlockGetter level = levelOf(Map.of(POS, lower, POS.above(), upper));
+
+		VoxelShape playerOne = ConnectedBlockOutlineState.mergedShape(lower, POS, level, 1);
+		VoxelShape playerTwo = ConnectedBlockOutlineState.mergedShape(lower, POS, level, 2);
+
+		assertNotNull(playerOne);
+		assertNotNull(playerTwo);
+		assertSameShape(playerOne, playerTwo);
 	}
 
 	// 无缓存等价性：reset 后的重建结果与缓存命中结果完全一致。
