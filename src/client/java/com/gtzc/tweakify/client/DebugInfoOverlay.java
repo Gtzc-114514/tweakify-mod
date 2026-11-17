@@ -10,6 +10,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.contextualbar.ContextualBar;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.locale.Language;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -25,13 +26,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * 调试信息叠加层：在 HUD 左下角按行显示运行时状态。
  *
  * <p>基础行是坐标、朝向、维度与脚下方块；性能、准星目标、生物群系、速度、
  * 附近实体、配置统计、药水效果与钩子探针等追加行由同名子开关控制。
- * 实体与配置统计需要遍历列表，按 500ms 节流刷新；其余行每帧直接读取。
+ * 整行文本在坐标、朝向、准星目标或子开关变化时重建，静止时每 500ms 刷新一次；
+ * 实体与配置统计仍按 500ms 节流，渲染帧只读缓存行。
  * 文字沿用原版 HUD 的描边样式，保证在水下/亮色背景上也清晰。
  */
 public final class DebugInfoOverlay {
@@ -45,6 +49,9 @@ public final class DebugInfoOverlay {
 	// 实体统计与配置统计的刷新间隔：两者都要遍历列表，按 500ms 节流，
 	// 不影响每帧的坐标、速度等轻量行。
 	private static final long SUMMARY_REFRESH_NANOS = 500_000_000L;
+	// 整行文本的刷新间隔：坐标/朝向/目标/子开关变化时立即重建，静止时每 500ms 刷新一次。
+	private static final long LINE_REFRESH_NANOS = 500_000_000L;
+	private static final LineCache CACHE = new LineCache();
 
 	private static long lastSummaryAtNanos = Long.MIN_VALUE;
 	private static String cachedEntitySummary = "Entities: -";
@@ -57,9 +64,11 @@ public final class DebugInfoOverlay {
 	public static void render(GuiGraphicsExtractor graphics, Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.testing.debugInfoOverlay) {
+			CACHE.reset();
 			return;
 		}
 		if (client.player == null || client.level == null) {
+			CACHE.reset();
 			return;
 		}
 		List<String> lines = buildLines(client, config);
@@ -75,6 +84,12 @@ public final class DebugInfoOverlay {
 
 	// 包私有：游戏内测试可直接校验文本内容，不必依赖渲染。
 	static List<String> buildLines(Minecraft client, TweakifyModConfig config) {
+		return CACHE.get(System.nanoTime(), signature(client, config), LINE_REFRESH_NANOS,
+			() -> buildLinesUncached(client, config));
+	}
+
+	// 无缓存重建：整行文本的构建逻辑保持不变，只在签名变化或间隔到期时调用。
+	private static List<String> buildLinesUncached(Minecraft client, TweakifyModConfig config) {
 		List<String> lines = new ArrayList<>();
 		BlockPos pos = client.player.blockPosition();
 		lines.add(String.format("XYZ: %.1f / %.1f / %.1f", client.player.getX(),
@@ -119,6 +134,54 @@ public final class DebugInfoOverlay {
 			appendHookLines(lines);
 		}
 		return lines;
+	}
+
+	// 只读取轻量状态构造签名：位置/朝向/准星目标/世界/语言/子开关变化时立即重建；
+	// 速度、生物群系、FPS、药水与钩子等变化由固定间隔兜底。
+	private static LineSignature signature(Minecraft client, TweakifyModConfig config) {
+		BlockPos pos = client.player.blockPosition();
+		HitResult hit = client.hitResult;
+		BlockPos hitPos = hit instanceof BlockHitResult blockHit ? blockHit.getBlockPos() : null;
+		HitResult.Type hitType = hit == null ? null : hit.getType();
+		Entity target = client.crosshairPickEntity;
+		return new LineSignature(
+			System.identityHashCode(client.player), System.identityHashCode(client.level),
+			Math.round(client.player.getX() * 10.0), Math.round(client.player.getY() * 10.0),
+			Math.round(client.player.getZ() * 10.0), Math.round(client.player.getYRot() * 10.0f),
+			client.player.getDirection().ordinal(),
+			pos.getX(), pos.getY(), pos.getZ(),
+			System.identityHashCode(target), target != null, hitType, hitPos,
+			configMask(config), Language.getInstance());
+	}
+
+	// 子开关决定追加哪些行；任一开关变化都要立即重建，不能等 500ms。
+	private static int configMask(TweakifyModConfig config) {
+		int mask = 0;
+		if (config.testing.debugInfoShowPerformance) {
+			mask |= 1;
+		}
+		if (config.testing.debugInfoShowTarget) {
+			mask |= 1 << 1;
+		}
+		if (config.testing.debugInfoShowBiome) {
+			mask |= 1 << 2;
+		}
+		if (config.testing.debugInfoShowSpeed) {
+			mask |= 1 << 3;
+		}
+		if (config.testing.debugInfoShowEntities) {
+			mask |= 1 << 4;
+		}
+		if (config.testing.debugInfoShowConfigStats) {
+			mask |= 1 << 5;
+		}
+		if (config.testing.debugInfoShowEffects) {
+			mask |= 1 << 6;
+		}
+		if (config.testing.debugInfoShowHooks) {
+			mask |= 1 << 7;
+		}
+		return mask;
 	}
 
 	private static String resolveTarget(Minecraft client) {
@@ -234,6 +297,43 @@ public final class DebugInfoOverlay {
 		}
 		if (hooks.size() > shown) {
 			lines.add(" - ...(+" + (hooks.size() - shown) + ")");
+		}
+	}
+
+	// 签名只包含影响整行文本的轻量状态；世界/玩家/目标只存身份哈希，
+	// 避免静态缓存长期持有 ClientLevel、玩家或实体引用。
+	private record LineSignature(int playerIdentity, int levelIdentity, long xTenth, long yTenth,
+			long zTenth, long yRotTenth, int direction, int blockX, int blockY, int blockZ,
+			int targetIdentity, boolean hasTarget, HitResult.Type hitType, BlockPos hitPos,
+			int configMask, Object language) {
+	}
+
+	// 整行文本缓存：签名变化或间隔到期时重建；返回不可变列表，渲染帧只读。
+	static final class LineCache {
+		private boolean valid;
+		private long lastBuildNanos;
+		private Object signature;
+		private List<String> lines = List.of();
+
+		List<String> get(long nowNanos, Object signature, long intervalNanos,
+				Supplier<List<String>> builder) {
+			if (this.valid && Objects.equals(signature, this.signature)
+				&& nowNanos - this.lastBuildNanos < intervalNanos) {
+				return this.lines;
+			}
+			List<String> built = List.copyOf(builder.get());
+			this.lines = built;
+			this.signature = signature;
+			this.lastBuildNanos = nowNanos;
+			this.valid = true;
+			return built;
+		}
+
+		void reset() {
+			this.valid = false;
+			this.lastBuildNanos = 0L;
+			this.signature = null;
+			this.lines = List.of();
 		}
 	}
 }

@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.WaypointStyle;
@@ -19,10 +20,12 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.ToIntFunction;
 
 /**
  * 定位栏头像，严格对齐 {@code Haage001/locator-heads}：不自己算摆放坐标，
@@ -72,6 +75,13 @@ public final class LocatorBarHeads {
 	// 参考实现按玩家名记录名字动画状态。
 	private static final Map<String, Long> NAME_FADE_START = new HashMap<>();
 	private static final Map<String, Boolean> NAME_FADE_IN = new HashMap<>();
+	// 名单解析缓存：配置列表按内容比较失效，避免每帧对每个航点重新 split/trim/toLowerCase。
+	private static final NameListCache INCLUDED_NAMES = new NameListCache();
+	private static final NameListCache EXCLUDED_NAMES = new NameListCache();
+	// 玩家名宽度缓存：Font 实例在资源重载后会替换，按实例身份整体失效。
+	private static final WidthCache NAME_WIDTHS = new WidthCache();
+	// 宽度缓存条目上限：在线玩家数量有限，超出时只淘汰一半，避免整表清空造成集中重算。
+	static final int MAX_NAME_WIDTH_ENTRIES = 256;
 
 	private LocatorBarHeads() {
 	}
@@ -106,13 +116,7 @@ public final class LocatorBarHeads {
 
 		String filterMode = config.functions.locatorBarHeadFilter;
 		// 与参考实现一致：INCLUDE 只看包含名单，EXCLUDE 只看排除名单，ALL 不解析任何名单。
-		boolean inIncluded = TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE.equals(filterMode)
-			&& containsName(splitNames(config.getStringList(
-				TweakifyModConfig.LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD)), playerName);
-		boolean inExcluded = TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE.equals(filterMode)
-			&& containsName(splitNames(config.getStringList(
-				TweakifyModConfig.LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD)), playerName);
-		if (!LocatorHeadFilter.allows(filterMode, inIncluded, inExcluded)) {
+		if (!matchesFilter(config, filterMode, playerName)) {
 			// 参考实现：过滤命中时整条航点都不画，圆点一并隐藏。
 			return DotResult.HIDE;
 		}
@@ -220,7 +224,7 @@ public final class LocatorBarHeads {
 		float effective = fadeIn ? progress : 1.0F - progress;
 		float eased = 1.0F - (float) Math.pow(1.0F - effective, 3.0F);
 
-		int textX = x + width / 2 - client.font.width(playerName) / 2;
+		int textX = x + width / 2 - nameWidth(client.font, playerName) / 2;
 		int baseY = y - (int) (NAME_BASE_OFFSET * multiplier);
 		int textY = baseY + (int) (NAME_SLIDE_PIXELS * (1.0F - eased));
 		int alpha = (int) (NAME_ALPHA * eased);
@@ -318,5 +322,105 @@ public final class LocatorBarHeads {
 			}
 		}
 		return false;
+	}
+
+	// 过滤判定：INCLUDE 只看包含名单，EXCLUDE 只看排除名单，ALL 不读任何名单（保留原短路）。
+	// 名单解析结果按内容缓存，配置列表内容变化时自动失效。
+	static boolean matchesFilter(TweakifyModConfig config, String filterMode, String playerName) {
+		boolean inIncluded = TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE.equals(filterMode)
+			&& containsName(INCLUDED_NAMES.parsed(config.getStringList(
+				TweakifyModConfig.LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD)), playerName);
+		boolean inExcluded = TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE.equals(filterMode)
+			&& containsName(EXCLUDED_NAMES.parsed(config.getStringList(
+				TweakifyModConfig.LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD)), playerName);
+		return LocatorHeadFilter.allows(filterMode, inIncluded, inExcluded);
+	}
+
+	// 玩家名宽度按 Font 实例与名字缓存：定位栏每帧为每个航点测宽。
+	private static int nameWidth(Font font, String playerName) {
+		return NAME_WIDTHS.width(font, playerName);
+	}
+
+	// 包私有：测试之间清空缓存，避免跨用例互相影响。
+	static void resetCachesForTest() {
+		INCLUDED_NAMES.reset();
+		EXCLUDED_NAMES.reset();
+		NAME_WIDTHS.reset();
+	}
+
+	// 名单解析结果缓存：内容未变时复用已解析列表，配置变化时重新解析。
+	static final class NameListCache {
+		private List<String> source = List.of();
+		private List<String> parsed = List.of();
+
+		List<String> parsed(List<String> entries) {
+			List<String> current = entries == null ? List.of() : entries;
+			// List.equals 先比引用：配置未变时只是一次引用比较；
+			// 内容变化（替换为新列表）时才重新 split/trim/toLowerCase。
+			if (current.equals(this.source)) {
+				return this.parsed;
+			}
+			this.source = List.copyOf(current);
+			this.parsed = splitNames(this.source);
+			return this.parsed;
+		}
+
+		void reset() {
+			this.source = List.of();
+			this.parsed = List.of();
+		}
+	}
+
+	// 玩家名宽度缓存：owner（生产为 Font）变化时整体失效；超出上限时淘汰一半。
+	static final class WidthCache {
+		private Object owner;
+		private final Map<String, Integer> widths = new HashMap<>();
+
+		int width(Font font, String name) {
+			ensureOwner(font);
+			Integer cached = this.widths.get(name);
+			if (cached != null) {
+				return cached;
+			}
+			int width = font.width(name);
+			store(name, width);
+			return width;
+		}
+
+		// 测试入口：不依赖真实 Font，用任意 owner 与测量函数走同一条缓存路径。
+		int widthForTest(Object owner, String name, ToIntFunction<String> measure) {
+			ensureOwner(owner);
+			Integer cached = this.widths.get(name);
+			if (cached != null) {
+				return cached;
+			}
+			int width = measure.applyAsInt(name);
+			store(name, width);
+			return width;
+		}
+
+		private void ensureOwner(Object owner) {
+			if (owner != this.owner) {
+				this.owner = owner;
+				this.widths.clear();
+			}
+		}
+
+		private void store(String name, int width) {
+			if (this.widths.size() >= MAX_NAME_WIDTH_ENTRIES) {
+				// 只淘汰一半：整体清空会让下一帧所有玩家名同时重算，造成周期性抖动。
+				Iterator<String> iterator = this.widths.keySet().iterator();
+				for (int i = 0; i < MAX_NAME_WIDTH_ENTRIES / 2 && iterator.hasNext(); i++) {
+					iterator.next();
+					iterator.remove();
+				}
+			}
+			this.widths.put(name, width);
+		}
+
+		void reset() {
+			this.owner = null;
+			this.widths.clear();
+		}
 	}
 }

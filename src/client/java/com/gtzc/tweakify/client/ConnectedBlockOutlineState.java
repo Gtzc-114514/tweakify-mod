@@ -15,7 +15,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * 连接方块轮廓：把门、床、双箱、双层植物等由多个方块组成的整体合并成一个轮廓，
@@ -26,6 +30,10 @@ import java.util.List;
  * 门是例外：按 2 格视觉高度描边，而不是原版约 1.5 格的碰撞形状。
  */
 public final class ConnectedBlockOutlineState {
+	// 合并形状缓存：键包含准星方块、邻居状态、世界/玩家身份与门高度配置；
+	// 小 LRU 足够（同一时刻只有一个准星目标），不持有世界或玩家引用。
+	private static final MergedShapeCache CACHE = new MergedShapeCache();
+
 	private ConnectedBlockOutlineState() {
 	}
 
@@ -64,29 +72,61 @@ public final class ConnectedBlockOutlineState {
 
 	// 合并后的轮廓；没有可合并的相邻方块时返回 null，调用方保留原轮廓。
 	public static VoxelShape mergedShape(BlockState state, BlockPos pos, BlockGetter level) {
+		return mergedShape(state, pos, level, 0);
+	}
+
+	// 重载：playerIdentity 由调用方传 System.identityHashCode(player)，避免缓存持有玩家引用。
+	public static VoxelShape mergedShape(BlockState state, BlockPos pos, BlockGetter level,
+			int playerIdentity) {
 		if (!isSupported(state)) {
 			return null;
 		}
+		BlockPos immutablePos = pos.immutable();
+		List<Neighbor> neighbors = neighbors(state, immutablePos, level);
+		boolean doorFullHeight = doorFullHeightEnabled();
+		CacheKey key = new CacheKey(System.identityHashCode(level), playerIdentity, immutablePos,
+			state, neighbors, doorFullHeight);
+		return CACHE.get(key, () -> computeMergedShape(state, immutablePos, level, neighbors,
+			doorFullHeight));
+	}
+
+	// 先读取邻居状态：它既参与缓存键（方块更新时失效），也供重建直接复用。
+	private static List<Neighbor> neighbors(BlockState state, BlockPos pos, BlockGetter level) {
+		List<BlockPos> positions = connectedPositions(state, pos);
+		if (positions.isEmpty()) {
+			return List.of();
+		}
+		List<Neighbor> neighbors = new ArrayList<>(positions.size());
+		for (BlockPos other : positions) {
+			BlockPos immutable = other.immutable();
+			neighbors.add(new Neighbor(immutable, level.getBlockState(immutable)));
+		}
+		return List.copyOf(neighbors);
+	}
+
+	// 无缓存重建：与原实现等价，只是邻居状态由调用方传入。
+	private static VoxelShape computeMergedShape(BlockState state, BlockPos pos, BlockGetter level,
+			List<Neighbor> neighbors, boolean doorFullHeight) {
 		// 门的模型视觉高度是 2 格，不直接使用原版约 1.5 格的碰撞形状。
 		if (state.getBlock() instanceof DoorBlock) {
-			return mergedDoorShape(state, pos, level);
+			return mergedDoorShape(state, pos, level, neighbors, doorFullHeight);
 		}
 		VoxelShape merged = state.getShape(level, pos);
 		boolean mergedAny = false;
-		for (BlockPos other : connectedPositions(state, pos)) {
-			BlockState otherState = level.getBlockState(other);
+		for (Neighbor neighbor : neighbors) {
+			BlockState otherState = neighbor.state();
 			// 必须“互为另一半”：只比方块类型会把相邻但未连接的同类方块也合并进来。
 			if (!isCounterpart(state, otherState)) {
 				continue;
 			}
-			VoxelShape otherShape = otherState.getShape(level, other);
+			VoxelShape otherShape = otherState.getShape(level, neighbor.pos());
 			if (otherShape.isEmpty()) {
 				continue;
 			}
 			merged = Shapes.or(merged, otherShape.move(
-				other.getX() - pos.getX(),
-				other.getY() - pos.getY(),
-				other.getZ() - pos.getZ()));
+				neighbor.pos().getX() - pos.getX(),
+				neighbor.pos().getY() - pos.getY(),
+				neighbor.pos().getZ() - pos.getZ()));
 			mergedAny = true;
 		}
 		return mergedAny ? merged : null;
@@ -104,12 +144,12 @@ public final class ConnectedBlockOutlineState {
 
 	// 门：保留原版形状的 x/z 范围，把 y 范围扩到两格（下半 0..2，上半 -1..1）。
 	// 子设置关闭时返回 null，门保持原版轮廓。
-	private static VoxelShape mergedDoorShape(BlockState state, BlockPos pos, BlockGetter level) {
-		if (!doorFullHeightEnabled()) {
+	private static VoxelShape mergedDoorShape(BlockState state, BlockPos pos, BlockGetter level,
+			List<Neighbor> neighbors, boolean doorFullHeight) {
+		if (!doorFullHeight) {
 			return null;
 		}
-		List<BlockPos> others = connectedPositions(state, pos);
-		if (others.isEmpty() || !isCounterpart(state, level.getBlockState(others.get(0)))) {
+		if (neighbors.isEmpty() || !isCounterpart(state, neighbors.get(0).state())) {
 			return null;
 		}
 		AABB base = state.getShape(level, pos).bounds();
@@ -144,5 +184,47 @@ public final class ConnectedBlockOutlineState {
 				&& other.getValue(ChestBlock.FACING) == state.getValue(ChestBlock.FACING);
 		}
 		return false;
+	}
+
+	// 包私有：测试之间清空缓存，避免跨用例互相影响。
+	static void resetCacheForTest() {
+		CACHE.clear();
+	}
+
+	private record Neighbor(BlockPos pos, BlockState state) {
+	}
+
+	private record CacheKey(int levelIdentity, int playerIdentity, BlockPos pos, BlockState state,
+			List<Neighbor> neighbors, boolean doorFullHeight) {
+	}
+
+	// 小型 LRU：同一时刻只有一个准星目标，8 条足够覆盖快速切换；不持有世界/玩家引用。
+	private static final class MergedShapeCache {
+		private static final int MAX_ENTRIES = 8;
+		private final Map<CacheKey, CachedShape> entries =
+			new LinkedHashMap<>(MAX_ENTRIES + 1, 0.75f, true) {
+				@Override
+				protected boolean removeEldestEntry(Map.Entry<CacheKey, CachedShape> eldest) {
+					return size() > MAX_ENTRIES;
+				}
+			};
+
+		VoxelShape get(CacheKey key, Supplier<VoxelShape> builder) {
+			CachedShape cached = this.entries.get(key);
+			if (cached != null) {
+				return cached.shape();
+			}
+			VoxelShape built = builder.get();
+			this.entries.put(key, new CachedShape(built));
+			return built;
+		}
+
+		void clear() {
+			this.entries.clear();
+		}
+
+		// null 也是有效结果（没有可合并的邻居），用包装区分“未缓存”。
+		private record CachedShape(VoxelShape shape) {
+		}
 	}
 }

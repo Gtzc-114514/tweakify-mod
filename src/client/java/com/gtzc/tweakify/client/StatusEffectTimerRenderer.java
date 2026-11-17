@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.ToIntFunction;
 
 /**
  * 药水效果时间显示：在 HUD 右侧效果图标的下方叠加剩余时间。
@@ -20,6 +21,9 @@ import java.util.List;
  * 有害效果整体下移 26 像素；图标背景 24x24，图标本体 18x18 且偏移 3 像素。
  * 文字默认按 0.5 倍缩放贴在图标底边内侧，长时间效果改用小时/天单位；
  * 开启“固定按秒”后文本可能更长，超出图标宽度时按比例缩小。
+ *
+ * <p>排序、文本格式化与 {@link TextPlacement} 在客户端 tick 结束时构建一次，
+ * 渲染帧只遍历缓存绘制；玩家、字体、GUI 宽度或演示模式变化时缓存失效并重建一次。
  */
 public final class StatusEffectTimerRenderer {
 	// 原版效果图标的排列参数。
@@ -42,10 +46,12 @@ public final class StatusEffectTimerRenderer {
 	private static final int AUTO_RED_SECONDS = 10;
 	private static final int AUTO_YELLOW_SECONDS = 30;
 
-	// 复用的排序缓冲：效果集合很小，每帧清空重填即可，
-	// 避免每帧复制集合与排序时新建列表（渲染线程单线程访问）。
+	// 复用的排序缓冲：效果集合很小，每 tick 清空重填即可，
+	// 避免复制集合与排序时新建列表（客户端 tick 与渲染同线程）。
 	private static final List<MobEffectInstance> SORTED_EFFECTS = new ArrayList<>();
 	private static final Comparator<MobEffectInstance> DESCENDING = Comparator.reverseOrder();
+	// tick 构建、渲染帧只读的缓存；玩家/字体/GUI 宽度/演示模式变化时失效。
+	private static final TimerCache CACHE = new TimerCache();
 
 	private StatusEffectTimerRenderer() {
 	}
@@ -61,39 +67,93 @@ public final class StatusEffectTimerRenderer {
 		}
 	}
 
-	// 由 Hud.extractEffects 末尾调用：此时背景与图标已经提交，文字会绘制在最上层。
+	// 布局所需的纯输入：把 MobEffectInstance 的判定结果提前采样，
+	// 便于单测在不加载注册表与渲染上下文的情况下覆盖排列。
+	record EffectSnapshot(boolean showIcon, int durationTicks, boolean beneficial, boolean infinite) {
+	}
+
+	// 渲染帧只读的条目：文本、位置与颜色都在 tick 构建。
+	record CachedTimer(TextPlacement placement, int color) {
+	}
+
+	// tick 级更新：排序、过滤、格式化与 TextPlacement 都只在这里构建一次。
+	static void tick(Minecraft client) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (config == null || !config.functions.statusEffectDurationDisplay || client.player == null) {
+			CACHE.reset();
+			return;
+		}
+		int guiWidth = client.getWindow().getGuiScaledWidth();
+		boolean demo = client.isDemo();
+		CACHE.update(rebuildTimers(client, guiWidth, demo, config), client.player, client.font, guiWidth, demo);
+	}
+
+	// 由 Hud.extractEffects 末尾调用：缓存命中时只遍历预构建条目并绘制。
 	public static void render(GuiGraphicsExtractor gui, Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.functions.statusEffectDurationDisplay || client.player == null) {
 			return;
 		}
+		int guiWidth = gui.guiWidth();
+		boolean demo = client.isDemo();
+		if (!CACHE.matches(client.player, client.font, guiWidth, demo)) {
+			// 窗口缩放、资源重载或首次启用：就地重建一次，避免等下一 tick 期间位置错误。
+			// 常规更新仍由 tick 驱动，缓存命中时渲染帧只读。
+			CACHE.update(rebuildTimers(client, guiWidth, demo, config), client.player, client.font, guiWidth, demo);
+		}
+		for (CachedTimer timer : CACHE.timers()) {
+			drawTimer(gui, client.font, timer);
+		}
+	}
+
+	private static List<CachedTimer> rebuildTimers(Minecraft client, int guiWidth, boolean demo,
+			TweakifyModConfig config) {
 		Collection<MobEffectInstance> activeEffects = client.player.getActiveEffects();
 		if (activeEffects.isEmpty()) {
-			return;
+			// 没有效果时不做排序/采样：空缓存同样是有效结果。
+			return List.of();
 		}
+		List<EffectSnapshot> snapshots = snapshotEffects(activeEffects);
+		return buildTimers(snapshots, client.font::width, client.font.lineHeight, guiWidth, demo,
+			config.functions.statusEffectDurationLowThreshold,
+			config.functions.statusEffectDurationColorMode,
+			config.functions.statusEffectDurationAlwaysSeconds);
+	}
 
-		// 与原版相同的顺序：按效果自身排序后反向遍历。
+	// 与原版相同的顺序：按效果自身排序后再采样；排序只在 tick/失效重建时发生。
+	private static List<EffectSnapshot> snapshotEffects(Collection<MobEffectInstance> effects) {
 		SORTED_EFFECTS.clear();
-		SORTED_EFFECTS.addAll(activeEffects);
+		SORTED_EFFECTS.addAll(effects);
 		SORTED_EFFECTS.sort(DESCENDING);
-		int thresholdSeconds = config.functions.statusEffectDurationLowThreshold;
-		String colorMode = config.functions.statusEffectDurationColorMode;
+		List<EffectSnapshot> snapshots = new ArrayList<>(SORTED_EFFECTS.size());
+		for (MobEffectInstance effect : SORTED_EFFECTS) {
+			snapshots.add(new EffectSnapshot(effect.showIcon(), effect.getDuration(),
+				effect.getEffect().value().isBeneficial(), effect.isInfiniteDuration()));
+		}
+		return snapshots;
+	}
+
+	// 纯构建：输入已按原版顺序排好；渲染帧不再做过滤、格式化或位置计算。
+	static List<CachedTimer> buildTimers(List<EffectSnapshot> effects, ToIntFunction<String> measure,
+			int lineHeight, int guiWidth, boolean demo, int thresholdSeconds, String colorMode,
+			boolean alwaysSeconds) {
+		List<CachedTimer> timers = new ArrayList<>(effects.size());
 		int beneficialCount = 0;
 		int harmfulCount = 0;
-		for (MobEffectInstance effect : SORTED_EFFECTS) {
+		for (EffectSnapshot effect : effects) {
 			if (!effect.showIcon()) {
 				continue;
 			}
 			// 低时长过滤：阈值 0 时全部显示；只留下即将结束的效果。
-			if (!shouldShowForThreshold(effect.getDuration(), thresholdSeconds)) {
+			if (!shouldShowForThreshold(effect.durationTicks(), thresholdSeconds)) {
 				continue;
 			}
-			int x = gui.guiWidth();
+			int x = guiWidth;
 			int y = EFFECT_BASE_Y;
-			if (client.isDemo()) {
+			if (demo) {
 				y += DEMO_OFFSET;
 			}
-			if (effect.getEffect().value().isBeneficial()) {
+			if (effect.beneficial()) {
 				beneficialCount++;
 				x -= EFFECT_SLOT_WIDTH * beneficialCount;
 			} else {
@@ -101,8 +161,14 @@ public final class StatusEffectTimerRenderer {
 				x -= EFFECT_SLOT_WIDTH * harmfulCount;
 				y += EFFECT_ROW_OFFSET;
 			}
-			renderTimer(gui, client.font, effect, x, y, timerColorArgb(colorMode, effect.getDuration()));
+			TextPlacement placement = placementFor(measure, lineHeight, effect.durationTicks(),
+				effect.infinite(), x, y, alwaysSeconds);
+			if (placement == null) {
+				continue;
+			}
+			timers.add(new CachedTimer(placement, timerColorArgb(colorMode, effect.durationTicks())));
 		}
+		return timers;
 	}
 
 	// 计算文字位置：固定 0.5 倍，底边贴住图标下沿；坐标取整避免字体像素落在半像素上。
@@ -119,33 +185,39 @@ public final class StatusEffectTimerRenderer {
 		if (effect.isInfiniteDuration()) {
 			return null;
 		}
-		String text = EffectDurationFormatter.format(effect.getDuration(), alwaysSeconds);
-		int textWidth = font.width(text);
+		return placementFor(font::width, font.lineHeight, effect.getDuration(), false, x, y, alwaysSeconds);
+	}
+
+	// 纯布局：不依赖 Font/注册表，测试用测量函数与行高替换字体。
+	static TextPlacement placementFor(ToIntFunction<String> measure, int lineHeight, int durationTicks,
+			boolean infinite, int x, int y, boolean alwaysSeconds) {
+		if (infinite) {
+			return null;
+		}
+		String text = EffectDurationFormatter.format(durationTicks, alwaysSeconds);
+		int textWidth = measure.applyAsInt(text);
 		float scale = TEXT_SCALE;
 		// 秒模式可能超过 5 个字符：超出图标宽度时按比例缩小，避免溢出到相邻图标。
 		if (textWidth * scale > EFFECT_ICON_SIZE) {
 			scale = Math.max(MIN_TEXT_SCALE, EFFECT_ICON_SIZE / (float) textWidth);
 		}
 		float scaledWidth = textWidth * scale;
-		float scaledHeight = font.lineHeight * scale;
+		float scaledHeight = lineHeight * scale;
 		float drawX = Math.round(x + (EFFECT_BOX_SIZE - scaledWidth) / 2.0f);
 		// 文字底边贴住图标下沿（背景 y + 3 + 18）；向下取整保证不越过图标。
 		float drawY = (float) Math.floor(y + EFFECT_ICON_OFFSET + EFFECT_ICON_SIZE - scaledHeight);
 		return new TextPlacement(text, drawX, drawY, scaledWidth, scaledHeight);
 	}
 
-	private static void renderTimer(GuiGraphicsExtractor gui, Font font, MobEffectInstance effect, int x, int y,
-									int color) {
-		TextPlacement placement = placementFor(font, effect, x, y);
-		if (placement == null) {
-			return;
-		}
+	// 渲染帧只做矩阵变换与文字提交，不再计算文本/位置。
+	private static void drawTimer(GuiGraphicsExtractor gui, Font font, CachedTimer timer) {
+		TextPlacement placement = timer.placement();
 		float scale = placement.height() / font.lineHeight;
 		Matrix3x2fStack pose = gui.pose();
 		pose.pushMatrix();
 		pose.translate(placement.x(), placement.y());
 		pose.scale(scale, scale);
-		gui.text(font, placement.text(), 0, 0, color, true);
+		gui.text(font, placement.text(), 0, 0, timer.color(), true);
 		pose.popMatrix();
 	}
 
@@ -166,5 +238,43 @@ public final class StatusEffectTimerRenderer {
 					: seconds <= AUTO_YELLOW_SECONDS ? COLOR_YELLOW : COLOR_WHITE;
 			}
 		};
+	}
+
+	// 缓存有效性：玩家、字体、GUI 宽度与演示模式任一变化即失效；
+	// 失效时由 tick 或渲染侧重建一次，避免缩放窗口期间沿用旧坐标。
+	static final class TimerCache {
+		private List<CachedTimer> timers = List.of();
+		private Object player;
+		private Object font;
+		private int guiWidth = -1;
+		private boolean demo;
+		private boolean valid;
+
+		boolean matches(Object player, Object font, int guiWidth, boolean demo) {
+			return this.valid && this.player == player && this.font == font
+				&& this.guiWidth == guiWidth && this.demo == demo;
+		}
+
+		void update(List<CachedTimer> timers, Object player, Object font, int guiWidth, boolean demo) {
+			this.timers = List.copyOf(timers);
+			this.player = player;
+			this.font = font;
+			this.guiWidth = guiWidth;
+			this.demo = demo;
+			this.valid = true;
+		}
+
+		List<CachedTimer> timers() {
+			return this.timers;
+		}
+
+		void reset() {
+			this.timers = List.of();
+			this.player = null;
+			this.font = null;
+			this.guiWidth = -1;
+			this.demo = false;
+			this.valid = false;
+		}
 	}
 }

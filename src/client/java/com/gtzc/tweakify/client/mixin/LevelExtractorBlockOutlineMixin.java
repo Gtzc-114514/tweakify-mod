@@ -43,13 +43,15 @@ public class LevelExtractorBlockOutlineMixin {
 		if (outline == null) {
 			return;
 		}
-		ClientLevel level = Minecraft.getInstance().level;
+		Minecraft client = Minecraft.getInstance();
+		ClientLevel level = client.level;
 		if (level == null) {
 			return;
 		}
 		BlockPos pos = outline.pos();
 		BlockState state = level.getBlockState(pos);
-		VoxelShape merged = ConnectedBlockOutlineState.mergedShape(state, pos, level);
+		VoxelShape merged = ConnectedBlockOutlineState.mergedShape(state, pos, level,
+			System.identityHashCode(client.player));
 		if (merged == null) {
 			return;
 		}

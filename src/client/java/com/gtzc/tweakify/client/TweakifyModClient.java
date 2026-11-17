@@ -60,6 +60,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			if (config != null && config.consumeOptionSyncRequest()) {
 				TweakifyModConfigOptions.syncFromConfig();
 			}
+			// 药水效果计时：在玩家效果 tick 与配置同步之后重建缓存，渲染帧只查表。
+			StatusEffectTimerRenderer.tick(client);
 		});
 
 		// 退出前排空后台写盘队列并同步落盘：
