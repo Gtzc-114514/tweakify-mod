@@ -169,6 +169,10 @@ public final class ConfigCatalog {
 		entries.add(fix("fixMouseButtonInventory", true));
 		// 聊天卡顿（MC-247973）
 		entries.add(fix("chatLagFix", true));
+		// 高等级经验条（MC-79545）
+		entries.add(fix("experienceBarHighLevelFix", true));
+		// 书本界面垂直居中（MC-61489）
+		entries.add(fix("bookGuiVerticalCenterFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

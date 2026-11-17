@@ -53,6 +53,12 @@ public final class FixConfig extends ConfigSection {
 	// MC-247973：收到聊天消息时改为后台拉取屏蔽名单，避免主线程同步网络请求卡顿。
 	public volatile boolean chatLagFix = false;
 
+	// MC-79545：等级极高时经验需求整数溢出，经验条仍然正常显示。
+	public volatile boolean experienceBarHighLevelFix = false;
+
+	// MC-61489：书本查看/编辑界面整体垂直居中，底部按钮不再贴着屏幕边缘。
+	public volatile boolean bookGuiVerticalCenterFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

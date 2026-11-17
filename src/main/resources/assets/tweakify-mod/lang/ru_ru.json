@@ -1227,5 +1227,13 @@
   "tweakify-mod.config.general.name.chatLagFix": "Исправление задержки чата",
   "tweakify-mod.config.general.prettyName.chatLagFix": "Исправление задержки чата",
   "tweakify-mod.config.general.comment.chatLagFix": "Исправляет MC-247973: список заблокированных игроков загружается в фоне при получении сообщения, не блокируя клиентский поток.",
-  "tweakify-mod.command.label.chatLagFix": "Задержка чата"
+  "tweakify-mod.command.label.chatLagFix": "Задержка чата",
+  "tweakify-mod.config.general.name.experienceBarHighLevelFix": "Исправление полосы опыта на высоких уровнях",
+  "tweakify-mod.config.general.prettyName.experienceBarHighLevelFix": "Исправление полосы опыта на высоких уровнях",
+  "tweakify-mod.config.general.comment.experienceBarHighLevelFix": "Исправляет MC-79545: полоса опыта остаётся видимой, когда требуемый опыт переполняется на очень высоких уровнях.",
+  "tweakify-mod.command.label.experienceBarHighLevelFix": "Полоса опыта на высоких уровнях",
+  "tweakify-mod.config.general.name.bookGuiVerticalCenterFix": "Вертикальное центрирование интерфейса книги",
+  "tweakify-mod.config.general.prettyName.bookGuiVerticalCenterFix": "Вертикальное центрирование интерфейса книги",
+  "tweakify-mod.config.general.comment.bookGuiVerticalCenterFix": "Исправляет MC-61489: экраны чтения и редактирования книги центрируются по вертикали, поэтому нижние кнопки больше не прижимаются к краю экрана.",
+  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Центрирование интерфейса книги"
 }

@@ -1227,5 +1227,13 @@
   "tweakify-mod.config.general.name.chatLagFix": "Correction de la latence du chat",
   "tweakify-mod.config.general.prettyName.chatLagFix": "Correction de la latence du chat",
   "tweakify-mod.config.general.comment.chatLagFix": "Corrige MC-247973 : la liste des joueurs bloqués est récupérée en arrière-plan à la réception d'un message au lieu de bloquer le thread client.",
-  "tweakify-mod.command.label.chatLagFix": "Latence du chat"
+  "tweakify-mod.command.label.chatLagFix": "Latence du chat",
+  "tweakify-mod.config.general.name.experienceBarHighLevelFix": "Correction de la barre d'expérience à haut niveau",
+  "tweakify-mod.config.general.prettyName.experienceBarHighLevelFix": "Correction de la barre d'expérience à haut niveau",
+  "tweakify-mod.config.general.comment.experienceBarHighLevelFix": "Corrige MC-79545 : la barre d'expérience reste visible lorsque l'expérience requise déborde aux niveaux extrêmes.",
+  "tweakify-mod.command.label.experienceBarHighLevelFix": "Barre d'expérience à haut niveau",
+  "tweakify-mod.config.general.name.bookGuiVerticalCenterFix": "Centrage vertical de l'interface du livre",
+  "tweakify-mod.config.general.prettyName.bookGuiVerticalCenterFix": "Centrage vertical de l'interface du livre",
+  "tweakify-mod.config.general.comment.bookGuiVerticalCenterFix": "Corrige MC-61489 : centre verticalement les écrans de lecture et d'édition de livre, pour que les boutons du bas ne collent plus au bord de l'écran.",
+  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Centrage vertical du livre"
 }

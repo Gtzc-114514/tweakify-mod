@@ -1227,5 +1227,13 @@
   "tweakify-mod.config.general.name.chatLagFix": "聊天卡顿修复",
   "tweakify-mod.config.general.prettyName.chatLagFix": "聊天卡顿修复",
   "tweakify-mod.config.general.comment.chatLagFix": "修复 MC-247973：收到聊天消息时改为后台拉取屏蔽名单，避免主线程同步网络请求造成卡顿。",
-  "tweakify-mod.command.label.chatLagFix": "聊天卡顿修复"
+  "tweakify-mod.command.label.chatLagFix": "聊天卡顿修复",
+  "tweakify-mod.config.general.name.experienceBarHighLevelFix": "经验条高等级修复",
+  "tweakify-mod.config.general.prettyName.experienceBarHighLevelFix": "经验条高等级修复",
+  "tweakify-mod.config.general.comment.experienceBarHighLevelFix": "修复 MC-79545：等级极高时经验需求溢出为负数，经验条不再整条消失。",
+  "tweakify-mod.command.label.experienceBarHighLevelFix": "经验条高等级修复",
+  "tweakify-mod.config.general.name.bookGuiVerticalCenterFix": "书本界面垂直居中",
+  "tweakify-mod.config.general.prettyName.bookGuiVerticalCenterFix": "书本界面垂直居中",
+  "tweakify-mod.config.general.comment.bookGuiVerticalCenterFix": "修复 MC-61489：书本查看与书与笔编辑界面整体垂直居中，底部按钮不再贴着屏幕边缘。",
+  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "书本界面垂直居中"
 }

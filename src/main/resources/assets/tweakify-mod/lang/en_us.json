@@ -1227,5 +1227,13 @@
   "tweakify-mod.config.general.name.chatLagFix": "Chat lag fix",
   "tweakify-mod.config.general.prettyName.chatLagFix": "Chat lag fix",
   "tweakify-mod.config.general.comment.chatLagFix": "Fixes MC-247973: fetch the blocked-player list asynchronously on chat messages instead of blocking the client thread.",
-  "tweakify-mod.command.label.chatLagFix": "Chat lag fix"
+  "tweakify-mod.command.label.chatLagFix": "Chat lag fix",
+  "tweakify-mod.config.general.name.experienceBarHighLevelFix": "Experience bar high-level fix",
+  "tweakify-mod.config.general.prettyName.experienceBarHighLevelFix": "Experience bar high-level fix",
+  "tweakify-mod.config.general.comment.experienceBarHighLevelFix": "Fixes MC-79545: keeps the experience bar visible when the required experience overflows at extreme levels.",
+  "tweakify-mod.command.label.experienceBarHighLevelFix": "Experience bar high-level fix",
+  "tweakify-mod.config.general.name.bookGuiVerticalCenterFix": "Book GUI vertical centering",
+  "tweakify-mod.config.general.prettyName.bookGuiVerticalCenterFix": "Book GUI vertical centering",
+  "tweakify-mod.config.general.comment.bookGuiVerticalCenterFix": "Fixes MC-61489: vertically centers the book view and book editing screens so the bottom buttons no longer hug the screen edge.",
+  "tweakify-mod.command.label.bookGuiVerticalCenterFix": "Book GUI vertical centering"
 }

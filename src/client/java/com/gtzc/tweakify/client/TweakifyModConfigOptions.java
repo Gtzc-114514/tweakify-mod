@@ -255,6 +255,12 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// MC-247973：聊天消息触发的屏蔽名单拉取改为后台执行。
 	public static final ConfigBoolean CHAT_LAG_FIX = new ConfigBoolean(
 		"chatLagFix", false).apply(GENERAL_KEY);
+	// MC-79545：等级过高时经验条仍然显示。
+	public static final ConfigBoolean EXPERIENCE_BAR_HIGH_LEVEL_FIX = new ConfigBoolean(
+		"experienceBarHighLevelFix", false).apply(GENERAL_KEY);
+	// MC-61489：书本查看/编辑界面垂直居中。
+	public static final ConfigBoolean BOOK_GUI_VERTICAL_CENTER_FIX = new ConfigBoolean(
+		"bookGuiVerticalCenterFix", false).apply(GENERAL_KEY);
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(GENERAL_KEY);
