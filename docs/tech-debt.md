@@ -25,10 +25,15 @@
 | T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（摘要去重 + 精确比对，见详情） |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-16，见详情） |
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-16，见详情） |
+| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 暂缓，第 1–5 项已预防性实施、待采样判定（最近复评 2026-11-18，见详情） |
+| T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置 JSON 序列化仍在主线程；输入均为不可变数据，可移入后台 worker / 写盘线程 | 暂缓，成本未采样，达标前不引入后台构建（最近复评 2026-11-17，见详情） |
 
 > v1.1.0 复评（2026-11-16）：T1 已通过真实 LevelChunk GameTest 闭环；T2 维持“已修复”；
 > T3/T4 仍未达到闭环条件（分别缺少实机 profiler 与 Mixin 集成测试），本轮只更新 T3/T4 的评估记录与缓解说明。
 > release action 的 Node.js 20 弃用项已闭环，记入 [`docs/release-pipeline.md`](release-pipeline.md)「已知但决定不改的点」L4。
+>
+> 2026-11-17 新增 T5/T6：分别覆盖 HUD/GUI 每帧重复计算与「几何重建 + 配置序列化」后台化候选。
+> 两条均为桌面复核后的暂缓条目；T5 第 1–5 项已预防性实施（见详情），等待采样判定。
 
 ## T1 详情：section 预筛的集成测试缺口
 
@@ -153,12 +158,122 @@
   项目仍未引入 Mixin 集成测试，mixin 转发链路继续依赖手动回归，维持暂缓。
 - **待办**：实机回归一次搜索/快捷栏/背包页的配置变化路径并记录结果。
 
+## T5 详情：HUD/GUI 每帧重复计算未缓存
+
+- **优先级**：P3 观察；触发后按 P2 近期处理。
+- **现状**：以下路径原本都在渲染帧内执行，且每次重新解析/格式化/分配：
+  - `LocatorBarHeads.renderDot` 每个航点每帧调用 `splitNames(...)`（`split` + `trim` + `toLowerCase`
+    建列表），并按玩家名调用 `font.width`（已于 2026-11-17 加缓存）；
+  - `StatusEffectTimerRenderer.render` 每帧复制并排序效果集合，为每个效果调用
+    `EffectDurationFormatter.format` 并新建 `TextPlacement`（已于 2026-11-17 改为 tick 级缓存）；
+  - `DebugInfoOverlay.buildLines` 每帧 3 次 `String.format`、一次生物群系解析与新建 `ArrayList`
+    （实体/配置统计已按 500ms 节流，其余行未缓存；整行已于 2026-11-18 加签名 + 500ms 缓存）；
+  - `ItemStackEnchantmentTooltipMixin.getTooltipLines` 在悬停期间每次提取都新建 3 个列表、逐行
+    `getString()`、每个附魔 `Component.translatable` 并线性查找对应附魔行
+    （已于 2026-11-18 加描述计划缓存）；
+  - `ConnectedBlockOutlineState.mergedShape` 在准星命中门/床/双箱/双层植物时每帧 `Shapes.or` + `move`
+    （已于 2026-11-18 加形状缓存）；
+  可复用模板：`DurabilityOverlayRenderer` 已用 long key + 上限淘汰缓存文本与测宽结果。
+- **影响**：Render thread 上的固定小额开销，单次微秒级，叠加后反映为 HUD 帧时间与年轻代分配；
+  不会造成渲染错误。定位栏与 tooltip 的开销随在线玩家/附魔数量线性增长，人数多或附魔多时放大。
+- **失败模式**：缓存键漏掉配置、语言、物品组件或方块状态变化时显示陈旧内容；缓存无界增长；
+  整体清空式淘汰造成周期性重算抖动（`DurabilityOverlayRenderer` 的注释已记录这一点）。
+- **触发条件**：Spark/JFR 过滤 Render thread 后，上述方法（含子调用）**合计**占比 > 2%；
+  或收到可复现的「悬停 tooltip / HUD 掉帧」反馈（独立触发路径，不要求占比达标）。
+- **判定口径**：合计 > 2% 实施 / 1%–2% 观察 / < 1% 且无复现反馈维持现状。
+  采集步骤、线程名口径与记录格式沿用 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)
+  §三、§四；采样时在数据清单中单列 `LocatorBarHeads.renderDot`、`StatusEffectTimerRenderer.render`、
+  `DebugInfoOverlay.buildLines`、`ItemStack.getTooltipLines`、`ConnectedBlockOutlineState.mergedShape`。
+- **闭环动作**：按项拆成独立可回滚提交，优先无跨帧状态依赖的项：
+  1. 定位栏名单与文字宽度缓存（已完成预防性实施）；
+  2. 状态效果计时改为 tick 更新、渲染帧查表（已完成预防性实施）；
+  3. 附魔 tooltip 按「`ItemStack` 附魔组件 + sneak 状态」缓存（已完成预防性实施）；
+  4. 调试叠加层整行按 500ms 缓存（已完成预防性实施）；
+  5. 连接方块轮廓按 `(pos, state)` 缓存，准星切换或方块更新时失效（已完成预防性实施）。
+  每项保留「缓存未命中路径与旧路径等价」的断言；完成后复测占比，达标则删除本条或标为已修复。
+- **预防性实施（2026-11-17）**：第 1 项（定位栏包含/排除名单解析与玩家名文字宽度缓存）与
+  第 2 项（药水效果计时的排序、格式化与 `TextPlacement` 改为 tick 级缓存）已先在
+  `LocatorBarHeads` / `StatusEffectTimerRenderer` 落地：第 1 项按名单内容与 `Font` 实例失效，
+  第 2 项按玩家/字体/GUI 宽度/演示模式失效。两者都是预防性改动，
+  **不替代本节触发条件的采样判定**，其余 2 项仍按判定口径执行。
+- **预防性实施（2026-11-18）**：第 3 项（附魔 tooltip 描述计划缓存）已下沉到
+  `EnchantmentTooltipDescriptions`：按注册表/物品/附魔组件/组件类型/潜行门控/`Language` 失效，
+  只缓存名称文本与描述组件，插入位置仍按当前 tooltip 行重新定位。该项同样是预防性改动，
+  **不替代本节触发条件的采样判定**。
+- **预防性实施（2026-11-18）**：第 4 项（调试叠加层整行文本缓存）已在 `DebugInfoOverlay` 落地：
+  签名覆盖玩家位置/朝向/准星目标/世界/语言/子开关（世界/玩家/目标用身份哈希，不持引用），
+  变化时立即重建，静止时每 500ms 刷新；功能关闭或玩家/世界为空时清空缓存。
+  该项同样是预防性改动，**不替代本节触发条件的采样判定**。
+- **预防性实施（2026-11-18）**：第 5 项（连接方块轮廓缓存）已在 `ConnectedBlockOutlineState` 落地：
+  键包含准星 `(pos, state)`、邻居状态、世界/玩家身份哈希与门高度配置；邻居方块更新、准星切换、
+  换世界/玩家时失效，8 条 LRU。该项同样是预防性改动，**不替代本节触发条件的采样判定**。
+- **缓解措施**：实施前保持现状；用户侧关闭 `locatorBarHeads`、`statusEffectDurationDisplay`、
+  `debugInfoOverlay` 可完全绕过对应开销。
+- **最近评估（2026-11-18）**：桌面复核列出上述 5 个热点，均为每帧重复解析/分配；
+  尚未实机采样；第 1–5 项已全部预防性落地，等待采样判定。
+- **待办**：完成一次 Render thread 采样并回填合计占比，按结果决定 T5 标为已修复或复测未达触发条件。
+- **验证方式**：`LocatorBarHeadsTest` 已覆盖名单缓存复用/内容变化失效、宽度缓存字体变化失效与
+  淘汰后取值正确；`StatusEffectTimerRendererTest` 已覆盖缓存键失效、tick 构建与无缓存
+  `placementFor` 等价、无尽效果占位、阈值/隐藏图标过滤、演示偏移与按秒格式化；
+  `EnchantmentTooltipDescriptionsTest` 已覆盖缓存键六个维度失效、LRU 上限与命中复用、
+  同名附魔行配对、尾部回退以及与无缓存构建的文本等价；
+  `DebugInfoOverlayTest` 已覆盖整行缓存同签名复用、签名变化/间隔到期重建、reset 与无缓存等价；
+  `ConnectedBlockOutlineStateTest` 已覆盖形状缓存命中、准星切换/邻居更新/换世界或玩家失效、
+  reset 重建与无缓存形状等价；缓存必须有上限与半量淘汰（参照 `DurabilityOverlayRenderer`），
+  并断言「淘汰后结果与无缓存一致」；tooltip 用现有提示行序断言校验追加位置不变；
+  `gradlew test` 与 `gradlew build`。
+
+## T6 详情：几何重建与配置序列化仍在主线程
+
+- **优先级**：P3 观察；两项分别达标后各自按 P2 近期处理。
+- **现状**：
+  - `AttackRangeGeometryCache.ensure` 在条目列表、显示/渲染模式或颜色变化时重建：每个条目
+    3 档 LOD（默认 64、上限 256 条），每次新建 `EntryGeometry` 与 3 个 `CachedGeometry` 数组；
+  - `BedrockGeometryCache.ensure` 在标记列表或颜色变化时重建，每个基岩最多 2 个可见面 × 24 顶点
+    （默认 32、上限 256）；
+  - `TweakifyModConfig.prepareSaveHandle` / `submitSaveAsyncHandle` 在客户端线程完成
+    `ConfigStorage.toJson`（pretty printing + 反射读取 300 余个 `volatile` 字段），只有磁盘 IO 进入
+    `AsyncFileWriter`；`TweakifyModConfigOptions.flushPendingSaveNow` 每 250ms 节流一次，
+    序列化与 `snapshot()` 仍在客户端线程。
+  已有基础设施：单线程 `AsyncFileWriter`、提交序号与 `Snapshot` 回滚；T2 的摘要去重已闭环，
+  T3 的扫描快照方案与本条独立，不在此重复。
+- **影响**：几何重建默认在内容变化时以 6/12 Hz 触发，高上限（256/256）时单次可达十万级顶点计算
+  与数百 KB 数组垃圾；配置序列化在拖动滑块时每 250ms 产生一次 1–2ms 量级的主线程尖峰（未实测）。
+  两者都不影响正确性，但属于可感知的周期性卡顿来源。
+- **失败模式**：
+  - 后台构建期间渲染线程读到半构建数组，导致渲染错误或崩溃；
+  - 过期结果覆盖新结果（玩家移动、换世界、改颜色/模式、配置回滚）；
+  - 退出时后台任务未排空，丢失最后一次写盘；
+  - 快照序列化与直接 `toJson` 的键序/null 跳过规则不一致，导致配置文件格式漂移。
+- **触发条件**：Spark/JFR 中 `AttackRangeGeometryCache.rebuild` + `BedrockGeometryCache.rebuild`
+  合计 > 1% Render thread（沿用 T2 的回归线）；或 `flushPendingSaveNow` / `ConfigStorage.toJson`
+  > 0.5% Render thread，或收到可复现的「拖动滑块卡顿」反馈；或实机把标记/条目上限调到 256
+  并同时开启多个渲染功能。
+- **判定口径**：几何 1% 触发 / 0.5%–1% 观察 / < 0.5% 维持；序列化 0.5% 触发或可复现反馈。
+  两条互不替代，可分别实施与关闭。
+- **闭环动作**：
+  1. 几何：引入单个 daemon worker 与双缓冲；后台构建不可变快照（`EntryGeometry` 表或
+     `CachedGeometry` + 段表），用 `AtomicReference` 与 generation 发布，渲染线程只读当前快照；
+     换世界、功能关闭、颜色/模式变化或退出时丢弃过期结果；缓存失效仍按引用相等，保留 T2 摘要去重；
+  2. 配置：序列化改为在写盘任务内基于不可变 `Snapshot` 执行（`GSON.toJsonTree(map)` + 拼接），
+     提交序号仍在提交时分配；退出兜底的 `writeSynchronously()` 保留主线程序列化；
+  3. 两项分开提交，不合并为一个改动。
+- **缓解措施**：实施前保持现状；几何继续用摘要去重 + LOD + 上限，序列化继续用 250ms 节流与单队列；
+  用户侧可降低上限或关闭对应渲染功能。
+- **最近评估（2026-11-17）**：桌面复核确认两处输入均为不可变数据（发布后的 `List.copyOf` 与
+  `Snapshot`），可安全移出主线程；未采样、未实施。
+- **待办**：采样两项占比；几何达标先做双缓冲改造并补并发测试；序列化改造单独排期。
+- **验证方式**：`AttackRangeGeometryCacheTest`、`BedrockGeometryCacheTest` 断言顶点数、LOD 选档与
+  缓存失效；新增并发测试用有界等待验证「旧任务结果不覆盖新快照」与「关闭后无残留线程」；
+  `TweakifyModConfigTest`、`AsyncFileWriterTest` 增加「快照序列化 JSON 与直接 `toJson` 内容及键序一致」
+  与提交顺序断言；手动在 256 上限下跑一次渲染回归；`gradlew test` 与 `gradlew build`。
+
 ## 与既有清单的关系
 
 | 文件 | 范围 |
 | --- | --- |
 | `docs/release-pipeline.md`「已知但决定不改的点」 | CI/发布流水线（L1–L4、H1–H2） |
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
-| `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
+| `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T5/T6 复用其 §三/§四 的采集步骤与线程名口径，不新增独立清单；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
-| 本文件 | 测试覆盖与性能取舍类技术债（T1–T4）；不搬运上述条目，避免两处维护漂移 |
+| 本文件 | 测试覆盖与性能取舍类技术债（T1–T6）；不搬运上述条目，避免两处维护漂移 |
