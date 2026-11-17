@@ -2,7 +2,7 @@
 
 本文档说明 `require = 0` 注入点的 `HookProbe` 探针约定、覆盖情况与已知取舍。
 
-**基线**：本文档描述提交 `429e709`（2026-11-14，探针字段全部统一）之后的状态；新增或修改注入点时以实际代码为准。
+**基线**：本文档描述 v1.1.1 发布前（2026-11-18）的探针状态；v1.1.1 新增的修复类注入点与既有内容一并计入，新增或修改注入点时以实际代码为准。
 
 ## 为什么需要探针
 
@@ -26,12 +26,12 @@ Mixin hook active: <探针名>
 
 - 约定：探针放在 handler 方法体**首行**，位于 config 与功能开关判断**之前**；
 - 理由：否则功能关闭时探针不触发，失去「确认钩子活着」的意义；
-- **例外（现状，58 处中 50 处遵循）**：以下 8 处把探针放在功能分支或计算之后，属于有意为之，
+- **例外（以实际代码为准）**：部分既有注入点把探针放在功能分支或计算之后，属于有意为之，
   它们的探针只证明「功能实际生效」，不证明「钩子已注入」：
-  `AnvilMenuMixin`（3 处）、`ItemStackEnchantmentTooltipMixin`、
-  `LocalPlayerCutThroughMixin`、`MinecraftPickFluidBucketMixin`、
+  `AnvilMenuMixin`（3 处）、`LocalPlayerCutThroughMixin`、`MinecraftPickFluidBucketMixin`、
   `FrostWalkerJumpFixMixin`（只在确实放宽容忍时才记录）、
   `SignOpenContainerMixin`（只在容器确实被打开时才记录）。
+  v1.1.1 新增的修复类注入点大多在配置开启后才记录，同样按“功能实际启用”口径理解；
   新增注入点默认按约定的首行写法，若要写成例外请在方法内注释原因。
 
 ### 重载选择
@@ -56,16 +56,23 @@ Mixin hook active: <探针名>
 - 同一功能拆到客户端与服务端两侧时用 `Client` / `Server` 后缀区分（如 `pickFluidBucket` / `pickFluidBucketServer`；`keepLastTorch` 是未加后缀的历史命名）；
 - 建议按「功能域 + 具体动作」命名（如 `visibleTradersSaveLocked`）。
 
-## 覆盖情况（58/58）
+## 覆盖情况（72/72）
 
 统计口径：**非注释**的 `require = 0` 注解数 与 `HookProbe.markOnce` 调用数。
 
 ```
-非注释 require = 0 注解 : 58
-HookProbe.markOnce 调用 : 58
-AtomicBoolean 探针字段  : 39（全部为 TWEAKIFY$XXX_PROBE 命名）
-逐文件配平             : 34 个 mixin 文件全部 1:1，无遗漏
+非注释 require = 0 注解 : 72
+HookProbe.markOnce 调用 : 72
+AtomicBoolean 探针字段  : 53（全部为 TWEAKIFY$XXX_PROBE 命名）
+mixin 文件             : 47 个含注入/探针的文件（其中两处刻意例外见下表）
 ```
+
+其中两处刻意不按文件 1:1：
+
+| 文件 | 说明 |
+| --- | --- |
+| `ItemStackEnchantmentTooltipMixin` | 注入点本身不再直接记录，探针在 `EnchantmentTooltipDescriptions` helper 中 |
+| `PotionContentsTooltipCategoryMixin` | 一个注入点按「发光」与「不祥之兆」分别记录两个探针 |
 
 最近补齐的 8 处（`56f1e07` 补齐，`604cd94` 统一字段命名）：
 
@@ -103,11 +110,11 @@ for f in files:
     req += r; probes += p; fields += fld
     if r or p:
         per_file.append((f, r, p))
-print("require=0 :", req)          # 58
-print("markOnce  :", probes)       # 58
-print("AtomicBool:", fields)       # 39
+print("require=0 :", req)          # 72
+print("markOnce  :", probes)       # 72
+print("AtomicBool:", fields)       # 53
 print("mixin 文件:", len(per_file),
-      "全部 1:1:", all(r == p for _, r, p in per_file))   # 34 True
+      "整体配平:", all(r == p for _, r, p in per_file))   # False；两处刻意例外见上表
 ```
 
 ## 已知不改清单
@@ -124,6 +131,6 @@ print("mixin 文件:", len(per_file),
 | 文件 | 作用 |
 | --- | --- |
 | `src/main/java/com/gtzc/tweakify/util/HookProbe.java` | 探针实现（两种重载） |
-| `src/client/java/com/gtzc/tweakify/client/mixin/**` | 58 个 `require = 0` 注入点所在 |
+| `src/client/java/com/gtzc/tweakify/client/mixin/**` | 72 个 `require = 0` 注入点所在 |
 | `docs/release-pipeline.md` | 发布流水线说明与 L1–L3 / H2 取舍 |
 | `docs/tech-debt.md` | 技术债台账（T1–T3：测试覆盖缺口、顶点缓存、主线程扫描） |
