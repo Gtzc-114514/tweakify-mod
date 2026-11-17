@@ -123,6 +123,28 @@ class EnchantmentTooltipDescriptionsTest {
 		assertEquals(2, builds.get(), "潜行门控变化后重新构建");
 	}
 
+	// 断线清理后同一键必须重新构建，验证 PlanCache 不再持有旧计划。
+	@Test
+	void clearCacheForcesRebuildAfterDisconnect() {
+		List<Component> original = List.of(Component.literal("Sword"), Component.literal("Sharpness I"));
+		AtomicInteger builds = new AtomicInteger();
+		Supplier<List<EnchantmentTooltipDescriptions.DescriptionPlan>> builder = () -> {
+			builds.incrementAndGet();
+			return List.of(new EnchantmentTooltipDescriptions.DescriptionPlan(
+				"Sharpness I", Component.literal("  sharp")));
+		};
+
+		EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", false, "language", builder);
+		assertEquals(1, builds.get());
+
+		EnchantmentTooltipDescriptions.clearCache();
+		EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", false, "language", builder);
+
+		assertEquals(2, builds.get(), "断线清理后同一键必须重新构建");
+	}
+
 	@Test
 	void appendInsertsDescriptionsAfterMatchingLinesAndKeepsTrailingOrder() {
 		List<Component> original = List.of(
