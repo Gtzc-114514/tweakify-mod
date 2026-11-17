@@ -1255,5 +1255,9 @@
   "tweakify-mod.config.general.name.fishingLineThirdPersonFix": "Correction de la ligne de pêche à la troisième personne",
   "tweakify-mod.config.general.prettyName.fishingLineThirdPersonFix": "Correction de la ligne de pêche à la troisième personne",
   "tweakify-mod.config.general.comment.fishingLineThirdPersonFix": "Corrige MC-4490 : en s'accroupissant, la ligne de pêche reste attachée à la canne en vue à la troisième personne au lieu de flotter au-dessus.",
-  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Ligne de pêche à la troisième personne"
+  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Ligne de pêche à la troisième personne",
+  "tweakify-mod.config.general.name.respawnHotbarFix": "Correction de la barre d'accès après réapparition",
+  "tweakify-mod.config.general.prettyName.respawnHotbarFix": "Correction de la barre d'accès après réapparition",
+  "tweakify-mod.config.general.comment.respawnHotbarFix": "Corrige MC-143474 : le slot sélectionné de la barre d'accès est conservé après la réapparition au lieu de revenir au premier slot.",
+  "tweakify-mod.command.label.respawnHotbarFix": "Barre d'accès après réapparition"
 }

@@ -1255,5 +1255,9 @@
   "tweakify-mod.config.general.name.fishingLineThirdPersonFix": "Third-person fishing line fix",
   "tweakify-mod.config.general.prettyName.fishingLineThirdPersonFix": "Third-person fishing line fix",
   "tweakify-mod.config.general.comment.fishingLineThirdPersonFix": "Fixes MC-4490: the fishing line stays attached to the rod in third person while crouching instead of floating above it.",
-  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Third-person fishing line fix"
+  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Third-person fishing line fix",
+  "tweakify-mod.config.general.name.respawnHotbarFix": "Respawn hotbar slot fix",
+  "tweakify-mod.config.general.prettyName.respawnHotbarFix": "Respawn hotbar slot fix",
+  "tweakify-mod.config.general.comment.respawnHotbarFix": "Fixes MC-143474: the selected hotbar slot is kept after respawning instead of resetting to the first slot.",
+  "tweakify-mod.command.label.respawnHotbarFix": "Respawn hotbar slot fix"
 }

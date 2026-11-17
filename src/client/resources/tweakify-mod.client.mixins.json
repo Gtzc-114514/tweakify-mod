@@ -129,7 +129,8 @@
 		"LivingEntityShieldHurtSoundMixin",
 		"LevelExtractorSpectatorOverlayMixin",
 		"HudCooldownIndicatorMixin",
-		"FishingHookRendererThirdPersonLineMixin"
+		"FishingHookRendererThirdPersonLineMixin",
+		"ClientPacketListenerRespawnHotbarMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

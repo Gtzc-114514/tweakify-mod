@@ -1255,5 +1255,9 @@
   "tweakify-mod.config.general.name.fishingLineThirdPersonFix": "Исправление лески от третьего лица",
   "tweakify-mod.config.general.prettyName.fishingLineThirdPersonFix": "Исправление лески от третьего лица",
   "tweakify-mod.config.general.comment.fishingLineThirdPersonFix": "Исправляет MC-4490: при приседании леска от третьего лица остаётся прикреплённой к удочке, а не висит над ней.",
-  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Леска от третьего лица"
+  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Леска от третьего лица",
+  "tweakify-mod.config.general.name.respawnHotbarFix": "Исправление выбранного слота после возрождения",
+  "tweakify-mod.config.general.prettyName.respawnHotbarFix": "Исправление выбранного слота после возрождения",
+  "tweakify-mod.config.general.comment.respawnHotbarFix": "Исправляет MC-143474: после возрождения сохраняется выбранный слот панели быстрого доступа, а не сбрасывается на первый.",
+  "tweakify-mod.command.label.respawnHotbarFix": "Слот после возрождения"
 }

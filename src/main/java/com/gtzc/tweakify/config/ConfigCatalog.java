@@ -183,6 +183,8 @@ public final class ConfigCatalog {
 		entries.add(fix("cooldownIndicatorFix", true));
 		// 第三人称鱼线（MC-4490）
 		entries.add(fix("fishingLineThirdPersonFix", true));
+		// 重生快捷栏（MC-143474）
+		entries.add(fix("respawnHotbarFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

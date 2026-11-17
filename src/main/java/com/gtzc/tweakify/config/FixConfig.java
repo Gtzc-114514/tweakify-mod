@@ -74,6 +74,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-4490：潜行时第三人称鱼线仍连接到鱼竿。
 	public volatile boolean fishingLineThirdPersonFix = false;
 
+	// MC-143474：重生后保留快捷栏选中的槽位。
+	public volatile boolean respawnHotbarFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);
