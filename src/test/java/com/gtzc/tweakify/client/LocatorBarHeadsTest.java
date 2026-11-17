@@ -1,13 +1,18 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.ToIntFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -15,6 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 这些判定与渲染分离，避免只靠游戏内目测验证。
  */
 class LocatorBarHeadsTest {
+	// 静态缓存跨用例共享：每个用例开始时清空，避免名单/宽度缓存互相影响。
+	@BeforeEach
+	void resetLocatorBarCaches() {
+		LocatorBarHeads.resetCachesForTest();
+	}
+
 	@Test
 	void nameModesFollowTheirTriggers() {
 		assertFalse(LocatorHeadNames.shouldShow(TweakifyModConfig.LOCATOR_HEAD_NAMES_NEVER, true, true),
@@ -79,6 +90,82 @@ class LocatorBarHeadsTest {
 		assertFalse(LocatorBarHeads.containsName(names, null));
 		assertTrue(LocatorBarHeads.splitNames(List.of()).isEmpty());
 		assertTrue(LocatorBarHeads.splitNames(null).isEmpty());
+	}
+
+	// 名单缓存：内容不变时复用同一解析实例，内容变化（模拟配置修改）后必须重新解析。
+	@Test
+	void filterNameCacheReusesParsedListAndInvalidatesOnContentChange() {
+		LocatorBarHeads.NameListCache cache = new LocatorBarHeads.NameListCache();
+		List<String> parsed = cache.parsed(List.of("Alice, Bob"));
+
+		assertEquals(List.of("alice", "bob"), parsed);
+		assertSame(parsed, cache.parsed(List.of("Alice, Bob")), "内容相同的列表复用同一解析实例");
+		assertNotSame(parsed, cache.parsed(List.of("Carol")), "内容变化后重新解析");
+		assertEquals(List.of("carol"), cache.parsed(List.of("Carol")));
+		assertTrue(new LocatorBarHeads.NameListCache().parsed(null).isEmpty(), "null 名单按空名单处理");
+	}
+
+	// 生产过滤路径：名单内容变化后必须立即失效，不能继续用旧解析结果。
+	@Test
+	void filterMatchesFollowConfigListChanges() {
+		TweakifyModConfig config = new TweakifyModConfig();
+		config.functions.locatorBarHeadFilter = TweakifyModConfig.LOCATOR_HEAD_FILTER_INCLUDE;
+		config.setStringList(TweakifyModConfig.LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD, List.of("Alice"));
+		assertTrue(LocatorBarHeads.matchesFilter(config, config.functions.locatorBarHeadFilter, "alice"));
+
+		config.setStringList(TweakifyModConfig.LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD, List.of("Bob"));
+		assertFalse(LocatorBarHeads.matchesFilter(config, config.functions.locatorBarHeadFilter, "alice"),
+			"包含名单内容变化后缓存失效");
+
+		config.functions.locatorBarHeadFilter = TweakifyModConfig.LOCATOR_HEAD_FILTER_EXCLUDE;
+		config.setStringList(TweakifyModConfig.LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD, List.of("Alice"));
+		assertFalse(LocatorBarHeads.matchesFilter(config, config.functions.locatorBarHeadFilter, "Alice"));
+
+		config.setStringList(TweakifyModConfig.LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD, List.of("Bob"));
+		assertTrue(LocatorBarHeads.matchesFilter(config, config.functions.locatorBarHeadFilter, "Alice"),
+			"排除名单内容变化后缓存失效");
+
+		config.functions.locatorBarHeadFilter = TweakifyModConfig.LOCATOR_HEAD_FILTER_ALL;
+		assertTrue(LocatorBarHeads.matchesFilter(config, config.functions.locatorBarHeadFilter, "Alice"));
+	}
+
+	// 宽度缓存：同一字体与名字只测宽一次，字体实例变化后整体失效。
+	@Test
+	void playerNameWidthCacheReusesValueAndInvalidatesOnFontChange() {
+		LocatorBarHeads.WidthCache cache = new LocatorBarHeads.WidthCache();
+		Object firstFont = new Object();
+		Object secondFont = new Object();
+		AtomicInteger measurements = new AtomicInteger();
+		ToIntFunction<String> measure = name -> {
+			measurements.incrementAndGet();
+			return name.length();
+		};
+
+		assertEquals(4, cache.widthForTest(firstFont, "Alex", measure));
+		assertEquals(4, cache.widthForTest(firstFont, "Alex", measure));
+		assertEquals(1, measurements.get(), "同一字体与名字只测宽一次");
+		assertEquals(5, cache.widthForTest(firstFont, "Steve", measure));
+		assertEquals(2, measurements.get(), "不同名字分别测宽");
+
+		assertEquals(4, cache.widthForTest(secondFont, "Alex", measure));
+		assertEquals(3, measurements.get(), "字体实例变化后缓存失效");
+	}
+
+	// 淘汰只保证性能，不影响正确性：溢出后旧名字重新查仍得到真实宽度。
+	@Test
+	void playerNameWidthCacheStaysCorrectAfterEviction() {
+		LocatorBarHeads.WidthCache cache = new LocatorBarHeads.WidthCache();
+		Object font = new Object();
+		ToIntFunction<String> measure = String::length;
+		for (int i = 0; i < LocatorBarHeads.MAX_NAME_WIDTH_ENTRIES; i++) {
+			String name = "player" + i;
+			assertEquals(name.length(), cache.widthForTest(font, name, measure));
+		}
+
+		assertEquals("player0".length(), cache.widthForTest(font, "player0", measure),
+			"淘汰后旧名字仍返回正确宽度");
+		assertEquals("overflow".length(), cache.widthForTest(font, "overflow", measure));
+		assertEquals("player1".length(), cache.widthForTest(font, "player1", measure));
 	}
 
 	@Test

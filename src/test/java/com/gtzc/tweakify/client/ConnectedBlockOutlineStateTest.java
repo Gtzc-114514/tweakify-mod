@@ -19,17 +19,22 @@ import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectedBlockOutlineStateTest {
@@ -40,6 +45,11 @@ class ConnectedBlockOutlineStateTest {
 	static void bootstrapMinecraft() {
 		SharedConstants.tryDetectVersion();
 		Bootstrap.bootStrap();
+	}
+
+	@BeforeEach
+	void resetOutlineCache() {
+		ConnectedBlockOutlineState.resetCacheForTest();
 	}
 
 	@Test
@@ -204,6 +214,105 @@ class ConnectedBlockOutlineStateTest {
 			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
 		BlockGetter level = levelOf(Map.of(POS, lower));
 		assertNull(ConnectedBlockOutlineState.mergedShape(lower, POS, level));
+	}
+
+	@Test
+	void mergedShapeCacheReusesSameTarget() {
+		BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
+			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+		BlockState upper = lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+		BlockGetter level = levelOf(Map.of(POS, lower, POS.above(), upper));
+
+		VoxelShape first = ConnectedBlockOutlineState.mergedShape(lower, POS, level);
+		VoxelShape second = ConnectedBlockOutlineState.mergedShape(lower, POS, level);
+
+		assertNotNull(first);
+		assertSame(first, second, "同一 (pos, state) 与邻居命中缓存");
+	}
+
+	@Test
+	void mergedShapeCacheInvalidatesOnTargetSwitch() {
+		BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
+			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+		BlockState upper = lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+		BlockGetter level = levelOf(Map.of(POS, lower, POS.above(), upper));
+
+		VoxelShape lowerShape = ConnectedBlockOutlineState.mergedShape(lower, POS, level);
+		VoxelShape upperShape = ConnectedBlockOutlineState.mergedShape(upper, POS.above(), level);
+
+		assertNotNull(lowerShape);
+		assertNotNull(upperShape);
+		assertNotSame(lowerShape, upperShape, "准星切换到另一半后重新构建");
+	}
+
+	@Test
+	void mergedShapeCacheInvalidatesOnNeighbourUpdate() {
+		BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
+			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+		BlockState upper = lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+		Map<BlockPos, BlockState> states = new HashMap<>();
+		states.put(POS, lower);
+		states.put(POS.above(), upper);
+		BlockGetter level = levelOf(states);
+
+		assertNotNull(ConnectedBlockOutlineState.mergedShape(lower, POS, level));
+		states.put(POS.above(), lower);
+
+		assertNull(ConnectedBlockOutlineState.mergedShape(lower, POS, level),
+			"上方方块更新为同半门后缓存失效");
+	}
+
+	@Test
+	void mergedShapeCacheInvalidatesOnWorldOrPlayerChange() {
+		BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
+			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+		BlockState upper = lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+		BlockGetter firstLevel = levelOf(Map.of(POS, lower, POS.above(), upper));
+		BlockGetter secondLevel = levelOf(Map.of(POS, lower, POS.above(), upper));
+
+		VoxelShape firstWorld = ConnectedBlockOutlineState.mergedShape(lower, POS, firstLevel);
+		VoxelShape secondWorld = ConnectedBlockOutlineState.mergedShape(lower, POS, secondLevel);
+		assertNotSame(firstWorld, secondWorld, "换世界后重新构建");
+
+		VoxelShape playerOne = ConnectedBlockOutlineState.mergedShape(lower, POS, firstLevel, 1);
+		VoxelShape playerTwo = ConnectedBlockOutlineState.mergedShape(lower, POS, firstLevel, 2);
+		assertNotSame(playerOne, playerTwo, "换玩家后重新构建");
+	}
+
+	// 无缓存等价性：reset 后的重建结果与缓存命中结果完全一致。
+	@Test
+	void mergedShapeCacheMatchesUncachedRebuild() {
+		BlockState left = Blocks.CHEST.defaultBlockState()
+			.setValue(ChestBlock.TYPE, ChestType.LEFT)
+			.setValue(ChestBlock.FACING, Direction.NORTH);
+		BlockPos partner = ChestBlock.getConnectedBlockPos(POS, left);
+		BlockState right = left.setValue(ChestBlock.TYPE, ChestType.RIGHT);
+		BlockGetter level = levelOf(Map.of(POS, left, partner, right));
+
+		VoxelShape cached = ConnectedBlockOutlineState.mergedShape(left, POS, level);
+		ConnectedBlockOutlineState.resetCacheForTest();
+		VoxelShape fresh = ConnectedBlockOutlineState.mergedShape(left, POS, level);
+
+		assertNotNull(cached);
+		assertNotNull(fresh);
+		assertNotSame(cached, fresh, "reset 后必须重新构建");
+		assertSameShape(fresh, cached);
+	}
+
+	private static void assertSameShape(VoxelShape expected, VoxelShape actual) {
+		List<AABB> expectedBoxes = expected.toAabbs();
+		List<AABB> actualBoxes = actual.toAabbs();
+		assertEquals(expectedBoxes.size(), actualBoxes.size());
+		for (int i = 0; i < expectedBoxes.size(); i++) {
+			AABB expectedBox = expectedBoxes.get(i);
+			AABB actualBox = actualBoxes.get(i);
+			assertEquals(expectedBox.minX, actualBox.minX, EPSILON);
+			assertEquals(expectedBox.minY, actualBox.minY, EPSILON);
+			assertEquals(expectedBox.minZ, actualBox.minZ, EPSILON);
+			assertEquals(expectedBox.maxX, actualBox.maxX, EPSILON);
+			assertEquals(expectedBox.maxY, actualBox.maxY, EPSILON);
+			assertEquals(expectedBox.maxZ, actualBox.maxZ, EPSILON);
+		}
 	}
 
 	// 只提供方块状态的轻量世界：门/床/箱子的形状都由状态决定，不需要完整 ClientLevel。
