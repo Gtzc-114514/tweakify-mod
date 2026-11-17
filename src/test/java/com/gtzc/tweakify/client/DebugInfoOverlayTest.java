@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -120,6 +121,31 @@ class DebugInfoOverlayTest {
 		assertEquals(hitPos, signature.hitPos());
 		assertEquals(0b1010_1010, signature.configMask());
 		assertSame(language, signature.language());
+	}
+
+	// 摘要节流必须首次立即刷新，之后按间隔刷新。
+	@Test
+	void summaryThrottleRefreshesFirstTimeAndAfterInterval() {
+		DebugInfoOverlay.SummaryThrottle throttle = new DebugInfoOverlay.SummaryThrottle();
+		long interval = 500_000_000L;
+
+		assertTrue(throttle.shouldRefresh(1_000_000_000L, interval), "首次必须刷新");
+		assertFalse(throttle.shouldRefresh(1_400_000_000L, interval));
+		assertTrue(throttle.shouldRefresh(1_500_000_000L, interval), "500ms 到期必须刷新");
+	}
+
+	// 回归：旧实现用 Long.MIN_VALUE 作上次刷新时间，now - last 溢出导致永不刷新。
+	@Test
+	void summaryThrottleDoesNotOverflowAtLongMinValue() {
+		DebugInfoOverlay.SummaryThrottle throttle = new DebugInfoOverlay.SummaryThrottle();
+		long interval = 500_000_000L;
+
+		assertTrue(throttle.shouldRefresh(Long.MIN_VALUE, interval),
+			"首次不能因 Long.MIN_VALUE 减法溢出被跳过");
+		assertFalse(throttle.shouldRefresh(Long.MIN_VALUE + interval - 1, interval));
+		assertTrue(throttle.shouldRefresh(Long.MIN_VALUE + interval, interval));
+		assertTrue(throttle.shouldRefresh(Long.MIN_VALUE + interval - 1, interval),
+			"时间回退时立即刷新，不能让条件恒成立");
 	}
 
 	// 每个调试子开关都必须从配置读取并落到独立位。

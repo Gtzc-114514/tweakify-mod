@@ -167,7 +167,8 @@
   - `StatusEffectTimerRenderer.render` 每帧复制并排序效果集合，为每个效果调用
     `EffectDurationFormatter.format` 并新建 `TextPlacement`（已于 2026-11-17 改为 tick 级缓存）；
   - `DebugInfoOverlay.buildLines` 每帧 3 次 `String.format`、一次生物群系解析与新建 `ArrayList`
-    （实体/配置统计已按 500ms 节流，其余行未缓存；整行已于 2026-11-18 加签名 + 500ms 缓存）；
+    （实体/配置统计按 500ms 节流，2026-11-18 修复初值溢出导致的永不刷新；其余行由签名 + 500ms
+    缓存覆盖）；
   - `ItemStackEnchantmentTooltipMixin.getTooltipLines` 在悬停期间每次提取都新建 3 个列表、逐行
     `getString()`、每个附魔 `Component.translatable` 并线性查找对应附魔行
     （已于 2026-11-18 加描述计划缓存）；
@@ -207,17 +208,22 @@
 - **预防性实施（2026-11-18）**：第 5 项（连接方块轮廓缓存）已在 `ConnectedBlockOutlineState` 落地：
   键包含准星 `(pos, state)`、邻居状态、世界/玩家身份哈希与门高度配置；邻居方块更新、准星切换、
   换世界/玩家时失效，8 条 LRU。该项同样是预防性改动，**不替代本节触发条件的采样判定**。
+- **缺陷修复（2026-11-18）**：`DebugInfoOverlay` 的摘要节流原以 `Long.MIN_VALUE` 作为上次刷新时间，
+  `now - last` 溢出使 `Entities:`/`Config:` 永不刷新；已改为带首次标记的 `SummaryThrottle`，
+  首次立即刷新、后续按 500ms 间隔刷新，并补 `Long.MIN_VALUE` 防溢出回归测试。该缺陷在 T5 前已存在，
+  不是缓存改动引入。
 - **缓解措施**：实施前保持现状；用户侧关闭 `locatorBarHeads`、`statusEffectDurationDisplay`、
   `debugInfoOverlay` 可完全绕过对应开销。
 - **最近评估（2026-11-18）**：桌面复核列出上述 5 个热点，均为每帧重复解析/分配；
-  尚未实机采样；第 1–5 项已全部预防性落地，等待采样判定。
+  尚未实机采样；第 1–5 项已全部预防性落地，并修复调试摘要节流的既有溢出缺陷，等待采样判定。
 - **待办**：完成一次 Render thread 采样并回填合计占比，按结果决定 T5 标为已修复或复测未达触发条件。
 - **验证方式**：`LocatorBarHeadsTest` 已覆盖名单缓存复用/内容变化失效、宽度缓存字体变化失效与
   淘汰后取值正确；`StatusEffectTimerRendererTest` 已覆盖缓存键失效、tick 构建与无缓存
   `placementFor` 等价、无尽效果占位、阈值/隐藏图标过滤、演示偏移与按秒格式化；
   `EnchantmentTooltipDescriptionsTest` 已覆盖缓存键六个维度失效、LRU 上限与命中复用、
   同名附魔行配对、尾部回退以及与无缓存构建的文本等价；
-  `DebugInfoOverlayTest` 已覆盖整行缓存同签名复用、签名变化/间隔到期重建、reset 与无缓存等价；
+  `DebugInfoOverlayTest` 已覆盖整行缓存同签名复用、签名变化/间隔到期重建、reset 与无缓存等价，
+  以及摘要节流首次/间隔/`Long.MIN_VALUE` 防溢出；
   `ConnectedBlockOutlineStateTest` 已覆盖形状缓存命中、准星切换/邻居更新/换世界或玩家失效、
   reset 重建与无缓存形状等价；缓存必须有上限与半量淘汰（参照 `DurabilityOverlayRenderer`），
   并断言「淘汰后结果与无缓存一致」；tooltip 用现有提示行序断言校验追加位置不变；

@@ -53,8 +53,8 @@ public final class DebugInfoOverlay {
 	// 整行文本的刷新间隔：坐标/朝向/目标/子开关变化时立即重建，静止时每 500ms 刷新一次。
 	private static final long LINE_REFRESH_NANOS = 500_000_000L;
 	private static final LineCache CACHE = new LineCache();
+	private static final SummaryThrottle SUMMARY_THROTTLE = new SummaryThrottle();
 
-	private static long lastSummaryAtNanos = Long.MIN_VALUE;
 	private static String cachedEntitySummary = "Entities: -";
 	private static String cachedConfigSummary = "Config: -";
 
@@ -222,13 +222,11 @@ public final class DebugInfoOverlay {
 		return String.format(Locale.ROOT, "Speed: %.2f / %.2f (h/v)", horizontal, vertical);
 	}
 
-	// 节流刷新两类重统计：距离上次刷新不足 500ms 时直接复用缓存文本。
+	// 节流刷新两类重统计：首次立即刷新，之后距离上次不足 500ms 时直接复用缓存文本。
 	private static void refreshSummaries(Minecraft client, boolean entities, boolean configStats) {
-		long now = System.nanoTime();
-		if (now - lastSummaryAtNanos < SUMMARY_REFRESH_NANOS) {
+		if (!SUMMARY_THROTTLE.shouldRefresh(System.nanoTime(), SUMMARY_REFRESH_NANOS)) {
 			return;
 		}
-		lastSummaryAtNanos = now;
 		if (entities) {
 			cachedEntitySummary = entitySummary(client);
 		}
@@ -316,6 +314,25 @@ public final class DebugInfoOverlay {
 			long zTenth, long yRotTenth, int direction, int blockX, int blockY, int blockZ,
 			int targetIdentity, boolean hasTarget, HitResult.Type hitType, BlockPos hitPos,
 			int configMask, Object language) {
+	}
+
+	// 摘要节流：首次立即刷新，之后按间隔；用显式首次标记避免 Long.MIN_VALUE 减法溢出。
+	static final class SummaryThrottle {
+		private boolean refreshed;
+		private long lastRefreshNanos;
+
+		boolean shouldRefresh(long nowNanos, long intervalNanos) {
+			if (this.refreshed) {
+				long elapsed = nowNanos - this.lastRefreshNanos;
+				// elapsed < 0 只可能来自时间源回退/回绕：直接刷新，避免永久卡在旧摘要。
+				if (elapsed >= 0 && elapsed < intervalNanos) {
+					return false;
+				}
+			}
+			this.refreshed = true;
+			this.lastRefreshNanos = nowNanos;
+			return true;
+		}
 	}
 
 	// 整行文本缓存：签名变化或间隔到期时重建；返回不可变列表，渲染帧只读。
