@@ -285,6 +285,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// MC-121706：骷髅瞄准修复。
 	public static final ConfigBoolean SKELETON_AIMING_FIX = new ConfigBoolean(
 		"skeletonAimingFix", false).apply(GENERAL_KEY);
+	// MC-8187：2×2 树苗生长修复。
+	public static final ConfigBoolean SAPLING_GROWTH_FIX = new ConfigBoolean(
+		"saplingGrowthFix", false).apply(GENERAL_KEY);
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算。
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(GENERAL_KEY);

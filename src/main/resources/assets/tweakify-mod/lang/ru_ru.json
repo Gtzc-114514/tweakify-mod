@@ -1267,5 +1267,9 @@
   "tweakify-mod.config.general.name.skeletonAimingFix": "Исправление прицеливания скелетов",
   "tweakify-mod.config.general.prettyName.skeletonAimingFix": "Исправление прицеливания скелетов",
   "tweakify-mod.config.general.comment.skeletonAimingFix": "Исправляет MC-121706: скелеты и иллюзионисты при стрельбе смотрят на цель вверх и вниз, а не только по горизонтали; только в одиночной игре/локальной сети.",
-  "tweakify-mod.command.label.skeletonAimingFix": "Прицеливание скелетов"
+  "tweakify-mod.command.label.skeletonAimingFix": "Прицеливание скелетов",
+  "tweakify-mod.config.general.name.saplingGrowthFix": "Исправление роста саженцев 2×2",
+  "tweakify-mod.config.general.prettyName.saplingGrowthFix": "Исправление роста саженцев 2×2",
+  "tweakify-mod.config.general.comment.saplingGrowthFix": "Исправляет MC-8187: саженцы ели и тропического дерева 2×2 могут расти при соседних блоках с севера или запада; только в одиночной игре/локальной сети.",
+  "tweakify-mod.command.label.saplingGrowthFix": "Рост саженцев 2×2"
 }

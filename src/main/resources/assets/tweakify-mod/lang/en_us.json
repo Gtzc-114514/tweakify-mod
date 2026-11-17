@@ -1267,5 +1267,9 @@
   "tweakify-mod.config.general.name.skeletonAimingFix": "Skeleton aiming fix",
   "tweakify-mod.config.general.prettyName.skeletonAimingFix": "Skeleton aiming fix",
   "tweakify-mod.config.general.comment.skeletonAimingFix": "Fixes MC-121706: skeletons and illusioners aim up and down at their target while shooting instead of only looking horizontally; single-player/LAN host only.",
-  "tweakify-mod.command.label.skeletonAimingFix": "Skeleton aiming fix"
+  "tweakify-mod.command.label.skeletonAimingFix": "Skeleton aiming fix",
+  "tweakify-mod.config.general.name.saplingGrowthFix": "2x2 sapling growth fix",
+  "tweakify-mod.config.general.prettyName.saplingGrowthFix": "2x2 sapling growth fix",
+  "tweakify-mod.config.general.comment.saplingGrowthFix": "Fixes MC-8187: 2x2 spruce and jungle saplings can grow with adjacent blocks to the north or west; single-player/LAN host only.",
+  "tweakify-mod.command.label.saplingGrowthFix": "2x2 sapling growth fix"
 }

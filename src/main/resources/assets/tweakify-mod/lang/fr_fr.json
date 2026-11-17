@@ -1267,5 +1267,9 @@
   "tweakify-mod.config.general.name.skeletonAimingFix": "Correction de la visée des squelettes",
   "tweakify-mod.config.general.prettyName.skeletonAimingFix": "Correction de la visée des squelettes",
   "tweakify-mod.config.general.comment.skeletonAimingFix": "Corrige MC-121706 : les squelettes et illusionnistes visent leur cible vers le haut et le bas en tirant, au lieu de regarder uniquement à l'horizontale ; uniquement en solo/LAN.",
-  "tweakify-mod.command.label.skeletonAimingFix": "Visée des squelettes"
+  "tweakify-mod.command.label.skeletonAimingFix": "Visée des squelettes",
+  "tweakify-mod.config.general.name.saplingGrowthFix": "Correction de la croissance des pousses 2×2",
+  "tweakify-mod.config.general.prettyName.saplingGrowthFix": "Correction de la croissance des pousses 2×2",
+  "tweakify-mod.config.general.comment.saplingGrowthFix": "Corrige MC-8187 : les pousses de sapin et de jungle 2×2 peuvent grandir avec des blocs adjacents au nord ou à l'ouest ; uniquement en solo/LAN.",
+  "tweakify-mod.command.label.saplingGrowthFix": "Croissance des pousses 2×2"
 }

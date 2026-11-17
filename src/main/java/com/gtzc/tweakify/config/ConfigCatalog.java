@@ -189,6 +189,8 @@ public final class ConfigCatalog {
 		entries.add(fix("sneakAnimationFix", true));
 		// 骷髅瞄准（MC-121706）
 		entries.add(fix("skeletonAimingFix", true));
+		// 2×2 树苗生长（MC-8187）
+		entries.add(fix("saplingGrowthFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));

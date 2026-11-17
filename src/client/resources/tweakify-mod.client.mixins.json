@@ -132,7 +132,8 @@
 		"FishingHookRendererThirdPersonLineMixin",
 		"ClientPacketListenerRespawnHotbarMixin",
 		"ClientPacketListenerSneakAnimationMixin",
-		"RangedBowAttackGoalSkeletonAimingMixin"
+		"RangedBowAttackGoalSkeletonAimingMixin",
+		"TreeFeatureSaplingGrowthMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

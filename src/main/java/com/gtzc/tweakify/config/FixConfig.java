@@ -83,6 +83,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-121706：骷髅/幻术师射箭时视线跟随目标上下。
 	public volatile boolean skeletonAimingFix = false;
 
+	// MC-8187：2×2 云杉/丛林树苗北/西侧有相邻方块时也能生长。
+	public volatile boolean saplingGrowthFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

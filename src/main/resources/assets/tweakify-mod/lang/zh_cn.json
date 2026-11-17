@@ -1267,5 +1267,9 @@
   "tweakify-mod.config.general.name.skeletonAimingFix": "骷髅瞄准修复",
   "tweakify-mod.config.general.prettyName.skeletonAimingFix": "骷髅瞄准修复",
   "tweakify-mod.config.general.comment.skeletonAimingFix": "修复 MC-121706：骷髅与幻术师射箭时视线随目标上下，不再只看水平方向；仅在单人/局域网生效。",
-  "tweakify-mod.command.label.skeletonAimingFix": "骷髅瞄准修复"
+  "tweakify-mod.command.label.skeletonAimingFix": "骷髅瞄准修复",
+  "tweakify-mod.config.general.name.saplingGrowthFix": "2×2 树苗生长修复",
+  "tweakify-mod.config.general.prettyName.saplingGrowthFix": "2×2 树苗生长修复",
+  "tweakify-mod.config.general.comment.saplingGrowthFix": "修复 MC-8187：2×2 云杉/丛林树苗在北/西侧有相邻方块时也能生长；仅在单人/局域网生效。",
+  "tweakify-mod.command.label.saplingGrowthFix": "2×2 树苗生长修复"
 }
