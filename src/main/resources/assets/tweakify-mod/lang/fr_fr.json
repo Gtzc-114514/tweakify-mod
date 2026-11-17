@@ -1251,5 +1251,9 @@
   "tweakify-mod.config.general.name.cooldownIndicatorFix": "Correction du clignotement de l'indicateur de recharge",
   "tweakify-mod.config.general.prettyName.cooldownIndicatorFix": "Correction du clignotement de l'indicateur de recharge",
   "tweakify-mod.config.general.comment.cooldownIndicatorFix": "Corrige MC-268420 : la progression du temps de recharge près du réticule ne clignote plus lors du changement d'objet à haute vitesse d'attaque.",
-  "tweakify-mod.command.label.cooldownIndicatorFix": "Indicateur de recharge"
+  "tweakify-mod.command.label.cooldownIndicatorFix": "Indicateur de recharge",
+  "tweakify-mod.config.general.name.fishingLineThirdPersonFix": "Correction de la ligne de pêche à la troisième personne",
+  "tweakify-mod.config.general.prettyName.fishingLineThirdPersonFix": "Correction de la ligne de pêche à la troisième personne",
+  "tweakify-mod.config.general.comment.fishingLineThirdPersonFix": "Corrige MC-4490 : en s'accroupissant, la ligne de pêche reste attachée à la canne en vue à la troisième personne au lieu de flotter au-dessus.",
+  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Ligne de pêche à la troisième personne"
 }

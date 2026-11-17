@@ -1251,5 +1251,9 @@
   "tweakify-mod.config.general.name.cooldownIndicatorFix": "Исправление мигания индикатора перезарядки",
   "tweakify-mod.config.general.prettyName.cooldownIndicatorFix": "Исправление мигания индикатора перезарядки",
   "tweakify-mod.config.general.comment.cooldownIndicatorFix": "Исправляет MC-268420: индикатор перезарядки атаки рядом с прицелом больше не мигает при смене предмета с высокой скоростью атаки.",
-  "tweakify-mod.command.label.cooldownIndicatorFix": "Индикатор перезарядки"
+  "tweakify-mod.command.label.cooldownIndicatorFix": "Индикатор перезарядки",
+  "tweakify-mod.config.general.name.fishingLineThirdPersonFix": "Исправление лески от третьего лица",
+  "tweakify-mod.config.general.prettyName.fishingLineThirdPersonFix": "Исправление лески от третьего лица",
+  "tweakify-mod.config.general.comment.fishingLineThirdPersonFix": "Исправляет MC-4490: при приседании леска от третьего лица остаётся прикреплённой к удочке, а не висит над ней.",
+  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Леска от третьего лица"
 }

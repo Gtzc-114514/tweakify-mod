@@ -71,6 +71,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-268420：高攻速切换物品时，攻击冷却指示器不再闪一帧。
 	public volatile boolean cooldownIndicatorFix = false;
 
+	// MC-4490：潜行时第三人称鱼线仍连接到鱼竿。
+	public volatile boolean fishingLineThirdPersonFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

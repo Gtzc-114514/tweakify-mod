@@ -1251,5 +1251,9 @@
   "tweakify-mod.config.general.name.cooldownIndicatorFix": "Cooldown indicator flicker fix",
   "tweakify-mod.config.general.prettyName.cooldownIndicatorFix": "Cooldown indicator flicker fix",
   "tweakify-mod.config.general.comment.cooldownIndicatorFix": "Fixes MC-268420: the attack cooldown progress next to the crosshair no longer flashes when switching items with high attack speed.",
-  "tweakify-mod.command.label.cooldownIndicatorFix": "Cooldown indicator flicker fix"
+  "tweakify-mod.command.label.cooldownIndicatorFix": "Cooldown indicator flicker fix",
+  "tweakify-mod.config.general.name.fishingLineThirdPersonFix": "Third-person fishing line fix",
+  "tweakify-mod.config.general.prettyName.fishingLineThirdPersonFix": "Third-person fishing line fix",
+  "tweakify-mod.config.general.comment.fishingLineThirdPersonFix": "Fixes MC-4490: the fishing line stays attached to the rod in third person while crouching instead of floating above it.",
+  "tweakify-mod.command.label.fishingLineThirdPersonFix": "Third-person fishing line fix"
 }

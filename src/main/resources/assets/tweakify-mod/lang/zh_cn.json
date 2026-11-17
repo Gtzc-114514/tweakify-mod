@@ -1251,5 +1251,9 @@
   "tweakify-mod.config.general.name.cooldownIndicatorFix": "冷却指示器闪烁修复",
   "tweakify-mod.config.general.prettyName.cooldownIndicatorFix": "冷却指示器闪烁修复",
   "tweakify-mod.config.general.comment.cooldownIndicatorFix": "修复 MC-268420：高攻速下切换物品时，准星旁攻击冷却进度不再闪一帧。",
-  "tweakify-mod.command.label.cooldownIndicatorFix": "冷却指示器闪烁修复"
+  "tweakify-mod.command.label.cooldownIndicatorFix": "冷却指示器闪烁修复",
+  "tweakify-mod.config.general.name.fishingLineThirdPersonFix": "第三人称鱼线修复",
+  "tweakify-mod.config.general.prettyName.fishingLineThirdPersonFix": "第三人称鱼线修复",
+  "tweakify-mod.config.general.comment.fishingLineThirdPersonFix": "修复 MC-4490：潜行时第三人称鱼线仍连接到鱼竿，不再悬在鱼竿上方。",
+  "tweakify-mod.command.label.fishingLineThirdPersonFix": "第三人称鱼线修复"
 }

@@ -128,7 +128,8 @@
 		"PotionContentsTooltipCategoryMixin",
 		"LivingEntityShieldHurtSoundMixin",
 		"LevelExtractorSpectatorOverlayMixin",
-		"HudCooldownIndicatorMixin"
+		"HudCooldownIndicatorMixin",
+		"FishingHookRendererThirdPersonLineMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

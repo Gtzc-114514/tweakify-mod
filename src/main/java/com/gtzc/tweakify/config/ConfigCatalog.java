@@ -181,6 +181,8 @@ public final class ConfigCatalog {
 		entries.add(fix("spectatorOverlayFix", true));
 		// 冷却指示器闪烁（MC-268420）
 		entries.add(fix("cooldownIndicatorFix", true));
+		// 第三人称鱼线（MC-4490）
+		entries.add(fix("fishingLineThirdPersonFix", true));
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));
