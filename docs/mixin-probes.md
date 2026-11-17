@@ -2,7 +2,7 @@
 
 本文档说明 `require = 0` 注入点的 `HookProbe` 探针约定、覆盖情况与已知取舍。
 
-**基线**：本文档描述 v1.1.1 发布前（2026-11-18）的探针状态；v1.1.1 新增的修复类注入点与既有内容一并计入，新增或修改注入点时以实际代码为准。
+**基线**：本文档描述 v1.1.1 发布后（2026-11-18）的探针状态；v1.1.1 新增的修复类注入点与 MC-8187 一并计入，新增或修改注入点时以实际代码为准。
 
 ## 为什么需要探针
 
@@ -56,15 +56,15 @@ Mixin hook active: <探针名>
 - 同一功能拆到客户端与服务端两侧时用 `Client` / `Server` 后缀区分（如 `pickFluidBucket` / `pickFluidBucketServer`；`keepLastTorch` 是未加后缀的历史命名）；
 - 建议按「功能域 + 具体动作」命名（如 `visibleTradersSaveLocked`）。
 
-## 覆盖情况（72/72）
+## 覆盖情况（73/73）
 
 统计口径：**非注释**的 `require = 0` 注解数 与 `HookProbe.markOnce` 调用数。
 
 ```
-非注释 require = 0 注解 : 72
-HookProbe.markOnce 调用 : 72
-AtomicBoolean 探针字段  : 53（全部为 TWEAKIFY$XXX_PROBE 命名）
-mixin 文件             : 47 个含注入/探针的文件（其中两处刻意例外见下表）
+非注释 require = 0 注解 : 73
+HookProbe.markOnce 调用 : 73
+AtomicBoolean 探针字段  : 54（全部为 TWEAKIFY$XXX_PROBE 命名）
+mixin 文件             : 48 个含注入/探针的文件（其中两处刻意例外见下表）
 ```
 
 其中两处刻意不按文件 1:1：
@@ -110,9 +110,9 @@ for f in files:
     req += r; probes += p; fields += fld
     if r or p:
         per_file.append((f, r, p))
-print("require=0 :", req)          # 72
-print("markOnce  :", probes)       # 72
-print("AtomicBool:", fields)       # 53
+print("require=0 :", req)          # 73
+print("markOnce  :", probes)       # 73
+print("AtomicBool:", fields)       # 54
 print("mixin 文件:", len(per_file),
       "整体配平:", all(r == p for _, r, p in per_file))   # False；两处刻意例外见上表
 ```
@@ -131,6 +131,6 @@ print("mixin 文件:", len(per_file),
 | 文件 | 作用 |
 | --- | --- |
 | `src/main/java/com/gtzc/tweakify/util/HookProbe.java` | 探针实现（两种重载） |
-| `src/client/java/com/gtzc/tweakify/client/mixin/**` | 72 个 `require = 0` 注入点所在 |
+| `src/client/java/com/gtzc/tweakify/client/mixin/**` | 73 个 `require = 0` 注入点所在 |
 | `docs/release-pipeline.md` | 发布流水线说明与 L1–L3 / H2 取舍 |
 | `docs/tech-debt.md` | 技术债台账（T1–T3：测试覆盖缺口、顶点缓存、主线程扫描） |
