@@ -219,8 +219,9 @@ final class BlockMarkerScanner {
 		private final ScanTarget target;
 		// 实际逐方块读取次数：GameTest 用它判别 section 预筛是否真的跳过了非目标区块。
 		private int blockReads;
-		// 实际读取过的 section：GameTest 用精确集合断言目标组合，避免只读总数掩盖 target 写反。
-		private final Set<SectionKey> sectionsRead = new HashSet<>();
+		// 实际读取过的 section：仅 GameTest 开启时分配，生产路径不产生集合/键对象。
+		private final boolean recordDiagnostics;
+		private final Set<SectionKey> sectionsRead;
 
 		// 目标 section 的稳定标识；仅用于 GameTest 行为断言。
 		record SectionKey(int chunkX, int chunkZ, int sectionIndex) {
@@ -228,6 +229,14 @@ final class BlockMarkerScanner {
 
 		ScanJob(Level level, BlockPos center, boolean barrier, boolean bedrock,
 				int barrierRadius, int bedrockRadius, int maxBedrockMarkers) {
+			this(level, center, barrier, bedrock, barrierRadius, bedrockRadius, maxBedrockMarkers, false);
+		}
+
+		// GameTest 专用重载：开启诊断集合记录；生产 createJob 使用上面的 7 参构造。
+		ScanJob(Level level, BlockPos center, boolean barrier, boolean bedrock,
+				int barrierRadius, int bedrockRadius, int maxBedrockMarkers, boolean recordDiagnostics) {
+			this.recordDiagnostics = recordDiagnostics;
+			this.sectionsRead = recordDiagnostics ? new HashSet<>() : null;
 			this.level = level;
 			this.centerX = center.getX();
 			this.centerY = center.getY();
@@ -275,7 +284,7 @@ final class BlockMarkerScanner {
 					this.layerChunks[slot] = chunk;
 					boolean mayContain = BlockMarkerScanner.sectionNeedsScan(chunk, y, this.target);
 					this.chunkMayContain[slot] = mayContain;
-					if (mayContain) {
+					if (mayContain && this.recordDiagnostics) {
 						this.sectionsRead.add(new SectionKey(baseChunkX + chunkX, baseChunkZ + chunkZ,
 							chunk.getSectionIndex(y)));
 					}
@@ -324,7 +333,7 @@ final class BlockMarkerScanner {
 		}
 
 		Set<SectionKey> sectionsReadForTest() {
-			return Set.copyOf(this.sectionsRead);
+			return this.sectionsRead == null ? Set.of() : Set.copyOf(this.sectionsRead);
 		}
 
 		List<BlockPos> barriersForTest() {
