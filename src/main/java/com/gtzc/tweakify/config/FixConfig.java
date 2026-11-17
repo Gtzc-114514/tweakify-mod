@@ -77,6 +77,9 @@ public final class FixConfig extends ConfigSection {
 	// MC-143474：重生后保留快捷栏选中的槽位。
 	public volatile boolean respawnHotbarFix = false;
 
+	// MC-159163：快速按潜行键时不再重复播放潜行动画。
+	public volatile boolean sneakAnimationFix = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

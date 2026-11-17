@@ -1259,5 +1259,9 @@
   "tweakify-mod.config.general.name.respawnHotbarFix": "Respawn hotbar slot fix",
   "tweakify-mod.config.general.prettyName.respawnHotbarFix": "Respawn hotbar slot fix",
   "tweakify-mod.config.general.comment.respawnHotbarFix": "Fixes MC-143474: the selected hotbar slot is kept after respawning instead of resetting to the first slot.",
-  "tweakify-mod.command.label.respawnHotbarFix": "Respawn hotbar slot fix"
+  "tweakify-mod.command.label.respawnHotbarFix": "Respawn hotbar slot fix",
+  "tweakify-mod.config.general.name.sneakAnimationFix": "Sneak animation double-play fix",
+  "tweakify-mod.config.general.prettyName.sneakAnimationFix": "Sneak animation double-play fix",
+  "tweakify-mod.config.general.comment.sneakAnimationFix": "Fixes MC-159163: quickly pressing the sneak key no longer plays the sneak animation twice.",
+  "tweakify-mod.command.label.sneakAnimationFix": "Sneak animation double-play fix"
 }

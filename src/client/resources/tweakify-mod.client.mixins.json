@@ -130,7 +130,8 @@
 		"LevelExtractorSpectatorOverlayMixin",
 		"HudCooldownIndicatorMixin",
 		"FishingHookRendererThirdPersonLineMixin",
-		"ClientPacketListenerRespawnHotbarMixin"
+		"ClientPacketListenerRespawnHotbarMixin",
+		"ClientPacketListenerSneakAnimationMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
