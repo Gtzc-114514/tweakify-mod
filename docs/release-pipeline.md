@@ -331,6 +331,34 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 
 > 备注：本次 main 与标签均通过本地代理首次推送成功；release 页面正文在 PowerShell 控制台显示为乱码属于终端解码问题，GitHub API 读取的正文与仓库 notes 完全一致。
 
+## 验证记录：v1.1.2 发布
+
+本次为 1.1.1 启动崩溃的热修复版本，同时纳入 MC-8187；`release.yml` 无改动：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `44341351180` |
+| 对应提交 | `4dc78bc`（`v1.1.2` 标签提交；含 1.1.2 版本号与 notes） |
+| 触发 | push tag `v1.1.2` |
+| 结论 | **success**，job 耗时 1 分 12 秒（run 1 分 16 秒） |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过** |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.1.2` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.1.2` 去前缀后与版本 `1.1.2` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.1.2` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.1.2.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文与仓库内 notes 逐字一致（1,275 字节），含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.1.2.jar`（782,023 字节）、`tweakify-mod-1.1.2-sources.jar`（586,682 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `44341330348`）同为 success。
+
+> 备注：v1.1.1 的启动崩溃由客户端 Mixin 配置缺少 `mixinextras.minVersion` 导致；1.1.2 已在配置中声明 `0.5.5` 并新增 `MixinConfigTest`。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
