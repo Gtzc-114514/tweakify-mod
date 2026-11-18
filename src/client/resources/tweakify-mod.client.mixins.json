@@ -135,6 +135,9 @@
 		"RangedBowAttackGoalSkeletonAimingMixin",
 		"TreeFeatureSaplingGrowthMixin"
 	],
+	"mixinextras": {
+		"minVersion": "0.5.5"
+	},
 	"injectors": {
 		"defaultRequire": 1
 	},
