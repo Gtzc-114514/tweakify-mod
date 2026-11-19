@@ -135,13 +135,11 @@ public final class SmoothScrolling {
 			? creativeMenuRow * 9 + slotIndex : -1;
 	}
 
-	// 悬停高亮绘制时的裁剪上边界：第 1 行在半行偏移下高亮会向上外扩 4+shift 像素，
-	// 单独放开上边界（最多到面板顶部 0，不越过面板），其余行仍按网格上沿裁剪。
-	public static int hoverHighlightClipTop(int slotY, int shiftPixels) {
-		if (slotY > CREATIVE_GRID_Y) {
-			return CREATIVE_GRID_Y;
-		}
-		return Math.max(0, CREATIVE_GRID_Y - CREATIVE_HOVER_OVERHANG - Math.max(0, shiftPixels));
+	// 悬停高亮绘制时的裁剪上边界：第一行固定放开 4 像素（高亮相对槽位的外扩量），
+	// 不随亚行偏移继续上移，避免滚到较深半行时压到面板顶部的标签标题；
+	// 其余行仍按网格上沿裁剪。
+	public static int hoverHighlightClipTop(int slotY) {
+		return slotY > CREATIVE_GRID_Y ? CREATIVE_GRID_Y : CREATIVE_GRID_Y - CREATIVE_HOVER_OVERHANG;
 	}
 
 	// 创造栏是否用自绘网格（可滚动且子开关开启）。

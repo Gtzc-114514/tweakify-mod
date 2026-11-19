@@ -208,9 +208,10 @@ public abstract class CreativeModeInventoryGridMixin {
 			original.call(gui);
 			return;
 		}
-		// 原版高亮是 24x24（比槽位外扩 4 像素）：第 1 行在半行偏移下会被网格上沿裁掉大半，
-		// 这里对该行单独放开上边界（最多到面板顶部，不越过面板），其余行仍按网格矩形裁剪。
-		this.tweakify$pushClip(gui, SmoothScrolling.hoverHighlightClipTop(this.hoveredSlot.y, shift));
+		// 原版高亮是 24x24（比槽位外扩 4 像素）：第 1 行固定放开这 4 像素，
+		// 不随亚行偏移继续上移，避免滚到较深半行时压到面板顶部的标签标题；
+		// 其余行仍按网格矩形裁剪。
+		this.tweakify$pushClip(gui, SmoothScrolling.hoverHighlightClipTop(this.hoveredSlot.y));
 		Matrix3x2fStack pose = gui.pose();
 		pose.pushMatrix();
 		pose.translate(0.0f, -shift);

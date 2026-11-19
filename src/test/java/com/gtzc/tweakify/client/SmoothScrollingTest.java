@@ -84,22 +84,22 @@ class SmoothScrollingTest {
 		SmoothScrolling.resetCreativeGridState();
 	}
 
-	// 首行悬停高亮比槽位外扩 4px：半行偏移时只放开首行的上边界，其余行保持网格上沿，
-	// 且最多到面板顶部（0），不会画到标签栏。
+	// 首行悬停高亮固定放开 4px（高亮相对槽位的外扩量），不随亚行偏移继续上移：
+	// 其它行保持网格上沿，首行也不越过面板顶部/标题区。
 	@Test
 	void hoverHighlightClipTopOnlyRelaxesFirstRow() {
 		assertEquals(SmoothScrolling.CREATIVE_GRID_Y,
-			SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y + 18, 7),
+			SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y + 18),
 			"第二行及以后仍按网格上沿裁剪");
 		assertEquals(SmoothScrolling.CREATIVE_GRID_Y - 4,
-			SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y, 0),
-			"首行静止时放开 4px 外扩");
-		assertEquals(SmoothScrolling.CREATIVE_GRID_Y - 4 - 5,
-			SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y, 5));
-		assertEquals(0, SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y, 17),
-			"最多到面板顶部，不越过面板");
-		assertEquals(0, SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y, 99),
-			"异常大的偏移也不能为负");
+			SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y),
+			"首行固定放开 4px 外扩");
+		// 固定值：不会随 shift 上移，始终停留在网格上方 4 像素，不会压到标题/标签栏。
+		assertTrue(SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y) > 0,
+			"首行裁剪上边界必须留在面板内部");
+		assertEquals(SmoothScrolling.CREATIVE_GRID_Y - 4,
+			SmoothScrolling.hoverHighlightClipTop(0),
+			"非网格上方的槽位也按首行处理，不能为负");
 	}
 
 	// 只有物品格内才允许做坐标补偿：背包/快捷槽在格子下方，必须保持原始坐标。
