@@ -2,6 +2,7 @@ package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.ConfigCatalog;
+import com.gtzc.tweakify.config.FavoritesStorage;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.AsyncFileWriter;
 import com.gtzc.tweakify.util.HookProbe;
@@ -73,6 +74,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		// 配置超时兜底会关闭写盘线程并同步写，因此必须放在滚动记忆提交之后。
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
 			ScrollMemory.flushOnShutdown();
+			// 收藏数据同样在写盘线程关闭前同步落盘一次。
+			FavoritesStorage.flushOnShutdown();
 			TweakifyModConfigOptions.flushOnShutdown();
 			AsyncFileWriter.shutdown(2000L);
 		});

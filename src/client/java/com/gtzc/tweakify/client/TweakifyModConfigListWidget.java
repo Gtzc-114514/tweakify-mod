@@ -29,11 +29,12 @@ import java.util.List;
  * 半行滚动时不会画到标签栏与页脚上。
  */
 public class TweakifyModConfigListWidget extends WidgetListConfigOptions {
-	// 标签列最小宽度，以及右侧按钮/重置/滚动条合计需要的宽度。
+	// 标签列最小宽度，以及右侧按钮/重置/收藏星/滚动条合计需要的宽度。
 	private static final int MIN_LABEL_WIDTH = 80;
-	private static final int MIN_CONTROLS_TOTAL = 230;
+	private static final int MIN_CONTROLS_TOTAL = 246;
 	private static final int LABEL_CONTROL_GAP = 10;
-	private static final int RIGHT_RESERVE = 40;
+	// 行右端固定留给收藏星：16px 星标 + 2px 右边距，再加重置按钮与间隙。
+	static final int RIGHT_RESERVE = 56;
 	private static final int MIN_CONFIG_WIDTH = 120;
 
 	// 拖动滚动只认鼠标左键；按下时先让条目控件处理，被消费的点击不会起拖。

@@ -562,9 +562,18 @@ public class TweakifyModConfig {
 	public static final String CONFIG_TAB_FIX = "fix";
 	public static final String CONFIG_TAB_OPTIMIZATION = "optimization";
 	public static final String CONFIG_TAB_TESTING = "testing";
+	// 收藏标签位于“测试”右侧：只显示已被收藏的配置项。
+	public static final String CONFIG_TAB_FAVORITES = "favorites";
 	public static final List<String> SUPPORTED_CONFIG_TABS = List.of(
 		CONFIG_TAB_ALL, CONFIG_TAB_GENERAL, CONFIG_TAB_FUNCTIONS, CONFIG_TAB_MODIFIED,
-		CONFIG_TAB_FIX, CONFIG_TAB_OPTIMIZATION, CONFIG_TAB_TESTING);
+		CONFIG_TAB_FIX, CONFIG_TAB_OPTIMIZATION, CONFIG_TAB_TESTING, CONFIG_TAB_FAVORITES);
+
+	// 收藏星样式：自绘星形 / 原版下界之星。
+	public static final String FAVORITE_STAR_STYLE_STAR = "star";
+	public static final String FAVORITE_STAR_STYLE_NETHER_STAR = "nether_star";
+	public static final String DEFAULT_FAVORITE_STAR_STYLE = FAVORITE_STAR_STYLE_STAR;
+	public static final List<String> SUPPORTED_FAVORITE_STAR_STYLES = List.of(
+		FAVORITE_STAR_STYLE_STAR, FAVORITE_STAR_STYLE_NETHER_STAR);
 
 	// 铁傀儡自动上车的最大玩家距离（0 ~ 64 格，0 = 不限制）。
 	public static final int MIN_IRON_GOLEM_PICKUP_DISTANCE = 0;

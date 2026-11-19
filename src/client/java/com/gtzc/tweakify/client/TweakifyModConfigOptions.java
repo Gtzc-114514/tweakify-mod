@@ -75,6 +75,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 未记忆时的默认标签（关闭标签记忆或首次打开）。
 	public static final ConfigOptionList REMEMBER_SELECTED_TAB_FALLBACK = new ConfigOptionList(
 		"rememberSelectedTabFallback", ConfigGuiTab.ALL).apply(GENERAL_KEY);
+	// 收藏星样式：自绘星形 / 原版下界之星，同时作用于配置行与存档列表的收藏星。
+	public static final ConfigOptionList FAVORITE_STAR_STYLE = new ConfigOptionList(
+		"favoriteStarStyle", FavoriteStarStyle.STAR).apply(GENERAL_KEY);
 	public static final ConfigHotkey OPEN_CONFIG_GUI = new ConfigHotkey(
 		"openConfigGui", "G,C", OPEN_CONFIG_GUI_SETTINGS).apply(GENERAL_KEY);
 	// 掉落物消失时间（tick）：默认 6000 = 原版 5 分钟，滑块范围 3 秒 ~ 30 分钟。

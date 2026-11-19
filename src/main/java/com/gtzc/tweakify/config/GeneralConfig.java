@@ -17,7 +17,7 @@ public final class GeneralConfig extends ConfigSection {
 
 	// 已登记字段级校验器的字段名：language 需要回退到支持的语言，标签回退需要合法代码，平滑时长需要夹紧范围。
 	private static final List<String> SANITIZED_FIELDS =
-		List.of("language", "rememberSelectedTabFallback", "smoothScrollDuration");
+		List.of("language", "rememberSelectedTabFallback", "smoothScrollDuration", "favoriteStarStyle");
 
 	// 模组界面语言代码（zh_cn / en_us / ru_ru / fr_fr）；跟随系统语言时忽略。
 	public volatile String language = "zh_cn";
@@ -58,6 +58,9 @@ public final class GeneralConfig extends ConfigSection {
 	// 未记忆（关闭标签记忆或首次打开）时停在哪个标签。
 	public volatile String rememberSelectedTabFallback = TweakifyModConfig.CONFIG_TAB_ALL;
 
+	// 收藏星样式：控件界面与存档列表右侧/左侧星标的皮肤（star / nether_star）。
+	public volatile String favoriteStarStyle = TweakifyModConfig.DEFAULT_FAVORITE_STAR_STYLE;
+
 	// 打开配置界面的快捷键，默认 G + C。
 	public volatile String hotkeyOpenConfigGui = "G,C";
 
@@ -71,6 +74,7 @@ public final class GeneralConfig extends ConfigSection {
 		boolean changed = sanitizeLanguage();
 		changed |= sanitizeTabFallback();
 		changed |= sanitizeSmoothScrollDuration();
+		changed |= sanitizeFavoriteStarStyle();
 		return changed;
 	}
 
@@ -97,6 +101,17 @@ public final class GeneralConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported config tab fallback: {}", rememberSelectedTabFallback);
 		rememberSelectedTabFallback = TweakifyModConfig.CONFIG_TAB_ALL;
+		return true;
+	}
+
+	// 收藏星样式只接受两种登记值，未知代码回退到自绘星形。
+	private boolean sanitizeFavoriteStarStyle() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_FAVORITE_STAR_STYLES, favoriteStarStyle)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported favorite star style: {}", favoriteStarStyle);
+		favoriteStarStyle = TweakifyModConfig.DEFAULT_FAVORITE_STAR_STYLE;
 		return true;
 	}
 
