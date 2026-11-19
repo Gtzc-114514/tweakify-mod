@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.client.mixin.EditBoxAccessor;
+import com.gtzc.tweakify.config.FavoritesStorage;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigDouble;
 import fi.dy.masa.malilib.config.IConfigSlider;
@@ -22,6 +23,7 @@ import fi.dy.masa.malilib.gui.widgets.WidgetListConfigOptionsBase;
 import fi.dy.masa.malilib.gui.widgets.WidgetSlider;
 import fi.dy.masa.malilib.render.GuiContext;
 import fi.dy.masa.malilib.util.StringUtils;
+import fi.dy.masa.malilib.util.input.ScanCodes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
@@ -87,6 +89,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		this.addKeyLabel();
 		this.replaceStringListButton();
 		this.addProfileEditorButton();
+		this.addFavoriteStar();
 	}
 
 	// 线宽滑块使用自定义回调，把 MaLiLib 默认的四位小数显示改成一位小数。
@@ -218,6 +221,25 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		this.addWidget(button);
 	}
 
+	// 收藏星贴在控件行最右侧按钮（重置/打开）右边，而不是行尾；
+	// 点击切换收藏，收藏后可在“收藏”标签快速访问该行。
+	private void addFavoriteStar() {
+		if (this.config == null) {
+			return;
+		}
+		int controlsRight = this.x + this.labelWidth + 10 + this.elementWidth;
+		for (WidgetBase widget : this.subWidgets) {
+			if (widget instanceof ButtonBase) {
+				controlsRight = Math.max(controlsRight, widget.getX() + widget.getWidth());
+			}
+		}
+		int starX = FavoriteStarRenderer.clampStarX(
+			FavoriteStarRenderer.rowStarX(controlsRight), this.x, this.getWidth());
+		int starY = FavoriteStarRenderer.rowStarY(this.y, ENTRY_HEIGHT);
+		TweakifyModConfigScreen screen = this.host instanceof TweakifyModConfigScreen target ? target : null;
+		this.addWidget(new FavoriteStarWidget(starX, starY, this.config.getName(), screen));
+	}
+
 	// 用可截断的小号标签替换父类名称标签：窄屏（4x/自动缩放）下避免长名称压到右侧按钮。
 	private void replaceNameLabel() {
 		if (this.config == null) {
@@ -279,6 +301,36 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 			return truncated;
 		}
 		return prefix + truncateToWidth(text.substring(start), available);
+	}
+
+	// 收藏星：未收藏/已收藏两种基础外观，鼠标悬停时换成悬停色并叠加聚焦外框。
+	private static class FavoriteStarWidget extends WidgetBase {
+		private final String configName;
+		private final TweakifyModConfigScreen screen;
+
+		FavoriteStarWidget(int x, int y, String configName, TweakifyModConfigScreen screen) {
+			super(x, y, FavoriteStarRenderer.SIZE, FavoriteStarRenderer.SIZE);
+			this.configName = configName;
+			this.screen = screen;
+		}
+
+		@Override
+		public void render(GuiContext gui, int mouseX, int mouseY, boolean hovered) {
+			FavoriteStarRenderer.draw(gui, this.x, this.y,
+				FavoritesStorage.isConfigFavorite(this.configName), this.isMouseOver(mouseX, mouseY));
+		}
+
+		@Override
+		protected boolean onMouseClickedImpl(MouseButtonEvent event, boolean notHovering) {
+			if (event.input() != ScanCodes.OFFSET_MOUSE_LEFT) {
+				return false;
+			}
+			FavoritesStorage.toggleConfigFavorite(this.configName);
+			if (this.screen != null) {
+				this.screen.onFavoriteToggled();
+			}
+			return true;
+		}
 	}
 
 	// 纯文字的展开/折叠切换控件：仅渲染 + 或 - 文本，鼠标悬停高亮，点击切换。

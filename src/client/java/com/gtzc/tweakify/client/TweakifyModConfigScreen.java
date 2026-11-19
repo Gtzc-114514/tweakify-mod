@@ -2,6 +2,7 @@ package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.ConfigCatalog;
+import com.gtzc.tweakify.config.FavoritesStorage;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigBoolean;
@@ -58,7 +59,9 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		MODIFIED("tweakify-mod.gui.tab.modified"),
 		FIXING("tweakify-mod.gui.tab.fix"),
 		OPTIMIZATION("tweakify-mod.gui.tab.optimization"),
-		TESTING("tweakify-mod.gui.tab.testing");
+		TESTING("tweakify-mod.gui.tab.testing"),
+		// 收藏标签位于“测试”右侧：只显示已被收藏的配置项。
+		FAVORITES("tweakify-mod.gui.tab.favorites");
 
 		private final String translationKey;
 
@@ -137,6 +140,10 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		List<IConfigBase> visible = new ArrayList<>(visibleConfigs(this.currentTab));
 		if (this.currentTab == ConfigTab.TESTING) {
 			visible.add(TweakifyModConfigOptions.PROFILE_EDITOR);
+		} else if (this.currentTab == ConfigTab.FAVORITES
+			&& FavoritesStorage.isConfigFavorite(TweakifyModConfigOptions.PROFILE_EDITOR.getName())) {
+			// 档案编辑器不在配置目录里，不能被树遍历到；收藏后单独追加到收藏标签。
+			visible.add(TweakifyModConfigOptions.PROFILE_EDITOR);
 		}
 		return ConfigOptionWrapper.createFor(visible);
 	}
@@ -208,6 +215,18 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 			this.getListWidget().resetScrollbarPosition();
 		}
 		this.initGui();
+	}
+
+	// 收藏星点击后由条目控件回调：收藏标签需要重新取列表（取消收藏后该行应消失），
+	// 其他标签只需要下一帧重绘星标状态。
+	void onFavoriteToggled() {
+		if (this.currentTab != ConfigTab.FAVORITES) {
+			return;
+		}
+		TweakifyModConfigListWidget list = this.configList();
+		if (list != null) {
+			list.refreshEntries();
+		}
 	}
 
 	private void drawStatsFooter(GuiContext gui) {
@@ -339,13 +358,36 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 	}
 
 	// 按当前标签把可见节点扁平化，同时刷新 NODE_INFO 供条目控件读取。
-	private static List<IConfigBase> visibleConfigs(ConfigTab tab) {
+	// 包私有：供收藏标签的回归测试直接校验可见集合。
+	static List<IConfigBase> visibleConfigs(ConfigTab tab) {
 		List<IConfigBase> result = new ArrayList<>();
 		NODE_INFO.clear();
+		if (tab == ConfigTab.FAVORITES) {
+			// 收藏标签只列收藏项本身（缩进保留真实层级，但不提供展开按钮），
+			// 不把未收藏的父分组当作路径显示，避免收藏清单被分组噪声填满。
+			// 先取一次快照：遍历配置树时逐项查询会把同一把锁重复加几十次。
+			Set<String> favorites = FavoritesStorage.configFavoriteSnapshot();
+			for (ConfigGroupNode root : ROOTS) {
+				appendFavorites(root, 0, result, favorites);
+			}
+			return result;
+		}
 		for (ConfigGroupNode root : ROOTS) {
 			appendVisible(root, 0, result, tab);
 		}
 		return result;
+	}
+
+	// 收藏项按配置树顺序展开为扁平清单：先父项后子项，缩进沿用真实深度。
+	private static void appendFavorites(ConfigGroupNode node, int depth, List<IConfigBase> result,
+										Set<String> favorites) {
+		if (favorites.contains(node.config().getName())) {
+			result.add(node.config());
+			NODE_INFO.put(node.config().getName(), new NodeInfo(depth, false, false));
+		}
+		for (ConfigGroupNode child : node.children()) {
+			appendFavorites(child, depth + 1, result, favorites);
+		}
 	}
 
 	private static void appendVisible(ConfigGroupNode node, int depth, List<IConfigBase> result,
@@ -393,6 +435,8 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 			// 优化标签只放直接在目录里标记为 OPTIMIZATION 的项。
 			case OPTIMIZATION -> category == ConfigCatalog.Tab.OPTIMIZATION;
 			case GENERAL -> category == null || category == ConfigCatalog.Tab.FUNCTION_AND_GENERAL;
+			// 收藏标签由收藏集合驱动，与目录分类无关。
+			case FAVORITES -> false;
 		};
 	}
 }

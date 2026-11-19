@@ -291,6 +291,26 @@ class LangFilesTest {
 		}
 	}
 
+	// 收藏标签与收藏星样式的翻译键必须在四种语言都存在。
+	@Test
+	void favoriteTranslationsExistInEveryLanguage() throws IOException {
+		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+			Set<String> keys = keysOf(code);
+			assertTrue(keys.contains("tweakify-mod.gui.tab.favorites"),
+				"missing favorites tab label in " + code);
+			assertTrue(keys.contains("tweakify-mod.gui.world_list.favorite_delete_blocked"),
+				"missing favorite delete hint in " + code);
+			for (String kind : List.of("name", "prettyName", "comment")) {
+				String key = "tweakify-mod.config.general." + kind + ".favoriteStarStyle";
+				assertTrue(keys.contains(key), "missing " + key + " in " + code);
+			}
+			for (FavoriteStarStyle style : FavoriteStarStyle.values()) {
+				assertTrue(keys.contains(style.translationKey()),
+					"missing " + style.translationKey() + " in " + code);
+			}
+		}
+	}
+
 	// 定位栏新增选项的枚举值翻译键必须在四种语言都存在（描边样式 / 名字时机 / 过滤 / 颜色）。
 	@Test
 	void locatorOptionValueTranslationsExistInEveryLanguage() throws IOException {

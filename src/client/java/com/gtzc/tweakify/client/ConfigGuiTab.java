@@ -21,7 +21,10 @@ public enum ConfigGuiTab implements CodeOptionEntry {
 	OPTIMIZATION(TweakifyModConfig.CONFIG_TAB_OPTIMIZATION, "tweakify-mod.gui.tab.optimization",
 		TweakifyModConfigScreen.ConfigTab.OPTIMIZATION),
 	TESTING(TweakifyModConfig.CONFIG_TAB_TESTING, "tweakify-mod.gui.tab.testing",
-		TweakifyModConfigScreen.ConfigTab.TESTING);
+		TweakifyModConfigScreen.ConfigTab.TESTING),
+	// 收藏标签：默认标签也可设为“收藏”（关闭标签记忆时使用）。
+	FAVORITES(TweakifyModConfig.CONFIG_TAB_FAVORITES, "tweakify-mod.gui.tab.favorites",
+		TweakifyModConfigScreen.ConfigTab.FAVORITES);
 
 	private final String code;
 	private final String translationKey;

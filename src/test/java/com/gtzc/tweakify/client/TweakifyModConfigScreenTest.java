@@ -4,13 +4,18 @@ import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigBoolean;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import com.gtzc.tweakify.config.ConfigCatalog;
+import com.gtzc.tweakify.config.FavoritesStorage;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import com.gtzc.tweakify.util.AsyncFileWriter;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -146,8 +151,46 @@ class TweakifyModConfigScreenTest {
 			TweakifyModConfigScreen.ConfigTab.MODIFIED,
 			TweakifyModConfigScreen.ConfigTab.FIXING,
 			TweakifyModConfigScreen.ConfigTab.OPTIMIZATION,
-			TweakifyModConfigScreen.ConfigTab.TESTING
+			TweakifyModConfigScreen.ConfigTab.TESTING,
+			// 收藏标签固定在“测试”右侧。
+			TweakifyModConfigScreen.ConfigTab.FAVORITES
 		}, TweakifyModConfigScreen.ConfigTab.values());
+	}
+
+	// 收藏标签只显示收藏项本身：按配置树顺序、保留真实缩进，未收藏的父分组不出现。
+	// 取消收藏后重新取列表，该行应立即消失。
+	@Test
+	void favoritesTabShowsOnlyFavoritedOptions(@TempDir Path tempDir) {
+		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
+		try {
+			assertTrue(FavoritesStorage.toggleConfigFavorite("cameraMotion"));
+			assertTrue(FavoritesStorage.toggleConfigFavorite("cameraMotionIntensity"));
+			List<String> names = TweakifyModConfigScreen.visibleConfigs(
+				TweakifyModConfigScreen.ConfigTab.FAVORITES).stream().map(IConfigBase::getName).toList();
+			assertEquals(List.of("cameraMotion", "cameraMotionIntensity"), names);
+			assertFalse(names.contains("smoothScroll"), "unfavorited option must not appear");
+
+			FavoritesStorage.toggleConfigFavorite("cameraMotion");
+			assertFalse(TweakifyModConfigScreen.visibleConfigs(
+				TweakifyModConfigScreen.ConfigTab.FAVORITES).stream()
+				.anyMatch(option -> option.getName().equals("cameraMotion")),
+				"unfavorited option must disappear immediately");
+		} finally {
+			// 等待异步写盘完成任务，避免后台线程在临时目录清理时仍写文件。
+			AsyncFileWriter.drain(15_000L);
+			FavoritesStorage.clearForTest();
+			// 恢复 ALL 标签的 NODE_INFO，避免影响其它用例。
+			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
+		}
+	}
+
+	// 收藏标签由收藏集合驱动，不按目录分类命中。
+	@Test
+	void favoritesTabIsCollectionDriven() {
+		for (IConfigBase option : TweakifyModConfigOptions.ALL_OPTIONS) {
+			assertFalse(TweakifyModConfigScreen.matchesTab(
+				option, TweakifyModConfigScreen.ConfigTab.FAVORITES));
+		}
 	}
 
 	@Test
