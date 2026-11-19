@@ -90,7 +90,7 @@
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
-| `disableFlightDrift` 移除飞行漂移 | 关 | 飞行时松开方向键立即停止水平移动 |
+| `disableFlightDrift` 禁用飞行漂移 | 关 | 飞行时松开方向键立即停止水平移动 |
 | `flightDriftVertical` 垂直飞行影响 | 关 | 松开跳跃/潜行后也立即停止升降 |
 | `autoStepUp` 如履平地 | 关 | 自动跨上 1 格高的方块（像马一样）；仅对本地玩家生效 |
 | `autoStepUpHeight` 跨步高度 | `one_block` | `one_block` 1 格 / `one_and_half` 1.5 格 / `two_blocks` 2 格；越高越容易跨上台阶与斜坡 |
@@ -98,7 +98,7 @@
 | `climbingFastDescend` 向下看加速下降 | 开 | 在梯子、藤蔓上向下看时快速下降 |
 | `climbingFasterAscend` 攀爬上升更快 | 开 | 向上攀爬时移动速度更快 |
 | `climbingJumpFromGround` 攀爬时从地面起跳 | 开 | 贴着可攀爬方块站在地面时也能直接起跳 |
-| `climbingCancelCollision` 无输入时不碰撞减速 | 开 | 没有移动输入时取消攀爬方块边缘的碰撞减速 |
+| `climbingCancelCollision` 无输入时取消碰撞减速 | 开 | 没有移动输入时取消攀爬方块边缘的碰撞减速 |
 | `forceCrawl` 主动爬行 | 关 | 开启总开关并给「爬行按键」绑定按键后，按住强制进入爬行姿态，可钻进 1 格高的空间；仅在单人/局域网主机生效 |
 | `forceCrawlKey` 爬行按键 | 未绑定 | 按住爬行、松开站起 |
 
@@ -135,12 +135,12 @@
 | `highlightPreset1Entities` / `highlightPreset2Entities` / `highlightPreset3Entities` 预设实体 | 空 | 各预设需要高亮的实体 ID 列表，支持 `minecraft:item` 等掉落物实体 |
 | `highlightSingleLayerBedrock` 高亮单层基岩 | 关 | 在扫描半径内（默认 32 格）的单层基岩朝向空气的顶面/底面显示凸出 1 像素的实心小方块，便于寻找下界顶棚的可击穿薄弱点；每秒刷新 6 次，扫描结果未变时复用已有顶点缓存 |
 | `highlightSingleLayerBedrockMaxMarkers` 基岩标记最大数量 | 32 | 单次最多显示的标记数（1 ~ 256）；超出时保留最近的 |
-| `highlightSingleLayerBedrockScanRadius` 扫描半径 | 32 | 扫描单层基岩的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
-| `highlightSingleLayerBedrockColor` 标记颜色 | `gold` | `gold` 金色 / `white` / `red` / `green` / `blue` / `cyan`；只影响小方块颜色，切换后顶点缓存自动重建 |
+| `highlightSingleLayerBedrockScanRadius` 基岩扫描半径 | 32 | 扫描单层基岩的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
+| `highlightSingleLayerBedrockColor` 基岩标记颜色 | `gold` | `gold` 金色 / `white` / `red` / `green` / `blue` / `cyan`；只影响小方块颜色，切换后顶点缓存自动重建 |
 | `barrierVisibility` 屏障可见 | 关 | 周围屏障方块显示与手持屏障物品时相同的原版标记粒子，粒子固定在方块中心并逐方块冷却，不会偏移或重叠；扫描半径与标记间隔可调 |
 | `barrierVisibilityMaxMarkers` 屏障标记最大数量 | 256 | 单次扫描最多保留的标记数（16 ~ 256）；超出时保留离玩家最近的 |
-| `barrierVisibilityScanRadius` 扫描半径 | 32 | 扫描屏障方块的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
-| `barrierVisibilityParticleInterval` 标记间隔 | 60 | 同一方块两次标记粒子之间的间隔（20 ~ 200 tick，20 tick = 1 秒）；越大越省性能、闪烁越慢 |
+| `barrierVisibilityScanRadius` 屏障扫描半径 | 32 | 扫描屏障方块的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
+| `barrierVisibilityParticleInterval` 屏障标记间隔 | 60 | 同一方块两次标记粒子之间的间隔（20 ~ 200 tick，20 tick = 1 秒）；越大越省性能、闪烁越慢 |
 | `durabilityOverlay` 装备耐久显示 | 关 | 在物品栏的耐久条上方叠加耐久文字；满耐久不显示，颜色随剩余耐久由绿转白、黄、红 |
 | `durabilityDisplayMode` 耐久显示内容 | `percent` | `percent` 耐久百分比 / `value` 剩余耐久数值（只显示当前剩余，不显示初始耐久）；两者字号一致 |
 | `durabilityOverlayHotbarOnly` 仅快捷栏显示 | 关 | 只在快捷栏显示耐久文字，背包格子里不显示 |
@@ -150,12 +150,12 @@
 | `statusEffectDurationAlwaysSeconds` 固定按秒显示 | 关 | 始终使用秒数（如 125），不使用分:秒与小时/天缩写；长时间效果会缩小字号避免溢出 |
 | `statusEffectDurationLowThreshold` 低时长阈值 | 0 | 只在剩余时间不高于该秒数时显示（0 ~ 600）；0 表示不过滤，适合只关注即将结束的效果 |
 | `statusEffectDurationColorMode` 时间文字配色 | `auto` | `auto` 剩余 10 秒内变红、30 秒内变黄，其余白色 / `white` / `yellow` / `red` 固定单色 |
-| `attackRangeDisplay` 生物攻击范围 | 关 | 以生物或玩家为中心显示半透明线框攻击范围（颜色可调），半径按原版攻击距离计算；每秒刷新 12 次，条目几何未变时复用已有顶点缓存 |
+| `attackRangeDisplay` 攻击范围显示 | 关 | 以生物或玩家为中心显示半透明线框攻击范围（颜色可调），半径按原版攻击距离计算；每秒刷新 12 次，条目几何未变时复用已有顶点缓存 |
 | `attackRangeDisplayMode` 范围显示方式 | `flat` | `flat` 脚下双圆环 / `sphere` 经纬线框球体 |
 | `attackRangeRenderMode` 范围渲染方式 | `wireframe` | `wireframe` 蓝色线框（无 OIT，性能更好）/ `filled` 半透明实心（观感更完整，可能掉帧） |
 | `attackRangePalette` 范围颜色 | `blue` | `blue` / `red` / `green` / `yellow` / `cyan` / `magenta` / `white`；只改 RGB，透明度仍按渲染方式固定 |
 | `attackRangeIncludeSelf` 显示自己的范围 | 关 | 是否显示本地玩家自己的攻击范围；关闭后只显示其他生物与玩家 |
-| `attackRangeHostileOnly` 只显示敌对生物 | 关 | 只显示僵尸、骷髅等敌对生物；玩家与被动生物不再显示范围 |
+| `attackRangeHostileOnly` 仅显示敌对生物 | 关 | 只显示僵尸、骷髅等敌对生物；玩家与被动生物不再显示范围 |
 | `attackRangeIncludeInvisible` 显示隐身实体 | 关 | 默认不显示隐身实体；开启后隐身生物同样显示攻击范围 |
 | `attackRangeMaxDistance` 范围收集距离 | 48 | 收集攻击范围的最大距离（8 ~ 128 格） |
 | `attackRangeMaxTargets` 最大显示数量 | 64 | 单次最多显示的数量（8 ~ 256）；超出时保留最近的实体 |
@@ -166,7 +166,7 @@
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
 | `disableDimensionTeleport` 禁用维度传送 | 关 | 总开关：关闭时以下各项均不生效 |
-| `dimensionTeleportPlayersOnly` 只拦玩家 | 关 | 只拦截玩家的维度传送，其他实体仍可正常穿过传送门 |
+| `dimensionTeleportPlayersOnly` 仅拦截玩家 | 关 | 只拦截玩家的维度传送，其他实体仍可正常穿过传送门 |
 | `disableNetherPortalTeleport` 禁用地狱门传送 | 开 | 地狱门拦截开关；开启且黑名单为空时拦截所有实体 |
 | `netherPortalTeleportBlacklist` 地狱门传送黑名单 | 空 | 非空时只拦截名单中的实体 |
 | `disableEndPortalTeleport` 禁用末地门传送 | 开 | 末地门拦截开关；开启且黑名单为空时拦截所有实体 |
@@ -193,21 +193,21 @@
 | `survivalPickBlockIncludeFluids` 包含液体 | 开 | 开启时生存取物也处理水/岩浆（背包里有对应的桶就切换）；关闭后退回原版，只取方块与实体 |
 | `quickBurnItem` 便捷焚烧 | 关 | 背包或容器里拿着物品时，把它悬停在岩浆桶或打火石上右键点击即可焚烧；单人/局域网会真正销毁物品，多人服务器会改为丢弃 |
 | `quickBurnItemRequireSneak` 需要潜行焚烧 | 关 | 开启后需按住潜行键再右键才会焚烧，避免整理背包时误触销毁物品 |
-| `piglinGoldArmorSwap` 防猪灵装备切换 | 关 | 附近有猪灵时自动把背包里的金制装备换到身上，猪灵离开后换回；仅在生存或冒险模式生效 |
-| `piglinGoldArmorSwapMode` 切换模式 | `auto` | `auto` 身上没有金制护甲时从背包选一件换上 / `helmet` / `chestplate` / `leggings` / `boots` 只替换指定部位 |
+| `piglinGoldArmorSwap` 猪灵金装自动切换 | 关 | 附近有猪灵时自动把背包里的金制装备换到身上，猪灵离开后换回；仅在生存或冒险模式生效 |
+| `piglinGoldArmorSwapMode` 自动换装模式 | `auto` | `auto` 身上没有金制护甲时从背包选一件换上 / `helmet` / `chestplate` / `leggings` / `boots` 只替换指定部位 |
 | `disableShovelSnowFullBreak` 锹单层铲雪 | 关 | 手持锹右键多层雪层时一次只铲掉一层，不再整块移除 |
 | `shovelSnowDropSnowball` 铲雪掉落雪球 | 开 | 单层铲雪掉落 1 个雪球；关闭后不产生掉落物 |
 | `shovelSnowConsumeDurability` 铲雪消耗耐久 | 开 | 单层铲雪按普通挖掘消耗锹耐久；关闭后不消耗 |
-| `disableSpecifiedMobSpawn` 关闭指定生物生成 | 关 | 列表中的生物不会通过自然、结构、巡逻、增援、鸡骑士、袭击、唤魔者召唤或刷怪笼等世界生成出现；列表为空时不生效；仅在单人/局域网生效 |
+| `disableSpecifiedMobSpawn` 禁用指定生物生成 | 关 | 列表中的生物不会通过自然、结构、巡逻、增援、鸡骑士、袭击、唤魔者召唤或刷怪笼等世界生成出现；列表为空时不生效；仅在单人/局域网生效 |
 | `disabledSpawnEntities` 生物 ID 列表 | 空 | 需要禁止生成的生物 ID 列表（如 `minecraft:zombie`）；为空时不生效 |
 | `disabledSpawnAllowPlayerSpawn` 允许玩家生成 | 开 | 刷怪蛋、命令、繁殖等玩家主动生成的生物不拦截；关闭后这些来源也会被拦截。玩家建造类触发（如铁傀儡、凋灵）恒放行 |
 | `peacefulModeMonsters` 和平模式怪物 | 关 | 允许列表中的怪物在和平难度下生成并保留；列表为空时不生效；仅在单人/局域网生效 |
 | `peacefulModeMonsterEntities` 和平模式生物 ID 列表 | 空 | 和平模式怪物功能使用的生物 ID 列表；为空时不生效 |
-| `peacefulModeMonsterSpawn` 和平模式中生成指定怪物 | 开 | 列表中的怪物可通过自然生成、刷怪笼、试炼刷怪笼和地狱门等来源在和平难度下生成，并跳过和平难度的自动清除；试炼刷怪笼需生成池全部命中列表 |
+| `peacefulModeMonsterSpawn` 和平模式生成怪物 | 开 | 列表中的怪物可通过自然生成、刷怪笼、试炼刷怪笼和地狱门等来源在和平难度下生成，并跳过和平难度的自动清除；试炼刷怪笼需生成池全部命中列表 |
 | `peacefulModeMonsterNoAttack` 和平模式怪物不攻击 | 开 | 列表中的怪物在和平难度下不锁定/攻击玩家；关闭时可正常攻击 |
 | `throwSpawnEgg` 刷怪蛋投掷 | 关 | 像鸡蛋、雪球一样把刷怪蛋投掷出去，命中方块或实体后生成对应生物；对刷怪笼只设置类型且不消耗刷怪蛋；仅在单人/局域网生效 |
 | `throwSpawnEggVelocity` 投掷速度 | 100 | 投掷速度百分比（50 ~ 200，100 = 原版鸡蛋速度） |
-| `throwSpawnEggSneakBypass` 潜行保持原版 | 关 | 开启后潜行时恢复原版放置，不再投掷刷怪蛋 |
+| `throwSpawnEggSneakBypass` 潜行时保持原版 | 关 | 开启后潜行时恢复原版放置，不再投掷刷怪蛋 |
 | `itemGroups` 物品分组 | 关 | 与 `BizCub/inventory-item-groups` 一致的基岩版分组：分类页把楼梯、台阶、羊毛等同类物品折叠成组图标，点击图标上的 `+` / `-` 展开/收起，展开的成员紧跟在图标之后并使用专用底板；悬停在组图标上只显示组名 |
 | `itemGroupsSort` 组内排序 | `default` | `default` 保持物品栏原顺序 / `alphabetical` 按物品 ID 字母序（组图标随之变化） |
 | `itemGroupsShowItems` 显示组内物品 | 关 | 展开状态下图标每 1.5 秒轮播一个组内物品，而不是固定显示首个物品 |
@@ -224,15 +224,15 @@
 | `locatorBarHeadFilter` 玩家过滤 | `all` | `all` 全部 / `include` 仅包含名单 / `exclude` 排除名单；名单为空时 `include` 全部隐藏、`exclude` 全部显示 |
 | `locatorBarHeadIncludedPlayers` 包含名单 | 空 | 与参考实现一致：仅在 `include` 模式生效，名单内玩家保留头像；玩家名可写在条目中并用逗号、分号、冒号或句点分隔，忽略大小写 |
 | `locatorBarHeadExcludedPlayers` 排除名单 | 空 | 与参考实现一致：仅在 `exclude` 模式生效，名单内玩家隐藏；分隔符与包含名单相同 |
-| `locatorBarHeadNearbyOnly` 只显示附近玩家 | 关 | 只给当前已加载（在附近）的玩家画头像，远处航点整条隐藏（含圆点，与参考实现一致） |
+| `locatorBarHeadNearbyOnly` 仅显示附近玩家 | 关 | 只给当前已加载（在附近）的玩家画头像，远处航点整条隐藏（含圆点，与参考实现一致） |
 | `locatorBarCompass` 显示指南针 | 关 | 与参考实现同一套坐标与画法（固定 `高度 - 31`，字母左移 2 像素），边缘淡出；字母画在 HUD 最上层（条带底图、圆点、头像都在它下面）；开启时经验等级数字上移 6 像素避让；Flashback 回放时不显示 |
 | `locatorBarCompassColor` 指南针颜色 | `white` | 方位字母颜色 |
 | `locatorBarCompassShadow` 指南针描边 | 开 | 给方位字母加四向黑色描边，亮色天空下更清晰 |
 | `locatorBarCompassCoordinates` 坐标标记 | 关 | 用 `+Z` / `-X` / `-Z` / `+X` 代替 `S` / `W` / `N` / `E` |
-| `betterBlockPlacement` 更好的放置覆盖 | 关 | 手持方块右键时可直接替换花、高草等植物，不必先打掉；有碰撞的甜浆果丛、水草等不受影响；仅在单人/局域网生效 |
-| `betterBlockPlacementSneakBypass` 潜行保持原版 | 开 | 开启后潜行时不再覆盖植物，按原版流程先打掉植物再放置 |
+| `betterBlockPlacement` 更好的方块放置 | 关 | 手持方块右键时可直接替换花、高草等植物，不必先打掉；有碰撞的甜浆果丛、水草等不受影响；仅在单人/局域网生效 |
+| `betterBlockPlacementSneakBypass` 潜行时保持原版 | 开 | 开启后潜行时不再覆盖植物，按原版流程先打掉植物再放置 |
 | `betterBlockPlacementMode` 覆盖范围 | `flowers` | `flowers` 花草（花、树苗、高草）/ `crops` 花草与作物 / `all` 全部无碰撞植物 |
-| `betterBoneMeal` 更好的骨粉催熟 | 关 | 让骨粉像基岩版一样催熟甘蔗与花；仅在单人/局域网生效 |
+| `betterBoneMeal` 更好的骨粉 | 关 | 让骨粉像基岩版一样催熟甘蔗与花；仅在单人/局域网生效 |
 | `boneMealSugarCane` 骨粉催熟甘蔗 | 开 | 一次骨粉把整株甘蔗催到最高 3 格，只消耗 1 个骨粉 |
 | `boneMealFlowers` 骨粉催熟花 | 开 | 在一格高的花周围长出一片相同的花（凋零玫瑰除外，与基岩版一致） |
 
@@ -262,12 +262,12 @@
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
-| `disableUseItemSlowdown` 禁用使用物品减速 | 关 | 进食、拉弓、举盾时不再降低移速 |
-| `useItemSlowdownExceptions` 减速例外物品 | 空 | 这些物品仍保留原版的使用减速（物品 ID 列表） |
-| `useItemSlowdownKeepPercent` 保留减速 | 0 | 保留原版使用减速的百分比（0 ~ 100）；0 = 完全取消（默认），100 = 与原版相同 |
+| `disableUseItemSlowdown` 禁用使用减速 | 关 | 进食、拉弓、举盾时不再降低移速 |
+| `useItemSlowdownExceptions` 使用减速例外物品 | 空 | 这些物品仍保留原版的使用减速（物品 ID 列表） |
+| `useItemSlowdownKeepPercent` 保留使用减速 | 0 | 保留原版使用减速的百分比（0 ~ 100）；0 = 完全取消（默认），100 = 与原版相同 |
 | `disableSprintFov` 禁用疾跑 FOV 变化 | 关 | 疾跑时视野不再放大；速度药水、飞行、拉弓等其它视野效果保持原版 |
 | `sprintFovIntensity` 保留疾跑视野 | 0 | 保留原版疾跑视野强度的百分比（0 ~ 100）；0 = 完全禁用（默认），100 = 等同原版 |
-| `keepMiningProgressOnItemSwitch` 禁用切换工具挖掘打断 | 关 | 像基岩版一样：挖掘中切换物品不再重置进度，继续挖同一个方块 |
+| `keepMiningProgressOnItemSwitch` 切换工具保留挖掘进度 | 关 | 像基岩版一样：挖掘中切换物品不再重置进度，继续挖同一个方块 |
 | `keepMiningProgressMaxDistance` 保留进度距离 | 0 | 只在玩家与目标方块距离不超过该格数时保留挖掘进度（0 ~ 16）；0 = 不限制（默认），超出后按原版重置 |
 | `climbablePassNoSlowdown` 经过可攀爬方块不减速 | 关 | 走过梯子、藤蔓等可攀爬方块时，蹭到边缘也不再被原版夹紧水平速度；攀爬上升/下滑保持原版 |
 | `climbablePassNoSlowdownSneakOnly` 仅潜行时生效 | 关 | 只在按住潜行键时跳过攀爬方块的水平速度夹紧 |
@@ -293,7 +293,7 @@
 | `hurtShakeKeepDeathTilt` 保留死亡镜头倾斜 | 关 | 开启后关闭受伤抖动时仍保留死亡倒下瞬间的镜头倾斜（默认关闭，连死亡倾斜一起取消） |
 | `disableHurtTint` 禁用受伤变红 | 关 | 受伤时不再叠加红色 overlay；死亡变红与受伤闪白保持原版 |
 | `hurtTintKeepWhiteFlash` 保留受伤闪白 | 开 | 关闭受伤变红时仍保留受伤瞬间的白色闪光；关闭后受伤完全不叠加 overlay |
-| `thirdPersonPlayerName` 第三人称名字显示 | 关 | 第三人称（背后/正面）也显示玩家自己的名字；第一人称、隐身、旁观和隐藏 HUD 时保持原版 |
+| `thirdPersonPlayerName` 第三人称显示名字 | 关 | 第三人称（背后/正面）也显示玩家自己的名字；第一人称、隐身、旁观和隐藏 HUD 时保持原版 |
 | `thirdPersonPlayerNameSneakOnly` 仅潜行时显示 | 关 | 只在按住潜行键时显示自己的名字 |
 | `betterInvisibility` 更好的隐身 | 关 | 隐身时不再显示药水粒子，身上的装备与第三人称手持物品也一并隐藏 |
 | `betterInvisibilityEffectParticles` 隐藏药水粒子 | 开 | 隐身时不再显示药水效果粒子 |
@@ -310,21 +310,21 @@
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
 | `disableOverlayEffects` 禁用屏幕覆盖层 | 关 | 总开关：关闭细雪、岩浆、水下等全屏覆盖效果；下面的子开关分别控制 |
-| `disablePowderSnowOverlay` 禁用细雪覆盖 | 开 | 陷入细雪时不再显示冰霜边框覆盖层 |
-| `disableLavaOverlay` 禁用岩浆覆盖 | 开 | 在岩浆中不再显示橙红色全屏覆盖层 |
-| `disableWaterOverlay` 禁用水下覆盖 | 开 | 水下不再显示蓝色水面覆盖层 |
+| `disablePowderSnowOverlay` 禁用细雪覆盖层 | 开 | 陷入细雪时不再显示冰霜边框覆盖层 |
+| `disableLavaOverlay` 禁用岩浆覆盖层 | 开 | 在岩浆中不再显示橙红色全屏覆盖层 |
+| `disableWaterOverlay` 禁用水下覆盖层 | 开 | 水下不再显示蓝色水面覆盖层 |
 | `disableWaterFog` 禁用水下雾 | 开 | 水下不再有雾与蓝色滤镜（26.3 的雾是独立系统） |
 | `disableLavaFog` 禁用岩浆雾 | 开 | 岩浆里不再有橙色雾 |
 | `disablePowderSnowFog` 禁用细雪雾 | 开 | 陷入细雪时不再有白雾 |
-| `forceCloseLoadingScreen` 强制关闭加载屏幕 | 关 | 加载世界时立刻关闭“正在加载地形”界面，提前看到世界；世界仍在后台继续加载 |
-| `forceCloseLoadingScreenInstant` 完全关闭加载屏幕 | 关 | 直接关闭加载界面（完全跳过，可能短暂掉入世界）；仅在上一项开启时生效 |
-| `forceCloseLoadingScreenKeepFirst` 保留加载界面 | 关 | 不跳过加载界面的文字与进度（背景和世界仍正常加载） |
-| `forceCloseLoadingScreenSkipResourcePackFade` 资源包加载加速 | 开 | 去掉资源包加载屏幕的淡入淡出并立即移除覆盖层（资源加载完成后才进入游戏） |
+| `forceCloseLoadingScreen` 强制关闭加载界面 | 关 | 加载世界时立刻关闭“正在加载地形”界面，提前看到世界；世界仍在后台继续加载 |
+| `forceCloseLoadingScreenInstant` 完全跳过加载界面 | 关 | 直接关闭加载界面（完全跳过，可能短暂掉入世界）；仅在上一项开启时生效 |
+| `forceCloseLoadingScreenKeepFirst` 保留加载文字进度 | 关 | 不跳过加载界面的文字与进度（背景和世界仍正常加载） |
+| `forceCloseLoadingScreenSkipResourcePackFade` 跳过资源包淡入淡出 | 开 | 去掉资源包加载屏幕的淡入淡出并立即移除覆盖层（资源加载完成后才进入游戏） |
 | `disableNetherPortalEffect` 禁用地狱门特效 | 关 | 进入下界传送门时不再显示紫色覆盖层、镜头旋转与传送门音效；关界面与传送逻辑不变 |
 | `disableNetherPortalOverlay` 禁用紫色覆盖层 | 开 | 站在传送门里时不再显示紫色半透明覆盖层 |
 | `disableNetherPortalCamera` 禁用镜头旋转 | 开 | 站在传送门里时镜头不再绕视角旋转 |
 | `disableNetherPortalSound` 禁用传送门音效 | 开 | 不再播放传送门的循环音效与传送瞬间的音效 |
-| `disableResourcePackCompatibilityCheck` 关闭资源包兼容性提示 | 关 | 资源包界面不再显示不兼容标记，也不会在启用不兼容资源包时弹出确认提示；仅影响资源包，不影响数据包 |
+| `disableResourcePackCompatibilityCheck` 禁用资源包兼容性检查 | 关 | 资源包界面不再显示不兼容标记，也不会在启用不兼容资源包时弹出确认提示；仅影响资源包，不影响数据包 |
 | `resourcePackCompatibilityAlsoDataPacks` 同时忽略数据包 | 关 | 数据包界面也不显示不兼容标记、不弹确认框 |
 
 #### 提示文本
@@ -344,34 +344,34 @@
 | `underwaterMiningPenaltyKeep` 保留水下惩罚 | 0 | 保留原版水下挖掘减速的百分比（0 ~ 100）；0 = 完全去掉（默认），100 = 与原版相同 |
 | `disableAirMiningPenalty` 禁用空中挖掘惩罚 | 关 | 离地挖掘时不再额外减速 |
 | `airMiningPenaltyKeep` 保留空中惩罚 | 0 | 保留原版空中挖掘减速的百分比（0 ~ 100）；0 = 完全去掉（默认），100 = 与原版相同 |
-| `disableCurseEnchantmentRestriction` 诅咒附魔可移除 | 关 | 砂轮可以去除诅咒附魔（原版会保留诅咒）；仅在单人/局域网生效 |
+| `disableCurseEnchantmentRestriction` 移除诅咒附魔 | 关 | 砂轮可以去除诅咒附魔（原版会保留诅咒）；仅在单人/局域网生效 |
 | `curseRemovalScope` 诅咒移除范围 | `all` | `all` 全部诅咒 / `binding_only` 仅绑定诅咒 / `vanishing_only` 仅消失诅咒；其它模组的诅咒仅在 `all` 下移除 |
 | `removeEnchantmentConflicts` 移除附魔冲突 | 关 | 铁砧合并装备时忽略附魔互斥限制，可以把锋利与亡灵杀手等互斥附魔合到同一件装备上；仅在单人/局域网生效 |
 | `removeEnchantmentConflictsSameGroupOnly` 仅同类附魔 | 关 | 只解除同一互斥组（同一 `exclusive_set` 标签）内部的限制；关闭时解除全部互斥限制 |
-| `disableTooExpensive` 禁用附魔过于昂贵 | 关 | 铁砧花费达到 40 级时不再提示“过于昂贵”，结果可以直接取出，等级不足也能取走（等级最低到 0）；仅在单人/局域网生效 |
-| `tooExpensiveMaxLevelCost` 费用上限 | 0 | 可承受的最大经验等级花费（0 ~ 1000）；0 = 不限制（默认），超过后按下一项决定阻止还是仅提示 |
-| `tooExpensiveWarnOnly` 超出仅提示 | 关 | 花费超过费用上限时仍显示“过于昂贵”提示，但允许取出；关闭时超过上限按原版阻止 |
-| `visibleTraders` 可见交易显示 | 关 | 在村民交易界面显示未来等级（锁定）的交易，村民升级时按顺序解锁；仅在单人/局域网生效 |
-| `visibleTradersOnlyLocked` 只显示锁定交易 | 关 | 交易界面只显示尚未解锁的未来等级交易，隐藏当前等级已解锁的交易；这些行均为锁定状态，不能点击 |
+| `disableTooExpensive` 禁用过于昂贵 | 关 | 铁砧花费达到 40 级时不再提示“过于昂贵”，结果可以直接取出，等级不足也能取走（等级最低到 0）；仅在单人/局域网生效 |
+| `tooExpensiveMaxLevelCost` 经验花费上限 | 0 | 可承受的最大经验等级花费（0 ~ 1000）；0 = 不限制（默认），超过后按下一项决定阻止还是仅提示 |
+| `tooExpensiveWarnOnly` 超限仅提示 | 关 | 花费超过费用上限时仍显示“过于昂贵”提示，但允许取出；关闭时超过上限按原版阻止 |
+| `visibleTraders` 显示锁定交易 | 关 | 在村民交易界面显示未来等级（锁定）的交易，村民升级时按顺序解锁；仅在单人/局域网生效 |
+| `visibleTradersOnlyLocked` 仅显示锁定交易 | 关 | 交易界面只显示尚未解锁的未来等级交易，隐藏当前等级已解锁的交易；这些行均为锁定状态，不能点击 |
 | `keepLastTorch` 不使用最后一根火把 | 关 | 放置火把时如果背包里只剩最后一根则不会放置；仅在单人/局域网生效 |
-| `keepLastTorchMinCount` 保留数量 | 1 | 剩余火把不超过该数量时阻止放置（1 ~ 8，默认 1 = 只保留最后一根） |
-| `disableSmithingTemplateConsumption` 锻造模板不消耗 | 关 | 锻造台取出成品时保留锻造模板，不再消耗；仅在单人/局域网生效 |
+| `keepLastTorchMinCount` 保留火把数量 | 1 | 剩余火把不超过该数量时阻止放置（1 ~ 8，默认 1 = 只保留最后一根） |
+| `disableSmithingTemplateConsumption` 禁用锻造模板消耗 | 关 | 锻造台取出成品时保留锻造模板，不再消耗；仅在单人/局域网生效 |
 | `smithingTemplateKeepChance` 保留概率 | 100 | 锻造模板被保留的概率（0 ~ 100）；100 = 必定保留（默认），0 = 完全按原版消耗 |
 | `itemDespawnTime` 掉落物消失时间 | 6000（原版 5 分钟） | 滑块调节 60 ~ 36000 tick（20 tick = 1 秒）；仅在单人/局域网生效 |
 | `itemDespawnPlayerDroppedOnly` 仅玩家丢弃物生效 | 关 | 只有玩家主动丢弃的掉落物按上面的时间消失，怪物与方块掉落保持原版 |
 | `itemDespawnTimeXpOrbs` 经验球消失时间 | 6000 | 经验球的消失时间（tick），范围同上 |
-| `disableFlatWorldSlimeSpawn` 超平坦无史莱姆 | 关 | 超平坦世界不再生成史莱姆；仅在单人/局域网生效 |
+| `disableFlatWorldSlimeSpawn` 禁用超平坦史莱姆生成 | 关 | 超平坦世界不再生成史莱姆；仅在单人/局域网生效 |
 | `flatWorldSlimeSpawnAllWorlds` 对所有世界生效 | 关 | 所有世界类型都不生成史莱姆，不再只限超平坦 |
-| `disableBedTooFar` 禁用床太远 | 关 | 离床再远右键也能直接入睡，不再提示“离床太远”；仅在单人/局域网生效 |
-| `bedTooFarMaxDistance` 最大距离 | 0 | 允许入睡的最大距离（0 ~ 128 格）；0 = 不限制（默认） |
+| `disableBedTooFar` 禁用床距离限制 | 关 | 离床再远右键也能直接入睡，不再提示“离床太远”；仅在单人/局域网生效 |
+| `bedTooFarMaxDistance` 允许入睡距离 | 0 | 允许入睡的最大距离（0 ~ 128 格）；0 = 不限制（默认） |
 | `ironGolemRideMinecart` 铁傀儡进矿车 | 关 | 空矿车碰到铁傀儡时，让铁傀儡坐进矿车；只限普通矿车，漏斗/运输/动力/TNT 等特种矿车不拉铁傀儡；仅在单人/局域网生效 |
 | `ironGolemRideMinecartMaxDistance` 玩家附近距离 | 0 | 只在玩家附近自动上车（0 ~ 64 格）；0 = 不限制（默认） |
 | `signOpenContainer` 穿牌打开容器 | 关 | 准星对准告示牌时直接打开它背后（或相邻）的容器；潜行右键默认仍按原版编辑告示牌 |
-| `signOpenContainerSneakBypass` 潜行保持原版 | 开 | 开启时潜行仍编辑告示牌；关闭后潜行也能穿牌打开容器 |
+| `signOpenContainerSneakBypass` 潜行时保持原版 | 开 | 开启时潜行仍编辑告示牌；关闭后潜行也能穿牌打开容器 |
 | `snowGolemBiomeImmunity` 雪傀儡不受群系影响 | 关 | 温暖或干燥群系不再让雪傀儡因群系属性融化；雨、水和熔岩伤害仍按原版；仅在单人/局域网生效 |
 | `snowGolemBiomeImmunityOverworldOnly` 仅主世界生效 | 关 | 只在主世界免疫群系融化；下界与末地仍按原版群系属性融化 |
 | `wartBlockDecomposition` 疣块分解 | 关 | 合成格里单独放一个下界疣块，结果槽直接产出 9 个下界疣（原版已有配方时优先走原版）；仅在单人/局域网生效 |
-| `wartBlockDecompositionOutput` 产出数量 | 9 | 分解一个下界疣块得到的下界疣数量（1 ~ 9） |
+| `wartBlockDecompositionOutput` 疣块产出数量 | 9 | 分解一个下界疣块得到的下界疣数量（1 ~ 9） |
 
 </details>
 
@@ -391,7 +391,7 @@
 | `fixMouseButtonInventory` 物品栏鼠标按键修复 | 关 | 修复 MC-577：物品栏里绑定到鼠标键的「关闭背包」与「丢弃物品」不再被吞掉；Ctrl+丢弃键仍按原版丢整组 |
 | `chatLagFix` 聊天卡顿修复 | 关 | 修复 MC-247973：收到聊天消息时改为后台拉取屏蔽名单，避免主线程同步网络请求卡顿；首次消息先按未屏蔽处理，后台完成后生效 |
 | `experienceBarHighLevelFix` 经验条高等级修复 | 关 | 修复 MC-79545：等级极高时经验需求整数溢出为负数，经验条不再整条消失；正常等级与原版完全一致 |
-| `bookGuiVerticalCenterFix` 书本界面垂直居中 | 关 | 修复 MC-61489：书本查看与书与笔编辑界面向下移动，整体更居中；底部按钮不再贴着屏幕边缘 |
+| `bookGuiVerticalCenterFix` 书本界面居中修复 | 关 | 修复 MC-61489：书本查看与书与笔编辑界面向下移动，整体更居中；底部按钮不再贴着屏幕边缘 |
 | `potionTooltipCategoryFix` 药水效果分类修复 | 关 | 修复 MC-84661 / MC-170462：药水类物品提示中的「发光」与「不祥之兆」按有害效果显示为红色，不再误显示为中性效果的蓝色；其它效果不变 |
 | `shieldBlockHurtSoundFix` 举盾受伤音效修复 | 关 | 修复 MC-105068：完全格挡攻击时不再播放玩家受伤音效，避免叠在盾牌格挡/禁用音效上；部分格挡仍有伤害时保持原版；仅在单人/局域网生效 |
 | `spectatorOverlayFix` 旁观者覆盖层修复 | 关 | 修复 MC-217716：进入旁观者模式后不再渲染反胃与下界传送门覆盖层；其它游戏模式保持原版 |
@@ -427,8 +427,8 @@
 | `favoriteStarStyle` 收藏星样式 | `star` | `star` 自绘星形 / `nether_star` 原版下界之星；同时作用于配置行右侧与存档列表左侧的收藏星 |
 | `scrollListMemory` 滚动列表记忆 | 开 | 记住列表滚到了哪里，关闭界面再打开回到上次位置 |
 | `scrollListMemoryPersist` 跨重启记忆 | 关 | 把滚动位置写入 `config/tweakify-mod-scroll-memory.json`，重启游戏后仍然生效 |
-| `malilibScrollMemory` MaLiLib 配置界面 | 开 | 记忆 MaLiLib 配置界面（含本模组配置界面）的滚动位置 |
-| `modMenuScrollMemory` Mod Menu 模组列表 | 开 | 记忆 Mod Menu 模组列表的滚动位置；未安装 Mod Menu 时不生效 |
+| `malilibScrollMemory` MaLiLib 界面 | 开 | 记忆 MaLiLib 配置界面（含本模组配置界面）的滚动位置 |
+| `modMenuScrollMemory` Mod Menu 列表 | 开 | 记忆 Mod Menu 模组列表的滚动位置；未安装 Mod Menu 时不生效 |
 | `searchHighlight` 搜索关键词高亮 | 开 | 搜索命中的部分改用金色显示（本地化名称与英文配置键都高亮）；多个关键词用 `\|` 分隔 |
 | `smoothScroll` 平滑滚动与拖动 | 开 | 为配置界面列表、创造物品栏、聊天栏与 Mod Menu 列表启用平滑滚动；配置界面还支持按住左键拖动列表（从名称/空白处起拖、移动几像素生效，不影响按钮与滑块）；创造栏与物品分组兼容 |
 | `smoothScrollConfigList` 配置界面列表 | 开 | 平滑滚动 + 左键拖动只作用于 MaLiLib 配置界面 |
@@ -460,7 +460,7 @@
 | `debugProbeReport` 钩子探针报表 | 未绑定 | 纯快捷键动作：按下后把已激活的探针输出到聊天栏（或剪贴板，见下一项） |
 | `debugProbeReportCopy` 探针输出到剪贴板 | 关 | 开启后探针报表写入剪贴板（每行一个钩子），不再输出到聊天栏 |
 | `debugEnabledFeaturesReport` 已启用功能报表 | 未绑定 | 纯快捷键动作：按下后把已启用的根功能开关名称输出到聊天栏 |
-| `debugEnabledFeaturesReportCopy` 输出到剪贴板 | 关 | 开启后报表写入剪贴板（每行一个开关），不再输出到聊天栏 |
+| `debugEnabledFeaturesReportCopy` 报表输出到剪贴板 | 关 | 开启后报表写入剪贴板（每行一个开关），不再输出到聊天栏 |
 
 </details>
 
