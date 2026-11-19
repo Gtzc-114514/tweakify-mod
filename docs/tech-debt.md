@@ -27,6 +27,7 @@
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-16，见详情） |
 | T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 暂缓，第 1–5 项已预防性实施、待采样判定（最近复评 2026-11-18，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置 JSON 序列化仍在主线程；输入均为不可变数据，可移入后台 worker / 写盘线程 | 暂缓，成本未采样，达标前不引入后台构建（最近复评 2026-11-17，见详情） |
+| T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
 
 > v1.1.0 复评（2026-11-16）：T1 已通过真实 LevelChunk GameTest 闭环；T2 维持“已修复”；
 > T3/T4 仍未达到闭环条件（分别缺少实机 profiler 与 Mixin 集成测试），本轮只更新 T3/T4 的评估记录与缓解说明。
@@ -34,6 +35,8 @@
 >
 > 2026-11-17 新增 T5/T6：分别覆盖 HUD/GUI 每帧重复计算与「几何重建 + 配置序列化」后台化候选。
 > 两条均为桌面复核后的暂缓条目；T5 第 1–5 项已预防性实施（见详情），等待采样判定。
+>
+> v1.1.5（2026-11-20）新增 T7 并直接闭环：窄窗口下收藏星改为「放不下即隐藏」，不再夹到重置按钮上方；修复提交 `7b05164`，发布记录见 [`docs/release-notes/v1.1.5.md`](release-notes/v1.1.5.md)。
 
 ## T1 详情：section 预筛的集成测试缺口
 
@@ -274,6 +277,34 @@
   `TweakifyModConfigTest`、`AsyncFileWriterTest` 增加「快照序列化 JSON 与直接 `toJson` 内容及键序一致」
   与提交顺序断言；手动在 256 上限下跑一次渲染回归；`gradlew test` 与 `gradlew build`。
 
+## T7 详情：窄窗口行内收藏星与重置按钮重叠
+
+- **修复前现状**：`FavoriteStarRenderer.clampStarX` 会把星标夹回行内；
+  `TweakifyModConfigOptionWidget.addFavoriteStar` 以「控件行最右按钮右边界 + 2」为期望位置。
+  当 `browserEntryWidth - maxLabelWidth - 10 - RIGHT_RESERVE < MIN_CONFIG_WIDTH(120)` 时，
+  `effectiveConfigWidth` 被 120 的下限抬高，控件与重置按钮溢出预留区；星标被夹到行尾后，
+  左边界落进重置按钮矩形（按钮宽 20、星标 16）。星标后加入 `subWidgets`、最后渲染，
+  会盖住重置按钮右半部分；点击由 `WidgetContainer.onMouseClicked` 按顺序命中重置按钮，收藏星失效。
+- **原影响**：仅出现在极端窄窗口（4x/自动缩放叠加长名称，约行宽 < `maxLabelWidth + 186`）；
+  表现为视觉重叠与星标不可点，正常窗口不受影响；重置按钮本身的功能不受损（只是星标被抢）。
+- **采用方案**：星标定位改为「能完整落在行内才显示」：
+  `FavoriteStarRenderer.starXIfFits(controlsRight, rowX, rowWidth)` 只在星标（16px + 2px 右留白）
+  完整落在行内时返回位置，否则返回 `-1`；`addFavoriteStar` 收到 `-1` 直接不添加星标。
+  正常行仍在重置/打开按钮右边 2px；删除 `clampStarX`，不再把星标挪到重叠位置。
+- **修复记录（v1.1.5，`7b05164`）**：`FavoriteStarRenderer.clampStarX` → `starXIfFits`；
+  `TweakifyModConfigOptionWidget.addFavoriteStar` 增加空间不足分支；
+  `FavoriteStarStyleTest` 新增 `starIsHiddenWhenRowCannotFitIt`（刚好放下 / 少 1 像素 /
+  按钮溢出 / 极端窄行），替换旧的 clamp 测试；发布记录见
+  [`docs/release-notes/v1.1.5.md`](release-notes/v1.1.5.md) 与
+  [`docs/release-pipeline.md`](release-pipeline.md) 的 v1.1.5 验证记录（run `44593915842`）。
+- **验证**：`gradlew test` 706 个单测通过；`starIsHiddenWhenRowCannotFitIt` 四个边界全部通过，
+  正常布局断言 `rowStarSitsRightOfTheResetButtonAndStaysClear` 继续通过；`gradlew build` 与
+  6 个 GameTest 通过；v1.1.5 release 流水线 11 个步骤全绿。
+- **回归条件**：若重新允许星标在空间不足时「夹到其它位置」，或调整 `RIGHT_RESERVE` /
+  `MIN_CONFIG_WIDTH` 让控件再次溢出预留区并与星标相交，重开本条；正常窗口下星标位置断言
+  （`rowStarSitsRightOfTheResetButtonAndStaysClear`）与窄行隐藏断言（`starIsHiddenWhenRowCannotFitIt`）
+  作为回归基线。
+
 ## 与既有清单的关系
 
 | 文件 | 范围 |
@@ -282,4 +313,4 @@
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
 | `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T5/T6 复用其 §三/§四 的采集步骤与线程名口径，不新增独立清单；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
-| 本文件 | 测试覆盖与性能取舍类技术债（T1–T6）；不搬运上述条目，避免两处维护漂移 |
+| 本文件 | 测试覆盖与性能取舍类技术债（T1–T7）；不搬运上述条目，避免两处维护漂移 |
