@@ -208,7 +208,9 @@ public abstract class CreativeModeInventoryGridMixin {
 			original.call(gui);
 			return;
 		}
-		this.tweakify$pushGridClip(gui);
+		// 原版高亮是 24x24（比槽位外扩 4 像素）：第 1 行在半行偏移下会被网格上沿裁掉大半，
+		// 这里对该行单独放开上边界（最多到面板顶部，不越过面板），其余行仍按网格矩形裁剪。
+		this.tweakify$pushClip(gui, SmoothScrolling.hoverHighlightClipTop(this.hoveredSlot.y, shift));
 		Matrix3x2fStack pose = gui.pose();
 		pose.pushMatrix();
 		pose.translate(0.0f, -shift);
@@ -257,7 +259,13 @@ public abstract class CreativeModeInventoryGridMixin {
 	// 调用时必须在额外的平移之前推入，保证裁剪区与网格矩形一致。
 	@Unique
 	private void tweakify$pushGridClip(GuiGraphicsExtractor gui) {
-		gui.enableScissor(GRID_X, GRID_Y, GRID_X + GRID_WIDTH, GRID_Y + GRID_HEIGHT);
+		this.tweakify$pushClip(gui, GRID_Y);
+	}
+
+	// 以自定义上边界推入网格矩形裁剪：网格不包含的部分不会画到标签栏/面板外。
+	@Unique
+	private void tweakify$pushClip(GuiGraphicsExtractor gui, int top) {
+		gui.enableScissor(GRID_X, top, GRID_X + GRID_WIDTH, GRID_Y + GRID_HEIGHT);
 	}
 
 	@Unique

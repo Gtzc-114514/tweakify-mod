@@ -84,6 +84,24 @@ class SmoothScrollingTest {
 		SmoothScrolling.resetCreativeGridState();
 	}
 
+	// 首行悬停高亮比槽位外扩 4px：半行偏移时只放开首行的上边界，其余行保持网格上沿，
+	// 且最多到面板顶部（0），不会画到标签栏。
+	@Test
+	void hoverHighlightClipTopOnlyRelaxesFirstRow() {
+		assertEquals(SmoothScrolling.CREATIVE_GRID_Y,
+			SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y + 18, 7),
+			"第二行及以后仍按网格上沿裁剪");
+		assertEquals(SmoothScrolling.CREATIVE_GRID_Y - 4,
+			SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y, 0),
+			"首行静止时放开 4px 外扩");
+		assertEquals(SmoothScrolling.CREATIVE_GRID_Y - 4 - 5,
+			SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y, 5));
+		assertEquals(0, SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y, 17),
+			"最多到面板顶部，不越过面板");
+		assertEquals(0, SmoothScrolling.hoverHighlightClipTop(SmoothScrolling.CREATIVE_GRID_Y, 99),
+			"异常大的偏移也不能为负");
+	}
+
 	// 只有物品格内才允许做坐标补偿：背包/快捷槽在格子下方，必须保持原始坐标。
 	@Test
 	void insideCreativeGridCoversGridOnly() {

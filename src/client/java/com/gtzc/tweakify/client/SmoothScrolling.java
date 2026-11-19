@@ -23,6 +23,8 @@ public final class SmoothScrolling {
 	public static final int CREATIVE_SLOT_SIZE = 18;
 	// 物品格共 9x5 = 45 个槽位（背包/快捷栏槽位不在此范围）。
 	private static final int CREATIVE_SLOT_COUNT = 45;
+	// 原版悬停高亮贴图是 24x24，比槽位向四周外扩 4 像素。
+	private static final int CREATIVE_HOVER_OVERHANG = 4;
 
 	// Mod Menu 列表控件用类名判断：它是可选依赖，运行时不能直接引用类，避免未安装时类加载失败。
 	private static final String MOD_MENU_LIST_CLASS = "com.terraformersmc.modmenu.gui.widget.ModListWidget";
@@ -131,6 +133,15 @@ public final class SmoothScrolling {
 		return creativeMenuRow >= 0 && creativeGridActive()
 			&& slotIndex >= 0 && slotIndex < CREATIVE_SLOT_COUNT
 			? creativeMenuRow * 9 + slotIndex : -1;
+	}
+
+	// 悬停高亮绘制时的裁剪上边界：第 1 行在半行偏移下高亮会向上外扩 4+shift 像素，
+	// 单独放开上边界（最多到面板顶部 0，不越过面板），其余行仍按网格上沿裁剪。
+	public static int hoverHighlightClipTop(int slotY, int shiftPixels) {
+		if (slotY > CREATIVE_GRID_Y) {
+			return CREATIVE_GRID_Y;
+		}
+		return Math.max(0, CREATIVE_GRID_Y - CREATIVE_HOVER_OVERHANG - Math.max(0, shiftPixels));
 	}
 
 	// 创造栏是否用自绘网格（可滚动且子开关开启）。
