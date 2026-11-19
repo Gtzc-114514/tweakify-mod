@@ -1,10 +1,34 @@
+<div align="center">
+
+<img src="docs/icon-128.png" width="96" alt="Tweakify Mod icon">
+
 # Tweakify Mod
 
-Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不可配置的行为整理成可开关、可绑定快捷键的选项，并提供基于 MaLiLib 的统一配置界面；配置修改即时持久化，专用服务器无需安装。
+**把原版里零散、不可配置的行为，整理成可开关、可绑定快捷键的选项。**
 
-> 纯客户端模组（`environment: client`）；涉及服务端判定的功能仅在单人 / 局域网世界生效。
+![Minecraft](https://img.shields.io/badge/Minecraft-26.3-0ea5e9?style=flat-square)
+![Fabric](https://img.shields.io/badge/Fabric-0.20.1%2B-f59e0b?style=flat-square)
+![Environment](https://img.shields.io/badge/Env-Client-8b5cf6?style=flat-square)
+![Requires](https://img.shields.io/badge/Requires-MaLiLib-red?style=flat-square)
 
-## 功能概览
+</div>
+
+[快速开始](#quick-start) · [功能一览](#features) · [配置文件](#config-file) · [环境要求](#requirements) · [命令](#commands)
+
+> 纯客户端模组（`environment: client`），专用服务器无需安装；涉及服务端判定的功能仅在单人 / 局域网世界生效。
+
+<a name="quick-start"></a>
+
+## 🚀 快速开始
+
+1. 安装 **Fabric Loader**（>= 0.20.1），用它启动 Minecraft **26.3**（需要 Java 25 运行时）。
+2. 从 [Releases](https://github.com/Gtzc-114514/tweakify-mod/releases) 下载本模组的 jar，连同必需的 **Fabric API** 一起放进 `.minecraft/mods/`。
+3. 安装 **MaLiLib**（必需，配置界面依赖它），同样放进 `mods/`。
+4. 可选：安装 **Mod Menu**，在模组列表里获得本模组的配置入口；不装也能用 `G + C` 或 `/fconfig` 打开配置界面。
+
+进游戏后按 `G + C` 打开配置界面即可开始调整；完整版本要求见下方「环境要求」一节。
+
+## ✨ 功能概览
 
 功能按配置界面顶部的标签组织，与游戏内看到的分组一致：
 
@@ -14,7 +38,9 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 - **优化** — MiniHUD 掉帧优化。
 - **通用** — 界面语言、打开配置界面的快捷键、标签记忆、滚动列表记忆、搜索关键词高亮与平滑滚动（配置列表 + 创造栏 + 聊天栏 + Mod Menu）。
 
-## 环境要求
+<a name="requirements"></a>
+
+## 🧩 环境要求
 
 | 项 | 版本 |
 | --- | --- |
@@ -27,13 +53,16 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | MiniHUD | 0.41.2（可选，仅用于 MiniHUD 掉帧优化） |
 | Java | 25 |
 
-## 功能一览
+<a name="features"></a>
 
-下面按配置界面的标签分节。每行以 `配置字段` 开头，后接便于识别的中文名；「默认」列是新生成配置文件时的初始值。说明中标注「仅在单人/局域网生效」的功能，判定发生在集成服务端，专用服务器上不会生效。
+## 📖 功能一览
 
-### 功能
+下面按配置界面的标签分节（默认折叠，点击分类标题展开）。每行以 `配置字段` 开头，后接便于识别的中文名；「默认」列是新生成配置文件时的初始值。说明中标注「仅在单人/局域网生效」的功能，判定发生在集成服务端，专用服务器上不会生效。
 
-新增原版没有的行为，也是快捷键支持最完整的一组。
+> **已知问题**：MC 26.3 在 **Vulkan 后端 + NVIDIA 驱动**下渲染实体描边会崩溃（`nvoglv64.dll`）。使用实体高亮时请把图形 API 设为 OpenGL。
+
+<details>
+<summary><b>功能 — 新增原版没有的行为，也是快捷键支持最完整的一组</b></summary>
 
 #### 交互冷却与副手回退
 
@@ -128,8 +157,6 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `attackRangeMaxTargets` 最大显示数量 | 64 | 单次最多显示的数量（8 ~ 256）；超出时保留最近的实体 |
 | `attackRangeEntities` 攻击范围实体 | 空 | 需要显示范围的生物/玩家 ID 列表；为空时显示全部生物与玩家 |
 
-> 已知问题：MC 26.3 在 **Vulkan 后端 + NVIDIA 驱动**下渲染实体描边会崩溃（`nvoglv64.dll`）。使用实体高亮时请把图形 API 设为 OpenGL。
-
 #### 维度传送
 
 | 功能 | 默认 | 说明 |
@@ -222,9 +249,10 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `chatInputMemory` 聊天框内容记忆 | 关 | 关闭聊天框后保留已输入但未发送的内容，下次打开聊天框时自动恢复；发送消息后清空 |
 | `chatInputMemoryIgnoreCommands` 不记忆命令 | 关 | 开启后以 `/` 开头的命令草稿不再记忆，避免下次打开聊天框时误执行未发送的命令 |
 
-### 修改
+</details>
 
-调整原版规则，行为上更接近基岩版或其它工具链的常见做法。
+<details>
+<summary><b>修改 — 调整原版规则，行为上更接近基岩版或其它工具链的常见做法</b></summary>
 
 #### 移动与挖掘
 
@@ -341,7 +369,10 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `wartBlockDecomposition` 疣块分解 | 关 | 合成格里单独放一个下界疣块，结果槽直接产出 9 个下界疣（原版已有配方时优先走原版）；仅在单人/局域网生效 |
 | `wartBlockDecompositionOutput` 产出数量 | 9 | 分解一个下界疣块得到的下界疣数量（1 ~ 9） |
 
-### 修复
+</details>
+
+<details>
+<summary><b>修复 — 修正原版瑕疵</b></summary>
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
@@ -367,14 +398,20 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `skeletonAimingFix` 骷髅瞄准修复 | 关 | 修复 MC-121706：骷髅与幻术师射箭时视线随目标上下；仅在单人/局域网生效 |
 | `saplingGrowthFix` 2×2 树苗生长修复 | 关 | 修复 MC-8187：2×2 云杉/丛林树苗在北/西侧有相邻方块时也能生长；仅在单人/局域网生效 |
 
-### 优化
+</details>
+
+<details>
+<summary><b>优化 — MiniHUD 掉帧优化</b></summary>
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
 | `miniHudFpsOptimization` MiniHUD 掉帧优化 | 关 | 把 MiniHUD 的 HUD 行刷新间隔放宽到 150ms，减少重复重算造成的掉帧；仍保持在渲染线程执行，避免并发访问；需要安装 MiniHUD |
 | `miniHudRefreshIntervalMs` 刷新间隔 | 150 | HUD 行刷新间隔（50 ~ 1000 毫秒）；越大越省性能、数字刷新越慢 |
 
-### 通用
+</details>
+
+<details>
+<summary><b>通用 — 界面语言、快捷键与列表行为</b></summary>
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
@@ -395,9 +432,12 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `smoothScrollModMenu` Mod Menu 列表 | 开 | Mod Menu 模组列表平滑滚动；未安装 Mod Menu 时不生效 |
 | `smoothScrollDuration` 平滑时长 | 60 | 滚动动画收敛时长（30 ~ 400 毫秒）：越大越柔和、越小越跟手 |
 
+</details>
+
 > 配置界面还有一个「测试」标签，包含下面几个调试辅助项，以及不是配置项的「档案编辑器」（保存、加载、删除整套配置档案）。
 
-### 测试
+<details>
+<summary><b>测试 — 调试辅助与报表</b></summary>
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
@@ -415,11 +455,15 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 | `debugEnabledFeaturesReport` 已启用功能报表 | 未绑定 | 纯快捷键动作：按下后把已启用的根功能开关名称输出到聊天栏 |
 | `debugEnabledFeaturesReportCopy` 输出到剪贴板 | 关 | 开启后报表写入剪贴板（每行一个开关），不再输出到聊天栏 |
 
+</details>
+
 > **服务端判定**：下列功能由集成服务端执行，仅在单人游戏或自己开设的局域网世界生效——诅咒附魔、附魔过于昂贵、移除附魔冲突、可见交易、中键获得液体桶、生存模式中键取物、锹单层铲雪、锻造模板、掉落物与经验球寿命、超平坦史莱姆、疣块分解、床距离、放置覆盖、耕地踩踏、骨粉催熟、刷怪蛋投掷、雪傀儡不受群系影响、维度传送、蛛网/液体/粘液块/蜂蜜块物理、冰霜行者跳跃修复、举盾受伤音效修复、骷髅瞄准修复、2×2 树苗生长修复。
 
 > `itemDespawnTime` 把寿命调长依赖对 `ItemEntity.tick` 内部调用的重定向：若其他模组整体重写了该方法，注入会静默失效，此时日志里不会出现 `Mixin hook active: itemDespawnTick`，功能退回原版行为。
 
-## 命令
+<a name="commands"></a>
+
+## 🧾 命令
 
 | 命令 | 说明 |
 | --- | --- |
@@ -440,7 +484,7 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 档案操作也可以直接在配置界面的「测试」标签点击「档案编辑器」完成（保存、加载、删除）；
 界面的删除需要连续点击两次确认，命令的删除直接生效。
 
-## 快捷键
+## ⌨️ 快捷键
 
 - **打开/关闭配置界面**：默认 **G + C**（对应配置项 `openConfigGui`），任意界面可用
 - **切换快捷键**：带快捷键槽的根功能可以绑定一个按键，按下即切换该开关，默认全部未绑定；除「修改」标签的「禁用屏幕覆盖层」与「测试」标签的「调试信息叠加层」外，带切换键的都是「功能」标签的根功能，子设置不提供
@@ -449,13 +493,15 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 - **主动爬行**：需要先在配置界面开启「主动爬行」总开关，并给子项「爬行按键」绑定一个按键；按住爬行、松开站起
 - **复制物体 ID**：需要先在配置界面里给「复制目标 ID 快捷键」绑定按键（默认未绑定），且「复制物体 ID」开关为开启状态；总开关所在行的快捷键只负责切换开关
 
-## 排查
+## 🔍 排查
 
 - 日志里的 `Mixin hook active: <名称>` 表示对应 `require = 0` 注入点已经执行过；功能开了却没效果时，先看这条在不在，能区分“没注入”和“注入了但逻辑不生效”。
 - 连接远程服务器时会提示一次：铁砧、铲雪、掉落物寿命、史莱姆生成、耕地踩踏、中键取物、移动物理（蛛网/液体/粘液块/蜂蜜块）与冰霜行者跳跃修复等功能在服务端执行，只在单人游戏或局域网主机生效。
 - 打开 Mod Menu 列表时会不断记录滚动位置，但写盘只在关闭界面或每 10 秒节流一次，不会每帧同步 IO。
 
-## 配置文件
+<a name="config-file"></a>
+
+## 💾 配置文件
 
 `config/tweakify-mod.json`，由配置界面或命令自动保存。文件损坏时会被重命名为 `tweakify-mod.json.broken-<时间戳>` 并重新生成默认配置；若备份失败则保留原文件、不覆盖。若存在旧版 `config/fantasy-mod.json`，首次启动会自动迁移为 `tweakify-mod.json`；配置档案单独存放在 `config/tweakify-mod-profiles.json`。
 
@@ -465,7 +511,7 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 
 写入采用「临时文件 + 原子替换」，写盘失败时会把内存里的配置整体回滚到上一次成功的快照，不会留下半新半旧的 JSON。
 
-## 新增配置项
+## ➕ 新增配置项
 
 配置项的注册关系收敛到了少数几个地方，新增一个开关只需四步：
 
@@ -476,7 +522,7 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 
 启动时会校验「配置字段 ⟷ 配置目录 ⟷ MaLiLib 选项」双向覆盖，漏登记会直接抛异常而不是静默丢项；配置界面的树、分类标签、统计、快捷键与命令表都由目录派生。
 
-## 构建与测试
+## 🛠️ 构建与测试
 
 ```bash
 ./gradlew build          # 编译 + 打包
@@ -486,7 +532,7 @@ Minecraft **26.3 / Fabric** 纯客户端微调模组。把原版中零散、不�
 
 Windows 下使用 `gradlew.bat`。需要环境变量 `JAVA_HOME` 指向 JDK 25。
 
-## 手动回归：/tweakify 命令权限
+## 🧪 手动回归：/tweakify 命令权限
 
 客户端 GameTest 已移除，`/tweakify` 的真实命令树权限不再有自动化覆盖。修改
 `TweakifyModCommands.canUseCommands` 或 `register` 中的 `requires` 后，请按本清单手动回归。
@@ -539,7 +585,7 @@ Windows 下使用 `gradlew.bat`。需要环境变量 `JAVA_HOME` 指向 JDK 25�
 至少记录：游戏版本、场景、是否出现补全、命令反馈文本、`config/tweakify-mod.json` 对应字段值，
 以及 `logs/latest.log` 中是否有异常。
 
-## 许可证
+## 📜 许可证
 
 MIT
 
