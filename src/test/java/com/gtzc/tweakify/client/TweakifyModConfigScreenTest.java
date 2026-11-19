@@ -68,6 +68,25 @@ class TweakifyModConfigScreenTest {
 			"scrollListMemory must not appear in the functions tab");
 	}
 
+	// 配置界面的搜索高亮与平滑滚动只属于「通用」标签，不占用功能/修改标签。
+	@Test
+	void configViewInteractionOptionsAreGeneralOnly() {
+		assertTab("searchHighlight", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		assertTab("smoothScroll", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		// 平滑滚动的子设置（按界面开关 / 时长）同样归入通用标签。
+		assertTab("smoothScrollConfigList", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		assertTab("smoothScrollCreative", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		assertTab("smoothScrollChat", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		assertTab("smoothScrollModMenu", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		assertTab("smoothScrollDuration", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		assertFalse(TweakifyModConfigScreen.matchesTab(
+			TweakifyModConfigOptions.optionOf("searchHighlight"), TweakifyModConfigScreen.ConfigTab.FUNCTIONS),
+			"searchHighlight must not appear in the functions tab");
+		assertFalse(TweakifyModConfigScreen.matchesTab(
+			TweakifyModConfigOptions.optionOf("smoothScroll"), TweakifyModConfigScreen.ConfigTab.FUNCTIONS),
+			"smoothScroll must not appear in the functions tab");
+	}
+
 	// 锹单层铲雪归入“功能”标签（子项随父项一起显示）。
 	@Test
 	void shovelSwitchIsInFunctionsTab() {
