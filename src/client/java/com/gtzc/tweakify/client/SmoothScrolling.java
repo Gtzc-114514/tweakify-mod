@@ -21,6 +21,8 @@ public final class SmoothScrolling {
 	public static final int CREATIVE_GRID_WIDTH = 162;
 	public static final int CREATIVE_GRID_HEIGHT = 90;
 	public static final int CREATIVE_SLOT_SIZE = 18;
+	// 物品格共 9x5 = 45 个槽位（背包/快捷栏槽位不在此范围）。
+	private static final int CREATIVE_SLOT_COUNT = 45;
 
 	// Mod Menu 列表控件用类名判断：它是可选依赖，运行时不能直接引用类，避免未安装时类加载失败。
 	private static final String MOD_MENU_LIST_CLASS = "com.terraformersmc.modmenu.gui.widget.ModListWidget";
@@ -126,7 +128,9 @@ public final class SmoothScrolling {
 	// 不再依赖“用前两个槽位反推偏移”的启发式（成员副本的重复物品会让它偏一位，图标格会闪）。
 	// 返回 -1 表示当前拿不到精确值，调用方应回退到原启发式。
 	public static int creativeDisplayIndex(int slotIndex) {
-		return creativeMenuRow >= 0 && creativeGridActive() ? creativeMenuRow * 9 + slotIndex : -1;
+		return creativeMenuRow >= 0 && creativeGridActive()
+			&& slotIndex >= 0 && slotIndex < CREATIVE_SLOT_COUNT
+			? creativeMenuRow * 9 + slotIndex : -1;
 	}
 
 	// 创造栏是否用自绘网格（可滚动且子开关开启）。

@@ -78,6 +78,9 @@ class SmoothScrollingTest {
 		SmoothScrolling.setCreativeMenuRow(2);
 		SmoothScrolling.updateCreativeGridState(2, 0, 10);
 		assertEquals(2 * 9 + 3, SmoothScrolling.creativeDisplayIndex(3));
+		// 背包/快捷栏槽位不在物品格内：必须回退（-1），不能算出越界索引。
+		assertEquals(-1, SmoothScrolling.creativeDisplayIndex(45));
+		assertEquals(-1, SmoothScrolling.creativeDisplayIndex(-1));
 		SmoothScrolling.resetCreativeGridState();
 	}
 
