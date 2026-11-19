@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin.modmenu;
 
 import com.gtzc.tweakify.client.ScrollMemory;
+import com.gtzc.tweakify.client.SmoothScrolling;
 import com.gtzc.tweakify.util.HookProbe;
 import com.terraformersmc.modmenu.gui.ModsScreen;
 import com.terraformersmc.modmenu.gui.widget.ModListWidget;
@@ -57,5 +58,8 @@ public class ModsScreenScrollMixin {
 	private void tweakify$flushScroll(CallbackInfo ci) {
 		HookProbe.markOnce("modMenuScrollFlush");
 		ScrollMemory.flush();
+		// 关闭界面时丢弃未收敛的动画目标：下次打开若恢复位置与上次写入值只差不到
+		// 1e-3 像素，残留的 target 会把列表自己拉走并写回错误记忆。
+		SmoothScrolling.resetModMenu();
 	}
 }

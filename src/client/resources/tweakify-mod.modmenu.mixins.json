@@ -4,7 +4,8 @@
 	"compatibilityLevel": "JAVA_25",
 	"plugin": "com.gtzc.tweakify.client.mixin.modmenu.ModMenuMixinPlugin",
 	"client": [
-		"ModsScreenScrollMixin"
+		"ModsScreenScrollMixin",
+		"ModListWidgetSmoothScrollMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

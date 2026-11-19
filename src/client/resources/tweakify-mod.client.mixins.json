@@ -35,6 +35,7 @@
 		"ChatScreenMixin",
 		"ChatComponentAccessor",
 		"ChatComponentSmoothScrollMixin",
+		"AbstractScrollAreaSmoothScrollMixin",
 		"MobAttackRangeAccessor",
 		"EnchantmentMixin",
 		"ItemStackEnchantmentTooltipMixin",
