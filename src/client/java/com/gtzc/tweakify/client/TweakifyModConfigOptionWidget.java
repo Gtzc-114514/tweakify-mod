@@ -1,11 +1,13 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.client.mixin.EditBoxAccessor;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigDouble;
 import fi.dy.masa.malilib.config.IConfigSlider;
 import fi.dy.masa.malilib.config.IConfigStringList;
 import fi.dy.masa.malilib.config.gui.ConfigOptionListenerResetConfig;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
+import fi.dy.masa.malilib.gui.GuiTextFieldGeneric;
 import fi.dy.masa.malilib.gui.button.ButtonBase;
 import fi.dy.masa.malilib.gui.button.ButtonGeneric;
 import fi.dy.masa.malilib.gui.button.ConfigButtonStringList;
@@ -21,13 +23,17 @@ import fi.dy.masa.malilib.gui.widgets.WidgetSlider;
 import fi.dy.masa.malilib.render.GuiContext;
 import fi.dy.masa.malilib.util.StringUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import org.joml.Matrix3x2fStack;
 
+import java.util.List;
+
 /**
  * 双层标签配置条目：左侧第一行显示本地化名称，第二行显示小号灰色英文配置键，
  * 条目整体加高，按钮等控件垂直居中，超宽配置键以省略号截断避免挤压按钮区域。
+ * 搜索过滤生效时，命中关键词的部分改用高亮色绘制。
  */
 public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 	// 双层标签条目的统一高度（名称行 + 配置键行），紧凑布局避免条目间空隙过大。
@@ -46,6 +52,9 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 	// 名称行由父类固定在 y + 8，配置键行紧随其后。
 	private static final int KEY_LABEL_Y_OFFSET = 16;
 
+	// 搜索高亮色：只给命中片段换色，其余文字保持原色，不引入额外背景色块。
+	private static final int HIGHLIGHT_COLOR = 0xFFFFD54F;
+
 	// 树形缩进与展开按钮布局。
 	public static final int INDENT_WIDTH = 10;
 	public static final int EXPAND_BUTTON_WIDTH = 12;
@@ -56,6 +65,8 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 	private final int labelWidth;
 	private final int elementWidth;
 	private final int labelShift;
+	// 当前搜索过滤串（小写、| 分隔）；为空时不做高亮。
+	private final String highlightFilter;
 
 	public TweakifyModConfigOptionWidget(int x, int y, int width, int height, int configWidth,
 									   int elementWidth, GuiConfigsBase.ConfigOptionWrapper wrapper, int index,
@@ -65,6 +76,9 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		this.labelWidth = configWidth;
 		this.elementWidth = elementWidth;
 		this.labelShift = this.computeLabelShift();
+		this.highlightFilter = this.parent instanceof TweakifyModConfigListWidget list
+			? list.searchHighlightFilter()
+			: "";
 		this.shiftNameLabel();
 		this.replaceNameLabel();
 		this.addExpandButton();
@@ -91,6 +105,32 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 			config, null, resetButton, null);
 		this.addWidget(slider);
 		this.addButton(resetButton, listener);
+	}
+
+	// 亚行平滑滚动时只平移已有控件：子控件坐标是绝对值，需要逐层跟随。
+	// 相比每帧重建，这样不会重置控件内部状态（例如重新注册快捷键变更监听）。
+	void shiftVertically(int deltaY) {
+		if (deltaY == 0) {
+			return;
+		}
+		this.setY(this.getY() + deltaY);
+		for (WidgetBase widget : this.subWidgets) {
+			widget.setY(widget.getY() + deltaY);
+		}
+		// 数字/文本输入框由 MaLiLib 单独持有（不在 subWidgets 里，也不随父控件移动），
+		// 漏掉它时滚动后输入框会留在原行位置，与整行越滚越开。
+		GuiTextFieldGeneric textField = this.textFieldWidget();
+		if (textField != null && !this.subWidgets.contains(textField)) {
+			textField.setY(textField.getY() + deltaY);
+			// 外框坐标在 GuiTextFieldGeneric 的 shadow 字段里，而 EditBox 的文字坐标是
+			// 私有缓存（textX/textY）：不重算就会出现“外框跟着动、数字留在原地”。
+			((EditBoxAccessor) textField).tweakify$updateTextPosition();
+		}
+	}
+
+	// 当前条目的输入框控件：非输入类配置为 null。
+	private GuiTextFieldGeneric textFieldWidget() {
+		return this.textField == null ? null : this.textField.textField();
 	}
 
 	// 缩进 + 展开按钮占位：所有行统一左移，保证子项名称与分组名称对齐。
@@ -188,7 +228,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		for (int i = 0; i < this.subWidgets.size(); i++) {
 			WidgetBase widget = this.subWidgets.get(i);
 			if (widget instanceof WidgetLabel) {
-				this.subWidgets.set(i, new NameLabel(widget.getX(), widget.getY(), text));
+				this.subWidgets.set(i, new NameLabel(widget.getX(), widget.getY(), text, this.highlightFilter));
 				return;
 			}
 		}
@@ -201,7 +241,8 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		}
 		int maxUnscaledWidth = (int) ((this.labelWidth - KEY_MARGIN - this.labelShift) / KEY_SCALE);
 		String key = truncateToWidth(this.config.getName(), maxUnscaledWidth);
-		this.addWidget(new ConfigKeyLabel(this.x + this.labelShift, this.y + KEY_LABEL_Y_OFFSET, key, KEY_COLOR));
+		this.addWidget(new ConfigKeyLabel(this.x + this.labelShift, this.y + KEY_LABEL_Y_OFFSET,
+			key, KEY_COLOR, this.highlightFilter));
 	}
 
 	// 超宽时以省略号截断，避免文字压到按钮区域。
@@ -241,18 +282,22 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		}
 	}
 
-	// 本地化名称标签：与 WidgetLabel 相同的阴影文字样式，但文本已在构造时截断。
+	// 本地化名称标签：与 WidgetLabel 相同的阴影文字样式，但文本已在构造时截断；
+	// 命中搜索关键词的片段换成高亮色。
 	private static class NameLabel extends WidgetBase {
 		private final String text;
+		private final String filter;
 
-		NameLabel(int x, int y, String text) {
+		NameLabel(int x, int y, String text, String filter) {
 			super(x, y, 0, 9);
 			this.text = text;
+			this.filter = filter;
 		}
 
 		@Override
 		public void render(GuiContext gui, int mouseX, int mouseY, boolean hovered) {
-			gui.text(this.textRenderer, this.text, this.x, this.y, 0xFFFFFFFF, true);
+			drawHighlighted(gui, this.textRenderer, this.text, this.x, this.y,
+				0xFFFFFFFF, this.filter, true);
 		}
 	}
 
@@ -260,11 +305,13 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 	private static class ConfigKeyLabel extends WidgetBase {
 		private final String text;
 		private final int color;
+		private final String filter;
 
-		ConfigKeyLabel(int x, int y, String text, int color) {
+		ConfigKeyLabel(int x, int y, String text, int color, String filter) {
 			super(x, y, 0, 9);
 			this.text = text;
 			this.color = color;
+			this.filter = filter;
 		}
 
 		@Override
@@ -272,9 +319,36 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 			Matrix3x2fStack pose = gui.pose();
 			pose.pushMatrix();
 			pose.scale(KEY_SCALE, KEY_SCALE);
-			gui.text(this.textRenderer, this.text,
-				Math.round(this.x / KEY_SCALE), Math.round(this.y / KEY_SCALE), this.color);
+			drawHighlighted(gui, this.textRenderer, this.text,
+				Math.round(this.x / KEY_SCALE), Math.round(this.y / KEY_SCALE), this.color, this.filter, false);
 			pose.popMatrix();
+		}
+	}
+
+	// 按高亮区间分段绘制：普通段用原色、命中段用高亮色，阴影设置与整体保持一致。
+	// x / y 是调用方在当前 pose 下的绘制坐标（配置键标签传入的是缩放后的坐标）。
+	private static void drawHighlighted(GuiContext gui, Font font, String text, int x, int y,
+										int color, String filter, boolean shadow) {
+		List<ConfigSearchHighlighter.Range> ranges = ConfigSearchHighlighter.ranges(text, filter);
+		if (ranges.isEmpty()) {
+			gui.text(font, text, x, y, color, shadow);
+			return;
+		}
+		int cursor = 0;
+		int drawX = x;
+		for (ConfigSearchHighlighter.Range range : ranges) {
+			if (range.start() > cursor) {
+				String plain = text.substring(cursor, range.start());
+				gui.text(font, plain, drawX, y, color, shadow);
+				drawX += font.width(plain);
+			}
+			String match = text.substring(range.start(), range.end());
+			gui.text(font, match, drawX, y, HIGHLIGHT_COLOR, shadow);
+			drawX += font.width(match);
+			cursor = range.end();
+		}
+		if (cursor < text.length()) {
+			gui.text(font, text.substring(cursor), drawX, y, color, shadow);
 		}
 	}
 }

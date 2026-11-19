@@ -6,16 +6,18 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * 通用分区：界面语言、打开配置界面的快捷键、标签与滚动列表记忆。
+ * 通用分区：界面语言、打开配置界面的快捷键、标签与滚动列表记忆，
+ * 以及配置列表的搜索高亮与平滑滚动。
  *
  * <p>这些开关不影响游戏行为，只作用于配置界面本身；
- * 语言覆盖与滚动记忆由客户端状态类读取。
+ * 语言覆盖与滚动记忆由客户端状态类读取，界面交互项由列表控件读取。
  */
 public final class GeneralConfig extends ConfigSection {
 	private static final Logger LOGGER = LoggerFactory.getLogger("tweakify-mod-config");
 
-	// 已登记字段级校验器的字段名：language 需要回退到支持的语言，标签回退需要合法代码。
-	private static final List<String> SANITIZED_FIELDS = List.of("language", "rememberSelectedTabFallback");
+	// 已登记字段级校验器的字段名：language 需要回退到支持的语言，标签回退需要合法代码，平滑时长需要夹紧范围。
+	private static final List<String> SANITIZED_FIELDS =
+		List.of("language", "rememberSelectedTabFallback", "smoothScrollDuration");
 
 	// 模组界面语言代码（zh_cn / en_us / ru_ru / fr_fr）；跟随系统语言时忽略。
 	public volatile String language = "zh_cn";
@@ -35,6 +37,21 @@ public final class GeneralConfig extends ConfigSection {
 	// 子开关：记忆 Mod Menu 模组列表的滚动位置。
 	public volatile boolean modMenuScrollMemory = true;
 
+	// 配置界面搜索：命中的关键词在条目名称与英文配置键上高亮显示。
+	public volatile boolean searchHighlight = true;
+
+	// 平滑滚动：配置界面列表、创造物品栏、聊天栏与 Mod Menu 列表共用总开关。
+	public volatile boolean smoothScroll = true;
+
+	// 子开关：按界面分别启用平滑滚动。
+	public volatile boolean smoothScrollConfigList = true;
+	public volatile boolean smoothScrollCreative = true;
+	public volatile boolean smoothScrollChat = true;
+	public volatile boolean smoothScrollModMenu = true;
+
+	// 平滑时长（毫秒，30 ~ 400）：越大越柔和、越小越跟手。
+	public volatile int smoothScrollDuration = TweakifyModConfig.DEFAULT_SMOOTH_SCROLL_DURATION;
+
 	// 标签记忆：记住上次选择的分类标签，下次打开配置界面直接停在该标签。
 	public volatile boolean rememberSelectedTab = false;
 
@@ -53,6 +70,7 @@ public final class GeneralConfig extends ConfigSection {
 	boolean sanitize() {
 		boolean changed = sanitizeLanguage();
 		changed |= sanitizeTabFallback();
+		changed |= sanitizeSmoothScrollDuration();
 		return changed;
 	}
 
@@ -79,6 +97,18 @@ public final class GeneralConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported config tab fallback: {}", rememberSelectedTabFallback);
 		rememberSelectedTabFallback = TweakifyModConfig.CONFIG_TAB_ALL;
+		return true;
+	}
+
+	// 平滑时长夹到 30 ~ 400 毫秒：手工编辑或迁移写坏时回退到合法范围。
+	private boolean sanitizeSmoothScrollDuration() {
+		int clamped = Math.max(TweakifyModConfig.MIN_SMOOTH_SCROLL_DURATION,
+			Math.min(TweakifyModConfig.MAX_SMOOTH_SCROLL_DURATION, smoothScrollDuration));
+		if (clamped == smoothScrollDuration) {
+			return false;
+		}
+		LOGGER.warn("Clamping smoothScrollDuration from {} to {}", smoothScrollDuration, clamped);
+		smoothScrollDuration = clamped;
 		return true;
 	}
 }

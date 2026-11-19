@@ -390,6 +390,14 @@ public final class ConfigCatalog {
 		entries.add(child("scrollListMemory", "scrollListMemoryPersist"));
 		entries.add(child("scrollListMemory", "malilibScrollMemory"));
 		entries.add(child("scrollListMemory", "modMenuScrollMemory"));
+		// 配置界面交互（通用标签）：搜索关键词高亮、平滑滚动与拖动滚动（同时作用于创造栏/聊天/Mod Menu）
+		entries.add(general("searchHighlight", true));
+		entries.add(general("smoothScroll", true));
+		entries.add(child("smoothScroll", "smoothScrollConfigList"));
+		entries.add(child("smoothScroll", "smoothScrollCreative"));
+		entries.add(child("smoothScroll", "smoothScrollChat"));
+		entries.add(child("smoothScroll", "smoothScrollModMenu"));
+		entries.add(child("smoothScroll", "smoothScrollDuration"));
 		// 调试信息叠加层（测试标签）
 		entries.add(testing("debugInfoOverlay", true));
 		entries.add(child("debugInfoOverlay", "debugInfoShowPerformance"));

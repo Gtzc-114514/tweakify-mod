@@ -496,6 +496,11 @@ public class TweakifyModConfig {
 	public static final int MAX_KEEP_MINING_PROGRESS_DISTANCE = 16;
 	public static final int DEFAULT_KEEP_MINING_PROGRESS_DISTANCE = 0;
 
+	// 平滑滚动时长（毫秒）：越大越柔和，越小越跟手。
+	public static final int MIN_SMOOTH_SCROLL_DURATION = 30;
+	public static final int MAX_SMOOTH_SCROLL_DURATION = 400;
+	public static final int DEFAULT_SMOOTH_SCROLL_DURATION = 60;
+
 	// 铁砧“过于昂贵”的费用上限（经验等级，0 = 不限制）。
 	public static final int MIN_TOO_EXPENSIVE_MAX_LEVEL_COST = 0;
 	public static final int MAX_TOO_EXPENSIVE_MAX_LEVEL_COST = 1000;

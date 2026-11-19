@@ -89,6 +89,7 @@
 		"CreativeModeInventoryGroupingMixin",
 		"CreativeModeInventorySlotRenderMixin",
 		"CreativeItemPickerMenuAccessor",
+		"EditBoxAccessor",
 		"SpawnEggItemThrowMixin",
 		"ThrownEggSpawnEggMixin",
 		"SpawnPlacementsMixin",

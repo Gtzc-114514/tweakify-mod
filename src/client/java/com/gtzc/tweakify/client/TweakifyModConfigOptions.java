@@ -780,6 +780,26 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"malilibScrollMemory", true).apply(GENERAL_KEY);
 	public static final ConfigBoolean MOD_MENU_SCROLL_MEMORY = new ConfigBoolean(
 		"modMenuScrollMemory", true).apply(GENERAL_KEY);
+	// 配置界面搜索：命中的关键词在条目名称与配置键上高亮。
+	public static final ConfigBoolean SEARCH_HIGHLIGHT = new ConfigBoolean(
+		"searchHighlight", true).apply(GENERAL_KEY);
+	// 平滑滚动：配置界面列表、创造物品栏、聊天栏与 Mod Menu 列表共用总开关。
+	public static final ConfigBoolean SMOOTH_SCROLL = new ConfigBoolean(
+		"smoothScroll", true).apply(GENERAL_KEY);
+	// 子开关：按界面分别启用。
+	public static final ConfigBoolean SMOOTH_SCROLL_CONFIG_LIST = new ConfigBoolean(
+		"smoothScrollConfigList", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean SMOOTH_SCROLL_CREATIVE = new ConfigBoolean(
+		"smoothScrollCreative", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean SMOOTH_SCROLL_CHAT = new ConfigBoolean(
+		"smoothScrollChat", true).apply(GENERAL_KEY);
+	public static final ConfigBoolean SMOOTH_SCROLL_MOD_MENU = new ConfigBoolean(
+		"smoothScrollModMenu", true).apply(GENERAL_KEY);
+	// 平滑时长（毫秒）：越大越柔和、越小越跟手。
+	public static final ConfigInteger SMOOTH_SCROLL_DURATION = new ConfigInteger(
+		"smoothScrollDuration", TweakifyModConfig.DEFAULT_SMOOTH_SCROLL_DURATION,
+		TweakifyModConfig.MIN_SMOOTH_SCROLL_DURATION,
+		TweakifyModConfig.MAX_SMOOTH_SCROLL_DURATION).apply(GENERAL_KEY);
 	// 调试信息叠加层：HUD 左下角显示运行时信息。
 	public static final ConfigBooleanHotkeyed DEBUG_INFO_OVERLAY = new ConfigBooleanHotkeyed(
 		"debugInfoOverlay", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);

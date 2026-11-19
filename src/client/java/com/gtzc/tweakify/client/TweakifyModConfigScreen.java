@@ -167,6 +167,17 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		return super.onMouseClicked(event, isRealMouse);
 	}
 
+	// GuiListBase 不转发拖动事件（只转发点击/释放/滚轮），
+	// 列表的左键拖动滚动需要在这里手动转给列表控件。
+	@Override
+	public boolean onMouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+		if (super.onMouseDragged(event, dragX, dragY)) {
+			return true;
+		}
+		WidgetListConfigOptions list = this.getListWidget();
+		return list != null && list.onMouseDragged(event, dragX, dragY);
+	}
+
 	// 使用原版 Button 创建分类标签；当前标签禁用置灰。
 	private void addTabButtons() {
 		this.tabButtons.clear();
@@ -229,7 +240,10 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		if (node == null || !node.hasChildren()) {
 			return;
 		}
-		int scroll = this.getListWidget() == null ? 0 : this.getListWidget().getScrollbar().getValue();
+		TweakifyModConfigListWidget list = this.configList();
+		int scroll = list == null ? 0 : list.getScrollbar().getValue();
+		// 半行滚动时只恢复行号会让视口回跳最多一整行：偏移一并带上。
+		int pixelOffset = list == null ? 0 : list.scrollPixelOffset();
 		VisiblePosition before = visiblePositionOf(configName);
 		node.toggle();
 		this.initGui();
@@ -238,10 +252,15 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		if (before.index() >= 0 && after.index() >= 0 && before.index() < scroll) {
 			scroll += after.size() - before.size();
 		}
-		if (this.getListWidget() != null) {
-			// setValue 会把越界值夹回新的合法范围。
-			this.getListWidget().getScrollbar().setValue(scroll);
+		if (list != null) {
+			// 越界值会被夹回新的合法范围。
+			list.restoreScrollPosition(scroll, pixelOffset);
 		}
+	}
+
+	// 本界面固定使用自己的列表控件；其他类型（理论上不会出现）按空处理。
+	private TweakifyModConfigListWidget configList() {
+		return this.getListWidget() instanceof TweakifyModConfigListWidget list ? list : null;
 	}
 
 	private record VisiblePosition(int index, int size) {
