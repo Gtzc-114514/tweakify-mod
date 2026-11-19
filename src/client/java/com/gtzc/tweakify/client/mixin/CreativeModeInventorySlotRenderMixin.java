@@ -2,6 +2,7 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.CreativeItemGroups;
+import com.gtzc.tweakify.client.SmoothScrolling;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -72,7 +73,7 @@ public class CreativeModeInventorySlotRenderMixin {
 		if (!tweakify$creativeScreen() || !CreativeItemGroups.isCreativeSlot(slot.index)) {
 			return;
 		}
-		int index = CreativeItemGroups.displayIndex(this.menu.slots, slot.index);
+		int index = this.tweakify$displayIndex(slot);
 		if (CreativeItemGroups.isExpandedIconSlot(index)) {
 			graphics.blitSprite(RenderPipelines.GUI_TEXTURED, ICON_SLOT_SPRITE,
 				slot.x - 1, slot.y - 1, ICON_SLOT_SIZE, ICON_SLOT_SIZE);
@@ -90,7 +91,7 @@ public class CreativeModeInventorySlotRenderMixin {
 		if (!tweakify$creativeScreen() || !CreativeItemGroups.isCreativeSlot(slot.index)) {
 			return;
 		}
-		int index = CreativeItemGroups.displayIndex(this.menu.slots, slot.index);
+		int index = this.tweakify$displayIndex(slot);
 		if (CreativeItemGroups.isExpandedIconSlot(index)) {
 			graphics.blitSprite(RenderPipelines.GUI_TEXTURED, MINUS_SPRITE,
 				slot.x, slot.y, MARKER_SIZE, MARKER_SIZE);
@@ -111,7 +112,7 @@ public class CreativeModeInventorySlotRenderMixin {
 			return real;
 		}
 		CreativeItemGroups.Group group = CreativeItemGroups.iconGroup(
-			CreativeItemGroups.displayIndex(this.menu.slots, slot.index));
+			this.tweakify$displayIndex(slot));
 		if (group == null || !ItemStack.isSameItem(real, group.icon())) {
 			return real;
 		}
@@ -132,11 +133,19 @@ public class CreativeModeInventorySlotRenderMixin {
 			return original.call(screen, stack);
 		}
 		CreativeItemGroups.Group group = CreativeItemGroups.iconGroup(
-			CreativeItemGroups.displayIndex(this.menu.slots, this.hoveredSlot.index));
+			this.tweakify$displayIndex(this.hoveredSlot));
 		if (group == null) {
 			return original.call(screen, stack);
 		}
 		return List.of(group.name());
+	}
+
+	// 显示索引：平滑滚动开启时用精确值（menuRow*9 + 槽位号），否则回退到原版启发式。
+	// 精确值跟预告行同源，避免槽位与预告行对同一格子给出不同判定而闪烁。
+	@Unique
+	private int tweakify$displayIndex(Slot slot) {
+		int exact = SmoothScrolling.creativeDisplayIndex(slot.index);
+		return exact >= 0 ? exact : CreativeItemGroups.displayIndex(this.menu.slots, slot.index);
 	}
 
 	// 分组只作用于创造模式物品页：其他容器界面即使残留状态也不会被绘制。
