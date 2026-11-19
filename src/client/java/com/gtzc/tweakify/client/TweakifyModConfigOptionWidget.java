@@ -233,8 +233,12 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 				controlsRight = Math.max(controlsRight, widget.getX() + widget.getWidth());
 			}
 		}
-		int starX = FavoriteStarRenderer.clampStarX(
-			FavoriteStarRenderer.rowStarX(controlsRight), this.x, this.getWidth());
+		int starX = FavoriteStarRenderer.starXIfFits(controlsRight, this.x, this.getWidth());
+		if (starX < 0) {
+			// 极端窄行（4x/自动缩放 + 长名称）放不下星标：直接不显示，
+			// 避免星标压到重置按钮上造成视觉重叠与点击被抢。
+			return;
+		}
 		int starY = FavoriteStarRenderer.rowStarY(this.y, ENTRY_HEIGHT);
 		TweakifyModConfigScreen screen = this.host instanceof TweakifyModConfigScreen target ? target : null;
 		this.addWidget(new FavoriteStarWidget(starX, starY, this.config.getName(), screen));

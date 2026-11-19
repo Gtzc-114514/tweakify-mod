@@ -106,8 +106,7 @@ class FavoriteStarStyleTest {
 		int controlsRight = rowX + rowWidth - TweakifyModConfigListWidget.RIGHT_RESERVE;
 		// 重置按钮从控件右 +2 开始、宽 20；星标在它右边 2px。
 		int resetRight = controlsRight + 22;
-		int starX = FavoriteStarRenderer.clampStarX(
-			FavoriteStarRenderer.rowStarX(resetRight), rowX, rowWidth);
+		int starX = FavoriteStarRenderer.starXIfFits(resetRight, rowX, rowWidth);
 		assertEquals(resetRight + 2, starX, "star must sit right after the reset button");
 		assertTrue(starX + FavoriteStarRenderer.SIZE <= rowX + rowWidth,
 			"star must stay inside the row");
@@ -117,14 +116,21 @@ class FavoriteStarStyleTest {
 		assertTrue(FavoriteStarRenderer.rowStarY(0, 24) > 0, "star must be vertically centred");
 	}
 
-	// 窄屏（控件区溢出）时星标夹回行内，不能越出列表。
+	// 行宽不足时星标应隐藏（返回 -1），而不是夹到重置按钮上方造成重叠。
 	@Test
-	void clampStarXKeepsStarInsideNarrowRows() {
+	void starIsHiddenWhenRowCannotFitIt() {
 		int rowX = 10;
-		int rowWidth = 300;
-		assertEquals(100, FavoriteStarRenderer.clampStarX(100, rowX, rowWidth));
-		assertEquals(rowX + rowWidth - FavoriteStarRenderer.SIZE - 2,
-			FavoriteStarRenderer.clampStarX(9999, rowX, rowWidth));
-		assertEquals(rowX, FavoriteStarRenderer.clampStarX(-5, rowX, rowWidth));
+		int rowWidth = 200;
+		int controlsRight = 100;
+		int starX = FavoriteStarRenderer.rowStarX(controlsRight);
+		int fitsWidth = starX + FavoriteStarRenderer.SIZE + 2 - rowX;
+		assertEquals(starX, FavoriteStarRenderer.starXIfFits(controlsRight, rowX, fitsWidth),
+			"star fits exactly when its right edge touches the row margin");
+		assertEquals(-1, FavoriteStarRenderer.starXIfFits(controlsRight, rowX, fitsWidth - 1),
+			"one pixel less must hide the star");
+		assertEquals(-1, FavoriteStarRenderer.starXIfFits(9999, rowX, rowWidth),
+			"buttons overflowing the row must hide the star");
+		assertEquals(-1, FavoriteStarRenderer.starXIfFits(controlsRight, rowX, 20),
+			"extremely narrow rows must hide the star");
 	}
 }

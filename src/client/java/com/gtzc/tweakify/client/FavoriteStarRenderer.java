@@ -75,10 +75,12 @@ public final class FavoriteStarRenderer {
 		return controlsRight + ROW_STAR_GAP;
 	}
 
-	// 行太窄（4x/自动缩放）时把星标夹回行内，避免压住滚动条或越出列表。
-	static int clampStarX(int preferredX, int rowX, int rowWidth) {
+	// 星标右侧留白内放不下时返回 -1（不显示）：
+	// 不再“夹到重置按钮上方”，避免视觉重叠并防止星标点击被重置按钮优先抢走。
+	static int starXIfFits(int controlsRight, int rowX, int rowWidth) {
+		int starX = rowStarX(controlsRight);
 		int max = rowX + rowWidth - SIZE - ROW_STAR_GAP;
-		return Math.max(rowX, Math.min(preferredX, max));
+		return starX <= max ? starX : -1;
 	}
 
 	static int rowStarY(int rowY, int rowHeight) {
