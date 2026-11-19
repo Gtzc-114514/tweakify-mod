@@ -9,6 +9,7 @@
 
 - `暂缓，<理由>`：尚未做过实机复评；
 - `暂缓，<理由>（最近复评 YYYY-MM-DD，见详情）`：已完成桌面复核，实机抽样进度见详情「待办」；
+- `已缓解，待采样（<摘要>）（最近复评 YYYY-MM-DD，见详情）`：主要风险已由预防性措施消除，仅剩采样/复测确认；
 - `已修复（<摘要>，见详情）`；
 - `复测未达触发条件（YYYY-MM-DD，见详情）`。
 
@@ -21,13 +22,18 @@
 
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
-| T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | section 预筛缺少真实 `LevelChunk` 集成测试：`chunkMayContain[slot] = true` 类变异无法被单测捕获 | 已修复（真实 LevelChunk GameTest，见详情） |
-| T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 顶点缓存以列表引用为唯一失效条件，每秒 6/12 次整表重建，内容未变时也重建 | 已修复（摘要去重 + 精确比对，见详情） |
-| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-16，见详情） |
-| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-16，见详情） |
-| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 暂缓，第 1–5 项已预防性实施、待采样判定（最近复评 2026-11-18，见详情） |
-| T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置 JSON 序列化仍在主线程；输入均为不可变数据，可移入后台 worker / 写盘线程 | 暂缓，成本未采样，达标前不引入后台构建（最近复评 2026-11-17，见详情） |
+| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-20，见详情） |
+| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-20，见详情） |
+| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解，待采样（第 1–5 项已预防性实施，采样优先级低于 T3/T6；最近复评 2026-11-20，见详情） |
+| T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置 JSON 序列化仍在主线程；输入均为不可变数据，可移入后台 worker / 写盘线程 | 暂缓，成本未采样，达标前不引入后台构建（最近复评 2026-11-20，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
+
+### 已闭环归档
+
+| # | 位置 | 闭环摘要 | 详情 |
+| --- | --- | --- | --- |
+| T1 | `BlockMarkerScanner` 的 `ScanJob` 接线 | 真实 `LevelChunk` GameTest 覆盖预筛接线与读取数/section 集合 | 见下方 T1 详情（已归档） |
+| T2 | `BedrockGeometryCache` / `AttackRangeGeometryCache` 的失效判定 | 发布侧摘要 + 精确比对，内容未变时复用几何 | 见下方 T2 详情（已归档） |
 
 > v1.1.0 复评（2026-11-16）：T1 已通过真实 LevelChunk GameTest 闭环；T2 维持“已修复”；
 > T3/T4 仍未达到闭环条件（分别缺少实机 profiler 与 Mixin 集成测试），本轮只更新 T3/T4 的评估记录与缓解说明。
@@ -37,8 +43,12 @@
 > 两条均为桌面复核后的暂缓条目；T5 第 1–5 项已预防性实施（见详情），等待采样判定。
 >
 > v1.1.5（2026-11-20）新增 T7 并直接闭环：窄窗口下收藏星改为「放不下即隐藏」，不再夹到重置按钮上方；修复提交 `7b05164`，发布记录见 [`docs/release-notes/v1.1.5.md`](release-notes/v1.1.5.md)。
+>
+> v1.1.5 后复查（2026-11-20）：T1/T2 仍闭环，归档为「已闭环历史记录」；T5 五项预防性缓存均在，
+> 降级为「已缓解，待采样」并调低采样优先级；T3/T4/T6 对照当前代码仍成立，已补充文件与代码位置依据
+> （见各详情「最近评估（2026-11-20）」）。
 
-## T1 详情：section 预筛的集成测试缺口
+## T1 详情（已归档）：section 预筛的集成测试缺口
 
 - **修复前现状**：`sectionNeedsScan(...)` 的纯函数决策由 `BlockMarkerScannerTest` 覆盖；未覆盖的是
   `ScanJob` 中 `chunkMayContain[slot] = BlockMarkerScanner.sectionNeedsScan(...)` 与真实
@@ -67,7 +77,7 @@
 - **回归条件**：若删除或绕过 `src/gametest`、改动 `ScanJob` 的 section 预筛、或 GameTest 读取计数与
   命中 section 的预期不一致，重新评估本条并保留 GameTest 作为基线。
 
-## T2 详情：顶点缓存的失效粒度过粗
+## T2 详情（已归档）：顶点缓存的失效粒度过粗
 
 - **修复前现状**：`BedrockGeometryCache` / `AttackRangeGeometryCache` 以“列表引用是否变化”作为唯一失效条件。
   `BlockMarkerScanner` 每轮扫描结束、`AttackRangeState` 每 1.67 tick 都会发布新的 `List.copyOf` 实例，
@@ -124,12 +134,17 @@
 - **闭环动作**：达标先按建议方案 3 降负，不足再按“主线程快照 + 后台解析”预案实施；
   不达标把 T3 状态写为「复测未达触发条件（YYYY-MM-DD，见详情）」；重评后同步表格状态与日期（详见检查表 §七）。
 - **缓解措施**：保持现状（section 预筛 + 每 tick 有界分帧）；触发后优先降负，见「建议方案」第 3 条。
-- **历史评估**：不适用（尚未做任何实机复评，检查表记录模板为空）。
-- **最近评估（2026-11-16）**：v1.1.0 新增屏障/基岩扫描半径 8 ~ 32、基岩标记上限 1 ~ 256、
+- **历史评估（2026-11-16）**：v1.1.0 新增屏障/基岩扫描半径 8 ~ 32、基岩标记上限 1 ~ 256、
   屏障标记上限 16 ~ 256、粒子间隔 20 ~ 200 tick、攻击范围收集距离 8 ~ 128 与上限 8 ~ 256，
   为用户侧提供了更多降负手段；默认值仍为半径 32、上限 256/32、间隔 60 tick、收集 48/64，
   扫描与收集仍在主线程分帧执行，架构未变。未完成 A–E 实机采样，维持暂缓（P3）。
-- **待办**：按检查表完成 A–E 采集并回填记录模板；未完成前 T3 维持暂缓。
+- **最近评估（2026-11-20）**：对照当前代码复查：`BlockMarkerScanner.java` 的
+  `LAYERS_PER_TICK = 22`（L42–L43）、`tick`（L124）与 `ScanJob.advance` 的每 tick 22 层分帧
+  （L256–L259）未变；`BlockMarkerScanner` / `AttackRangeState` / 两个 GeometryCache 中无
+  `Executor` / `Thread` / `CompletableFuture` 用法（Grep 0 匹配），扫描与实体收集仍在主线程；
+  `docs/t3-profiler-checklist.md` L92–L120 的 A–E 记录模板仍为空。架构未变、触发条件未采样，
+  维持暂缓（P3）。
+- **待办**：按检查表完成 A–E 采集并回填记录模板；未完成前 T3 维持暂缓（采样优先级高于 T5）。
 - **验证清单**：实机 profiler 采集步骤、场景矩阵、数据清单与判定标准见
   [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)。
 
@@ -156,14 +171,19 @@
   决策与副作用集中在可单测的 `onConfigChanged`；`itemGroups` 的 HookProbe 只能确认点击钩子，转发链路仍需按判定口径手动回归。
 - **历史评估（2026-11-15）**：`onConfigChanged` 的三个分支已由单测覆盖；mixin 转发在一行内，
   本次重构已核对与抽取前逐分支等价。项目未引入 Mixin 集成测试，维持暂缓。
-- **最近评估（2026-11-16）**：v1.1.0 未修改 `CreativeModeInventoryGroupingMixin` 与
+- **历史评估（2026-11-16）**：v1.1.0 未修改 `CreativeModeInventoryGroupingMixin` 与
   `CreativeItemGroups.onConfigChanged`，本轮新增的 51 个子设置也不涉及物品分组热更新。
   项目仍未引入 Mixin 集成测试，mixin 转发链路继续依赖手动回归，维持暂缓。
+- **最近评估（2026-11-20）**：对照当前代码复查：`CreativeModeInventoryGroupingMixin.java`
+  L137–L148 仍是「签名比对 + 一行 `onConfigChanged` 调用 + 按返回值刷新」；决策由
+  `CreativeItemGroups.onConfigChanged`（L483）承担，`CreativeItemGroupsTest` L832–L861 覆盖
+  分类页重建、非分类页不重建与 null 分支；`MixinConfigTest` L20–L28 只校验 `mixinextras` 声明，
+  不加载 Mixin。转发链路仍无自动化覆盖，维持暂缓。
 - **待办**：实机回归一次搜索/快捷栏/背包页的配置变化路径并记录结果。
 
-## T5 详情：HUD/GUI 每帧重复计算未缓存
+## T5 详情（已缓解，待采样）：HUD/GUI 每帧重复计算
 
-- **优先级**：P3 观察；触发后按 P2 近期处理。
+- **优先级**：P3 观察（已缓解，采样优先级低于 T3/T6）；触发后按 P2 近期处理。
 - **现状**：以下路径原本都在渲染帧内执行，且每次重新解析/格式化/分配：
   - `LocatorBarHeads.renderDot` 每个航点每帧调用 `splitNames(...)`（`split` + `trim` + `toLowerCase`
     建列表），并按玩家名调用 `font.width`（已于 2026-11-17 加缓存）；
@@ -217,9 +237,17 @@
   不是缓存改动引入。
 - **缓解措施**：实施前保持现状；用户侧关闭 `locatorBarHeads`、`statusEffectDurationDisplay`、
   `debugInfoOverlay` 可完全绕过对应开销。
-- **最近评估（2026-11-18）**：桌面复核列出上述 5 个热点，均为每帧重复解析/分配；
+- **历史评估（2026-11-18）**：桌面复核列出上述 5 个热点，均为每帧重复解析/分配；
   尚未实机采样；第 1–5 项已全部预防性落地，并修复调试摘要节流的既有溢出缺陷，等待采样判定。
-- **待办**：完成一次 Render thread 采样并回填合计占比，按结果决定 T5 标为已修复或复测未达触发条件。
+- **最近评估（2026-11-20）**：对照当前代码复查：台账列出的 5 个热点均已落地预防性缓存——
+  `LocatorBarHeads` 的 `NameListCache` / `WidthCache`（L79–L82、L352、L375）、
+  `StatusEffectTimerRenderer.TimerCache`（L54、L251）、`EnchantmentTooltipDescriptions.PlanCache`
+  （L49、L159）、`DebugInfoOverlay` 的 `LineCache` / `SummaryThrottle`（L55–L56、L88–L89）、
+  `ConnectedBlockOutlineState` 的 `MergedShapeCache`（L35、L206），对应 5 个测试均存在。
+  原始「每帧重复解析/分配」风险已消除，状态降级为「已缓解，待采样」；仅剩一次 Render thread
+  采样确认，采样优先级低于 T3/T6。
+- **待办**：完成一次 Render thread 采样并回填合计占比；已降级为「已缓解，待采样」，按结果决定
+  标为已修复或复测未达触发条件。
 - **验证方式**：`LocatorBarHeadsTest` 已覆盖名单缓存复用/内容变化失效、宽度缓存字体变化失效与
   淘汰后取值正确；`StatusEffectTimerRendererTest` 已覆盖缓存键失效、tick 构建与无缓存
   `placementFor` 等价、无尽效果占位、阈值/隐藏图标过滤、演示偏移与按秒格式化；
@@ -269,8 +297,14 @@
   3. 两项分开提交，不合并为一个改动。
 - **缓解措施**：实施前保持现状；几何继续用摘要去重 + LOD + 上限，序列化继续用 250ms 节流与单队列；
   用户侧可降低上限或关闭对应渲染功能。
-- **最近评估（2026-11-17）**：桌面复核确认两处输入均为不可变数据（发布后的 `List.copyOf` 与
+- **历史评估（2026-11-17）**：桌面复核确认两处输入均为不可变数据（发布后的 `List.copyOf` 与
   `Snapshot`），可安全移出主线程；未采样、未实施。
+- **最近评估（2026-11-20）**：对照当前代码复查：`AttackRangeGeometryCache.ensure/rebuild`
+  （L67–L106）与 `BedrockGeometryCache.ensure/rebuild`（L37–L60）仍在主线程执行，无
+  `Executor` / `Thread` / `CompletableFuture` 用法；`TweakifyModConfigOptions.flushPendingSaveNow`
+  仍在客户端线程调用 `config.toJson()`（L1353、L1374），节流间隔仍为 250ms（L1260）；
+  `TweakifyModConfig.prepareSaveHandle` 仍在配置锁内同步序列化。未后台化、触发条件未采样，
+  维持暂缓（P3）。
 - **待办**：采样两项占比；几何达标先做双缓冲改造并补并发测试；序列化改造单独排期。
 - **验证方式**：`AttackRangeGeometryCacheTest`、`BedrockGeometryCacheTest` 断言顶点数、LOD 选档与
   缓存失效；新增并发测试用有界等待验证「旧任务结果不覆盖新快照」与「关闭后无残留线程」；
@@ -313,4 +347,4 @@
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
 | `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T5/T6 复用其 §三/§四 的采集步骤与线程名口径，不新增独立清单；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
-| 本文件 | 测试覆盖与性能取舍类技术债（T1–T7）；不搬运上述条目，避免两处维护漂移 |
+| 本文件 | 测试覆盖与性能取舍类技术债（现行 T3–T7；T1/T2 已闭环归档）；不搬运上述条目，避免两处维护漂移 |
