@@ -30,7 +30,7 @@
 
 ## ✨ 功能概览
 
-功能按配置界面顶部的标签分 6 类，完整清单见[功能一览](#features)。
+功能按配置界面顶部的标签分 7 类，完整清单见[功能一览](#features)。
 
 | 标签 | 主要能力 |
 | --- | --- |
@@ -38,8 +38,9 @@
 | 修改 | 使用物品不减速、飞行漂移、疾跑视野、挖掘打断、鞘翅水中飞行、附魔/铁砧限制、掉落物寿命、生物生成、移动物理、耕地踩踏 |
 | 修复 | 草径卡船、聊天卡顿、经验条溢出、书本居中、鱼线悬空、树苗生长等原版问题 |
 | 优化 | MiniHUD 掉帧优化 |
-| 通用 | 界面语言、配置快捷键、标签与滚动记忆、搜索高亮、平滑滚动 |
+| 通用 | 界面语言、配置快捷键、标签与滚动记忆、搜索高亮、平滑滚动、收藏星样式 |
 | 测试 | 调试 HUD、钩子探针与报表、配置档案编辑器 |
+| 收藏 | 手动收藏的配置项（点击配置行右侧星标收藏/取消；存档列表左侧的星标可收藏存档并置顶，收藏的存档不可删除） |
 
 <a name="requirements"></a>
 
@@ -60,7 +61,7 @@
 
 ## 📖 功能一览
 
-下面按配置界面的标签分为 6 类、共 290 余项配置（默认折叠，点击分类标题展开）。每行以 `配置字段` 开头，后接便于识别的中文名；「默认」列是新生成配置文件时的初始值。说明中标注「仅在单人/局域网生效」的功能，判定发生在集成服务端，专用服务器上不会生效。
+下面按配置界面的标签分为 7 类、共 290 余项配置（默认折叠，点击分类标题展开）。每行以 `配置字段` 开头，后接便于识别的中文名；「默认」列是新生成配置文件时的初始值。说明中标注「仅在单人/局域网生效」的功能，判定发生在集成服务端，专用服务器上不会生效。
 
 > **已知问题**：MC 26.3 在 **Vulkan 后端 + NVIDIA 驱动**下渲染实体描边会崩溃（`nvoglv64.dll`）。使用实体高亮时请把图形 API 设为 OpenGL。
 
@@ -414,15 +415,16 @@
 </details>
 
 <details>
-<summary><b>通用 — 语言、快捷键与列表行为（16 项）</b></summary>
+<summary><b>通用 — 语言、快捷键与列表行为（17 项）</b></summary>
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
 | `language` 界面语言 | `zh_cn` | 支持 `zh_cn` / `en_us` / `ru_ru` / `fr_fr`；关闭「跟随系统语言」后生效 |
 | `followSystemLanguage` 跟随系统语言 | 开 | 使用游戏当前语言，忽略上面的语言选择 |
 | `openConfigGui` 打开配置界面 | G + C | 打开或关闭本模组配置界面的快捷键；任意界面可用 |
-| `rememberSelectedTab` 标签记忆 | 关 | 记住上次选择的分类标签（全部/通用/功能/修改/修复/优化），下次打开配置界面直接停在该标签 |
-| `rememberSelectedTabFallback` 默认标签 | 全部 | 关闭标签记忆或首次打开时停在的标签（全部/通用/功能/修改/修复/优化/测试） |
+| `rememberSelectedTab` 标签记忆 | 关 | 记住上次选择的分类标签（全部/通用/功能/修改/修复/优化/测试/收藏），下次打开配置界面直接停在该标签 |
+| `rememberSelectedTabFallback` 默认标签 | 全部 | 关闭标签记忆或首次打开时停在的标签（全部/通用/功能/修改/修复/优化/测试/收藏） |
+| `favoriteStarStyle` 收藏星样式 | `star` | `star` 自绘星形 / `nether_star` 原版下界之星；同时作用于配置行右侧与存档列表左侧的收藏星 |
 | `scrollListMemory` 滚动列表记忆 | 开 | 记住列表滚到了哪里，关闭界面再打开回到上次位置 |
 | `scrollListMemoryPersist` 跨重启记忆 | 关 | 把滚动位置写入 `config/tweakify-mod-scroll-memory.json`，重启游戏后仍然生效 |
 | `malilibScrollMemory` MaLiLib 配置界面 | 开 | 记忆 MaLiLib 配置界面（含本模组配置界面）的滚动位置 |
@@ -438,6 +440,8 @@
 </details>
 
 > 配置界面还有一个「测试」标签，包含下面几个调试辅助项，以及不是配置项的「档案编辑器」（保存、加载、删除整套配置档案）。
+
+> 「收藏」标签只显示手动收藏的配置项：点击任意配置行右侧（重置按钮右边）的星标即可收藏/取消收藏。存档列表左侧也有同样的星标：收藏的存档会**置顶显示**，取消收藏后**回到原来的位置**；收藏期间**不可删除**（删除按钮置灰并提示，需先取消收藏）。收藏数据保存在 `config/tweakify-mod-favorites.json`，外观由「通用」标签的「收藏星样式」决定。
 
 <details>
 <summary><b>测试 — 调试 HUD 与报表（13 项）</b></summary>
@@ -506,7 +510,7 @@
 
 ## 💾 配置文件
 
-`config/tweakify-mod.json`，由配置界面或命令自动保存。文件损坏时会被重命名为 `tweakify-mod.json.broken-<时间戳>` 并重新生成默认配置；若备份失败则保留原文件、不覆盖。若存在旧版 `config/fantasy-mod.json`，首次启动会自动迁移为 `tweakify-mod.json`；配置档案单独存放在 `config/tweakify-mod-profiles.json`。
+`config/tweakify-mod.json`，由配置界面或命令自动保存。文件损坏时会被重命名为 `tweakify-mod.json.broken-<时间戳>` 并重新生成默认配置；若备份失败则保留原文件、不覆盖。若存在旧版 `config/fantasy-mod.json`，首次启动会自动迁移为 `tweakify-mod.json`；配置档案单独存放在 `config/tweakify-mod-profiles.json`，收藏数据存放在 `config/tweakify-mod-favorites.json`（损坏时同样备份为 `.broken-<时间戳>`）。
 
 文件里带有 `configVersion` 字段：旧版本配置读取后会自动升级并回写，便于以后调整字段语义时做迁移。从版本 2 起，`scrollListMemory` 默认开启；版本 1 的旧配置读取后会升级并回写。
 
@@ -596,3 +600,6 @@ MIT
 > `icon_slot.png` / `item_slot.png` / `plus.png` / `minus.png` 四张精灵图来自
 > [BizCub/inventory-item-groups](https://github.com/BizCub/inventory-item-groups)（MIT），
 > 与项目整体使用相同的 MIT 许可。
+>
+> 收藏星纹理位于 `assets/tweakify-mod/textures/gui/sprites/favorite/`：星形一套为自绘；
+> 下界之星一套取自 Minecraft 原版物品纹理（版权归 Mojang），仅用于在界面上模仿原版外观。
