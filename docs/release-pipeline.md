@@ -359,6 +359,35 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 
 > 备注：v1.1.1 的启动崩溃由客户端 Mixin 配置缺少 `mixinextras.minVersion` 导致；1.1.2 已在配置中声明 `0.5.5` 并新增 `MixinConfigTest`。
 
+## 验证记录：v1.1.3 发布
+
+本次为平滑滚动与搜索高亮的功能版本（配置界面 / 创造物品栏 / 聊天栏 / Mod Menu），`release.yml` 无改动：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `44505264128` |
+| 对应提交 | `3976a30`（`v1.1.3` 标签提交；含 1.1.3 版本号、notes 与版本索引） |
+| 触发 | push tag `v1.1.3` |
+| 结论 | **success**，job 耗时 1 分 06 秒 |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过** |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.1.3` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.1.3` 去前缀后与版本 `1.1.3` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.1.3` 与版本一致（本地同步核对过） | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.1.3.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.1.3` 开头（36 行），含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.1.3.jar`（817,086 字节）、`tweakify-mod-1.1.3-sources.jar`（620,480 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `44505056428`，1 分 13 秒）同为 success。
+
+> 备注：本次 main（`99be866..3976a30`）与标签均通过本地代理 `-c http.proxy=http://127.0.0.1:26561` 首次推送成功；
+> 本地构建的 jar 体积（821,265 字节）与 CI 产物略有差异，属打包时间戳差异，不影响版本校验。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
