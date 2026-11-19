@@ -224,7 +224,8 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 			return;
 		}
 		int maxWidth = Math.max(20, this.labelWidth - this.labelShift);
-		String text = truncateToWidth(this.config.getConfigGuiDisplayName(), maxWidth);
+		String text = this.truncateToWidthKeepingMatch(
+			this.config.getConfigGuiDisplayName(), maxWidth, this.highlightFilter);
 		for (int i = 0; i < this.subWidgets.size(); i++) {
 			WidgetBase widget = this.subWidgets.get(i);
 			if (widget instanceof WidgetLabel) {
@@ -240,7 +241,8 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 			return;
 		}
 		int maxUnscaledWidth = (int) ((this.labelWidth - KEY_MARGIN - this.labelShift) / KEY_SCALE);
-		String key = truncateToWidth(this.config.getName(), maxUnscaledWidth);
+		String key = this.truncateToWidthKeepingMatch(
+			this.config.getName(), maxUnscaledWidth, this.highlightFilter);
 		this.addWidget(new ConfigKeyLabel(this.x + this.labelShift, this.y + KEY_LABEL_Y_OFFSET,
 			key, KEY_COLOR, this.highlightFilter));
 	}
@@ -255,6 +257,28 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 			shortened = shortened.substring(0, shortened.length() - 1);
 		}
 		return shortened + "…";
+	}
+
+	// 超宽截断时优先让命中片段可见：MaLiLib 用完整文本做过滤，如果关键词只落在
+	// 被截掉的后半段，条目会被保留却完全看不到高亮，用户会以为高亮失效。
+	private String truncateToWidthKeepingMatch(String text, int maxWidth, String filter) {
+		String truncated = this.truncateToWidth(text, maxWidth);
+		if (filter == null || filter.isEmpty() || truncated.equals(text)
+			|| !ConfigSearchHighlighter.ranges(truncated, filter).isEmpty()) {
+			return truncated;
+		}
+		List<ConfigSearchHighlighter.Range> ranges = ConfigSearchHighlighter.ranges(text, filter);
+		if (ranges.isEmpty()) {
+			return truncated;
+		}
+		// 以首个命中点为窗口起点（前留 2 个字符做上下文），尾部再按剩余宽度截断。
+		int start = ConfigSearchHighlighter.windowStartForFirstMatch(text, filter);
+		String prefix = start > 0 ? "…" : "";
+		int available = maxWidth - this.getStringWidth(prefix);
+		if (available <= 0) {
+			return truncated;
+		}
+		return prefix + truncateToWidth(text.substring(start), available);
 	}
 
 	// 纯文字的展开/折叠切换控件：仅渲染 + 或 - 文本，鼠标悬停高亮，点击切换。

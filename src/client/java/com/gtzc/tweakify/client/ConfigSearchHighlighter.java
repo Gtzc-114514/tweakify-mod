@@ -36,6 +36,13 @@ final class ConfigSearchHighlighter {
 		return merge(ranges);
 	}
 
+	// 超宽截断时优先保留首个命中片段：返回保证命中可见的窗口起点（命中点前留 2 个字符）。
+	// 无命中时返回 0，保持“从头截断”的原行为。
+	static int windowStartForFirstMatch(String text, String filter) {
+		List<Range> ranges = ranges(text, filter);
+		return ranges.isEmpty() ? 0 : Math.max(0, ranges.get(0).start() - 2);
+	}
+
 	// 多个关键词可能命中同一段或相邻的文字：合并成连续区间，避免重复绘制。
 	private static List<Range> merge(List<Range> ranges) {
 		if (ranges.size() <= 1) {

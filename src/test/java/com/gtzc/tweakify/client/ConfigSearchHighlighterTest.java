@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -87,5 +88,21 @@ class ConfigSearchHighlighterTest {
 		List<ConfigSearchHighlighter.Range> ranges = ConfigSearchHighlighter.ranges("smooth", "smooth|");
 
 		assertEquals(List.of(new ConfigSearchHighlighter.Range(0, 6)), ranges);
+	}
+
+	// 超宽截断时以命中点为窗口起点：截断后的文本必须仍包含命中片段，否则高亮会整条消失。
+	@Test
+	void windowStartKeepsFirstMatchVisible() {
+		String text = "itemGroupsShowItems";
+		String filter = "showitems";
+
+		int start = ConfigSearchHighlighter.windowStartForFirstMatch(text, filter);
+
+		assertTrue(start > 0, "命中在后半段时窗口应从中间开始");
+		assertFalse(ConfigSearchHighlighter.ranges(text.substring(start), filter).isEmpty(),
+			"窗口内的文本必须仍包含命中片段");
+		assertEquals(0, ConfigSearchHighlighter.windowStartForFirstMatch(text, "zzz"),
+			"无命中时保持从头截断");
+		assertEquals(0, ConfigSearchHighlighter.windowStartForFirstMatch(text, ""));
 	}
 }
