@@ -138,7 +138,13 @@
 		"ClientPacketListenerRespawnHotbarMixin",
 		"ClientPacketListenerSneakAnimationMixin",
 		"RangedBowAttackGoalSkeletonAimingMixin",
-		"TreeFeatureSaplingGrowthMixin"
+		"TreeFeatureSaplingGrowthMixin",
+		"WorldSelectionListAccessor",
+		"AbstractSelectionListInvoker",
+		"WorldListEntryFavoriteMixin",
+		"AbstractContainerWidgetFavoriteMixin",
+		"WorldSelectionListFavoriteMixin",
+		"SelectWorldScreenFavoriteMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"
