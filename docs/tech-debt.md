@@ -25,7 +25,7 @@
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-20，见详情） |
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（真实 Loader 集成 + 源码契约，见详情） |
 | T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解，待采样（第 1–5 项已预防性实施，采样优先级低于 T3/T6；最近复评 2026-11-20，见详情） |
-| T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置 JSON 序列化仍在主线程；输入均为不可变数据，可移入后台 worker / 写盘线程 | 暂缓，成本未采样，达标前不引入后台构建（最近复评 2026-11-20，见详情） |
+| T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建 | 几何重建仍在主线程；输入为不可变数据，可移入后台 worker（配置序列化已于 2026-11-21 异步化，见详情） | 暂缓，几何重建未线程化（最近复评 2026-11-21，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
 
 ### 已闭环归档
@@ -55,6 +55,10 @@
 > 2026-11-20 T4 真实加载升级：Fabric Loader JUnit 0.20.1 在独立 loaderTest 源集以 CLIENT
 > 环境加载客户端 Mixin（`CreativeModeInventoryScreen` 已织入 `tweakify$lastConfigSignature`），
 > 普通 test 保持 708 个用例；提交 `3559cb1`。
+>
+> 2026-11-21 T6 配置序列化落地：写盘任务内基于不可变 JSON 树执行 pretty printing，主线程只建树并提交；
+> 新增内容/键序一致性、快照隔离与提交顺序测试，`gradlew test` 714 例与 `gradlew build`（loaderTest + 6 GameTest）通过。
+> 几何重建仍暂缓。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -271,56 +275,69 @@
   并断言「淘汰后结果与无缓存一致」；tooltip 用现有提示行序断言校验追加位置不变；
   `gradlew test` 与 `gradlew build`。
 
-## T6 详情：几何重建与配置序列化仍在主线程
+## T6 详情：几何重建仍在主线程（配置序列化已异步化）
 
-- **优先级**：P3 观察；两项分别达标后各自按 P2 近期处理。
+- **优先级**：P3 观察；几何项达标后按 P2 近期处理。
 - **现状**：
   - `AttackRangeGeometryCache.ensure` 在条目列表、显示/渲染模式或颜色变化时重建：每个条目
     3 档 LOD（默认 64、上限 256 条），每次新建 `EntryGeometry` 与 3 个 `CachedGeometry` 数组；
   - `BedrockGeometryCache.ensure` 在标记列表或颜色变化时重建，每个基岩最多 2 个可见面 × 24 顶点
     （默认 32、上限 256）；
-  - `TweakifyModConfig.prepareSaveHandle` / `submitSaveAsyncHandle` 在客户端线程完成
-    `ConfigStorage.toJson`（pretty printing + 反射读取 300 余个 `volatile` 字段），只有磁盘 IO 进入
-    `AsyncFileWriter`；`TweakifyModConfigOptions.flushPendingSaveNow` 每 250ms 节流一次，
-    序列化与 `snapshot()` 仍在客户端线程。
+  - `TweakifyModConfig.prepareSaveHandle` / `submitSaveAsyncHandle` 与
+    `TweakifyModConfigOptions.flushPendingSaveNow` 自 2026-11-21 起只在配置锁内构建不可变 JSON 树
+    （`ConfigStorage.toJsonTree(Map)`），提交时仍分配落盘序号；pretty printing（`GSON.toJson`）与
+    磁盘 IO 都在写盘任务内执行，写盘线程不再读取配置字段值（只读 `TweakifyMod.CONFIG` 引用与路径）；
+    `writeSynchronously()` 保留主线程序列化作为退出兜底（见「实施记录」）。
   已有基础设施：单线程 `AsyncFileWriter`、提交序号与 `Snapshot` 回滚；T2 的摘要去重已闭环，
   T3 的扫描快照方案与本条独立，不在此重复。
 - **影响**：几何重建默认在内容变化时以 6/12 Hz 触发，高上限（256/256）时单次可达十万级顶点计算
-  与数百 KB 数组垃圾；配置序列化在拖动滑块时每 250ms 产生一次 1–2ms 量级的主线程尖峰（未实测）。
-  两者都不影响正确性，但属于可感知的周期性卡顿来源。
+  与数百 KB 数组垃圾；不影响正确性，但属于可感知的周期性卡顿来源。配置序列化的 pretty printing
+  与磁盘 IO 已移出主线程，主线程只剩建树。
 - **失败模式**：
-  - 后台构建期间渲染线程读到半构建数组，导致渲染错误或崩溃；
-  - 过期结果覆盖新结果（玩家移动、换世界、改颜色/模式、配置回滚）；
-  - 退出时后台任务未排空，丢失最后一次写盘；
-  - 快照序列化与直接 `toJson` 的键序/null 跳过规则不一致，导致配置文件格式漂移。
+  - 几何：后台构建期间渲染线程读到半构建数组，导致渲染错误或崩溃；
+  - 几何：过期结果覆盖新结果（玩家移动、换世界、改颜色/模式、配置回滚）；
+  - 几何：退出时后台任务未排空，丢失最后一次写盘；
+  - 配置：快照树与直接 `toJson` 的键序/null 跳过规则漂移，导致配置文件格式变化——已由
+    `snapshotJsonTreeMatchesDirectToJson` 锁定；
+  - 配置：任务执行期间读取配置字段，把提交后的新值写进本次落盘——已由
+    `prepareSaveHandleWritesSnapshotTakenAtSubmitTime` / `flushPendingSaveNowWritesSnapshotTakenAtSubmitTime` 锁定。
 - **触发条件**：Spark/JFR 中 `AttackRangeGeometryCache.rebuild` + `BedrockGeometryCache.rebuild`
-  合计 > 1% Render thread（沿用 T2 的回归线）；或 `flushPendingSaveNow` / `ConfigStorage.toJson`
-  > 0.5% Render thread，或收到可复现的「拖动滑块卡顿」反馈；或实机把标记/条目上限调到 256
-  并同时开启多个渲染功能。
-- **判定口径**：几何 1% 触发 / 0.5%–1% 观察 / < 0.5% 维持；序列化 0.5% 触发或可复现反馈。
-  两条互不替代，可分别实施与关闭。
+  合计 > 1% Render thread（沿用 T2 的回归线）；或实机把标记/条目上限调到 256
+  并同时开启多个渲染功能。（配置序列化项已完成，不再作为触发条件。）
+- **判定口径**：几何 1% 触发 / 0.5%–1% 观察 / < 0.5% 维持。
 - **闭环动作**：
   1. 几何：引入单个 daemon worker 与双缓冲；后台构建不可变快照（`EntryGeometry` 表或
      `CachedGeometry` + 段表），用 `AtomicReference` 与 generation 发布，渲染线程只读当前快照；
      换世界、功能关闭、颜色/模式变化或退出时丢弃过期结果；缓存失效仍按引用相等，保留 T2 摘要去重；
-  2. 配置：序列化改为在写盘任务内基于不可变 `Snapshot` 执行（`GSON.toJsonTree(map)` + 拼接），
-     提交序号仍在提交时分配；退出兜底的 `writeSynchronously()` 保留主线程序列化；
+  2. 配置（已完成，2026-11-21）：写盘任务内基于不可变 JSON 树执行 pretty printing，提交序号仍在
+     提交时分配；退出兜底的 `writeSynchronously()` 保留主线程序列化；
   3. 两项分开提交，不合并为一个改动。
-- **缓解措施**：实施前保持现状；几何继续用摘要去重 + LOD + 上限，序列化继续用 250ms 节流与单队列；
-  用户侧可降低上限或关闭对应渲染功能。
+- **缓解措施**：几何继续用摘要去重 + LOD + 上限，用户侧可降低上限或关闭对应渲染功能。
+- **实施记录（2026-11-21，待提交）**：
+  - `ConfigStorage` 新增基于快照值表的 `toJsonTree(Map)` 与写盘重载
+    `writeAtomically(JsonObject, Path, long)`：树在配置锁内一次性生成，任务内只做 pretty printing
+    与落盘，序列化异常转为失败返回值；
+  - `TweakifyModConfig` 新增 `toJsonTreeSnapshot()` / `writeJsonTree(...)`；
+    `prepareSaveHandle` / `submitSaveAsyncHandle` 改为快照树路径，`writeSynchronously()` 保持不变；
+  - `TweakifyModConfigOptions.flushPendingSaveNow` 改为先建快照树再入队，建树失败仍走原回滚 +
+    `syncFromConfig` 路径；`writeConfig` 后台任务只接收冻结的树；
+  - 验证：`gradlew test` **714** 个用例通过（新增 6 条）；`gradlew build` 通过 loaderTest 与 6 个 GameTest。
 - **历史评估（2026-11-17）**：桌面复核确认两处输入均为不可变数据（发布后的 `List.copyOf` 与
   `Snapshot`），可安全移出主线程；未采样、未实施。
-- **最近评估（2026-11-20）**：对照当前代码复查：`AttackRangeGeometryCache.ensure/rebuild`
-  （L67–L106）与 `BedrockGeometryCache.ensure/rebuild`（L37–L60）仍在主线程执行，无
-  `Executor` / `Thread` / `CompletableFuture` 用法；`TweakifyModConfigOptions.flushPendingSaveNow`
-  仍在客户端线程调用 `config.toJson()`（L1353、L1374），节流间隔仍为 250ms（L1260）；
-  `TweakifyModConfig.prepareSaveHandle` 仍在配置锁内同步序列化。未后台化、触发条件未采样，
-  维持暂缓（P3）。
-- **待办**：采样两项占比；几何达标先做双缓冲改造并补并发测试；序列化改造单独排期。
+- **历史评估（2026-11-20）**：对照当时代码复查：两个几何缓存仍在主线程执行，无 `Executor` /
+  `Thread` / `CompletableFuture` 用法；`flushPendingSaveNow` 仍在客户端线程调用 `config.toJson()`；
+  `prepareSaveHandle` 仍在配置锁内同步序列化。两项均未后台化、触发条件未采样。
+- **最近评估（2026-11-21）**：配置序列化已落地并通过一致性/隔离/提交顺序测试；几何两项仍无
+  `Executor` / `Thread` / `CompletableFuture` 用法，维持暂缓（P3）。
+- **待办**：采样几何两项占比；达标先做双缓冲改造并补并发测试；配置项观察发版后是否出现格式漂移反馈。
 - **验证方式**：`AttackRangeGeometryCacheTest`、`BedrockGeometryCacheTest` 断言顶点数、LOD 选档与
   缓存失效；新增并发测试用有界等待验证「旧任务结果不覆盖新快照」与「关闭后无残留线程」；
-  `TweakifyModConfigTest`、`AsyncFileWriterTest` 增加「快照序列化 JSON 与直接 `toJson` 内容及键序一致」
-  与提交顺序断言；手动在 256 上限下跑一次渲染回归；`gradlew test` 与 `gradlew build`。
+  `TweakifyModConfigTest` 的 `snapshotJsonTreeMatchesDirectToJson` /
+  `snapshotJsonTreeFreezesValuesAtBuildTime` / `prepareSaveHandleWritesSnapshotTakenAtSubmitTime` /
+  `prepareSaveHandleSubmitsInCallOrder`（排队旧快照 vs 同步兜底写，序号必须在提交时分配）、
+  `ConfigStorageTest.writeAtomicallyWithJsonTreeWritesFormattedContent`、
+  `TweakifyModConfigOptionsTest.flushPendingSaveNowWritesSnapshotTakenAtSubmitTime` 锁定配置序列化路径；
+  手动在 256 上限下跑一次渲染回归；`gradlew test` 与 `gradlew build`。
 
 ## T7 详情：窄窗口行内收藏星与重置按钮重叠
 
