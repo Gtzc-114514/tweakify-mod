@@ -25,7 +25,7 @@ public class HudStatusEffectTimerMixin {
 	@Final
 	private Minecraft minecraft;
 
-	// try-with-resources 保证异常时矩阵栈仍能恢复；缩放围绕右上角，避免图标移出屏幕右缘。
+	// try/finally 保证异常时矩阵栈仍能恢复；缩放围绕右上角，避免图标移出屏幕右缘。
 	// 时间文字由下方的 TAIL 注入绘制：TAIL 落在 wrapped 方法内部，既在缩放矩阵内，
 	// 又保留原版“未显示效果时提前返回”的语义。
 	@WrapMethod(method = "extractEffects")

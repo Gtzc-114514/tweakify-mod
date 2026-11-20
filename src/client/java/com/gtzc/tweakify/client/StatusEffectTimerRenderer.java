@@ -134,13 +134,19 @@ public final class StatusEffectTimerRenderer {
 
 	public static final class EffectScaleScope implements AutoCloseable {
 		private final Matrix3x2fStack pose;
+		private boolean closed;
 
 		private EffectScaleScope(Matrix3x2fStack pose) {
 			this.pose = pose;
 		}
 
+		// 幂等：重复 close 不能多弹一层，避免破坏调用方的矩阵栈。
 		@Override
 		public void close() {
+			if (this.closed) {
+				return;
+			}
+			this.closed = true;
 			this.pose.popMatrix();
 		}
 	}
