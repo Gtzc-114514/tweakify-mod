@@ -27,7 +27,7 @@ public final class AttackRangeRenderer {
 								 List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
 								 Frustum frustum) {
 		CACHE.ensure(entries, sphere, false, paletteRgb());
-		writeVisible(vertices, pose, entries, camera, sphere, frustum);
+		writeVisible(vertices, pose, entries, camera, sphere, frustum, CACHE.snapshot());
 	}
 
 	// 半透明实心模式：由 WorldOverlayRenderer 使用 debugFilledBox 提交。
@@ -35,7 +35,7 @@ public final class AttackRangeRenderer {
 								  List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
 								  Frustum frustum) {
 		CACHE.ensure(entries, sphere, true, paletteRgb());
-		writeVisible(vertices, pose, entries, camera, sphere, frustum);
+		writeVisible(vertices, pose, entries, camera, sphere, frustum, CACHE.snapshot());
 	}
 
 	// 提交前判断：是否有条目在视锥内；与 writeVisible 共用同一判定，避免提交空几何。
@@ -61,14 +61,16 @@ public final class AttackRangeRenderer {
 
 	private static void writeVisible(VertexConsumer vertices, PoseStack.Pose pose,
 									 List<AttackRangeState.Entry> entries, Vec3 camera,
-									 boolean sphere, Frustum frustum) {
+									 boolean sphere, Frustum frustum,
+									 AttackRangeGeometryCache.Snapshot snapshot) {
 		for (AttackRangeState.Entry entry : entries) {
 			// 视锥剔除：只提交相机可见范围内的攻击范围，减少屏幕外几何。
 			if (!isVisible(entry, frustum)) {
 				continue;
 			}
-			AttackRangeGeometryCache.EntryGeometry geometry = CACHE.geometry(entry);
+			AttackRangeGeometryCache.EntryGeometry geometry = snapshot.geometry(entry);
 			if (geometry == null) {
+				// 新条目还在后台构建：本帧跳过，下一次发布后自动出现。
 				continue;
 			}
 			double dx = entry.x() - camera.x;

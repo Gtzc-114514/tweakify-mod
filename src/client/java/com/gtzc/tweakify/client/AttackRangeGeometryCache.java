@@ -2,13 +2,20 @@ package com.gtzc.tweakify.client;
 
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 生物攻击范围的顶点缓存：每个条目预生成 3 档 LOD（step 1/2/4）的顶点，
- * 条目列表或显示/渲染模式变化时重建一次，渲染帧只按距离选档并把缓存顶点平移写入。
+ * 条目列表或显示/渲染模式变化时在后台重建一次，渲染帧只按距离选档并把缓存顶点平移写入。
  *
  * <p>坐标相对条目中心缓存，写入时再加“条目坐标 - 相机坐标”，
  * 相机移动不会让缓存失效；距离只决定使用哪一档 LOD。
+ *
+ * <p>双缓冲：构建在 {@link GeometryBuildWorker} 上进行，完成后一次性发布不可变
+ * {@link Snapshot}；渲染线程始终读到上一份完整快照，不会看到半成品。每次请求分配
+ * 递增 generation，旧任务开始时直接丢弃，发布侧也只接受更新的代。
  */
 final class AttackRangeGeometryCache {
 	// 每个条目的基准点与三档 LOD 几何；球体模式没有 step 4。
@@ -16,6 +23,30 @@ final class AttackRangeGeometryCache {
 						 CachedGeometry step1, CachedGeometry step2, CachedGeometry step4) {
 		CachedGeometry forStep(int step) {
 			return step >= 4 ? this.step4 : step == 2 ? this.step2 : this.step1;
+		}
+	}
+
+	// 一次构建的完整产物：代与只读映射绑定发布，渲染一帧内只取同一次快照。
+	static final class Snapshot {
+		private final long generation;
+		private final IdentityHashMap<AttackRangeState.Entry, EntryGeometry> geometries;
+
+		// 包私有：测试注入旧代验证单调换代。
+		Snapshot(long generation, IdentityHashMap<AttackRangeState.Entry, EntryGeometry> geometries) {
+			this.generation = generation;
+			this.geometries = geometries;
+		}
+
+		long generation() {
+			return this.generation;
+		}
+
+		EntryGeometry geometry(AttackRangeState.Entry entry) {
+			return this.geometries.get(entry);
+		}
+
+		int size() {
+			return this.geometries.size();
 		}
 	}
 
@@ -57,13 +88,17 @@ final class AttackRangeGeometryCache {
 		}
 	}
 
+	private static final Snapshot EMPTY = new Snapshot(0L, new IdentityHashMap<>());
+
 	private List<AttackRangeState.Entry> cachedEntries = List.of();
 	private boolean cachedSphere;
 	private boolean cachedFilled;
 	private int cachedRgb = -1;
-	private final IdentityHashMap<AttackRangeState.Entry, EntryGeometry> geometries = new IdentityHashMap<>();
+	// 请求代与已发布快照：都在验证新旧，后台任务只能发布比当前更新的代。
+	private final AtomicLong issuedGeneration = new AtomicLong();
+	private final AtomicReference<Snapshot> published = new AtomicReference<>(EMPTY);
 
-	// 返回本次调用是否重建了缓存。
+	// 返回本次调用是否提交了新的构建请求（空列表会立即发布空快照）。
 	boolean ensure(List<AttackRangeState.Entry> entries, boolean sphere, boolean filled) {
 		return ensure(entries, sphere, filled, DEFAULT_RGB);
 	}
@@ -78,28 +113,76 @@ final class AttackRangeGeometryCache {
 		this.cachedSphere = sphere;
 		this.cachedFilled = filled;
 		this.cachedRgb = rgb;
-		rebuild(entries, sphere, filled, rgb);
+		long generation = this.issuedGeneration.incrementAndGet();
+		// 空输入不必占用后台队列：直接发布空快照，同时让在途任务过期。
+		if (entries.isEmpty()) {
+			publish(new Snapshot(generation, new IdentityHashMap<>()));
+			return true;
+		}
+		GeometryBuildWorker.submit(() -> rebuildIfCurrent(entries, sphere, filled, rgb, generation));
 		return true;
 	}
 
+	// 渲染线程每帧取一次快照：同一帧内的查询都落在同一代上。
+	Snapshot snapshot() {
+		return this.published.get();
+	}
+
 	EntryGeometry geometry(AttackRangeState.Entry entry) {
-		return this.geometries.get(entry);
+		return snapshot().geometry(entry);
 	}
 
 	int cachedSize() {
-		return this.geometries.size();
+		return snapshot().size();
 	}
 
-	private void rebuild(List<AttackRangeState.Entry> entries, boolean sphere, boolean filled, int rgb) {
-		this.geometries.clear();
+	// 后台构建：开始前丢弃已过期的请求；完成后交给发布侧的单调换代兜底。
+	private void rebuildIfCurrent(List<AttackRangeState.Entry> entries, boolean sphere, boolean filled,
+								  int rgb, long generation) {
+		if (generation != this.issuedGeneration.get()) {
+			return;
+		}
+		IdentityHashMap<AttackRangeState.Entry, EntryGeometry> built = new IdentityHashMap<>();
 		for (AttackRangeState.Entry entry : entries) {
 			// 平面模式以脚底为基准，球体模式以实体中心为基准。
 			double baseY = sphere ? entry.centerY() : entry.feetY();
-			this.geometries.put(entry, new EntryGeometry(entry.x(), baseY, entry.z(),
+			built.put(entry, new EntryGeometry(entry.x(), baseY, entry.z(),
 				build(entry.radius(), sphere, filled, 1, rgb),
 				build(entry.radius(), sphere, filled, 2, rgb),
 				build(entry.radius(), sphere, filled, 4, rgb)));
 		}
+		publish(new Snapshot(generation, built));
+	}
+
+	// 旧任务即使晚于新任务完成，也不能把更旧的快照盖回去（代严格单调）。
+	// 包私有：测试直接注入旧代验证这条规则。
+	void publish(Snapshot snapshot) {
+		while (true) {
+			Snapshot current = this.published.get();
+			if (current.generation() > snapshot.generation()) {
+				return;
+			}
+			if (this.published.compareAndSet(current, snapshot)) {
+				return;
+			}
+		}
+	}
+
+	// 包私有：测试等待后台构建发布到当前请求代；超时返回 false。
+	boolean awaitPublishedForTest(long timeoutMillis) {
+		long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+		while (System.nanoTime() < deadline) {
+			if (this.published.get().generation() == this.issuedGeneration.get()) {
+				return true;
+			}
+			try {
+				Thread.sleep(1L);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return false;
+			}
+		}
+		return false;
 	}
 
 	private static CachedGeometry build(float radius, boolean sphere, boolean filled, int step, int rgb) {

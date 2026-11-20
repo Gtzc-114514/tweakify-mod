@@ -41,8 +41,10 @@ public final class BedrockHighlightRenderer {
 	public static void drawGeometry(VertexConsumer vertices, PoseStack.Pose pose,
 									List<BedrockHighlightState.Marker> markers, Vec3 camera) {
 		CACHE.ensure(markers, markerColor());
-		CachedGeometry geometry = CACHE.geometry();
-		for (BedrockGeometryCache.Segment segment : CACHE.segments()) {
+		// 几何与段表必须在同一代上读取：后台发布可能发生在两行之间。
+		BedrockGeometryCache.Snapshot snapshot = CACHE.snapshot();
+		CachedGeometry geometry = snapshot.geometry();
+		for (BedrockGeometryCache.Segment segment : snapshot.segments()) {
 			// 相机看不到的那一面在提交前就跳过，和原实现一致。
 			if (!BedrockHighlightState.isFaceVisibleFrom(segment.top(), camera.y, segment.blockY())) {
 				continue;
