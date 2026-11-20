@@ -521,6 +521,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 潜行时保持原版告示牌交互。
 	public static final ConfigBoolean SIGN_OPEN_CONTAINER_SNEAK_BYPASS = new ConfigBoolean(
 		"signOpenContainerSneakBypass", true).apply(GENERAL_KEY);
+	// 不死图腾背包生效：图腾在快捷栏或背包即可触发，不再要求主手/副手。
+	public static final ConfigBoolean TOTEM_FROM_INVENTORY = new ConfigBoolean(
+		"totemFromInventory", false).apply(GENERAL_KEY);
 	// 禁用蛛网减速：蜘蛛网不再粘住并限制移动。
 	public static final ConfigBoolean DISABLE_COBWEB_SLOWDOWN = new ConfigBoolean(
 		"disableCobwebSlowdown", false).apply(GENERAL_KEY);

@@ -13,6 +13,7 @@
 		"AbstractWidgetLockedTradeMixin",
 		"AutoStepUpMixin",
 		"LivingEntityClimbingMixin",
+		"TotemInventoryMixin",
 		"PlayerForceCrawlMixin",
 		"BoneMealItemMixin",
 		"MultiPlayerGameModeMixin",

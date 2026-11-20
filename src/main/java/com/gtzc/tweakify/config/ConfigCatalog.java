@@ -346,6 +346,8 @@ public final class ConfigCatalog {
 		// 穿牌打开容器（修改标签）
 		entries.add(modified("signOpenContainer", true));
 		entries.add(child("signOpenContainer", "signOpenContainerSneakBypass"));
+		// 不死图腾背包生效（修改标签）：图腾放在快捷栏或背包即可触发。
+		entries.add(modified("totemFromInventory", true));
 		// 禁用蛛网减速（修改标签）
 		entries.add(modified("disableCobwebSlowdown", true));
 		entries.add(child("disableCobwebSlowdown", "cobwebSlowdownAllEntities"));

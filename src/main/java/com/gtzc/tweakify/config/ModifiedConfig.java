@@ -206,6 +206,9 @@ public final class ModifiedConfig extends ConfigSection {
 	// 潜行时保持原版：开启时潜行交给告示牌自身，关闭后潜行也能穿牌开容器。
 	public volatile boolean signOpenContainerSneakBypass = true;
 
+	// 不死图腾背包生效：图腾放在快捷栏或主背包（不限于主手/副手）也能触发。
+	public volatile boolean totemFromInventory = false;
+
 	// 禁用蛛网减速：蜘蛛网不再把实体粘住并限制移动。
 	public volatile boolean disableCobwebSlowdown = false;
 
