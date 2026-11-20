@@ -146,10 +146,11 @@
 | `durabilityOverlayHotbarOnly` 仅快捷栏显示 | 关 | 只在快捷栏显示耐久文字，背包格子里不显示 |
 | `durabilityOverlayLowThreshold` 低耐久提醒阈值 | 0 | 剩余耐久低于该百分比（0 ~ 100）时才显示；0 表示始终显示 |
 | `durabilityOverlayColorMode` 耐久文字配色 | `auto` | `auto` 随剩余耐久由绿转白、黄、红 / `white` / `yellow` / `red` 固定单色 |
-| `statusEffectDurationDisplay` 药水效果时间显示 | 关 | 在 HUD 右侧药水效果图标下方显示剩余时间（秒 / 分:秒 / 2h05 / 2d05）；无尽效果不显示；颜色与低时长过滤可调 |
+| `statusEffectDurationDisplay` 更好的药水显示 | 关 | 在 HUD 右侧药水效果图标下方显示剩余时间（秒 / 分:秒 / 2h05 / 2d05）；无尽效果不显示；颜色、低时长过滤与整体缩放可调 |
 | `statusEffectDurationAlwaysSeconds` 固定按秒显示 | 关 | 始终使用秒数（如 125），不使用分:秒与小时/天缩写；长时间效果会缩小字号避免溢出 |
 | `statusEffectDurationLowThreshold` 低时长阈值 | 0 | 只在剩余时间不高于该秒数时显示（0 ~ 600）；0 表示不过滤，适合只关注即将结束的效果 |
 | `statusEffectDurationColorMode` 时间文字配色 | `auto` | `auto` 剩余 10 秒内变红、30 秒内变黄，其余白色 / `white` / `yellow` / `red` 固定单色 |
+| `statusEffectDurationScale` 效果显示大小 | 100 | 右上角药水效果图标与时间文字的整体缩放百分比（50 ~ 200）；数字随图标同步缩放 |
 | `attackRangeDisplay` 攻击范围显示 | 关 | 以生物或玩家为中心显示半透明线框攻击范围（颜色可调），半径按原版攻击距离计算；每秒刷新 12 次，条目几何未变时复用已有顶点缓存 |
 | `attackRangeDisplayMode` 范围显示方式 | `flat` | `flat` 脚下双圆环 / `sphere` 经纬线框球体 |
 | `attackRangeRenderMode` 范围渲染方式 | `wireframe` | `wireframe` 蓝色线框（无 OIT，性能更好）/ `filled` 半透明实心（观感更完整，可能掉帧） |
