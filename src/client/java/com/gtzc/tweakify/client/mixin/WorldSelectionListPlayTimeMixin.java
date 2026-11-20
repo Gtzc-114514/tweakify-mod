@@ -15,23 +15,23 @@ import java.util.List;
 /**
  * 存档列表每次重新填充（打开界面、搜索过滤）后刷新游玩时长缓存。
  *
- * <p>只在单人存档列表生效：Realms/上传世界没有本地 stats。
- * 功能关闭时清空缓存，避免关闭后仍占用内存。
+ * <p>只给单人存档列表显示时长；功能关闭、Realms 或上传列表都清空缓存：
+ * 上传列表同样展示本地存档，若不清理会把单人列表的缓存串过去。
+ * 搜索过滤复用同一列表实例，{@link com.gtzc.tweakify.client.WorldPlayTime#refresh}
+ * 内部按引用去重，不会每个按键都重扫磁盘。
  */
 @Mixin(WorldSelectionList.class)
 public abstract class WorldSelectionListPlayTimeMixin {
 	@Inject(method = "fillLevels", at = @At("TAIL"))
 	private void tweakify$refreshPlayTime(String filter, List<LevelSummary> levels, CallbackInfo ci) {
 		WorldSelectionList list = (WorldSelectionList) (Object) this;
+		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (((WorldSelectionListAccessor) list).tweakify$entryType()
-			!= WorldSelectionList.EntryType.SINGLEPLAYER) {
+			!= WorldSelectionList.EntryType.SINGLEPLAYER
+			|| config == null || !config.functions.savePlayTime) {
+			WorldPlayTime.clear();
 			return;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.functions.savePlayTime) {
-			WorldPlayTime.refresh(levels);
-		} else {
-			WorldPlayTime.clear();
-		}
+		WorldPlayTime.refresh(levels);
 	}
 }
