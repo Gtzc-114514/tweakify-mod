@@ -71,6 +71,23 @@ class TotemInventoryTest {
 			Inventory.INVENTORY_SIZE));
 	}
 
+	@Test
+	void findSlotHandlesEmptyAndLimitBoundaries() {
+		ItemStack[] slots = {ItemStack.EMPTY, stack(Items.TOTEM_OF_UNDYING)};
+
+		assertEquals(-1, TotemInventory.findSlot(0, i -> slots[i], 36), "空容器");
+		assertEquals(-1, TotemInventory.findSlot(2, i -> slots[i], 0), "limit 为 0");
+		assertEquals(-1, TotemInventory.findSlot(2, i -> slots[i], -1), "limit 为负数");
+		assertEquals(1, TotemInventory.findSlot(2, i -> slots[i], 36), "limit 超过尺寸");
+	}
+
+	@Test
+	void findSlotIgnoresNullSlots() {
+		ItemStack[] slots = {null, stack(Items.TOTEM_OF_UNDYING)};
+
+		assertEquals(1, TotemInventory.findSlot(2, i -> slots[i], Inventory.INVENTORY_SIZE));
+	}
+
 	// 单元测试没有完整数据包加载流程：先绑定空组件表让 ItemStack 可构造，
 	// 再给图腾手动设置 DEATH_PROTECTION（空效果列表），验证生产路径的组件判定。
 	private static ItemStack stack(Item item) {

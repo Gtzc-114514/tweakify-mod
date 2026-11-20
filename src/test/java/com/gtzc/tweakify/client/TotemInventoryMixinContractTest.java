@@ -21,22 +21,29 @@ class TotemInventoryMixinContractTest {
 
 	@Test
 	void inventoryTotemFallbackStaysWired() throws IOException {
-		String source = Files.readString(MIXIN_SOURCE);
-		assertTrue(source.matches("(?s).*@Inject\\s*\\([^)]*method\\s*=\\s*\"checkTotemDeathProtection\"[^)]*\\).*"),
-			"checkTotemDeathProtection 注入被移除或改名");
-		assertTrue(source.matches("(?s).*@Inject\\s*\\(.*?cancellable\\s*=\\s*true.*?\\).*"),
+		String code = stripComments(Files.readString(MIXIN_SOURCE));
+
+		assertTrue(code.matches("(?ms).*^[ \\t]*@Inject\\s*\\([\\s\\S]*?method\\s*=\\s*\"checkTotemDeathProtection\"[\\s\\S]*?\\).*"),
+			"checkTotemDeathProtection 注入注解被注释、移除或改名");
+		assertTrue(code.matches("(?s).*@Inject\\s*\\([\\s\\S]*?at\\s*=\\s*@At\\(\"HEAD\"\\)[\\s\\S]*?\\).*"),
+			"@Inject 注入点必须是 HEAD");
+		assertTrue(code.matches("(?s).*@Inject\\s*\\([\\s\\S]*?cancellable\\s*=\\s*true[\\s\\S]*?\\).*"),
 			"@Inject 必须保持 cancellable，否则 setReturnValue 无法跳过原方法");
-		assertTrue(source.matches("(?s).*!config\\.modified\\.totemFromInventory.*"),
+		assertTrue(code.matches("(?s).*!config\\.modified\\.totemFromInventory.*"),
 			"背包图腾开关必须取反：关闭时不能触发");
-		assertTrue(source.matches("(?s).*BYPASSES_INVULNERABILITY\\)\\)\\s*\\{\\s*return;.*"),
-			"绕过无敌的伤害必须先早退");
-		assertTrue(source.matches("(?s).*if\\s*\\(\\s*!\\s*\\(\\s*self\\s+instanceof\\s+Player\\s+player\\s*\\)\\s*\\)\\s*\\{\\s*return;\\s*}.*"),
+		assertTrue(code.matches("(?s).*[^!]source\\.is\\(DamageTypeTags\\.BYPASSES_INVULNERABILITY\\)\\s*\\)\\s*\\{\\s*return;.*"),
+			"绕过无敌的伤害判断必须保持正极性并早退");
+		assertTrue(code.matches("(?s).*if\\s*\\(\\s*!\\s*\\(\\s*self\\s+instanceof\\s+Player\\s+\\w+\\s*\\)\\s*\\)\\s*\\{\\s*return;\\s*}.*"),
 			"非 Player 必须先早退");
-		assertTrue(source.matches("(?s).*InteractionHand\\.values\\(\\).*?getItemInHand\\(hand\\)[^}]*DEATH_PROTECTION[^}]*return;.*"),
-			"手部已有图腾时必须交给原版处理（手部优先）");
-		assertTrue(source.matches("(?s).*if\\s*\\(\\s*TotemInventory\\.tryUseInventoryTotem\\(player\\)\\s*\\)\\s*\\{\\s*cir\\.setReturnValue\\(true\\);\\s*}.*"),
+		assertTrue(code.matches("(?s).*InteractionHand\\.values\\(\\).*?getItemInHand\\(\\w+\\)[^}]*DEATH_PROTECTION[^}]*!=\\s*null\\s*\\)\\s*\\{\\s*return;.*"),
+			"手部已有图腾时必须保持正极性并交给原版处理（手部优先）");
+		assertTrue(code.matches("(?s).*if\\s*\\(\\s*TotemInventory\\.tryUseInventoryTotem\\(\\w+\\)\\s*\\)\\s*\\{\\s*cir\\.setReturnValue\\(true\\);\\s*}.*"),
 			"setReturnValue(true) 必须位于命中分支内，不能无条件免死");
-		assertTrue(source.contains("TotemInventory.tryUseInventoryTotem(player)"),
-			"背包图腾触发调用被移除");
+	}
+
+	// 剥离整行 // 与块注释，避免“注释里写着关键字”让接线断言假通过。
+	private static String stripComments(String source) {
+		return source.replaceAll("(?m)^[ \\t]*//.*$", "")
+			.replaceAll("(?s)/\\*.*?\\*/", "");
 	}
 }

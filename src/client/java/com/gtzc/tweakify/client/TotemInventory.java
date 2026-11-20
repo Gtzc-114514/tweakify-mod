@@ -57,7 +57,8 @@ public final class TotemInventory {
 	}
 
 	// 共享遍历内核：容器与列表只在尺寸/取槽方式上不同，判定逻辑保持一致。
-	private static int findSlot(int size, IntFunction<ItemStack> getter, int limit) {
+	// 包级可见，供边界测试直接使用；生产入口通过委托使用同一内核。
+	static int findSlot(int size, IntFunction<ItemStack> getter, int limit) {
 		int end = Math.min(size, limit);
 		for (int slot = 0; slot < end; slot++) {
 			if (hasDeathProtection(getter.apply(slot))) {
