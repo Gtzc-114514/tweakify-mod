@@ -1,6 +1,8 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import org.joml.Matrix3x2fStack;
+import org.joml.Vector2f;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -45,6 +47,28 @@ class StatusEffectTimerRendererTest {
 		assertEquals(0xFFFF5555, StatusEffectTimerRenderer.timerColorArgb("red", 800));
 		assertEquals(0xFFFFFFFF, StatusEffectTimerRenderer.timerColorArgb("unknown", 800),
 			"未知模式回退 auto，40 秒仍为白色");
+	}
+
+	@Test
+	void anchoredScaleKeepsTopRightAndRestoresMatrix() {
+		Matrix3x2fStack pose = new Matrix3x2fStack(16);
+		StatusEffectTimerRenderer.EffectScaleScope scope =
+			StatusEffectTimerRenderer.pushAnchoredScale(pose, 320, 2.0f);
+		try {
+			Vector2f anchor = pose.transformPosition(new Vector2f(320.0f, 0.0f));
+			assertEquals(320.0f, anchor.x, 1.0e-5, "右上角必须固定");
+			assertEquals(0.0f, anchor.y, 1.0e-5);
+
+			Vector2f left = pose.transformPosition(new Vector2f(295.0f, 17.0f));
+			assertEquals(270.0f, left.x, 1.0e-5, "左侧按比例向左扩展");
+			assertEquals(34.0f, left.y, 1.0e-5);
+		} finally {
+			scope.close();
+		}
+
+		Vector2f restored = pose.transformPosition(new Vector2f(7.0f, 9.0f));
+		assertEquals(7.0f, restored.x, 1.0e-5, "close 后矩阵必须恢复");
+		assertEquals(9.0f, restored.y, 1.0e-5);
 	}
 
 	@Test
