@@ -142,8 +142,10 @@
 		"WorldSelectionListAccessor",
 		"AbstractSelectionListInvoker",
 		"WorldListEntryFavoriteMixin",
+		"WorldListEntryPlayTimeMixin",
 		"AbstractContainerWidgetFavoriteMixin",
 		"WorldSelectionListFavoriteMixin",
+		"WorldSelectionListPlayTimeMixin",
 		"SelectWorldScreenFavoriteMixin"
 	],
 	"mixinextras": {

@@ -196,6 +196,14 @@ public class TweakifyModConfig {
 	public static final List<String> SUPPORTED_ATTACK_RANGE_DISPLAY_MODES = List.of(
 		ATTACK_RANGE_DISPLAY_FLAT, ATTACK_RANGE_DISPLAY_SPHERE);
 
+	// 存档游玩时长显示格式：hours 小数小时 / clock 时:分 / duration 小时与分钟。
+	// 只影响存档列表右上角的文本，不改变读取的 play_time 数据。
+	public static final String SAVE_PLAY_TIME_FORMAT_HOURS = "hours";
+	public static final String SAVE_PLAY_TIME_FORMAT_CLOCK = "clock";
+	public static final String SAVE_PLAY_TIME_FORMAT_DURATION = "duration";
+	public static final List<String> SUPPORTED_SAVE_PLAY_TIME_FORMATS = List.of(
+		SAVE_PLAY_TIME_FORMAT_HOURS, SAVE_PLAY_TIME_FORMAT_CLOCK, SAVE_PLAY_TIME_FORMAT_DURATION);
+
 	// 攻击范围渲染方式：蓝色线框 / 半透明实心。
 	public static final String ATTACK_RANGE_RENDER_WIREFRAME = "wireframe";
 	public static final String ATTACK_RANGE_RENDER_FILLED = "filled";

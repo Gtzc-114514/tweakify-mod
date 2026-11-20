@@ -33,6 +33,7 @@ public final class FunctionConfig extends ConfigSection {
 				this::sanitizeAttackRangeLimits),
 			FieldSanitizer.of("attackRangeRenderMode", this::sanitizeAttackRangeRenderMode),
 			FieldSanitizer.of("attackRangePalette", this::sanitizeAttackRangePalette),
+			FieldSanitizer.of("savePlayTimeFormat", this::sanitizeSavePlayTimeFormat),
 			FieldSanitizer.of("highlightSingleLayerBedrockMaxMarkers", this::sanitizeBedrockMarkerLimit),
 			FieldSanitizer.of("highlightSingleLayerBedrockScanRadius", this::sanitizeBedrockScanRadius),
 			FieldSanitizer.of("highlightSingleLayerBedrockColor", this::sanitizeBedrockMarkerColor),
@@ -301,6 +302,12 @@ public final class FunctionConfig extends ConfigSection {
 	// 攻击范围颜色调色板：只决定 RGB，透明度沿用各模式的固定档位。
 	public volatile String attackRangePalette = TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE;
 
+	// 存档列表显示游玩时长（参考 WorldPlayTime）：累加 stats 中每个玩家的 play_time。
+	public volatile boolean savePlayTime = false;
+
+	// 时长显示格式：hours（小数小时）/ clock（时:分）/ duration（小时与分钟）。
+	public volatile String savePlayTimeFormat = TweakifyModConfig.SAVE_PLAY_TIME_FORMAT_HOURS;
+
 	// 自定义方块轮廓：总开关、线宽、调色板与彩色模式。
 	public volatile boolean customBlockOutline = false;
 	public volatile double blockOutlineWidth = TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH;
@@ -428,6 +435,7 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile String hotkeyDurabilityOverlay = "";
 	public volatile String hotkeyElytraFireworkCooldown = "";
 	public volatile String hotkeyAttackRangeDisplay = "";
+	public volatile String hotkeySavePlayTime = "";
 	public volatile String hotkeyDisableDimensionTeleport = "";
 	public volatile String hotkeyChatTextSelection = "";
 	public volatile String hotkeySwordCutThroughPlants = "";
@@ -647,6 +655,17 @@ public final class FunctionConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported attack range palette: {}", attackRangePalette);
 		attackRangePalette = TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE;
+		return true;
+	}
+
+	// 修正不合法的存档时长格式，回退到小数小时。
+	private boolean sanitizeSavePlayTimeFormat() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_SAVE_PLAY_TIME_FORMATS, savePlayTimeFormat)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported save play time format: {}", savePlayTimeFormat);
+		savePlayTimeFormat = TweakifyModConfig.SAVE_PLAY_TIME_FORMAT_HOURS;
 		return true;
 	}
 

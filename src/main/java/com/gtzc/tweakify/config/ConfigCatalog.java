@@ -322,6 +322,9 @@ public final class ConfigCatalog {
 		entries.add(child("attackRangeDisplay", "attackRangeMaxDistance"));
 		entries.add(child("attackRangeDisplay", "attackRangeMaxTargets"));
 		entries.add(child("attackRangeDisplay", "attackRangeEntities"));
+		// 存档游玩时长（功能标签，子项为显示格式）
+		entries.add(function("savePlayTime", true));
+		entries.add(child("savePlayTime", "savePlayTimeFormat"));
 		entries.add(modified("nightVisionFadeOut", true));
 		entries.add(child("nightVisionFadeOut", "nightVisionFadeOutDuration"));
 		entries.add(child("nightVisionFadeOut", "nightVisionFadeOutCurve"));

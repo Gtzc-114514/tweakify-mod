@@ -311,6 +311,24 @@ class LangFilesTest {
 		}
 	}
 
+	// 存档游玩时长显示文本与格式选项翻译键必须在四种语言都存在。
+	@Test
+	void worldPlayTimeTranslationsExistInEveryLanguage() throws IOException {
+		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+			Set<String> keys = keysOf(code);
+			for (String key : List.of(
+				"tweakify-mod.world_play_time.hours",
+				"tweakify-mod.world_play_time.duration",
+				"tweakify-mod.world_play_time.minutes")) {
+				assertTrue(keys.contains(key), "missing " + key + " in " + code);
+			}
+			for (SavePlayTimeFormat format : SavePlayTimeFormat.values()) {
+				assertTrue(keys.contains(format.translationKey()),
+					"missing " + format.translationKey() + " in " + code);
+			}
+		}
+	}
+
 	// 定位栏新增选项的枚举值翻译键必须在四种语言都存在（描边样式 / 名字时机 / 过滤 / 颜色）。
 	@Test
 	void locatorOptionValueTranslationsExistInEveryLanguage() throws IOException {

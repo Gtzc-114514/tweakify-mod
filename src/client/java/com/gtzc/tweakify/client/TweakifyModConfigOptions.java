@@ -467,6 +467,11 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		"attackRangeMaxTargets", TweakifyModConfig.DEFAULT_ATTACK_RANGE_TARGETS,
 		TweakifyModConfig.MIN_ATTACK_RANGE_TARGETS,
 		TweakifyModConfig.MAX_ATTACK_RANGE_TARGETS).apply(GENERAL_KEY);
+	// 存档游玩时长：在存档列表右上角显示累计游玩时长，格式由子项切换。
+	public static final ConfigBooleanHotkeyed SAVE_PLAY_TIME = new ConfigBooleanHotkeyed(
+		"savePlayTime", false, "", TOGGLE_HOTKEY_SETTINGS).apply(GENERAL_KEY);
+	public static final ConfigOptionList SAVE_PLAY_TIME_FORMAT = new ConfigOptionList(
+		"savePlayTimeFormat", SavePlayTimeFormat.HOURS).apply(GENERAL_KEY);
 	// 夜视淡出：夜视结束前平滑淡出。
 	public static final ConfigBoolean NIGHT_VISION_FADE_OUT = new ConfigBoolean(
 		"nightVisionFadeOut", false).apply(GENERAL_KEY);
