@@ -92,6 +92,43 @@ dependencies {
 	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
+// T4：Fabric Loader JUnit 在独立 loaderTest 源集运行，避免改变普通单测的注册表/tags 状态。
+sourceSets {
+	loaderTest {
+		java.srcDir "src/loaderTest/java"
+		compileClasspath += sourceSets.main.output + sourceSets.client.output + sourceSets.test.compileClasspath
+		runtimeClasspath += sourceSets.main.output + sourceSets.client.output + sourceSets.test.runtimeClasspath
+	}
+}
+
+dependencies {
+	// loaderTest 只引入 Fabric Loader JUnit；普通 test 环境保持不变。
+	loaderTestImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
+}
+
+configurations {
+	// 复用普通 test 的 JUnit 5.13.4 约束，避免 Fabric Loader JUnit 传递的旧版 launcher 触发额外下载。
+	loaderTestImplementation.extendsFrom testImplementation
+	loaderTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+dependencies {
+	loaderTestRuntimeOnly "org.junit.platform:junit-platform-launcher:1.13.4"
+}
+
+tasks.register("loaderTest", Test) {
+	testClassesDirs = sourceSets.loaderTest.output.classesDirs
+	classpath = sourceSets.loaderTest.runtimeClasspath
+	useJUnitPlatform()
+	systemProperty "joml.nounsafe", "true"
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat = "full"
+	}
+}
+
+check.dependsOn loaderTest
+
 test {
 	useJUnitPlatform()
 	systemProperty "joml.nounsafe", "true"
