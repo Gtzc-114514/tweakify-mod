@@ -277,7 +277,7 @@
 | `elytraWaterFlightOnlyWater` 仅水中生效 | 关 | 只在水中保持滑翔，岩浆里仍按原版下沉 |
 | `disableFarmlandTrampling` 禁用耕地踩踏 | 关 | 从高处落在耕地上不再把它踩回泥土；仅在单人/局域网生效 |
 | `farmlandTramplingPlayerOnly` 仅玩家生效 | 关 | 只有玩家不会踩坏耕地，动物与村民仍会踩坏 |
-| `totemFromInventory` 不死图腾背包生效 | 关 | 图腾放在快捷栏或背包（主手/副手之外）也能触发不死保护；手部已有图腾时仍优先消耗手中的 |
+| `totemFromInventory` 不死图腾背包生效 | 关 | 图腾放在快捷栏或背包（主手/副手之外）也能触发不死保护；手部已有图腾时仍优先消耗手中的；仅在单人/局域网生效 |
 | `disableCobwebSlowdown` 禁用蛛网减速 | 关 | 蜘蛛网不再粘住玩家并限制移动与跳跃；仅在单人/局域网生效 |
 | `cobwebSlowdownAllEntities` 作用于全部实体 | 关 | 生物、掉落物等也不再被蛛网减速；默认只解除玩家 |
 | `disableFluidPush` 禁用液体推动 | 关 | 水流与岩浆流不再施加水平推力，浮力与流体高度判定保持原版；仅在单人/局域网生效 |
