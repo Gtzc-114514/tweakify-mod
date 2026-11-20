@@ -1,5 +1,6 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -44,6 +45,26 @@ class StatusEffectTimerRendererTest {
 		assertEquals(0xFFFF5555, StatusEffectTimerRenderer.timerColorArgb("red", 800));
 		assertEquals(0xFFFFFFFF, StatusEffectTimerRenderer.timerColorArgb("unknown", 800),
 			"未知模式回退 auto，40 秒仍为白色");
+	}
+
+	@Test
+	void effectScaleFollowsConfigAndClamps() {
+		TweakifyModConfig config = new TweakifyModConfig();
+		assertEquals(1.0f, StatusEffectTimerRenderer.effectScale(null), "未初始化时不缩放");
+
+		config.functions.statusEffectDurationDisplay = false;
+		config.functions.statusEffectDurationScale = 150;
+		assertEquals(1.0f, StatusEffectTimerRenderer.effectScale(config), "功能关闭时不缩放");
+
+		config.functions.statusEffectDurationDisplay = true;
+		config.functions.statusEffectDurationScale = 100;
+		assertEquals(1.0f, StatusEffectTimerRenderer.effectScale(config));
+		config.functions.statusEffectDurationScale = 150;
+		assertEquals(1.5f, StatusEffectTimerRenderer.effectScale(config));
+		config.functions.statusEffectDurationScale = 10;
+		assertEquals(0.5f, StatusEffectTimerRenderer.effectScale(config), "低于下限夹到 50%");
+		config.functions.statusEffectDurationScale = 999;
+		assertEquals(2.0f, StatusEffectTimerRenderer.effectScale(config), "高于上限夹到 200%");
 	}
 
 	// 缓存键任一变化（玩家/字体/GUI 宽度/演示模式）都必须失效，reset 后为空。

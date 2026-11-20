@@ -285,6 +285,7 @@ public final class ConfigCatalog {
 		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationAlwaysSeconds"));
 		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationLowThreshold"));
 		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationColorMode"));
+		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationScale"));
 		entries.add(function("elytraFireworkCooldown", true));
 		entries.add(child("elytraFireworkCooldown", "elytraFireworkCooldownTicks"));
 		entries.add(modified("disableFlatWorldSlimeSpawn", true));

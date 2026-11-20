@@ -531,6 +531,19 @@ class TweakifyModConfigTest {
 			"unsupported mode should fall back to auto");
 	}
 
+	// 新增的药水显示缩放百分比必须夹回 50 ~ 200。
+	@Test
+	void loadClampsStatusEffectScale() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, "{\"statusEffectDurationScale\":999}");
+		assertEquals(TweakifyModConfig.MAX_STATUS_EFFECT_SCALE,
+			TweakifyModConfig.load(path).functions.statusEffectDurationScale);
+
+		Files.writeString(path, "{\"statusEffectDurationScale\":1}");
+		assertEquals(TweakifyModConfig.MIN_STATUS_EFFECT_SCALE,
+			TweakifyModConfig.load(path).functions.statusEffectDurationScale);
+	}
+
 	@Test
 	void loadKeepsExistingFileOnReadError() throws IOException {
 		// 把配置路径指向一个目录：读取会抛 IOException，原路径必须原样保留。

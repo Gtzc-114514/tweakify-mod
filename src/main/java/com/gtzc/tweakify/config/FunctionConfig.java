@@ -64,7 +64,8 @@ public final class FunctionConfig extends ConfigSection {
 			FieldSanitizer.of("entityHighlightColor", this::sanitizeEntityHighlightColor),
 			FieldSanitizer.of("cameraMotionIntensity", this::sanitizeCameraMotionIntensity),
 			FieldSanitizer.of("statusEffectDurationLowThreshold", this::sanitizeStatusDurationThreshold),
-			FieldSanitizer.of("statusEffectDurationColorMode", this::sanitizeStatusDurationColorMode));
+			FieldSanitizer.of("statusEffectDurationColorMode", this::sanitizeStatusDurationColorMode),
+			FieldSanitizer.of("statusEffectDurationScale", this::sanitizeStatusEffectScale));
 		// 启动期校验：新增数值/枚举字段忘记登记校验器时直接失败。
 		assertSanitizerCoverage(fieldNamesOf(this.sanitizers));
 	}
@@ -424,6 +425,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 文字配色：auto（按剩余时间分档）/ white / yellow / red。
 	public volatile String statusEffectDurationColorMode = TweakifyModConfig.STATUS_COLOR_AUTO;
 
+	// 右上角药水效果显示（图标与时间文字）的整体缩放百分比（50 ~ 200）。
+	public volatile int statusEffectDurationScale = TweakifyModConfig.DEFAULT_STATUS_EFFECT_SCALE;
+
 	// 各功能根开关的切换快捷键，默认无快捷键（空字符串）。
 	// 功能标签只给根功能提供快捷键，子设置不占快捷键栏。
 	public volatile String hotkeyMiningCooldown = "";
@@ -702,6 +706,19 @@ public final class FunctionConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported status duration color mode: {}", statusEffectDurationColorMode);
 		statusEffectDurationColorMode = TweakifyModConfig.STATUS_COLOR_AUTO;
+		return true;
+	}
+
+	// 修正药水效果整体缩放百分比，手工改坏配置时夹回允许范围。
+	private boolean sanitizeStatusEffectScale() {
+		int clamped = Math.max(TweakifyModConfig.MIN_STATUS_EFFECT_SCALE,
+			Math.min(TweakifyModConfig.MAX_STATUS_EFFECT_SCALE, statusEffectDurationScale));
+		if (clamped == statusEffectDurationScale) {
+			return false;
+		}
+		LOGGER.warn("Clamping statusEffectDurationScale from {} to {}",
+			statusEffectDurationScale, clamped);
+		statusEffectDurationScale = clamped;
 		return true;
 	}
 

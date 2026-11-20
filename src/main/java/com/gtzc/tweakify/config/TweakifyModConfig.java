@@ -436,6 +436,11 @@ public class TweakifyModConfig {
 	public static final List<String> SUPPORTED_STATUS_COLOR_MODES = List.of(
 		STATUS_COLOR_AUTO, STATUS_COLOR_WHITE, STATUS_COLOR_YELLOW, STATUS_COLOR_RED);
 
+	// 药水效果显示整体缩放百分比（50 ~ 200，100 = 原版大小）。
+	public static final int MIN_STATUS_EFFECT_SCALE = 50;
+	public static final int MAX_STATUS_EFFECT_SCALE = 200;
+	public static final int DEFAULT_STATUS_EFFECT_SCALE = 100;
+
 	// 聊天框选背景透明度（百分比）与透明通道重写：保留调色板的 RGB，只替换 alpha。
 	public static final int MIN_CHAT_SELECTION_OPACITY = 10;
 	public static final int MAX_CHAT_SELECTION_OPACITY = 100;

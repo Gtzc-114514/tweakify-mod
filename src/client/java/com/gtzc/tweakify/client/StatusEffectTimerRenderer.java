@@ -24,6 +24,7 @@ import java.util.function.ToIntFunction;
  *
  * <p>排序、文本格式化与 {@link TextPlacement} 在客户端 tick 结束时构建一次，
  * 渲染帧只遍历缓存绘制；玩家、字体、GUI 宽度或演示模式变化时缓存失效并重建一次。
+ * 整体缩放由 HUD 注入包裹原版效果渲染，时间文字与图标共用同一缩放矩阵。
  */
 public final class StatusEffectTimerRenderer {
 	// 原版效果图标的排列参数。
@@ -109,6 +110,16 @@ public final class StatusEffectTimerRenderer {
 	// tick 与 render 共用窗口 GUI 缩放宽：避免 gui.guiWidth() 与窗口口径不一致时每帧 miss。
 	private static int guiWidth(Minecraft client) {
 		return client.getWindow().getGuiScaledWidth();
+	}
+
+	// 整体缩放系数：功能关闭或配置未初始化时为 1；百分比在允许范围内夹紧。
+	public static float effectScale(TweakifyModConfig config) {
+		if (config == null || !config.functions.statusEffectDurationDisplay) {
+			return 1.0f;
+		}
+		int percent = Math.max(TweakifyModConfig.MIN_STATUS_EFFECT_SCALE,
+			Math.min(TweakifyModConfig.MAX_STATUS_EFFECT_SCALE, config.functions.statusEffectDurationScale));
+		return percent / 100.0f;
 	}
 
 	private static List<CachedTimer> rebuildTimers(Minecraft client, int guiWidth, boolean demo,

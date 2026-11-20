@@ -614,6 +614,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		TweakifyModConfig.MAX_STATUS_DURATION_THRESHOLD).apply(GENERAL_KEY);
 	public static final ConfigOptionList STATUS_EFFECT_DURATION_COLOR_MODE = new ConfigOptionList(
 		"statusEffectDurationColorMode", StatusDurationColorMode.AUTO).apply(GENERAL_KEY);
+	// 右上角药水效果显示的整体缩放百分比（50 ~ 200），使用滑条调节。
+	public static final ConfigInteger STATUS_EFFECT_DURATION_SCALE = new ConfigInteger(
+		"statusEffectDurationScale", TweakifyModConfig.DEFAULT_STATUS_EFFECT_SCALE,
+		TweakifyModConfig.MIN_STATUS_EFFECT_SCALE, TweakifyModConfig.MAX_STATUS_EFFECT_SCALE, true).apply(GENERAL_KEY);
 	// 复制 ID 子项。
 	public static final ConfigOptionList COPY_ITEM_ID_FORMAT = new ConfigOptionList(
 		"copyItemIdFormat", CopyIdFormat.PLAIN).apply(GENERAL_KEY);

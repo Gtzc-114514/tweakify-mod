@@ -131,6 +131,14 @@ class TweakifyModConfigOptionsTest {
 	}
 
 	@Test
+	void statusEffectScaleUsesSliderConfig() {
+		assertTrue(TweakifyModConfigOptions.STATUS_EFFECT_DURATION_SCALE.shouldUseSlider(),
+			"药水显示大小必须使用滑条，而不是文本输入");
+		assertEquals(TweakifyModConfig.DEFAULT_STATUS_EFFECT_SCALE,
+			TweakifyModConfigOptions.STATUS_EFFECT_DURATION_SCALE.getIntegerValue());
+	}
+
+	@Test
 	void blockOutlineWidthOptionRangeMatchesConstants() {
 		IConfigDouble width = TweakifyModConfigOptions.BLOCK_OUTLINE_WIDTH;
 		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD, width.getName());
