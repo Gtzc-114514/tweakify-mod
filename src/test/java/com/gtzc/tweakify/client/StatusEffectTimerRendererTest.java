@@ -9,6 +9,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -66,9 +67,12 @@ class StatusEffectTimerRendererTest {
 			scope.close();
 		}
 
+		// 幂等：重复 close 不能多弹一层；随后栈已到底，再 pop 必须报错。
+		scope.close();
 		Vector2f restored = pose.transformPosition(new Vector2f(7.0f, 9.0f));
 		assertEquals(7.0f, restored.x, 1.0e-5, "close 后矩阵必须恢复");
 		assertEquals(9.0f, restored.y, 1.0e-5);
+		assertThrows(IllegalStateException.class, pose::popMatrix, "close 应把栈弹回底部");
 	}
 
 	@Test
