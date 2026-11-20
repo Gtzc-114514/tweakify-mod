@@ -11,6 +11,7 @@ import net.minecraft.world.item.component.DeathProtection;
 import net.minecraft.world.level.gameevent.GameEvent;
 
 import java.util.List;
+import java.util.function.IntFunction;
 
 /**
  * 不死图腾的背包查找与触发：原版只检查主手/副手（checkTotemDeathProtection），
@@ -47,22 +48,20 @@ public final class TotemInventory {
 	}
 
 	static int findTotemSlot(Inventory inventory, int limit) {
-		int end = Math.min(inventory.getContainerSize(), limit);
-		for (int slot = 0; slot < end; slot++) {
-			if (hasDeathProtection(inventory.getItem(slot))) {
-				return slot;
-			}
-		}
-		return -1;
+		return findSlot(inventory.getContainerSize(), inventory::getItem, limit);
 	}
 
 	// 纯函数：测试直接覆盖槽位遍历与范围限制。
-	// 只保留真实谓词（DEATH_PROTECTION 组件判定），避免测试专用重载成为死代码。
 	static int findTotemSlot(List<ItemStack> items, int limit) {
-		int end = Math.min(items.size(), limit);
-		for (int i = 0; i < end; i++) {
-			if (hasDeathProtection(items.get(i))) {
-				return i;
+		return findSlot(items.size(), items::get, limit);
+	}
+
+	// 共享遍历内核：容器与列表只在尺寸/取槽方式上不同，判定逻辑保持一致。
+	private static int findSlot(int size, IntFunction<ItemStack> getter, int limit) {
+		int end = Math.min(size, limit);
+		for (int slot = 0; slot < end; slot++) {
+			if (hasDeathProtection(getter.apply(slot))) {
+				return slot;
 			}
 		}
 		return -1;

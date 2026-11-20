@@ -22,21 +22,21 @@ class TotemInventoryMixinContractTest {
 	@Test
 	void inventoryTotemFallbackStaysWired() throws IOException {
 		String source = Files.readString(MIXIN_SOURCE);
-		assertTrue(source.matches("(?s).*@Inject\\s*\\(\\s*method\\s*=\\s*\"checkTotemDeathProtection\".*"),
+		assertTrue(source.matches("(?s).*@Inject\\s*\\([^)]*method\\s*=\\s*\"checkTotemDeathProtection\"[^)]*\\).*"),
 			"checkTotemDeathProtection 注入被移除或改名");
-		assertTrue(source.contains("config.modified.totemFromInventory"),
-			"背包图腾开关读取被移除");
+		assertTrue(source.matches("(?s).*@Inject\\s*\\(.*?cancellable\\s*=\\s*true.*?\\).*"),
+			"@Inject 必须保持 cancellable，否则 setReturnValue 无法跳过原方法");
+		assertTrue(source.matches("(?s).*!config\\.modified\\.totemFromInventory.*"),
+			"背包图腾开关必须取反：关闭时不能触发");
+		assertTrue(source.matches("(?s).*BYPASSES_INVULNERABILITY\\)\\)\\s*\\{\\s*return;.*"),
+			"绕过无敌的伤害必须先早退");
+		assertTrue(source.matches("(?s).*if\\s*\\(\\s*!\\s*\\(\\s*self\\s+instanceof\\s+Player\\s+player\\s*\\)\\s*\\)\\s*\\{\\s*return;\\s*}.*"),
+			"非 Player 必须先早退");
+		assertTrue(source.matches("(?s).*InteractionHand\\.values\\(\\).*?getItemInHand\\(hand\\)[^}]*DEATH_PROTECTION[^}]*return;.*"),
+			"手部已有图腾时必须交给原版处理（手部优先）");
+		assertTrue(source.matches("(?s).*if\\s*\\(\\s*TotemInventory\\.tryUseInventoryTotem\\(player\\)\\s*\\)\\s*\\{\\s*cir\\.setReturnValue\\(true\\);\\s*}.*"),
+			"setReturnValue(true) 必须位于命中分支内，不能无条件免死");
 		assertTrue(source.contains("TotemInventory.tryUseInventoryTotem(player)"),
 			"背包图腾触发调用被移除");
-		assertTrue(source.contains("BYPASSES_INVULNERABILITY"),
-			"绕过无敌的伤害来源过滤被移除");
-		assertTrue(source.contains("InteractionHand.values()"),
-			"手部已有图腾时的原版优先预检被移除");
-		assertTrue(source.contains("if (TotemInventory.tryUseInventoryTotem(player))"),
-			"setReturnValue(true) 被移出命中分支，会导致无条件免死");
-		assertTrue(source.contains("cir.isCancelled()"),
-			"未尊重其他模组在本注入点取消的结果");
-		assertTrue(source.contains("cir.setReturnValue(true)"),
-			"触发后取消原方法的返回值被移除");
 	}
 }
