@@ -23,7 +23,7 @@
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-20，见详情） |
-| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 暂缓，测试基础设施不加载 Mixin（最近复评 2026-11-20，见详情） |
+| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（转发接缝 + 接线契约测试，见详情） |
 | T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解，待采样（第 1–5 项已预防性实施，采样优先级低于 T3/T6；最近复评 2026-11-20，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置 JSON 序列化仍在主线程；输入均为不可变数据，可移入后台 worker / 写盘线程 | 暂缓，成本未采样，达标前不引入后台构建（最近复评 2026-11-20，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
@@ -47,6 +47,10 @@
 > v1.1.5 后复查（2026-11-20）：T1/T2 仍闭环，归档为「已闭环历史记录」；T5 五项预防性缓存均在，
 > 降级为「已缓解，待采样」并调低采样优先级；T3/T4/T6 对照当前代码仍成立，已补充文件与代码位置依据
 > （见各详情「最近评估（2026-11-20）」）。
+>
+> 2026-11-20 T4 闭环：转发条件收敛为 `CreativeItemGroups.shouldRefreshAfterConfigChange` 接缝，
+> 新增接缝单测与 `CreativeModeInventoryGroupingMixinContractTest` 源码契约测试（提交 `78e411d`），
+> 不再依赖手动回归。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -150,36 +154,29 @@
 
 ## T4 详情：mixin 层配置热更新转发无自动化覆盖
 
-- **现状**：配置变化后“是否重建当前页”的决策已下沉到 `CreativeItemGroups.onConfigChanged`，
+- **修复前现状**：配置变化后“是否重建当前页”的决策已下沉到 `CreativeItemGroups.onConfigChanged`，
   由 `CreativeItemGroupsTest.onConfigChangedRefreshesOnlyCategoryTabs` 覆盖分类页重建、
-  非分类页只告警且不清空组状态、null 分支。
-  `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` 只剩签名比对、调用 `onConfigChanged`
-  与按返回值刷新列表；本条只描述该转发链路。
-- **失败模式**：转发代码被误删、条件写反（如常数 false）或刷新调用被移除时，单元测试全绿；
+  非分类页只告警且不清空组状态、null 分支；但 `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange`
+  的「签名比对 → 调用 onConfigChanged → 按返回值刷新」链路没有自动化覆盖，项目测试基础设施不加载 Mixin。
+- **原影响**：转发代码被误删、条件写反或刷新调用被移除时，单测全绿，只能靠手动回归发现；
   实机表现为配置变化后物品列表不刷新，或非分类页误清空 `currentTab`/渲染快照，
   导致组图标与点击判定错位。
-- **触发条件**：修改 `CreativeModeInventoryGroupingMixin` 的 `containerTick` 注入或
-  `refreshCurrentTabContents` 调用；或其它模组重写 `CreativeModeInventoryScreen.containerTick`
-  导致注入失效（该注入未设 `require = 0`，注入失败会在启动期报错，不属于静默失效）。
-- **判定口径**：代码审查 + 实机手动回归：在分类页切换排序/总开关应立即重建列表；
-  在搜索页修改配置不应清空搜索结果；在快捷栏/背包页修改配置不应清空预览；
-  日志应出现对应告警且只出现一次。
-- **闭环动作**：若将来引入可加载 Mixin 的集成测试（Fabric Loader JUnit 或 GameTest），
-  补一条“配置变化 → 分类页刷新 / 非分类页仅告警”的转发测试并删除本条；
-  否则每次改动该 mixin 按判定口径手动回归。
-- **缓解措施**：转发保持单条语句 `if (selectedTab != null && onConfigChanged(selectedTab)) refreshCurrentTabContents(...)`，
-  决策与副作用集中在可单测的 `onConfigChanged`；`itemGroups` 的 HookProbe 只能确认点击钩子，转发链路仍需按判定口径手动回归。
-- **历史评估（2026-11-15）**：`onConfigChanged` 的三个分支已由单测覆盖；mixin 转发在一行内，
-  本次重构已核对与抽取前逐分支等价。项目未引入 Mixin 集成测试，维持暂缓。
-- **历史评估（2026-11-16）**：v1.1.0 未修改 `CreativeModeInventoryGroupingMixin` 与
-  `CreativeItemGroups.onConfigChanged`，本轮新增的 51 个子设置也不涉及物品分组热更新。
-  项目仍未引入 Mixin 集成测试，mixin 转发链路继续依赖手动回归，维持暂缓。
-- **最近评估（2026-11-20）**：对照当前代码复查：`CreativeModeInventoryGroupingMixin.java`
-  L137–L148 仍是「签名比对 + 一行 `onConfigChanged` 调用 + 按返回值刷新」；决策由
-  `CreativeItemGroups.onConfigChanged`（L483）承担，`CreativeItemGroupsTest` L832–L861 覆盖
-  分类页重建、非分类页不重建与 null 分支；`MixinConfigTest` L20–L28 只校验 `mixinextras` 声明，
-  不加载 Mixin。转发链路仍无自动化覆盖，维持暂缓。
-- **待办**：实机回归一次搜索/快捷栏/背包页的配置变化路径并记录结果。
+- **采用方案（可测性接缝 + 源码契约测试）**：
+  - 把「非空判断 + onConfigChanged」收敛为 `CreativeItemGroups.shouldRefreshAfterConfigChange(CreativeModeTab)`；
+    Mixin 的 `containerTick` 注入只调用该接缝并按返回值刷新，不再内联条件；
+  - 新增接缝单测 `CreativeItemGroupsTest.shouldRefreshAfterConfigChangeMatchesOnConfigChanged`，
+    覆盖 null / 非分类页 / 分类页三种返回值；
+  - 新增 `CreativeModeInventoryGroupingMixinContractTest` 源码契约测试，锁定三处接线：
+    `@Inject(method = "containerTick")`、`CreativeItemGroups.shouldRefreshAfterConfigChange(selectedTab)`、
+    `refreshCurrentTabContents(selectedTab.getDisplayItems())`；任一处被删除/改名/条件写反即失败；
+  - 未引入真实加载 Mixin 的集成测试：项目测试基础设施不加载客户端 Mixin，Fabric Loader JUnit 需要
+    额外客户端环境与依赖，成本高于收益；契约测试 + 接缝单测覆盖了原手动回归的全部失败模式。
+- **修复记录（提交 `78e411d`，待发布）**：`CreativeItemGroups` 新增转发接缝；
+  `CreativeModeInventoryGroupingMixin` 改为调用接缝；`CreativeItemGroupsTest` 新增接缝测试；
+  新增 `CreativeModeInventoryGroupingMixinContractTest`。
+- **验证**：`gradlew test` **708** 个单测通过（新增 2 个）；`gradlew build` 与 6 个 GameTest 通过。
+- **回归条件**：若删除/拆分接缝、改变 `containerTick` 注入方法名，或移除列表刷新调用，
+  接缝测试或契约测试会失败；若将来引入可加载 Mixin 的集成测试，可用真实转发测试替换源码契约测试。
 
 ## T5 详情（已缓解，待采样）：HUD/GUI 每帧重复计算
 
