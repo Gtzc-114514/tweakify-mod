@@ -134,8 +134,8 @@ public class CreativeModeInventoryGroupingMixin {
 	}
 
 	// 配置变化（总开关/排序/默认组/自定义组）时重建当前页，避免必须重开界面。
-	// 决策（分类页重建 / 非分类页只告警）已下沉到 CreativeItemGroups.onConfigChanged，
-	// mixin 只负责转发与按返回值刷新列表，便于单测覆盖非分类页告警分支。
+	// 决策（分类页重建 / 非分类页只告警）与空值判断已下沉到
+	// CreativeItemGroups.shouldRefreshAfterConfigChange，mixin 只负责签名比对、转发与按返回值刷新。
 	@Inject(method = "containerTick", at = @At("TAIL"))
 	private void tweakify$refreshOnConfigChange(CallbackInfo ci) {
 		String signature = CreativeItemGroups.configSignature(TweakifyMod.CONFIG);
@@ -143,7 +143,7 @@ public class CreativeModeInventoryGroupingMixin {
 			return;
 		}
 		this.tweakify$lastConfigSignature = signature;
-		if (selectedTab != null && CreativeItemGroups.onConfigChanged(selectedTab)) {
+		if (CreativeItemGroups.shouldRefreshAfterConfigChange(selectedTab)) {
 			this.refreshCurrentTabContents(selectedTab.getDisplayItems());
 		}
 	}

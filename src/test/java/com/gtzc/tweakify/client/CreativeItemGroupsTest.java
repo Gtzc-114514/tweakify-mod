@@ -861,6 +861,25 @@ class CreativeItemGroupsTest {
 		assertFalse(CreativeItemGroups.onConfigChanged(null));
 	}
 
+	// 转发接缝：与 onConfigChanged 的返回值完全一致（null/非分类页 false，分类页 true）。
+	@Test
+	void shouldRefreshAfterConfigChangeMatchesOnConfigChanged() {
+		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of());
+		CreativeModeTab search = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeModeTabs.SEARCH);
+		CreativeModeTab building = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
+			CreativeModeTabs.BUILDING_BLOCKS);
+		assertNotNull(search);
+		assertNotNull(building);
+
+		assertFalse(CreativeItemGroups.shouldRefreshAfterConfigChange(null));
+		assertFalse(CreativeItemGroups.shouldRefreshAfterConfigChange(search),
+			"非分类页不重建列表");
+		assertTrue(CreativeItemGroups.shouldRefreshAfterConfigChange(building),
+			"分类页需要重建列表");
+
+		CreativeItemGroups.clear();
+	}
+
 	// 轮播只用于展开的组：收起时图标固定为首个成员，关闭轮播时也不会返回替换图标。
 	@Test
 	void collapsedIconDoesNotRotate() {

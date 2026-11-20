@@ -492,6 +492,13 @@ public final class CreativeItemGroups {
 		return true;
 	}
 
+	// Mixin 转发接缝：配置变化后是否需要重建当前页。
+	// 把「非空判断 + onConfigChanged」收敛到这里，Mixin 只保留签名比对与调用；
+	// 单测覆盖 null / 分类页 / 非分类页三种返回值，源码契约测试锁定 Mixin 仍调用本接缝。
+	public static boolean shouldRefreshAfterConfigChange(CreativeModeTab tab) {
+		return tab != null && onConfigChanged(tab);
+	}
+
 	// 参考实现的 setIndexes：收起时图标取基准列表里的首个位置、成员索引置 -1；
 	// 展开时图标取首个位置，同一物品的后续位置留给成员（用于重复物品的补位）。
 	private static void setIndexes() {
