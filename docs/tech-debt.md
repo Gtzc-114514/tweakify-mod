@@ -23,7 +23,7 @@
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-20，见详情） |
-| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（转发接缝 + 接线契约测试，见详情） |
+| T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（真实 Loader 集成 + 源码契约，见详情） |
 | T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解，待采样（第 1–5 项已预防性实施，采样优先级低于 T3/T6；最近复评 2026-11-20，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置 JSON 序列化仍在主线程；输入均为不可变数据，可移入后台 worker / 写盘线程 | 暂缓，成本未采样，达标前不引入后台构建（最近复评 2026-11-20，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
@@ -51,6 +51,10 @@
 > 2026-11-20 T4 闭环：转发条件收敛为 `CreativeItemGroups.shouldRefreshAfterConfigChange` 接缝，
 > 新增接缝单测与 `CreativeModeInventoryGroupingMixinContractTest` 源码契约测试（提交 `78e411d`），
 > 不再依赖手动回归。
+>
+> 2026-11-20 T4 真实加载升级：Fabric Loader JUnit 0.20.1 在独立 loaderTest 源集以 CLIENT
+> 环境加载客户端 Mixin（`CreativeModeInventoryScreen` 已织入 `tweakify$lastConfigSignature`），
+> 普通 test 保持 708 个用例；提交 `3559cb1`。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -161,7 +165,7 @@
 - **原影响**：转发代码被误删、条件写反或刷新调用被移除时，单测全绿，只能靠手动回归发现；
   实机表现为配置变化后物品列表不刷新，或非分类页误清空 `currentTab`/渲染快照，
   导致组图标与点击判定错位。
-- **采用方案（可测性接缝 + 源码契约测试）**：
+- **采用方案（可测性接缝 + 真实 Loader 集成 + 源码契约）**：
   - 把「非空判断 + onConfigChanged」收敛为 `CreativeItemGroups.shouldRefreshAfterConfigChange(CreativeModeTab)`；
     Mixin 的 `containerTick` 注入只调用该接缝并按返回值刷新，不再内联条件；
   - 新增接缝单测 `CreativeItemGroupsTest.shouldRefreshAfterConfigChangeMatchesOnConfigChanged`，
@@ -169,14 +173,24 @@
   - 新增 `CreativeModeInventoryGroupingMixinContractTest` 源码契约测试，锁定三处接线：
     `@Inject(method = "containerTick")`、`CreativeItemGroups.shouldRefreshAfterConfigChange(selectedTab)`、
     `refreshCurrentTabContents(selectedTab.getDisplayItems())`；任一处被删除/改名/条件写反即失败；
-  - 未引入真实加载 Mixin 的集成测试：项目测试基础设施不加载客户端 Mixin，Fabric Loader JUnit 需要
-    额外客户端环境与依赖，成本高于收益；契约测试 + 接缝单测覆盖了原手动回归的全部失败模式。
-- **修复记录（提交 `78e411d`，待发布）**：`CreativeItemGroups` 新增转发接缝；
-  `CreativeModeInventoryGroupingMixin` 改为调用接缝；`CreativeItemGroupsTest` 新增接缝测试；
-  新增 `CreativeModeInventoryGroupingMixinContractTest`。
-- **验证**：`gradlew test` **708** 个单测通过（新增 2 个）；`gradlew build` 与 6 个 GameTest 通过。
+  - 真实 Loader 集成：`fabric-loader-junit:0.20.1` 只在独立 `loaderTest` 源集/任务中引入
+    （`src/loaderTest/java`，`check` 依赖该任务）；`CreativeModeInventoryGroupingMixinLoaderTest`
+    在 CLIENT 环境加载 `CreativeModeInventoryScreen`，断言 `tweakify$lastConfigSignature` 字段
+    与 `containerTick` 方法存在；注入配置错误会在类加载时直接失败；
+  - 不把 Fabric Loader JUnit 加到普通 `test`：实测会让 `Bootstrap.bootStrap()` 在
+    `CreativeItemGroupsTest` 触发 `Unbound tags`（Loader 已冻结注册表但未加载数据包 tags），
+    因此用独立源集隔离，普通 708 个用例保持原环境。
+- **修复记录（提交 `3559cb1`，基于 `78e411d`，待发布）**：
+  - `3559cb1`：`build.gradle` 新增 `loaderTest` 源集/任务与 `fabric-loader-junit` 依赖；
+    新增 `CreativeModeInventoryGroupingMixinLoaderTest`；`.gitignore` 忽略 `.fabric/`；
+  - `78e411d`：`CreativeItemGroups` 新增转发接缝；`CreativeModeInventoryGroupingMixin` 改为调用接缝；
+    `CreativeItemGroupsTest` 新增接缝测试；新增 `CreativeModeInventoryGroupingMixinContractTest`。
+- **验证**：`gradlew test` **708** 个单测通过；`gradlew loaderTest` 1 个集成用例通过
+  （CLIENT 环境 + Mixin 织入）；`gradlew build --rerun-tasks` 与 6 个 GameTest 通过；
+  CI 的 `./gradlew build` 通过 `check` 自动执行 `loaderTest`。
 - **回归条件**：若删除/拆分接缝、改变 `containerTick` 注入方法名，或移除列表刷新调用，
-  接缝测试或契约测试会失败；若将来引入可加载 Mixin 的集成测试，可用真实转发测试替换源码契约测试。
+  接缝测试/源码契约会失败；若删除 `loaderTest` 源集、任务或依赖，真实加载保护失效，
+  需重新评估本条。
 
 ## T5 详情（已缓解，待采样）：HUD/GUI 每帧重复计算
 
