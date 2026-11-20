@@ -94,6 +94,21 @@ final class ConfigStorage {
 		return root;
 	}
 
+	// 基于不可变快照构建 JSON 树：Snapshot.values 与字段表同序（都是 LinkedHashMap），
+	// 因此键序与 toJsonTree(config) 完全一致，null 也按同一规则跳过。
+	// 树在配置锁内一次性生成（值为深拷贝的 JsonElement），后台线程只读，不再触碰配置对象。
+	static JsonObject toJsonTree(Map<String, Object> values) {
+		JsonObject root = new JsonObject();
+		for (Map.Entry<String, Object> entry : values.entrySet()) {
+			Object value = entry.getValue();
+			if (value == null) {
+				continue;
+			}
+			root.add(entry.getKey(), GSON.toJsonTree(value));
+		}
+		return root;
+	}
+
 	// 按扁平字段表逐项读取：缺键保留默认值，显式 null 原样写入（交给后续清洗），
 	// 类型不匹配抛 JsonSyntaxException，与拆分前直接交给 Gson 反序列化的行为一致。
 	static TweakifyModConfig fromJsonTree(JsonObject root) {
@@ -122,6 +137,19 @@ final class ConfigStorage {
 	// 异步写盘任务必须在提交时用带序号的版本，否则执行期序号会破坏新旧顺序。
 	static boolean writeAtomically(String json, Path configPath) {
 		return writeAtomically(json, configPath, nextWriteSequence());
+	}
+
+	// 写盘任务专用：树在提交时已经冻结，这里只做 pretty printing 与落盘。
+	// 序列化异常必须转成失败返回值——后台任务抛异常会静默丢掉调用方的回滚与日志。
+	static boolean writeAtomically(JsonObject jsonTree, Path configPath, long sequence) {
+		String json;
+		try {
+			json = GSON.toJson(jsonTree);
+		} catch (RuntimeException e) {
+			LOGGER.error("Failed to serialize the config snapshot", e);
+			return false;
+		}
+		return writeAtomically(json, configPath, sequence);
 	}
 
 	// 带提交序号的落盘：序号小于该文件已成功写盘的最新序号时直接跳过并返回 true

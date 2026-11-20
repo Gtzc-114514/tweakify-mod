@@ -766,6 +766,116 @@ class TweakifyModConfigTest {
 		assertEquals(List.of("minecraft:apple"), reloaded.getMainHandUseCooldownItems());
 	}
 
+	// 快照树的格式化结果必须与直接 toJson 完全一致：键序、null 跳过与缩进都不能漂移，
+	// 否则同一份配置会因保存路径（同步保存 vs 异步 flush）不同而产生内容差异。
+	@Test
+	void snapshotJsonTreeMatchesDirectToJson() {
+		TweakifyModConfig config = new TweakifyModConfig(configPath());
+		config.functions.blockOffhandFallback = false;
+		config.functions.attackRangeMaxDistance = 96;
+		config.general.hotkeyOpenConfigGui = "H,J";
+		config.replaceRestrictedOffhandItems(List.of("minecraft:torch", "minecraft:debug_stick"));
+
+		String direct = config.toJson();
+		String fromSnapshotTree = ConfigStorage.GSON.toJson(config.toJsonTreeSnapshot());
+
+		assertEquals(direct, fromSnapshotTree,
+			"the snapshot tree must serialize to exactly the same text as toJson()");
+	}
+
+	// 树一旦构建就与后续修改隔离：写盘任务拿到的必须是提交时刻的值，
+	// 否则慢盘场景下“改了又改”会让磁盘内容取决于任务执行时机。
+	@Test
+	void snapshotJsonTreeFreezesValuesAtBuildTime() {
+		TweakifyModConfig config = new TweakifyModConfig(configPath());
+		config.functions.blockOffhandFallback = false;
+		config.replaceRestrictedOffhandItems(List.of("minecraft:torch"));
+		JsonObject tree = config.toJsonTreeSnapshot();
+
+		config.functions.blockOffhandFallback = true;
+		config.replaceRestrictedOffhandItems(List.of("minecraft:debug_stick"));
+
+		String frozen = ConfigStorage.GSON.toJson(tree);
+		assertTrue(frozen.contains("\"blockOffhandFallback\": false"),
+			"the tree must keep the value captured at build time");
+		assertTrue(frozen.contains("minecraft:torch"), "the tree must keep the captured list");
+		assertFalse(frozen.contains("minecraft:debug_stick"),
+			"later changes must not leak into an already built tree");
+	}
+
+	// 写盘任务执行时不能再读配置：提交后修改的字段不能出现在本次落盘内容里。
+	@Test
+	void prepareSaveHandleWritesSnapshotTakenAtSubmitTime() throws Exception {
+		Path path = configPath();
+		TweakifyModConfig config = new TweakifyModConfig(path);
+		config.functions.blockOffhandFallback = false;
+		config.replaceRestrictedOffhandItems(List.of("minecraft:torch"));
+
+		CountDownLatch blocked = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		AsyncFileWriter.execute(() -> {
+			blocked.countDown();
+			awaitQuietly(release);
+		});
+
+		AsyncFileWriter.WriteHandle handle = null;
+		try {
+			assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+				"the blocking write should start");
+			handle = config.prepareSaveHandle();
+			// 提交之后、任务执行之前修改字段：落盘内容必须仍是提交时刻的快照。
+			config.functions.blockOffhandFallback = true;
+			config.replaceRestrictedOffhandItems(List.of("minecraft:debug_stick"));
+		} finally {
+			release.countDown();
+		}
+
+		assertTrue(Boolean.TRUE.equals(AsyncFileWriter.await(handle, DRAIN_TIMEOUT_MILLIS, false)),
+			"the queued snapshot write should succeed");
+		String written = Files.readString(path);
+		assertTrue(written.contains("\"blockOffhandFallback\": false"),
+			"the write must use the snapshot captured at submit time; file content: " + written);
+		assertTrue(written.contains("minecraft:torch"));
+		assertFalse(written.contains("minecraft:debug_stick"),
+			"changes made after submit must not reach this write");
+	}
+
+	// 提交时分配落盘序号：排队中的旧快照即使延后执行，也不能覆盖之后同步写的新快照。
+	// 若序号改到执行期分配，本用例就会失败——这才能区分“提交顺序”与“队列执行顺序”。
+	@Test
+	void prepareSaveHandleSubmitsInCallOrder() throws Exception {
+		Path path = configPath();
+		TweakifyModConfig config = new TweakifyModConfig(path);
+		config.functions.blockOffhandFallback = false;
+
+		CountDownLatch blocked = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		AsyncFileWriter.execute(() -> {
+			blocked.countDown();
+			awaitQuietly(release);
+		});
+
+		AsyncFileWriter.WriteHandle older = null;
+		try {
+			assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+				"the blocking write should start");
+			// 旧快照（false）先提交，但被阻塞任务挡在队列里。
+			older = config.prepareSaveHandle();
+			// 新值走退出兜底同步写，拿到更晚序号并立即落盘。
+			config.functions.blockOffhandFallback = true;
+			assertTrue(Boolean.TRUE.equals(config.writeSynchronously()),
+				"the synchronous fallback should write the newer snapshot");
+		} finally {
+			release.countDown();
+		}
+
+		// 放行后才执行的旧任务必须被判定为陈旧写而跳过，不能把 false 写回去。
+		assertTrue(Boolean.TRUE.equals(AsyncFileWriter.await(older, DRAIN_TIMEOUT_MILLIS, false)),
+			"the stale queued write should report success after being skipped");
+		assertTrue(Files.readString(path).contains("\"blockOffhandFallback\": true"),
+			"a queued stale snapshot must not overwrite the newer synchronous write");
+	}
+
 	// 保存失败/超时回滚后提交的兜底快照最终必须落盘（异步，不阻塞调用方）。
 	@Test
 	void submitSaveAsyncWritesCurrentSnapshot() throws IOException {

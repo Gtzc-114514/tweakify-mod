@@ -711,9 +711,9 @@ public class TweakifyModConfig {
 		return config;
 	}
 
-	// 写盘时按扁平字段表序列化全部配置项：序列化在配置锁内完成，得到不可变 JSON 字符串；
-	// 磁盘 IO 在写盘线程上通过 ConfigStorage 的写锁串行执行，等待在配置锁外进行
-	//（见 save/applyAndSave），因此慢盘不会在持有配置锁时阻塞客户端 tick 或其它线程。
+	// 写盘时按扁平字段表构建不可变 JSON 树：树在配置锁内生成，pretty printing 与磁盘 IO
+	// 都在写盘线程执行（见 ConfigStorage.writeAtomically），等待在配置锁外进行
+	//（见 save/applyAndSave），因此慢盘与大字段量格式化都不会在持有配置锁时阻塞客户端 tick。
 	// 超时视为失败：尚未开始的任务会被取消；已经开始的任务会延长等待一次。
 	// 仍超时则由 applyAndSave 字段级回滚后提交一份兜底快照，保证磁盘最终与内存一致。
 	public boolean save() {
@@ -728,14 +728,15 @@ public class TweakifyModConfig {
 		return Boolean.TRUE.equals(AsyncFileWriter.await(handle, SAVE_TIMEOUT_MILLIS, false));
 	}
 
-	// 锁内完成「序列化 + 入队」，返回可在锁外等待的句柄。
+	// 锁内完成「快照树构建 + 入队」，返回可在锁外等待的句柄。
+	// 树是字段值的不可变深拷贝；pretty printing 在写盘线程执行，调用线程不再格式化全部字段。
 	// 调用方若需要与其它写盘任务保持提交顺序（Options.save 的检查点），应在外层持锁调用。
 	public AsyncFileWriter.WriteHandle prepareSaveHandle() {
 		synchronized (this) {
-			String json = ConfigStorage.toJson(this);
+			JsonObject jsonTree = toJsonTreeSnapshot();
 			Path path = configPathOrDefault();
 			long sequence = ConfigStorage.nextWriteSequence();
-			return AsyncFileWriter.submit(() -> ConfigStorage.writeAtomically(json, path, sequence));
+			return AsyncFileWriter.submit(() -> ConfigStorage.writeAtomically(jsonTree, path, sequence));
 		}
 	}
 
@@ -774,11 +775,11 @@ public class TweakifyModConfig {
 	// 提交兜底快照并返回可等待句柄；执行器已关闭时返回 null。
 	// 调用方可在后续任务中 await 这个句柄，拿到真实的写盘结果（而不是只看“已入队”）。
 	public synchronized AsyncFileWriter.WriteHandle submitSaveAsyncHandle() {
-		String json = ConfigStorage.toJson(this);
+		JsonObject jsonTree = toJsonTreeSnapshot();
 		Path path = configPathOrDefault();
 		long sequence = ConfigStorage.nextWriteSequence();
 		return AsyncFileWriter.submit(() -> {
-			boolean written = ConfigStorage.writeAtomically(json, path, sequence);
+			boolean written = ConfigStorage.writeAtomically(jsonTree, path, sequence);
 			if (!written) {
 				LOGGER.error("Fallback config write also failed; the config on disk may be out of sync with memory");
 			}
@@ -797,10 +798,21 @@ public class TweakifyModConfig {
 		return ConfigStorage.toJsonTree(this);
 	}
 
-	// 只落盘，不读写字段：供后台写盘线程调用（不能在这里同步整个对象）。
+	// 锁内构建不可变 JSON 树快照：字段值已由 snapshot() 复制（列表 List.copyOf），
+	// 树本身交给写盘线程做 pretty printing；后台线程不再访问配置字段。
+	public synchronized JsonObject toJsonTreeSnapshot() {
+		return ConfigStorage.toJsonTree(snapshot().values);
+	}
+
+	// 只落盘给定文本，不读写字段：供诊断或测试直接写已准备的文本。
 	// 序号必须在提交时分配（prepareSaveHandle / flushPendingSaveNow），不能用执行期序号。
 	public boolean writeJson(String json, long sequence) {
 		return ConfigStorage.writeAtomically(json, configPathOrDefault(), sequence);
+	}
+
+	// 只格式化并落盘已冻结的 JSON 树，不读写字段：供后台写盘线程调用。
+	public boolean writeJsonTree(JsonObject jsonTree, long sequence) {
+		return ConfigStorage.writeAtomically(jsonTree, configPathOrDefault(), sequence);
 	}
 
 	// 修正配置版本：旧文件（缺少该字段）按 0 处理并升级到当前版本。

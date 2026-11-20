@@ -46,6 +46,14 @@ class TweakifyModConfigOptionsTest {
 	private static final long DRAIN_TIMEOUT_MILLIS = 15_000L;
 	private static final long START_TIMEOUT_SECONDS = 10L;
 
+	private static void awaitQuietly(CountDownLatch latch) {
+		try {
+			latch.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
 	@TempDir
 	Path tempDir;
 
@@ -220,6 +228,47 @@ class TweakifyModConfigOptionsTest {
 			String json = Files.readString(path);
 			assertTrue(json.contains("\"blockOffhandFallback\": true"),
 				"the stale queued flush must not overwrite the later synchronous snapshot");
+		} finally {
+			release.countDown();
+			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
+			TweakifyModConfigOptions.resetForTest();
+			TweakifyMod.CONFIG = null;
+		}
+	}
+
+	// flush 的写盘任务只使用提交时冻结的 JSON 树：提交后修改的字段不能进入本次落盘，
+	// 否则慢盘场景下磁盘内容会取决于任务执行时机。
+	@Test
+	void flushPendingSaveNowWritesSnapshotTakenAtSubmitTime() throws Exception {
+		Path path = tempDir.resolve("flush-snapshot.json");
+		TweakifyModConfig config = new TweakifyModConfig(path);
+		TweakifyMod.CONFIG = config;
+
+		CountDownLatch blocked = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		AsyncFileWriter.execute(() -> {
+			blocked.countDown();
+			awaitQuietly(release);
+		});
+
+		try {
+			assertTrue(blocked.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the writer should be blocked");
+			config.functions.blockOffhandFallback = false;
+			TweakifyModConfigOptions.setPendingForTest(config.snapshot());
+			TweakifyModConfigOptions.flushPendingSaveNow();
+
+			// 提交之后、任务执行之前修改字段：落盘内容必须仍是提交时刻的快照。
+			config.functions.blockOffhandFallback = true;
+
+			release.countDown();
+			assertTrue(AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS));
+			TweakifyModConfigOptions.pollSaveResults();
+
+			String json = Files.readString(path);
+			assertTrue(json.contains("\"blockOffhandFallback\": false"),
+				"flush must write the snapshot captured at submit time; file content: " + json);
+			assertFalse(json.contains("\"blockOffhandFallback\": true"),
+				"changes made after submit must not reach this write");
 		} finally {
 			release.countDown();
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);

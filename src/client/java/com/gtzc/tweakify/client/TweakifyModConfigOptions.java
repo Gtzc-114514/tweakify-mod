@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.JsonObject;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.TweakifyModConfig;
@@ -1264,9 +1265,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	private static long lastSaveAtMillis;
 	private static TweakifyModConfig.Snapshot pendingSnapshot;
 
-	// 异步写盘：序列化留在客户端线程（有锁、亚毫秒级），只有磁盘 IO 交给后台线程。
-	// 每次 flush 都在配置锁内完成「序列化 + 提交到全局串行队列」，因此队列顺序等于快照
-	// 新旧顺序；即使磁盘慢、前面还有旧写未完成，也不会出现旧快照晚于新快照落盘。
+	// 异步写盘：客户端线程只做「快照 -> JSON 树」（瞬时可忽略），pretty printing 与磁盘 IO
+	// 都交给后台线程。每次 flush 都在配置锁内完成「建树 + 提交到全局串行队列」，因此队列顺序
+	// 等于快照新旧顺序；即使磁盘慢、前面还有旧写未完成，也不会出现旧快照晚于新快照落盘。
 	private static final Queue<SaveResult> SAVE_RESULTS = new ConcurrentLinkedQueue<>();
 	// 被乐观推进跳过的失败结果：整份保存失败并回退序号后，按序号重放，重新参与回滚判定。
 	private static final Queue<SaveResult> DEFERRED_RESULTS = new ConcurrentLinkedQueue<>();
@@ -1347,8 +1348,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		}
 	}
 
-	// 立即写盘：序列化在客户端线程完成，磁盘 IO 交给后台线程，避免拖动滑块时掉帧。
-	// 「序列化 + 提交」必须在同一把配置锁内完成，保证提交顺序就是快照新旧顺序：
+	// 立即写盘：客户端线程只构建不可变 JSON 树，格式化与磁盘 IO 都交给后台线程，
+	// 避免拖动滑块时掉帧。
+	// 「建树 + 提交」必须在同一把配置锁内完成，保证提交顺序就是快照新旧顺序：
 	// 否则另一个线程的同步保存可能先提交，而这里的旧快照稍后才入队，把新内容覆盖掉。
 	static void flushPendingSaveNow() {
 		if (!savePending) {
@@ -1361,27 +1363,27 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 			return;
 		}
 		TweakifyModConfig.Snapshot snapshot = pendingSnapshot;
-		boolean serializationFailed = false;
+		boolean snapshotFailed = false;
 		synchronized (config) {
 			if (IN_FLIGHT_FLUSHES.get() >= MAX_IN_FLIGHT_FLUSHES) {
 				// 队列积压：保留本批修改与回滚快照，等下一个节流窗口再提交。
 				lastSaveAtMillis = System.currentTimeMillis();
 				return;
 			}
-			String serialized = null;
+			JsonObject jsonTree = null;
 			TweakifyModConfig.Snapshot after = null;
 			try {
-				serialized = config.toJson();
+				jsonTree = config.toJsonTreeSnapshot();
 				after = config.snapshot();
 			} catch (RuntimeException e) {
-				TweakifyMod.LOGGER.error("Failed to serialize Tweakify Mod configuration", e);
-				serializationFailed = true;
+				TweakifyMod.LOGGER.error("Failed to snapshot Tweakify Mod configuration for serialization", e);
+				snapshotFailed = true;
 			}
 			savePending = false;
 			pendingSnapshot = null;
 			lastSaveAtMillis = System.currentTimeMillis();
-			if (!serializationFailed) {
-				String json = serialized;
+			if (!snapshotFailed) {
+				JsonObject tree = jsonTree;
 				TweakifyModConfig.Snapshot afterSnapshot = after;
 				long sequence = WRITE_SEQUENCE.incrementAndGet();
 				// 落盘序号在提交时分配：任务延迟执行时不能覆盖更晚提交的写。
@@ -1391,7 +1393,7 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 				// 入队失败（执行器已关闭）时立即退回计数，避免永久占掉一个名额。
 				if (!AsyncFileWriter.execute(() -> {
 					try {
-						writeConfig(json, snapshot, afterSnapshot, sequence, writeSequence);
+						writeConfig(tree, snapshot, afterSnapshot, sequence, writeSequence);
 					} finally {
 						IN_FLIGHT_FLUSHES.decrementAndGet();
 					}
@@ -1400,20 +1402,21 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 				}
 			}
 		}
-		if (serializationFailed) {
-			// 序列化失败等同于写盘失败：在客户端线程回滚，不进入后台队列。
+		if (snapshotFailed) {
+			// 建树失败等同于序列化/写盘失败：在客户端线程回滚，不进入后台队列。
 			config.restoreSnapshot(snapshot);
 			syncFromConfig();
 		}
 	}
 
-	// 后台写盘任务：只写已序列化好的文本，不访问配置字段，因此不会与配置锁互相阻塞。
-	private static void writeConfig(String json, TweakifyModConfig.Snapshot snapshot,
+	// 后台写盘任务：只对提交时冻结的 JSON 树做格式化与落盘，不访问配置字段，
+	// 因此不会与配置锁互相阻塞，也不会把任务执行期间的新修改写进这份快照。
+	private static void writeConfig(JsonObject jsonTree, TweakifyModConfig.Snapshot snapshot,
 								 TweakifyModConfig.Snapshot afterSnapshot, long sequence, long writeSequence) {
 		boolean success;
 		try {
 			TweakifyModConfig config = TweakifyMod.CONFIG;
-			success = config != null && config.writeJson(json, writeSequence);
+			success = config != null && config.writeJsonTree(jsonTree, writeSequence);
 		} catch (RuntimeException e) {
 			// 非 IOException 的写盘异常（路径非法、安全策略等）也必须产出失败结果：
 			// 否则 pollSaveResults 永远收不到这次结果，回滚与日志会一起静默丢失。

@@ -1,11 +1,13 @@
 package com.gtzc.tweakify.config;
 
+import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -37,6 +39,19 @@ class ConfigStorageTest {
 
 		assertEquals("{\"v\":2}", Files.readString(path),
 			"a stale write must not overwrite newer content");
+	}
+
+	// 快照树写盘与文本写盘等价：任务内格式化的结果必须与 GSON.toJson(tree) 一致。
+	@Test
+	void writeAtomicallyWithJsonTreeWritesFormattedContent() throws IOException {
+		Path path = tempDir.resolve("tree.json");
+		JsonObject tree = new JsonObject();
+		tree.addProperty("blockOffhandFallback", false);
+		tree.add("restrictedOffhandItems", ConfigStorage.GSON.toJsonTree(List.of("minecraft:torch")));
+
+		assertTrue(ConfigStorage.writeAtomically(tree, path, 1L));
+		assertEquals(ConfigStorage.GSON.toJson(tree), Files.readString(path),
+			"the writer task must serialize the frozen tree itself");
 	}
 
 	// 失败的写不能占用提交序号，否则更旧（但真正成功）的写会被错误跳过。
