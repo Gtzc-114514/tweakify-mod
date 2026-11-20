@@ -30,6 +30,12 @@ class TotemInventoryMixinContractTest {
 			"背包图腾触发调用被移除");
 		assertTrue(source.contains("BYPASSES_INVULNERABILITY"),
 			"绕过无敌的伤害来源过滤被移除");
+		assertTrue(source.contains("InteractionHand.values()"),
+			"手部已有图腾时的原版优先预检被移除");
+		assertTrue(source.contains("if (TotemInventory.tryUseInventoryTotem(player))"),
+			"setReturnValue(true) 被移出命中分支，会导致无条件免死");
+		assertTrue(source.contains("cir.isCancelled()"),
+			"未尊重其他模组在本注入点取消的结果");
 		assertTrue(source.contains("cir.setReturnValue(true)"),
 			"触发后取消原方法的返回值被移除");
 	}

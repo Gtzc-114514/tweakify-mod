@@ -22,6 +22,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class TotemInventoryMixin {
 	@Inject(method = "checkTotemDeathProtection", at = @At("HEAD"), cancellable = true)
 	private void tweakify$useInventoryTotem(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
+		if (cir.isCancelled()) {
+			// 其他模组在本注入点已取消（如禁用图腾）：尊重其结果，不能再消耗背包图腾。
+			return;
+		}
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.modified.totemFromInventory
 			|| source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {

@@ -11,7 +11,6 @@ import net.minecraft.world.item.component.DeathProtection;
 import net.minecraft.world.level.gameevent.GameEvent;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * 不死图腾的背包查找与触发：原版只检查主手/副手（checkTotemDeathProtection），
@@ -19,16 +18,13 @@ import java.util.function.Predicate;
  * 死亡保护效果完全沿用原版实现。
  */
 public final class TotemInventory {
-	// 快捷栏 0~8 + 主背包 9~35；盔甲槽与副手不在范围内（副手由原版手部检查处理）。
-	static final int MAIN_INVENTORY_SIZE = 36;
-
 	private TotemInventory() {
 	}
 
 	// 从背包取图腾并触发不死保护；返回是否触发（触发后由 mixin 取消原方法）。
 	public static boolean tryUseInventoryTotem(Player player) {
 		Inventory inventory = player.getInventory();
-		int slot = findTotemSlot(inventory, MAIN_INVENTORY_SIZE);
+		int slot = findTotemSlot(inventory, Inventory.INVENTORY_SIZE);
 		if (slot < 0) {
 			return false;
 		}
@@ -61,15 +57,11 @@ public final class TotemInventory {
 	}
 
 	// 纯函数：测试直接覆盖槽位遍历与范围限制。
-	// 单测环境无法构造非空 ItemStack（物品组件未绑定），谓词版不依赖真实物品。
+	// 只保留真实谓词（DEATH_PROTECTION 组件判定），避免测试专用重载成为死代码。
 	static int findTotemSlot(List<ItemStack> items, int limit) {
-		return findTotemSlot(items, limit, TotemInventory::hasDeathProtection);
-	}
-
-	static int findTotemSlot(List<ItemStack> items, int limit, Predicate<ItemStack> isTotem) {
 		int end = Math.min(items.size(), limit);
 		for (int i = 0; i < end; i++) {
-			if (isTotem.test(items.get(i))) {
+			if (hasDeathProtection(items.get(i))) {
 				return i;
 			}
 		}
