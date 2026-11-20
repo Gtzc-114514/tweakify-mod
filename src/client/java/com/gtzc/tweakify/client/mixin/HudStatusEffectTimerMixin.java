@@ -11,6 +11,9 @@ import net.minecraft.client.gui.Hud;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * 更好的药水显示：包裹 {@code Hud.extractEffects}，按配置整体缩放右侧效果图标与时间文字。
@@ -22,25 +25,27 @@ public class HudStatusEffectTimerMixin {
 	@Final
 	private Minecraft minecraft;
 
-	// try/finally 保证异常时矩阵栈仍能恢复；缩放围绕右上角，避免图标移出屏幕右缘。
+	// try-with-resources 保证异常时矩阵栈仍能恢复；缩放围绕右上角，避免图标移出屏幕右缘。
+	// 时间文字由下方的 TAIL 注入绘制：TAIL 落在 wrapped 方法内部，既在缩放矩阵内，
+	// 又保留原版“未显示效果时提前返回”的语义。
 	@WrapMethod(method = "extractEffects")
 	private void tweakify$scaledEffectDisplay(GuiGraphicsExtractor gui, DeltaTracker delta, Operation<Void> original) {
 		float scale = StatusEffectTimerRenderer.effectScale(TweakifyMod.CONFIG);
-		boolean scaled = scale != 1.0f;
-		if (scaled) {
-			int right = this.minecraft.getWindow().getGuiScaledWidth();
-			gui.pose().pushMatrix();
-			gui.pose().translate(right, 0.0f);
-			gui.pose().scale(scale, scale);
-			gui.pose().translate(-right, 0.0f);
+		if (scale == 1.0f) {
+			original.call(gui, delta);
+			return;
 		}
+		StatusEffectTimerRenderer.EffectScaleScope scope =
+			StatusEffectTimerRenderer.pushAnchoredScale(gui.pose(), gui.guiWidth(), scale);
 		try {
 			original.call(gui, delta);
-			StatusEffectTimerRenderer.render(gui, this.minecraft);
 		} finally {
-			if (scaled) {
-				gui.pose().popMatrix();
-			}
+			scope.close();
 		}
+	}
+
+	@Inject(method = "extractEffects", at = @At("TAIL"))
+	private void tweakify$renderEffectTimers(GuiGraphicsExtractor gui, DeltaTracker delta, CallbackInfo ci) {
+		StatusEffectTimerRenderer.render(gui, this.minecraft);
 	}
 }

@@ -122,6 +122,29 @@ public final class StatusEffectTimerRenderer {
 		return percent / 100.0f;
 	}
 
+	// 以右上角 (right, 0) 为锚点压入缩放矩阵；与 EffectScaleScope.close 成对。
+	// 单独抽成作用域便于单测验证锚点与矩阵栈平衡。
+	public static EffectScaleScope pushAnchoredScale(Matrix3x2fStack pose, int right, float scale) {
+		pose.pushMatrix();
+		pose.translate(right, 0.0f);
+		pose.scale(scale, scale);
+		pose.translate(-right, 0.0f);
+		return new EffectScaleScope(pose);
+	}
+
+	public static final class EffectScaleScope implements AutoCloseable {
+		private final Matrix3x2fStack pose;
+
+		private EffectScaleScope(Matrix3x2fStack pose) {
+			this.pose = pose;
+		}
+
+		@Override
+		public void close() {
+			this.pose.popMatrix();
+		}
+	}
+
 	private static List<CachedTimer> rebuildTimers(Minecraft client, int guiWidth, boolean demo,
 			TweakifyModConfig config) {
 		Collection<MobEffectInstance> activeEffects = client.player.getActiveEffects();
