@@ -35,7 +35,7 @@ class DebugInfoOverlayTest {
 	// 同一签名在间隔内复用同一份文本，渲染帧不再重复构建。
 	@Test
 	void lineCacheReusesSameSignatureWithinInterval() {
-		DebugInfoOverlay.LineCache cache = new DebugInfoOverlay.LineCache();
+		DebugInfoOverlay.LineCache<String> cache = new DebugInfoOverlay.LineCache<>();
 		AtomicInteger builds = new AtomicInteger();
 		Supplier<List<String>> builder = () -> {
 			builds.incrementAndGet();
@@ -52,7 +52,7 @@ class DebugInfoOverlayTest {
 	// 签名变化（坐标/朝向/目标/子开关）必须立即重建，不等间隔到期。
 	@Test
 	void lineCacheRebuildsOnSignatureChangeAndIntervalExpiry() {
-		DebugInfoOverlay.LineCache cache = new DebugInfoOverlay.LineCache();
+		DebugInfoOverlay.LineCache<String> cache = new DebugInfoOverlay.LineCache<>();
 		AtomicInteger builds = new AtomicInteger();
 		Supplier<List<String>> builder = () -> {
 			builds.incrementAndGet();
@@ -69,7 +69,7 @@ class DebugInfoOverlayTest {
 
 	@Test
 	void lineCacheResetForcesRebuild() {
-		DebugInfoOverlay.LineCache cache = new DebugInfoOverlay.LineCache();
+		DebugInfoOverlay.LineCache<String> cache = new DebugInfoOverlay.LineCache<>();
 		AtomicInteger builds = new AtomicInteger();
 		Supplier<List<String>> builder = () -> {
 			builds.incrementAndGet();
@@ -86,7 +86,7 @@ class DebugInfoOverlayTest {
 	// 无缓存等价性：缓存返回内容与直接构建一致，只是复用了列表实例。
 	@Test
 	void cachedLinesEqualUncachedBuild() {
-		DebugInfoOverlay.LineCache cache = new DebugInfoOverlay.LineCache();
+		DebugInfoOverlay.LineCache<String> cache = new DebugInfoOverlay.LineCache<>();
 		Supplier<List<String>> builder = () -> List.of(
 			"XYZ: 1.0 / 2.0 / 3.0", "Facing: north (0.0)", "Dim: minecraft:overworld");
 

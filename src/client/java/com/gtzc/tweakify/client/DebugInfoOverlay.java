@@ -12,7 +12,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -37,6 +39,8 @@ import java.util.function.Supplier;
  * 附近实体、配置统计、药水效果与钩子探针等追加行由同名子开关控制。
  * 整行文本在坐标、朝向、准星目标或子开关变化时重建，静止时每 500ms 刷新一次；
  * 实体与配置统计仍按 500ms 节流，渲染帧只读缓存行。
+ * 缓存行同时保存已排序的 {@link FormattedCharSequence}，渲染帧不再重复做
+ * 字符串→字形序列化；维度/方块/实体 ID 只显示路径部分，减少每帧 glyph 数量。
  * 文字沿用原版 HUD 的描边样式，保证在水下/亮色背景上也清晰。
  */
 public final class DebugInfoOverlay {
@@ -52,7 +56,7 @@ public final class DebugInfoOverlay {
 	private static final long SUMMARY_REFRESH_NANOS = 500_000_000L;
 	// 整行文本的刷新间隔：坐标/朝向/目标/子开关变化时立即重建，静止时每 500ms 刷新一次。
 	private static final long LINE_REFRESH_NANOS = 500_000_000L;
-	private static final LineCache CACHE = new LineCache();
+	private static final LineCache<Line> CACHE = new LineCache<>();
 	private static final SummaryThrottle SUMMARY_THROTTLE = new SummaryThrottle();
 
 	private static String cachedEntitySummary = "Entities: -";
@@ -72,35 +76,39 @@ public final class DebugInfoOverlay {
 			CACHE.reset();
 			return;
 		}
-		List<String> lines = buildLines(client, config);
+		List<Line> lines = buildLines(client, config);
 		// 底边锚在原版条带（经验条/定位栏）上方，并让出一行名字：头像上沿 2 像素 + 名字行 + 1 像素余量。
 		int bottom = ContextualBar.EMPTY.top(client.getWindow())
 			- (2 + client.font.lineHeight + 1);
 		int y = Math.max(0, bottom - LINE_HEIGHT * lines.size());
-		for (String line : lines) {
-			graphics.text(client.font, line, MARGIN, y, TEXT_COLOR, true);
+		for (Line line : lines) {
+			graphics.text(client.font, line.text(), MARGIN, y, TEXT_COLOR, true);
 			y += LINE_HEIGHT;
 		}
 	}
 
+	// 一行已排序文本：渲染帧直接绘制，不再每帧做字符串→字形序列转换。
+	record Line(FormattedCharSequence text) {
+	}
+
 	// 包私有：游戏内测试可直接校验文本内容，不必依赖渲染。
-	static List<String> buildLines(Minecraft client, TweakifyModConfig config) {
+	static List<Line> buildLines(Minecraft client, TweakifyModConfig config) {
 		return CACHE.get(System.nanoTime(), signature(client, config), LINE_REFRESH_NANOS,
 			() -> buildLinesUncached(client, config));
 	}
 
-	// 无缓存重建：整行文本的构建逻辑保持不变，只在签名变化或间隔到期时调用。
-	private static List<String> buildLinesUncached(Minecraft client, TweakifyModConfig config) {
+	// 无缓存重建：字符串构建后一次性转换为字形序列，只在签名变化或间隔到期时调用。
+	private static List<Line> buildLinesUncached(Minecraft client, TweakifyModConfig config) {
 		List<String> lines = new ArrayList<>();
 		BlockPos pos = client.player.blockPosition();
 		lines.add(String.format("XYZ: %.1f / %.1f / %.1f", client.player.getX(),
 			client.player.getY(), client.player.getZ()));
 		lines.add("Facing: " + client.player.getDirection().getName()
 			+ String.format(" (%.1f)", client.player.getYRot()));
-		lines.add("Dim: " + client.level.dimension().identifier());
+		lines.add("Dim: " + client.level.dimension().identifier().getPath());
 		BlockState below = client.level.getBlockState(pos.below());
 		Identifier belowId = BuiltInRegistries.BLOCK.getKey(below.getBlock());
-		lines.add("Below: " + (belowId == null ? "unknown" : belowId.toString()));
+		lines.add("Below: " + (belowId == null ? "unknown" : belowId.getPath()));
 		if (config.testing.debugInfoShowPerformance) {
 			Runtime runtime = Runtime.getRuntime();
 			long usedMb = (runtime.totalMemory() - runtime.freeMemory()) / (1024L * 1024L);
@@ -134,7 +142,12 @@ public final class DebugInfoOverlay {
 		if (config.testing.debugInfoShowHooks) {
 			appendHookLines(lines);
 		}
-		return lines;
+		Language language = Language.getInstance();
+		List<Line> result = new ArrayList<>(lines.size());
+		for (String line : lines) {
+			result.add(new Line(language.getVisualOrder(FormattedText.of(line))));
+		}
+		return result;
 	}
 
 	// 只读取轻量状态构造签名：位置/朝向/准星目标/世界/语言/子开关变化时立即重建；
@@ -198,13 +211,13 @@ public final class DebugInfoOverlay {
 		Entity entity = client.crosshairPickEntity;
 		if (entity != null) {
 			Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-			return id == null ? "entity" : id.toString();
+			return id == null ? "entity" : id.getPath();
 		}
 		HitResult hit = client.hitResult;
 		if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
 			Identifier id = BuiltInRegistries.BLOCK.getKey(
 				client.level.getBlockState(blockHit.getBlockPos()).getBlock());
-			return id == null ? "block" : id.toString();
+			return id == null ? "block" : id.getPath();
 		}
 		return "-";
 	}
@@ -336,20 +349,21 @@ public final class DebugInfoOverlay {
 	}
 
 	// 整行文本缓存：签名变化或间隔到期时重建；返回不可变列表，渲染帧只读。
+	// 泛型化仅为单测复用（生产实例固定为 {@link Line}）。
 	// 仅客户端渲染线程访问（客户端 tick 与 HUD extract 同线程）：不做同步。
-	static final class LineCache {
+	static final class LineCache<T> {
 		private boolean valid;
 		private long lastBuildNanos;
 		private Object signature;
-		private List<String> lines = List.of();
+		private List<T> lines = List.of();
 
-		List<String> get(long nowNanos, Object signature, long intervalNanos,
-				Supplier<List<String>> builder) {
+		List<T> get(long nowNanos, Object signature, long intervalNanos,
+				Supplier<List<T>> builder) {
 			if (this.valid && Objects.equals(signature, this.signature)
 				&& nowNanos - this.lastBuildNanos < intervalNanos) {
 				return this.lines;
 			}
-			List<String> built = List.copyOf(builder.get());
+			List<T> built = List.copyOf(builder.get());
 			this.lines = built;
 			this.signature = signature;
 			this.lastBuildNanos = nowNanos;
