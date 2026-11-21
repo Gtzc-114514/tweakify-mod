@@ -536,6 +536,38 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 > 发布后修正：`514bf37` 删除存档游玩时长条目误植的过滤/配色描述、修正「双向锚点」措辞，并已用
 > `gh release edit v1.1.8 --notes-file docs/release-notes/v1.1.8.md` 同步线上；修正后正文仍为 931 字符并与仓库 notes 一致。
 
+## 验证记录：v1.1.9 发布
+
+本次为工程化维护版本（测试/门禁加固、配置类拆分、T3/T5/T6 首轮采样，无功能与配置字段变更），
+`release.yml` 无改动：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `44864038913` |
+| 对应提交 | `b6a1bad`（`v1.1.9` 标签提交；含 1.1.9 版本号、notes 与版本索引） |
+| 触发 | push tag `v1.1.9` |
+| 结论 | **success**，job 耗时 1 分 24 秒 |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过** |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.1.9` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.1.9` 去前缀后与版本 `1.1.9` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.1.9` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.1.9.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.1.9` 开头（1043 字符），与仓库内 notes 逐字一致 | ✅ |
+
+产物：`tweakify-mod-1.1.9.jar`（882,421 字节）、`tweakify-mod-1.1.9-sources.jar`（672,208 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `44864032983`）同为 success。
+
+> 备注：本次 main（`aca7f63..b6a1bad`）与标签均通过本地代理
+> `-c http.proxy=http://127.0.0.1:26561` 推送成功；Dependabot 首次运行随本次推送触发，
+> 已开 4 个 PR（JUnit 5.13.4→6.1.3、junit-platform-launcher 1.13.4→6.1.3、
+> gradle-wrapper 9.7.1→9.9.1、GitHub Actions 分组），均需人工评估后再决定是否合并。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
