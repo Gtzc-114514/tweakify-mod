@@ -147,10 +147,20 @@ jacocoTestReport {
 	dependsOn test
 	// 普通 test 同时覆盖 main（配置/命令）与 client（Mixin/渲染）两个源集。
 	sourceSets sourceSets.main, sourceSets.client
+	// 只统计核心逻辑：mixin 包（含 minihud/modmenu 子包）的注入体大多只能在实机触发，
+	// 混入后会把整体数字压到没有指导意义。需要单独看 Mixin 时临时去掉这条排除。
+	classDirectories.setFrom(classDirectories.files.collect {
+		fileTree(dir: it, exclude: 'com/gtzc/tweakify/client/mixin/**')
+	})
 	reports {
 		xml.required = true
 		html.required = true
 		csv.required = false
+	}
+	// 报告任务不会清理旧输出：排除 mixin 包后上一次的页面会残留在 HTML 目录里，
+	// 生成前清空一次，保证本地与 CI 看到的口径一致。
+	doFirst {
+		reports.html.outputLocation.get().asFile.deleteDir()
 	}
 }
 
