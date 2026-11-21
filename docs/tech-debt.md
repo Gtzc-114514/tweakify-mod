@@ -24,7 +24,7 @@
 | --- | --- | --- | --- |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 复测未达触发条件（2026-11-21，降负后中位 1.98%，见详情） |
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（真实 Loader 集成 + 源码契约，见详情） |
-| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解（调试层 1.40%、连接轮廓 0.36%、描述缓存 0.49%；tooltip 整体 2.54% 为原版构建，定位栏待多人采样，见详情） |
+| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解（调试层 1.40%、连接轮廓 0.36%、描述缓存 0.49%；tooltip 整体 2.54% 为原版构建；定位栏补采 0%，Mixin 签名已修复，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（渲染线程几何构建 0 样本、worker 空闲；峰值与写盘未覆盖，见详情）（最近复评 2026-11-21，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
 | T8 | `AllMixinApplicationLoaderTest` | 主配置 145 个 mixin 的 100 个去重目标类在真实 Loader 中全部加载；`require = 0` 的 73 个探针点按设计豁免 | 已修复（真实 Loader 全量织入，见详情） |
@@ -72,6 +72,7 @@
 > T3 降负（4 Hz / 半径 24）后 C 场景 3 轮中位 1.98%（降负前 5.22%），低于 2% 触发观察线，
 > 状态改为「复测未达触发条件」；B/E 场景仍未采集。
 > T5 调试层降负后 D 场景中位 1.40%（降负前 4.21%）；药水 HUD 另有 1.14%，属绘制成本。
+> T5 定位栏补采（双客户端）3 轮 0 样本、探针已触发；同时修复 Mixin 的 blitSprite 6 参签名。
 > 数据见 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) §六。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
@@ -310,10 +311,15 @@
   - 连接轮廓：准星对准双格门（`Target: oak_door`），3 轮
     `ConnectedBlockOutlineState.mergedShape` 0.36% / 0.47% / 0.00%（第三轮窗口被遮挡），
     中位 **0.36%**；
-  - 定位栏：单人世界无其他玩家航点，磁化指南针 + 磁石也未在 locator bar 产生航点，
-    `LocatorBarHeads.renderDot` 未触发；需要多人/局域网环境，本次未采集。
-- **待办**：定位栏需在双客户端或局域网环境补采；若要求 tooltip 合计 < 2%，
-  需要接管原版 tooltip 构建（兼容性风险高），建议维持现状。
+  - 定位栏：双客户端 + 独立服务端环境补采（`online-mode=false`，主机 Player666 / 访客 Guest），
+    3 轮 `LocatorBarHeads.renderDot` 均 0 样本（Render 样本 1729 / 881 / 469，探针
+    `locatorBarHeads` 已触发、头像正常显示），占比 < 0.1%。
+- **定位栏 Mixin 修复（2026-11-21）**：26.3 的 `LocatorBar` 调用 6 参
+  `blitSprite(RenderPipeline, Identifier, x, y, w, h)`，原注入目标沿用 7 参（带 depth），
+  `require = 0` 静默跳过，头像功能实际从未生效（首轮“0 样本”误判为无航点）。
+  修复为 6 参后探针与头像均正常；746 单测与全量 build 通过。
+- **待办**：若要求 tooltip 合计 < 2%，需要接管原版 tooltip 构建（兼容性风险高），
+  建议维持现状；定位栏已完成补采。
 - **验证方式**：`LocatorBarHeadsTest` 已覆盖名单缓存复用/内容变化失效、宽度缓存字体变化失效与
   淘汰后取值正确；`StatusEffectTimerRendererTest` 已覆盖缓存键失效、tick 构建与无缓存
   `placementFor` 等价、无尽效果占位、阈值/隐藏图标过滤、演示偏移与按秒格式化；

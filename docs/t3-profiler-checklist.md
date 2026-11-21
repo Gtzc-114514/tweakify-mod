@@ -147,7 +147,7 @@ jcmd <pid> JFR.stop name=scan        # 需要提前结束时
 | tooltip（附魔剑悬停） | `ItemStack.getTooltipLines` | 2.54% / 2.89% / 0%（作废） | 2.54% | 第三轮 tooltip 丢失 |
 | tooltip（附魔剑悬停） | `EnchantmentTooltipDescriptions` | 0.49% / 0.64% / 0% | 0.49% | 模组描述缓存 |
 | 连接轮廓（双格门） | `ConnectedBlockOutlineState.mergedShape` | 0.36% / 0.47% / 0%（作废） | 0.36% | 第三轮窗口被遮挡 |
-| 定位栏 | `LocatorBarHeads.renderDot` | 未采集 | — | 单人无航点，需多人环境 |
+| 定位栏（双客户端） | `LocatorBarHeads.renderDot` | 0% / 0% / 0% | 0% | 探针已触发；Render 样本 1729/881/469 |
 
 ## 七、结果处理
 
