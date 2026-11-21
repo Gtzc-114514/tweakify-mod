@@ -151,7 +151,9 @@
 		"AbstractContainerWidgetFavoriteMixin",
 		"WorldSelectionListFavoriteMixin",
 		"WorldSelectionListPlayTimeMixin",
-		"SelectWorldScreenFavoriteMixin"
+		"SelectWorldScreenFavoriteMixin",
+		"ScreenshotKeyMixin",
+		"ChatScreenshotRenderMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"

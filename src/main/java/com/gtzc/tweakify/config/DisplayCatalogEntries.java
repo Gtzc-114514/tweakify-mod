@@ -64,5 +64,9 @@ final class DisplayCatalogEntries {
 		entries.add(child("sweepingView", "sweepingViewSphere"));
 		entries.add(child("sweepingView", "sweepingViewSphereColor"));
 		entries.add(child("sweepingView", "sweepingViewVehicles"));
+		// 更好的 F2 截图：截图卡片与 F9 4K、输出格式集中在同一父项下。
+		entries.add(display("betterScreenshot", false));
+		entries.add(child("betterScreenshot", "betterScreenshotF9"));
+		entries.add(child("betterScreenshot", "betterScreenshotFormat"));
 	}
 }

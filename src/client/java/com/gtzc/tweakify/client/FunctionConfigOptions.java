@@ -560,6 +560,16 @@ public final class FunctionConfigOptions {
 	public static final ConfigBooleanHotkeyed EXPLOSION_RANGE_DISPLAY = new ConfigBooleanHotkeyed(
 		"explosionRangeDisplay", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 更好的 F2 截图：F9 为子项，输出格式覆盖 PNG/JPG/TGA/BMP。
+	public static final ConfigBoolean BETTER_SCREENSHOT = new ConfigBoolean(
+		"betterScreenshot", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean BETTER_SCREENSHOT_F9 = new ConfigBoolean(
+		"betterScreenshotF9", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigOptionList BETTER_SCREENSHOT_FORMAT = new ConfigOptionList(
+		"betterScreenshotFormat", ScreenshotFormat.PNG).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBooleanHotkeyed SWEEPING_VIEW = new ConfigBooleanHotkeyed(
 		"sweepingView", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
 

@@ -36,6 +36,7 @@ public final class FunctionConfig extends ConfigSection {
 			FieldSanitizer.of("sweepingViewWireframeColor", this::sanitizeSweepingViewWireframeColor),
 			FieldSanitizer.of("sweepingViewFaceColor", this::sanitizeSweepingViewFaceColor),
 			FieldSanitizer.of("sweepingViewSphereColor", this::sanitizeSweepingViewSphereColor),
+			FieldSanitizer.of("betterScreenshotFormat", this::sanitizeBetterScreenshotFormat),
 			FieldSanitizer.of("savePlayTimeFormat", this::sanitizeSavePlayTimeFormat),
 			FieldSanitizer.of("highlightSingleLayerBedrockMaxMarkers", this::sanitizeBedrockMarkerLimit),
 			FieldSanitizer.of("highlightSingleLayerBedrockScanRadius", this::sanitizeBedrockScanRadius),
@@ -308,6 +309,11 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 爆炸范围可视化：用红色标记即将爆炸的 TNT、TNT 矿车、苦力怕与末地水晶。
 	public volatile boolean explosionRangeDisplay = false;
+
+	// 更好的 F2 截图：截图卡片、输出格式；F9 可额外触发 4K 输出。
+	public volatile boolean betterScreenshot = true;
+	public volatile boolean betterScreenshotF9 = false;
+	public volatile String betterScreenshotFormat = TweakifyModConfig.SCREENSHOT_FORMAT_PNG;
 
 	// 横扫范围可视化：参考 sweeping-view，目标扩展框 + 三格球体攻击范围。
 	public volatile boolean sweepingView = false;
@@ -686,6 +692,17 @@ public final class FunctionConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported attack range palette: {}", attackRangePalette);
 		attackRangePalette = TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE;
+		return true;
+	}
+
+	// 截图格式：未知值回退到 PNG。
+	private boolean sanitizeBetterScreenshotFormat() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_SCREENSHOT_FORMATS, betterScreenshotFormat)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported screenshot format: {}", betterScreenshotFormat);
+		betterScreenshotFormat = TweakifyModConfig.SCREENSHOT_FORMAT_PNG;
 		return true;
 	}
 

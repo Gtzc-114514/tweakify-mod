@@ -223,6 +223,15 @@ public class TweakifyModConfig {
 		ATTACK_RANGE_PALETTE_YELLOW, ATTACK_RANGE_PALETTE_CYAN, ATTACK_RANGE_PALETTE_MAGENTA,
 		ATTACK_RANGE_PALETTE_WHITE);
 
+	// 更好的 F2 截图输出格式。
+	public static final String SCREENSHOT_FORMAT_PNG = "png";
+	public static final String SCREENSHOT_FORMAT_JPG = "jpg";
+	public static final String SCREENSHOT_FORMAT_TGA = "tga";
+	public static final String SCREENSHOT_FORMAT_BMP = "bmp";
+	public static final List<String> SUPPORTED_SCREENSHOT_FORMATS = List.of(
+		SCREENSHOT_FORMAT_PNG, SCREENSHOT_FORMAT_JPG, SCREENSHOT_FORMAT_TGA,
+		SCREENSHOT_FORMAT_BMP);
+
 	// 攻击范围的显示数量/距离限制。
 	public static final int MIN_ATTACK_RANGE_DISTANCE = 8;
 	public static final int MAX_ATTACK_RANGE_DISTANCE = 128;

@@ -7,6 +7,7 @@ import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.AsyncFileWriter;
 import com.gtzc.tweakify.util.HookProbe;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.renderpearl.api.device.DeviceInfo;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import fi.dy.masa.malilib.config.ConfigManager;
@@ -51,6 +52,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			ChatInputMemoryState.beginSession());
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
 			ChatInputMemoryState.endSession();
+			// 截图卡片绑定当前会话聊天；断线时释放缩略图纹理，避免累积。
+			ScreenshotChatCards.clear();
 			// 附魔描述计划缓存键含 RegistryAccess/Component：断线时主动释放。
 			EnchantmentTooltipDescriptions.clearCache();
 		});
@@ -73,6 +76,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		// 顺序：先让滚动记忆在同一队列中写完，再让配置写最终快照；
 		// 配置超时兜底会关闭写盘线程并同步写，因此必须放在滚动记忆提交之后。
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+			ScreenshotChatCards.clear();
 			ScrollMemory.flushOnShutdown();
 			// 收藏数据同样在写盘线程关闭前同步落盘一次。
 			FavoritesStorage.flushOnShutdown();
@@ -91,12 +95,19 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		TweakifyMod.LOGGER.info("Locator compass registered via HudElementRegistry.addLast");
 
 		// 不依赖 Mod Menu 也能打开配置界面（Mod Menu 是可选依赖）。
-		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
 			dispatcher.register(ClientCommands.literal("fconfig")
 				.executes(ctx -> {
 					Minecraft.getInstance().setScreenAndShow(new TweakifyModConfigScreen(null));
 					return 1;
-				})));
+				}));
+			// 聊天卡片的删除按钮通过客户端命令执行，不经过服务端。
+			dispatcher.register(ClientCommands.literal("tweakify_screenshot")
+				.then(ClientCommands.literal("delete")
+					.then(ClientCommands.argument("id", IntegerArgumentType.integer(1))
+						.executes(ctx -> ScreenshotChatCards.delete(
+							ctx.getArgument("id", Integer.class)) ? 1 : 0))));
+		});
 
 		// 掉落物寿命调长依赖 ItemEntity.tick 里对 discard() 的可选重定向。
 		// 它用 require = 0 避免拖垮启动，因此改用行为探针确认：
