@@ -96,7 +96,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 	@Override
 	protected void addConfigSliderEntry(int x, int y, int resetX, int configWidth, int configHeight,
 									   IConfigSlider config) {
-		if (config != TweakifyModConfigOptions.BLOCK_OUTLINE_WIDTH
+		if (config != FunctionConfigOptions.BLOCK_OUTLINE_WIDTH
 			|| !(config instanceof IConfigDouble doubleConfig)) {
 			super.addConfigSliderEntry(x, y, resetX, configWidth, configHeight, config);
 			return;
@@ -205,7 +205,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 
 	// “测试”标签的档案编辑器是界面操作项，用按钮替代普通配置控件。
 	private void addProfileEditorButton() {
-		if (this.config != TweakifyModConfigOptions.PROFILE_EDITOR) {
+		if (this.config != TestingConfigOptions.PROFILE_EDITOR) {
 			return;
 		}
 		// 视觉上只保留“打开”：移除 ConfigBoolean 自带的开关与重置按钮。

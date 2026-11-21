@@ -27,7 +27,7 @@ public final class ForceCrawlState {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		crawlKeyHeld = config != null && config.functions.forceCrawl
 			&& client.player != null
-			&& TweakifyModConfigOptions.FORCE_CRAWL_KEY.getKeybind().isKeybindHeld();
+			&& FunctionConfigOptions.FORCE_CRAWL_KEY.getKeybind().isKeybindHeld();
 	}
 
 	public static boolean shouldForceCrawl(Player player) {

@@ -139,11 +139,11 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 	public List<ConfigOptionWrapper> getConfigs() {
 		List<IConfigBase> visible = new ArrayList<>(visibleConfigs(this.currentTab));
 		if (this.currentTab == ConfigTab.TESTING) {
-			visible.add(TweakifyModConfigOptions.PROFILE_EDITOR);
+			visible.add(TestingConfigOptions.PROFILE_EDITOR);
 		} else if (this.currentTab == ConfigTab.FAVORITES
-			&& FavoritesStorage.isConfigFavorite(TweakifyModConfigOptions.PROFILE_EDITOR.getName())) {
+			&& FavoritesStorage.isConfigFavorite(TestingConfigOptions.PROFILE_EDITOR.getName())) {
 			// 档案编辑器不在配置目录里，不能被树遍历到；收藏后单独追加到收藏标签。
-			visible.add(TweakifyModConfigOptions.PROFILE_EDITOR);
+			visible.add(TestingConfigOptions.PROFILE_EDITOR);
 		}
 		return ConfigOptionWrapper.createFor(visible);
 	}

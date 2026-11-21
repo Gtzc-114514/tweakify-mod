@@ -257,14 +257,14 @@ class TweakifyModConfigScreenTest {
 
 	@Test
 	void testingTabHasProfileEditorAction() {
-		assertNotNull(TweakifyModConfigOptions.PROFILE_EDITOR,
+		assertNotNull(TestingConfigOptions.PROFILE_EDITOR,
 			"profile editor action must exist");
-		assertEquals("profileEditor", TweakifyModConfigOptions.PROFILE_EDITOR.getName());
+		assertEquals("profileEditor", TestingConfigOptions.PROFILE_EDITOR.getName());
 	}
 
 	@Test
 	void profileEditorIsUiOnly() {
-		String name = TweakifyModConfigOptions.PROFILE_EDITOR.getName();
+		String name = TestingConfigOptions.PROFILE_EDITOR.getName();
 		assertFalse(TweakifyModConfigOptions.ALL_OPTIONS.stream()
 			.anyMatch(option -> option.getName().equals(name)),
 			"profile editor must not be a persisted config option");

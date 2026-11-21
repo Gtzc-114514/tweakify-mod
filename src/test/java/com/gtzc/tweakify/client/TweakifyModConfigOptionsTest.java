@@ -126,21 +126,21 @@ class TweakifyModConfigOptionsTest {
 
 	@Test
 	void blockOutlineWidthUsesSteppedSliderConfig() {
-		assertTrue(TweakifyModConfigOptions.BLOCK_OUTLINE_WIDTH instanceof BlockOutlineWidthConfig);
-		assertTrue(TweakifyModConfigOptions.BLOCK_OUTLINE_WIDTH.shouldUseSlider());
+		assertTrue(FunctionConfigOptions.BLOCK_OUTLINE_WIDTH instanceof BlockOutlineWidthConfig);
+		assertTrue(FunctionConfigOptions.BLOCK_OUTLINE_WIDTH.shouldUseSlider());
 	}
 
 	@Test
 	void statusEffectScaleUsesSliderConfig() {
-		assertTrue(TweakifyModConfigOptions.STATUS_EFFECT_DURATION_SCALE.shouldUseSlider(),
+		assertTrue(FunctionConfigOptions.STATUS_EFFECT_DURATION_SCALE.shouldUseSlider(),
 			"药水显示大小必须使用滑条，而不是文本输入");
 		assertEquals(TweakifyModConfig.DEFAULT_STATUS_EFFECT_SCALE,
-			TweakifyModConfigOptions.STATUS_EFFECT_DURATION_SCALE.getIntegerValue());
+			FunctionConfigOptions.STATUS_EFFECT_DURATION_SCALE.getIntegerValue());
 	}
 
 	@Test
 	void blockOutlineWidthOptionRangeMatchesConstants() {
-		IConfigDouble width = TweakifyModConfigOptions.BLOCK_OUTLINE_WIDTH;
+		IConfigDouble width = FunctionConfigOptions.BLOCK_OUTLINE_WIDTH;
 		assertEquals(TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD, width.getName());
 		assertEquals(TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_WIDTH, width.getDefaultDoubleValue(), 1.0e-9);
 		assertEquals(TweakifyModConfig.MIN_BLOCK_OUTLINE_WIDTH, width.getMinDoubleValue(), 1.0e-9);

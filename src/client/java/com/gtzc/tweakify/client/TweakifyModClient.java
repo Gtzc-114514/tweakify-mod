@@ -182,7 +182,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		InputEventHandler.getKeybindManager().registerKeybindProvider(new TweakifyModKeybindProvider());
 
 		// 打开配置界面快捷键：配置界面已打开时按同键关闭，否则打开。
-		TweakifyModConfigOptions.OPEN_CONFIG_GUI.getKeybind().setCallback((action, key) -> {
+		GeneralConfigOptions.OPEN_CONFIG_GUI.getKeybind().setCallback((action, key) -> {
 			Minecraft client = Minecraft.getInstance();
 			if (client.gui.screen() instanceof TweakifyModConfigScreen) {
 				client.gui.setScreen(null);
@@ -194,8 +194,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 
 		// 复制物体 ID：开关自身的热键沿用 MaLiLib 默认的“切换开关”，
 		// 真正执行复制的是子设置 copyTargetId 的快捷键（界面打开时也能用）。
-		TweakifyModConfigOptions.COPY_TARGET_ID_HOTKEY.getKeybind().setCallback((action, key) -> {
-			if (!TweakifyModConfigOptions.COPY_ITEM_ID.getBooleanValue()) {
+		FunctionConfigOptions.COPY_TARGET_ID_HOTKEY.getKeybind().setCallback((action, key) -> {
+			if (!FunctionConfigOptions.COPY_ITEM_ID.getBooleanValue()) {
 				return false;
 			}
 			CopyIdFeature.copyTargetId();
@@ -204,13 +204,13 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 
 		// 探针报表（测试标签）：把已激活的 Mixin 行为探针打到聊天栏或剪贴板，
 		// 排查“功能开了却没反应”时可直接确认钩子是否真的注入。
-		TweakifyModConfigOptions.DEBUG_PROBE_REPORT.getKeybind().setCallback((action, key) -> {
+		TestingConfigOptions.DEBUG_PROBE_REPORT.getKeybind().setCallback((action, key) -> {
 			Minecraft client = Minecraft.getInstance();
 			if (client.gui == null) {
 				return false;
 			}
 			List<String> hooks = HookProbe.reportedHooks();
-			if (TweakifyModConfigOptions.DEBUG_PROBE_REPORT_COPY.getBooleanValue()) {
+			if (TestingConfigOptions.DEBUG_PROBE_REPORT_COPY.getBooleanValue()) {
 				client.keyboardHandler.setClipboard(hooks.isEmpty() ? "" : String.join("\n", hooks));
 				client.gui.chatListener().handleSystemMessage(Component.literal(hooks.isEmpty()
 					? "[Tweakify] no mixin hook has fired yet (clipboard cleared)"
@@ -232,7 +232,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		});
 
 		// 已启用功能报表（测试标签）：只列根级布尔开关，用于快速核对当前配置组合。
-		TweakifyModConfigOptions.DEBUG_ENABLED_FEATURES_REPORT.getKeybind().setCallback((action, key) -> {
+		TestingConfigOptions.DEBUG_ENABLED_FEATURES_REPORT.getKeybind().setCallback((action, key) -> {
 			Minecraft client = Minecraft.getInstance();
 			if (client.gui == null || TweakifyMod.CONFIG == null) {
 				return false;
@@ -250,7 +250,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 				return true;
 			}
 			// 可选输出到剪贴板：与服务端探针报表的行为保持一致。
-			if (TweakifyModConfigOptions.DEBUG_ENABLED_FEATURES_REPORT_COPY.getBooleanValue()) {
+			if (TestingConfigOptions.DEBUG_ENABLED_FEATURES_REPORT_COPY.getBooleanValue()) {
 				client.keyboardHandler.setClipboard(String.join("\n", enabled));
 				client.gui.chatListener().handleSystemMessage(Component.literal(
 					"[Tweakify] copied " + enabled.size() + " enabled root toggles to the clipboard"), false);

@@ -547,10 +547,14 @@
 
 1. 在 `TweakifyModConfig` 加字段（默认值写在字段初始化里）。
 2. 在 `ConfigCatalog` 的 `ENTRIES` 表加一行（父项 / 分类 / 是否需要 `/tweakify` 命令）。
-3. 在 `TweakifyModConfigOptions` 声明对应的 MaLiLib 选项（含 `.apply(...)` 语言前缀）。
+3. 在对应标签页的选项文件加 MaLiLib 选项（通用 `GeneralConfigOptions`、功能 `FunctionConfigOptions`、
+   修改 `ModifiedConfigOptions`、修复 `FixConfigOptions`、优化 `OptimizationConfigOptions`、
+   测试 `TestingConfigOptions`），语言键与快捷键设置引用 `ConfigOptionKeys`。
 4. 在 4 份语言文件补 `name` / `prettyName` / `comment`（需要命令时再补 `command.label.<name>`）。
 
-启动时会校验「配置字段 ⟷ 配置目录 ⟷ MaLiLib 选项」双向覆盖，漏登记会直接抛异常而不是静默丢项；配置界面的树、分类标签、统计、快捷键与命令表都由目录派生。
+标签归属以 `ConfigCatalog` 的分类为准，字段放在哪个文件、按什么顺序声明都不影响界面顺序；
+启动时会校验「配置字段 ⟷ 配置目录 ⟷ MaLiLib 选项」双向覆盖，漏登记会直接抛异常而不是静默丢项；
+配置界面的树、分类标签、统计、快捷键与命令表都由目录派生。
 
 [↑ 返回顶部](#)
 
