@@ -546,7 +546,8 @@
 配置项的注册关系收敛到了少数几个地方，新增一个开关只需四步：
 
 1. 在 `TweakifyModConfig` 加字段（默认值写在字段初始化里）。
-2. 在 `ConfigCatalog` 的 `ENTRIES` 表加一行（父项 / 分类 / 是否需要 `/tweakify` 命令）。
+2. 在对应标签页的 `*CatalogEntries` 的 `addPartN` 里加一行（父项 / 分类 / 是否需要 `/tweakify` 命令）；
+   目录顺序即界面顺序，新条目追加到该标签的最后一段，不要跨段搬动。
 3. 在对应标签页的选项文件加 MaLiLib 选项（通用 `GeneralConfigOptions`、功能 `FunctionConfigOptions`、
    修改 `ModifiedConfigOptions`、修复 `FixConfigOptions`、优化 `OptimizationConfigOptions`、
    测试 `TestingConfigOptions`），语言键与快捷键设置引用 `ConfigOptionKeys`。
