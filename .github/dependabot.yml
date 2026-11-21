@@ -1,0 +1,39 @@
+# 依赖版本由 Dependabot 托管。
+# - GitHub Actions：每周一次性分组升级，改动集中在一个 PR。
+# - Gradle：逐个依赖提 PR，交给 CI 的 build / loaderTest / GameTest 验证。
+# - Minecraft 与 Loom 不自动升级：需要与 Fabric API、MaLiLib 联动并实机回归，
+#   升级流程见 docs/release-pipeline.md 与 docs/tech-debt.md。
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      # MC 版本按发布节奏人工升级，同时需要更新 gradle.properties 的 minecraft_version。
+      - dependency-name: "com.mojang:minecraft"
+      # Loom 升级会改变 remap 与依赖解析行为，需人工跑完整构建与 GameTest。
+      - dependency-name: "net.fabricmc:fabric-loom"
+      - dependency-name: "net.fabricmc.fabric-loom"
