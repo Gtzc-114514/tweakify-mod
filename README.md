@@ -35,19 +35,20 @@
 | 配置界面 | 存档列表 |
 | --- | --- |
 | <img src="docs/screenshots/config-screen.png" width="480" alt="配置界面"> | <img src="docs/screenshots/world-list-playtime.jpg" width="480" alt="存档列表"> |
-| 8 个标签页、关键词高亮与行内收藏星 | 每个存档的游玩时长、收藏置顶与收藏保护 |
+| 9 个标签页、关键词高亮与行内收藏星 | 每个存档的游玩时长、收藏置顶与收藏保护 |
 
 ## ✨ 功能概览
 
-功能按配置界面顶部的标签分 7 类，完整清单见[功能一览](#features)。
+功能按配置界面顶部的标签分 8 类，完整清单见[功能一览](#features)。
 
 | 标签 | 主要能力 |
 | --- | --- |
-| 功能 | 交互冷却与副手回退、如履平地、更好的攀爬、主动爬行、相机运动、轮廓与高亮、计时、攻击范围、存档时长、维度传送、刷怪蛋、物品分组、定位栏头像 |
-| 修改 | 使用物品不减速、飞行漂移、疾跑视野、挖掘打断、鞘翅水中飞行、附魔/铁砧限制、掉落物寿命、生物生成、移动物理、不死图腾、耕地踩踏 |
+| 功能 | 交互冷却与副手回退、如履平地、更好的攀爬、主动爬行、相机运动、计时、附魔台信息、存档时长、维度传送、刷怪蛋、物品分组、定位栏头像 |
+| 显示 | 攻击范围、爆炸范围、横扫范围、单层基岩、屏障可见、方块轮廓、实体高亮 |
+| 修改 | 使用物品不减速、飞行漂移、疾跑视野、挖掘打断、鞘翅水中飞行、附魔/铁砧限制、掉落物寿命、生物生成、移动物理、不死图腾、耕地踩踏、盔甲架手臂、隐藏展示框 |
 | 修复 | 草径卡船、聊天卡顿、经验条溢出、书本居中、鱼线悬空、树苗生长等原版问题 |
 | 优化 | MiniHUD 掉帧优化 |
-| 通用 | 界面语言、配置快捷键、标签与滚动记忆、搜索高亮、平滑滚动、收藏星样式 |
+| 通用 | 界面语言、配置快捷键、标签与滚动记忆、搜索高亮、平滑滚动、收藏系统（星标样式/包含子项） |
 | 测试 | 调试 HUD、钩子探针与报表、配置档案编辑器 |
 | 收藏 | 手动收藏的配置项（点击配置行右侧星标收藏/取消；存档列表左侧的星标可收藏存档并置顶，收藏的存档不可删除） |
 
@@ -70,12 +71,12 @@
 
 ## 📖 功能一览
 
-下面按配置界面的标签分为 7 类、共 290 余项配置（默认折叠，点击分类标题展开）。每行以 `配置字段` 开头，后接便于识别的中文名；「默认」列是新生成配置文件时的初始值。说明中标注「仅在单人/局域网生效」的功能，判定发生在集成服务端，专用服务器上不会生效。
+下面按配置界面的标签分为 8 类、共 300 余项配置（默认折叠，点击分类标题展开）。每行以 `配置字段` 开头，后接便于识别的中文名；「默认」列是新生成配置文件时的初始值。说明中标注「仅在单人/局域网生效」的功能，判定发生在集成服务端，专用服务器上不会生效。
 
 > **已知问题**：MC 26.3 在 **Vulkan 后端 + NVIDIA 驱动**下渲染实体描边会崩溃（`nvoglv64.dll`）。使用实体高亮时请把图形 API 设为 OpenGL。
 
 <details>
-<summary><b>功能 — 新增行为，快捷键最完整（7 组 / 150 余项：交互冷却、移动、相机、HUD、传送、世界交互、工具）</b></summary>
+<summary><b>功能 — 新增行为，快捷键最完整（7 组 / 110 余项：交互冷却、移动、相机、HUD、传送、世界交互、工具）</b></summary>
 
 #### 交互冷却与副手回退
 
@@ -131,25 +132,6 @@
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
-| `customBlockOutline` 自定义方块轮廓 | 关 | 总开关：自定义准星方块轮廓的粗细与颜色；高对比度轮廓模式下保持原版轮廓 |
-| `blockOutlineWidth` 轮廓粗细度 | 2.0 | 线宽（0.5 ~ 8，滑块调节）；部分显卡或渲染后端会把线宽限制为 1 |
-| `blockOutlineAnimationSpeed` 动画速度 | 100 | 彩虹/呼吸模式的动画速度百分比（10 ~ 400，数值越大越快） |
-| `blockOutlinePalette` 轮廓颜色调色板 | `white` | `white` / `red` / `green` / `blue` / `yellow` / `cyan` / `magenta` / `orange`，仅「调色板」模式使用 |
-| `blockOutlineColorMode` 轮廓彩色模式 | `palette` | `palette` 固定使用所选颜色 / `rainbow` 随时间循环变色 / `pulse` 亮度周期性变化 |
-| `entityHighlight` 自定义实体高亮 | 关 | 为预设列表中的实体显示发光描边；需同时开启一个预设；描边样式与颜色可调 |
-| `entityHighlightStyle` 描边样式 | `outline` | `outline` 常亮描边 / `blink` 周期闪烁（一半时间显示、一半时间隐藏） |
-| `entityHighlightBlinkPeriod` 闪烁周期 | 60 | 闪烁样式的周期（tick，10 ~ 200）；仅在 `blink` 样式下生效 |
-| `entityHighlightColor` 描边颜色 | `vanilla` | `vanilla` 原版队伍色（无队伍为白色）/ `white` / `red` / `green` / `blue` / `yellow` / `cyan` / `magenta` |
-| `highlightPreset1` / `highlightPreset2` / `highlightPreset3` 高亮预设 | 关 | 三个预设互斥，开启一个会自动关闭其他 |
-| `highlightPreset1Entities` / `highlightPreset2Entities` / `highlightPreset3Entities` 预设实体 | 空 | 各预设需要高亮的实体 ID 列表，支持 `minecraft:item` 等掉落物实体 |
-| `highlightSingleLayerBedrock` 高亮单层基岩 | 关 | 在扫描半径内（默认 24 格）的单层基岩朝向空气的顶面/底面显示凸出 1 像素的实心小方块，便于寻找下界顶棚的可击穿薄弱点；每秒刷新 4 次，扫描结果未变时复用已有顶点缓存 |
-| `highlightSingleLayerBedrockMaxMarkers` 基岩标记最大数量 | 32 | 单次最多显示的标记数（1 ~ 256）；超出时保留最近的 |
-| `highlightSingleLayerBedrockScanRadius` 基岩扫描半径 | 24 | 扫描单层基岩的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
-| `highlightSingleLayerBedrockColor` 基岩标记颜色 | `gold` | `gold` 金色 / `white` / `red` / `green` / `blue` / `cyan`；只影响小方块颜色，切换后顶点缓存自动重建 |
-| `barrierVisibility` 屏障可见 | 关 | 周围屏障方块显示与手持屏障物品时相同的原版标记粒子，粒子固定在方块中心并逐方块冷却，不会偏移或重叠；扫描半径与标记间隔可调 |
-| `barrierVisibilityMaxMarkers` 屏障标记最大数量 | 256 | 单次扫描最多保留的标记数（16 ~ 256）；超出时保留离玩家最近的 |
-| `barrierVisibilityScanRadius` 屏障扫描半径 | 24 | 扫描屏障方块的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
-| `barrierVisibilityParticleInterval` 屏障标记间隔 | 60 | 同一方块两次标记粒子之间的间隔（20 ~ 200 tick，20 tick = 1 秒）；越大越省性能、闪烁越慢 |
 | `durabilityOverlay` 装备耐久显示 | 关 | 在物品栏的耐久条上方叠加耐久文字；满耐久不显示，颜色随剩余耐久由绿转白、黄、红 |
 | `durabilityDisplayMode` 耐久显示内容 | `percent` | `percent` 耐久百分比 / `value` 剩余耐久数值（只显示当前剩余，不显示初始耐久）；两者字号一致 |
 | `durabilityOverlayHotbarOnly` 仅快捷栏显示 | 关 | 只在快捷栏显示耐久文字，背包格子里不显示 |
@@ -160,16 +142,7 @@
 | `statusEffectDurationLowThreshold` 低时长阈值 | 0 | 只在剩余时间不高于该秒数时显示（0 ~ 600）；0 表示不过滤，适合只关注即将结束的效果 |
 | `statusEffectDurationColorMode` 时间文字配色 | `auto` | `auto` 剩余 10 秒内变红、30 秒内变黄，其余白色 / `white` / `yellow` / `red` 固定单色 |
 | `statusEffectDurationScale` 效果显示大小 | 100 | 右上角药水效果图标与时间文字的整体缩放百分比（50% ~ 200%）；数字随图标同步缩放 |
-| `attackRangeDisplay` 攻击范围显示 | 关 | 以生物或玩家为中心显示半透明线框攻击范围（颜色可调），半径按原版攻击距离计算；每秒刷新 12 次，条目几何未变时复用已有顶点缓存 |
-| `attackRangeDisplayMode` 范围显示方式 | `flat` | `flat` 脚下双圆环 / `sphere` 经纬线框球体 |
-| `attackRangeRenderMode` 范围渲染方式 | `wireframe` | `wireframe` 蓝色线框（无 OIT，性能更好）/ `filled` 半透明实心（观感更完整，可能掉帧） |
-| `attackRangePalette` 范围颜色 | `blue` | `blue` / `red` / `green` / `yellow` / `cyan` / `magenta` / `white`；只改 RGB，透明度仍按渲染方式固定 |
-| `attackRangeIncludeSelf` 显示自己的范围 | 关 | 是否显示本地玩家自己的攻击范围；关闭后只显示其他生物与玩家 |
-| `attackRangeHostileOnly` 仅显示敌对生物 | 关 | 只显示僵尸、骷髅等敌对生物；玩家与被动生物不再显示范围 |
-| `attackRangeIncludeInvisible` 显示隐身实体 | 关 | 默认不显示隐身实体；开启后隐身生物同样显示攻击范围 |
-| `attackRangeMaxDistance` 范围收集距离 | 48 | 收集攻击范围的最大距离（8 ~ 128 格） |
-| `attackRangeMaxTargets` 最大显示数量 | 64 | 单次最多显示的数量（8 ~ 256）；超出时保留最近的实体 |
-| `attackRangeEntities` 攻击范围实体 | 空 | 需要显示范围的生物/玩家 ID 列表；为空时显示全部生物与玩家 |
+| `enchantingTableInfo` 附魔台附魔信息 | 关 | 悬停附魔台的三个附魔选项时，显示该选项实际会给出的附魔名称与等级；按客户端同步的附魔种子计算，多人服务器同样可用 |
 | `savePlayTime` 存档游玩时长 | 关 | 在存档列表右上角显示该存档的累计游玩时长（读取 `stats` 中每个玩家的 `minecraft:play_time` 并累加；多人存档按全部玩家统计） |
 | `savePlayTimeFormat` 时长显示格式 | `hours` | `hours` 小数小时（不足 1 小时显示分钟）/ `clock` 时:分 / `duration` X 小时 Y 分 |
 
@@ -268,7 +241,61 @@
 </details>
 
 <details>
-<summary><b>修改 — 改写原版规则，更接近基岩版（5 组 / 90 项：移动挖掘、视角显示、覆盖层、提示文本、世界生成）</b></summary>
+<summary><b>显示 — 世界内可视化与渲染叠加层（7 组 / 45 项：攻击范围、爆炸范围、横扫范围、屏障、基岩、轮廓、高亮）</b></summary>
+
+#### 范围可视化
+
+| 功能 | 默认 | 说明 |
+| --- | --- | --- |
+| `attackRangeDisplay` 攻击范围显示 | 关 | 以生物或玩家为中心显示半透明线框攻击范围（颜色可调），半径按原版攻击距离计算；每秒刷新 12 次，条目几何未变时复用已有顶点缓存 |
+| `attackRangeDisplayMode` 范围显示方式 | `flat` | `flat` 脚下双圆环 / `sphere` 经纬线框球体 |
+| `attackRangeRenderMode` 范围渲染方式 | `wireframe` | `wireframe` 线框（无 OIT，性能更好）/ `filled` 半透明实心（观感更完整，可能掉帧）；filled 会额外叠加线条轮廓，避免 Vulkan/Vitrail 下 OIT 实心不可见 |
+| `attackRangePalette` 范围颜色 | `blue` | `blue` / `red` / `green` / `yellow` / `cyan` / `magenta` / `white`；只改 RGB，透明度仍按渲染方式固定；爆炸/横扫范围固定使用红色 |
+| `attackRangeIncludeSelf` 显示自己的范围 | 关 | 是否显示本地玩家自己的攻击范围；关闭后只显示其他生物与玩家 |
+| `attackRangeHostileOnly` 仅显示敌对生物 | 关 | 只显示僵尸、骷髅等敌对生物；玩家与被动生物不再显示范围 |
+| `attackRangeIncludeInvisible` 显示隐身实体 | 关 | 默认不显示隐身实体；开启后隐身生物同样显示攻击范围 |
+| `attackRangeMaxDistance` 范围收集距离 | 48 | 收集攻击范围的最大距离（8 ~ 128 格）；爆炸范围也使用该值扫描 |
+| `attackRangeMaxTargets` 最大显示数量 | 64 | 单次最多显示的数量（8 ~ 256）；超出时保留最近的实体；爆炸范围也使用该上限 |
+| `attackRangeEntities` 攻击范围实体 | 空 | 需要显示范围的生物/玩家 ID 列表；为空时显示全部生物与玩家 |
+| `explosionRangeDisplay` 爆炸范围可视化 | 关 | 红色标记 TNT、已激活的 TNT 矿车、苦力怕与末地水晶的爆炸半径；平面/球体与线框/实心模式沿用攻击范围，实心模式会额外叠加线条，避免 Vulkan/Vitrail 下 OIT 实心不可见 |
+| `sweepingView` 横扫范围可视化 | 关 | 参考 `sweeping-view`：手持剑时显示以脚底为中心的 3 格球体攻击范围；瞄准生物、船或矿车时附加目标扩展框（水平 +1 格、垂直 +0.25 格）；子项控制线框/面框/球体、载具目标与颜色；实心模式会额外叠加线条，避免 Vulkan 下实心不可见 |
+| `sweepingViewWireframe` 横扫目标线框 | 开 | 显示目标扩展框的线框 |
+| `sweepingViewWireframeColor` 横扫线框颜色 | `red` | 目标扩展框线框颜色，调色板与攻击范围一致 |
+| `sweepingViewFace` 横扫目标面框 | 开 | 用网格线填充目标扩展框形成半透明面；不依赖 OIT 或线框子开关，关闭线框时也能在 Vulkan 下显示 |
+| `sweepingViewFaceSolid` 横扫实心面框 | 关 | 开启后用实心四边形替代网格面框；依赖原版 OIT，Vulkan/Vitrail 下可能不可见 |
+| `sweepingViewFaceColor` 横扫面框颜色 | `red` | 目标扩展框面框颜色 |
+| `sweepingViewSphere` 横扫球体范围 | 开 | 显示以玩家脚底为中心的 3 格球体攻击范围 |
+| `sweepingViewSphereColor` 横扫球体颜色 | `red` | 3 格球体攻击范围颜色 |
+| `sweepingViewVehicles` 横扫载具目标 | 开 | 瞄准船或矿车时也显示目标扩展框；关闭后仅对生物与玩家生效 |
+
+#### 方块与实体渲染
+
+| 功能 | 默认 | 说明 |
+| --- | --- | --- |
+| `customBlockOutline` 自定义方块轮廓 | 关 | 总开关：自定义准星方块轮廓的粗细与颜色；高对比度轮廓模式下保持原版轮廓 |
+| `blockOutlineWidth` 轮廓粗细度 | 2.0 | 线宽（0.5 ~ 8，滑块调节）；部分显卡或渲染后端会把线宽限制为 1 |
+| `blockOutlineAnimationSpeed` 动画速度 | 100 | 彩虹/呼吸模式的动画速度百分比（10 ~ 400，数值越大越快） |
+| `blockOutlinePalette` 轮廓颜色调色板 | `white` | `white` / `red` / `green` / `blue` / `yellow` / `cyan` / `magenta` / `orange`，仅「调色板」模式使用 |
+| `blockOutlineColorMode` 轮廓彩色模式 | `palette` | `palette` 固定使用所选颜色 / `rainbow` 随时间循环变色 / `pulse` 亮度周期性变化 |
+| `entityHighlight` 自定义实体高亮 | 关 | 为预设列表中的实体显示发光描边；需同时开启一个预设；描边样式与颜色可调 |
+| `entityHighlightStyle` 描边样式 | `outline` | `outline` 常亮描边 / `blink` 周期闪烁（一半时间显示、一半时间隐藏） |
+| `entityHighlightBlinkPeriod` 闪烁周期 | 60 | 闪烁样式的周期（tick，10 ~ 200）；仅在 `blink` 样式下生效 |
+| `entityHighlightColor` 描边颜色 | `vanilla` | `vanilla` 原版队伍色（无队伍为白色）/ `white` / `red` / `green` / `blue` / `yellow` / `cyan` / `magenta` |
+| `highlightPreset1` / `highlightPreset2` / `highlightPreset3` 高亮预设 | 关 | 三个预设互斥，开启一个会自动关闭其他 |
+| `highlightPreset1Entities` / `highlightPreset2Entities` / `highlightPreset3Entities` 预设实体 | 空 | 各预设需要高亮的实体 ID 列表，支持 `minecraft:item` 等掉落物实体 |
+| `highlightSingleLayerBedrock` 高亮单层基岩 | 关 | 在扫描半径内（默认 24 格）的单层基岩朝向空气的顶面/底面显示凸出 1 像素的实心小方块，便于寻找下界顶棚的可击穿薄弱点；每秒刷新 4 次，扫描结果未变时复用已有顶点缓存 |
+| `highlightSingleLayerBedrockMaxMarkers` 基岩标记最大数量 | 32 | 单次最多显示的标记数（1 ~ 256）；超出时保留最近的 |
+| `highlightSingleLayerBedrockScanRadius` 基岩扫描半径 | 24 | 扫描单层基岩的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
+| `highlightSingleLayerBedrockColor` 基岩标记颜色 | `gold` | `gold` 金色 / `white` / `red` / `green` / `blue` / `cyan`；只影响小方块颜色，切换后顶点缓存自动重建 |
+| `barrierVisibility` 屏障可见 | 关 | 周围屏障方块显示与手持屏障物品时相同的原版标记粒子，粒子固定在方块中心并逐方块冷却，不会偏移或重叠；扫描半径与标记间隔可调 |
+| `barrierVisibilityMaxMarkers` 屏障标记最大数量 | 256 | 单次扫描最多保留的标记数（16 ~ 256）；超出时保留离玩家最近的 |
+| `barrierVisibilityScanRadius` 屏障扫描半径 | 24 | 扫描屏障方块的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
+| `barrierVisibilityParticleInterval` 屏障标记间隔 | 60 | 同一方块两次标记粒子之间的间隔（20 ~ 200 tick，20 tick = 1 秒）；越大越省性能、闪烁越慢 |
+
+</details>
+
+<details>
+<summary><b>修改 — 改写原版规则，更接近基岩版（6 组 / 93 项：移动挖掘、视角显示、实体展示、覆盖层、提示文本、世界生成）</b></summary>
 
 #### 移动与挖掘
 
@@ -285,6 +312,7 @@
 | `climbablePassNoSlowdownSneakOnly` 仅潜行时生效 | 关 | 只在按住潜行键时跳过攀爬方块的水平速度夹紧 |
 | `elytraWaterFlight` 鞘翅水中飞行 | 关 | 滑翔时不再被水流移动逻辑接管，潜入水中也能继续保持滑翔姿态与速度 |
 | `elytraWaterFlightOnlyWater` 仅水中生效 | 关 | 只在水中保持滑翔，岩浆里仍按原版下沉 |
+| `removeSpeedLimit` 取消速度上限 | 关 | 关闭服务端 moved too quickly 速度检查，避免高速移动被拉回；碰撞与位置校正保留；仅在单人/局域网主机生效 |
 | `disableFarmlandTrampling` 禁用耕地踩踏 | 关 | 从高处落在耕地上不再把它踩回泥土；仅在单人/局域网生效 |
 | `farmlandTramplingPlayerOnly` 仅玩家生效 | 关 | 只有玩家不会踩坏耕地，动物与村民仍会踩坏 |
 | `totemFromInventory` 不死图腾背包生效 | 关 | 图腾放在快捷栏或背包（主手/副手之外）也能触发不死保护；手部已有图腾时仍优先消耗手中的；仅在单人/局域网生效 |
@@ -317,6 +345,13 @@
 | `nightVisionFadeOutCurve` 淡出曲线 | `smooth` | `smooth` 平滑（两端更慢）/ `linear` 线性 |
 | `connectedBlockOutline` 连接方块轮廓 | 关 | 准星对准门、床、双箱、双层植物等连接方块时，显示整体轮廓（类似基岩版） |
 | `connectedBlockOutlineDoorFullHeight` 门两格高度 | 开 | 开启时门按 2 格视觉高度描边；关闭后门保持原版轮廓 |
+
+#### 实体与展示框
+
+| 功能 | 默认 | 说明 |
+| --- | --- | --- |
+| `armorStandArms` 盔甲架手臂 | 关 | 所有盔甲架默认显示手臂；单人/局域网下可直接把物品放上双手；远程服务器只影响本地渲染 |
+| `hideItemFrames` 隐藏物品展示框 | 关 | 展示框里装有物品时只渲染物品、不渲染外框；空展示框保持原样；只影响本地渲染 |
 
 #### 屏幕覆盖层与加载界面
 
@@ -428,16 +463,18 @@
 </details>
 
 <details>
-<summary><b>通用 — 语言、快捷键与列表行为（17 项）</b></summary>
+<summary><b>通用 — 语言、快捷键与列表行为（19 项）</b></summary>
 
 | 功能 | 默认 | 说明 |
 | --- | --- | --- |
 | `language` 界面语言 | `zh_cn` | 支持 `zh_cn` / `en_us` / `ru_ru` / `fr_fr`；关闭「跟随系统语言」后生效 |
 | `followSystemLanguage` 跟随系统语言 | 开 | 使用游戏当前语言，忽略上面的语言选择 |
 | `openConfigGui` 打开配置界面 | G + C | 打开或关闭本模组配置界面的快捷键；任意界面可用 |
-| `rememberSelectedTab` 标签记忆 | 关 | 记住上次选择的分类标签（全部/通用/功能/修改/修复/优化/测试/收藏），下次打开配置界面直接停在该标签 |
-| `rememberSelectedTabFallback` 默认标签 | 全部 | 关闭标签记忆或首次打开时停在的标签（全部/通用/功能/修改/修复/优化/测试/收藏） |
-| `favoriteStarStyle` 收藏星样式 | `star` | `star` 自绘星形 / `nether_star` 原版下界之星；同时作用于配置行右侧与存档列表左侧的收藏星 |
+| `rememberSelectedTab` 标签记忆 | 关 | 记住上次选择的分类标签（全部/通用/功能/显示/修改/修复/优化/测试/收藏），下次打开配置界面直接停在该标签 |
+| `rememberSelectedTabFallback` 默认标签 | 全部 | 关闭标签记忆或首次打开时停在的标签（全部/通用/功能/显示/修改/修复/优化/测试/收藏） |
+| `favoriteSystem` 收藏系统 | 开 | 收藏系统总开关（父项）：关闭后隐藏配置行与存档列表的收藏星，收藏标签不再显示内容；收藏数据保留 |
+| `favoriteStarStyle` 收藏星样式 | `star` | 子设置：`star` 自绘星形 / `nether_star` 原版下界之星；同时作用于配置行右侧与存档列表左侧的收藏星 |
+| `favoriteIncludeChildren` 收藏包含子项 | 开 | 子设置：收藏父项时，它的全部子项也出现在收藏标签中；关闭后只显示手动收藏的每一项 |
 | `scrollListMemory` 滚动列表记忆 | 开 | 记住列表滚到了哪里，关闭界面再打开回到上次位置 |
 | `scrollListMemoryPersist` 跨重启记忆 | 关 | 把滚动位置写入 `config/tweakify-mod-scroll-memory.json`，重启游戏后仍然生效 |
 | `malilibScrollMemory` MaLiLib 界面 | 开 | 记忆 MaLiLib 配置界面（含本模组配置界面）的滚动位置 |
@@ -454,7 +491,7 @@
 
 > 配置界面还有一个「测试」标签，包含下面几个调试辅助项，以及不是配置项的「档案编辑器」（保存、加载、删除整套配置档案）。
 
-> 「收藏」标签只显示手动收藏的配置项：点击任意配置行右侧（重置按钮右边）的星标即可收藏/取消收藏。存档列表左侧也有同样的星标：收藏的存档会**置顶显示**，取消收藏后**回到原来的位置**；收藏期间**不可删除**（删除按钮置灰并提示，需先取消收藏）。收藏数据保存在 `config/tweakify-mod-favorites.json`，外观由「通用」标签的「收藏星样式」决定。
+> 「收藏」标签显示手动收藏的配置项：点击任意配置行右侧（重置按钮右边）的星标即可收藏/取消收藏。通用标签的「收藏系统」是父项总开关，关闭后隐藏收藏星并清空收藏标签（收藏数据保留）；子设置「收藏星样式」控制外观，「收藏包含子项」开启后收藏父项会连带显示全部子项。存档列表左侧也有同样的星标：收藏的存档会**置顶显示**，取消收藏后**回到原来的位置**；收藏期间**不可删除**（删除按钮置灰并提示，需先取消收藏）。收藏数据保存在 `config/tweakify-mod-favorites.json`。
 
 <details>
 <summary><b>测试 — 调试 HUD 与报表（13 项）</b></summary>
@@ -467,7 +504,7 @@
 | `debugInfoShowBiome` 显示生物群系 | 关 | 追加玩家所在生物群系的 ID |
 | `debugInfoShowSpeed` 显示移动速度 | 关 | 追加水平/垂直速度（格每秒），便于确认飞行、攀爬、如履平地是否生效 |
 | `debugInfoShowEntities` 显示附近实体 | 关 | 按 32 格范围统计附近生物、掉落物与其他实体数量；每 500ms 刷新一次 |
-| `debugInfoShowConfigStats` 显示配置统计 | 关 | 统计功能标签下已开启与已修改的布尔开关数量；每 500ms 刷新一次 |
+| `debugInfoShowConfigStats` 显示配置统计 | 关 | 统计功能与显示标签下已开启与已修改的布尔开关数量；每 500ms 刷新一次 |
 | `debugInfoShowEffects` 显示药水效果 | 关 | 追加当前药水效果数量与最短剩余时间 |
 | `debugInfoShowHooks` 显示钩子探针 | 关 | 追加已激活的 Mixin 行为探针列表 |
 | `debugProbeReport` 钩子探针报表 | 未绑定 | 纯快捷键动作：按下后把已激活的探针输出到聊天栏（或剪贴板，见下一项） |
@@ -477,7 +514,9 @@
 
 </details>
 
-> **服务端判定**：下列功能由集成服务端执行，仅在单人游戏或自己开设的局域网世界生效——诅咒附魔、附魔过于昂贵、移除附魔冲突、可见交易、中键获得液体桶、生存模式中键取物、锹单层铲雪、锻造模板、掉落物与经验球寿命、超平坦史莱姆、疣块分解、床距离、放置覆盖、耕地踩踏、骨粉催熟、刷怪蛋投掷、雪傀儡不受群系影响、维度传送、蛛网/液体/粘液块/蜂蜜块物理、冰霜行者跳跃修复、举盾受伤音效修复、骷髅瞄准修复、2×2 树苗生长修复。
+> **服务端判定**：下列功能由集成服务端执行，仅在单人游戏或自己开设的局域网世界生效——诅咒附魔、附魔过于昂贵、移除附魔冲突、可见交易、中键获得液体桶、生存模式中键取物、锹单层铲雪、锻造模板、掉落物与经验球寿命、超平坦史莱姆、疣块分解、床距离、放置覆盖、耕地踩踏、骨粉催熟、刷怪蛋投掷、雪傀儡不受群系影响、维度传送、蛛网/液体/粘液块/蜂蜜块物理、冰霜行者跳跃修复、举盾受伤音效修复、骷髅瞄准修复、2×2 树苗生长修复、盔甲架双手放置物品、取消速度上限。
+>
+> **仅本地渲染/界面**：隐藏物品展示框、附魔台附魔信息、攻击/爆炸/横扫范围与屏障/基岩等世界叠加层不依赖集成服务端，连接任何服务器都可用。
 
 > `itemDespawnTime` 把寿命调长依赖对 `ItemEntity.tick` 内部调用的重定向：若其他模组整体重写了该方法，注入会静默失效，此时日志里不会出现 `Mixin hook active: itemDespawnTick`，功能退回原版行为。
 
@@ -511,7 +550,7 @@
 ## ⌨️ 快捷键
 
 - **打开/关闭配置界面**：默认 **G + C**（对应配置项 `openConfigGui`），任意界面可用
-- **切换快捷键**：带快捷键槽的根功能可以绑定一个按键，按下即切换该开关，默认全部未绑定；除「修改」标签的「禁用屏幕覆盖层」与「测试」标签的「调试信息叠加层」外，带切换键的都是「功能」标签的根功能，子设置不提供
+- **切换快捷键**：带快捷键槽的根功能可以绑定一个按键，按下即切换该开关，默认全部未绑定；除「修改」标签的「禁用屏幕覆盖层」与「测试」标签的「调试信息叠加层」外，带切换键的是「功能」与「显示」标签的根功能，子设置不提供
 - **钩子探针报表**：给「测试」标签的「钩子探针报表」绑定按键后，按下即把已激活的 Mixin 行为探针打到聊天栏；开启「探针输出到剪贴板」后改为写入剪贴板（纯动作，没有开关）
 - **已启用功能报表**：给「测试」标签的「已启用功能报表」绑定按键后，按下即把已启用的根功能开关打到聊天栏（纯动作，没有开关）
 - **主动爬行**：需要先在配置界面开启「主动爬行」总开关，并给子项「爬行按键」绑定一个按键；按住爬行、松开站起
