@@ -58,8 +58,14 @@ public final class GeneralConfig extends ConfigSection {
 	// 未记忆（关闭标签记忆或首次打开）时停在哪个标签。
 	public volatile String rememberSelectedTabFallback = TweakifyModConfig.CONFIG_TAB_ALL;
 
+	// 收藏系统总开关：关闭后隐藏配置行与存档列表的收藏星，收藏标签不再显示内容。
+	public volatile boolean favoriteSystem = true;
+
 	// 收藏星样式：控件界面与存档列表右侧/左侧星标的皮肤（star / nether_star）。
 	public volatile String favoriteStarStyle = TweakifyModConfig.DEFAULT_FAVORITE_STAR_STYLE;
+
+	// 收藏包含子项：收藏父项时，它的全部子项也出现在收藏标签中。
+	public volatile boolean favoriteIncludeChildren = true;
 
 	// 打开配置界面的快捷键，默认 G + C。
 	public volatile String hotkeyOpenConfigGui = "G,C";

@@ -26,6 +26,12 @@ public final class FavoriteStarRenderer {
 	private FavoriteStarRenderer() {
 	}
 
+	// 收藏系统总开关：配置尚未加载时按开启处理。
+	public static boolean isEnabled() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config == null || config.general.favoriteSystem;
+	}
+
 	// 当前样式：配置尚未加载时按默认（自绘星形）处理。
 	public static FavoriteStarStyle selectedStyle() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
@@ -36,6 +42,9 @@ public final class FavoriteStarRenderer {
 	}
 
 	public static void draw(GuiGraphicsExtractor gui, int x, int y, boolean favorite, boolean hovered) {
+		if (!isEnabled()) {
+			return;
+		}
 		FavoriteStarStyle style = selectedStyle();
 		FavoriteStarStyle.State state;
 		if (favorite) {

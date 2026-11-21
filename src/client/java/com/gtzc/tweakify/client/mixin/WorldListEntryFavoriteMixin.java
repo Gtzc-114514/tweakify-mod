@@ -44,7 +44,8 @@ public abstract class WorldListEntryFavoriteMixin {
 	// 收藏的存档不可删除：删除按钮已置灰，这里再拦截直接调用删除的其它路径。
 	@Inject(method = "deleteWorld", at = @At("HEAD"), cancellable = true)
 	private void tweakify$blockFavoriteDeletion(CallbackInfo ci) {
-		if (FavoritesStorage.isWorldFavorite(this.getLevelSummary().getLevelId())) {
+		if (FavoriteStarRenderer.isEnabled()
+			&& FavoritesStorage.isWorldFavorite(this.getLevelSummary().getLevelId())) {
 			ci.cancel();
 		}
 	}
@@ -53,7 +54,8 @@ public abstract class WorldListEntryFavoriteMixin {
 	// 绕过 deleteWorld 入口；收藏存档在这里再拦一次，保证不会被物理删除。
 	@Inject(method = "doDeleteWorld", at = @At("HEAD"), cancellable = true)
 	private void tweakify$blockFavoriteDeletionHard(CallbackInfo ci) {
-		if (FavoritesStorage.isWorldFavorite(this.getLevelSummary().getLevelId())) {
+		if (FavoriteStarRenderer.isEnabled()
+			&& FavoritesStorage.isWorldFavorite(this.getLevelSummary().getLevelId())) {
 			ci.cancel();
 		}
 	}
@@ -61,8 +63,9 @@ public abstract class WorldListEntryFavoriteMixin {
 	// 上传世界（Realms）列表不提供收藏星，避免与“单人存档”语义混淆。
 	@Unique
 	private boolean tweakify$showsFavoriteStar() {
-		return ((WorldSelectionListAccessor) (Object) this.list).tweakify$entryType()
-			== WorldSelectionList.EntryType.SINGLEPLAYER;
+		return FavoriteStarRenderer.isEnabled()
+			&& ((WorldSelectionListAccessor) (Object) this.list).tweakify$entryType()
+				== WorldSelectionList.EntryType.SINGLEPLAYER;
 	}
 
 	// Mixin 类无法直接调用目标类的父类方法：先转成目标类自身（public），再调用继承的坐标方法。

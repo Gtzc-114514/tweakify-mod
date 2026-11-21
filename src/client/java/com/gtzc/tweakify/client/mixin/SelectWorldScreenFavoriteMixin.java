@@ -1,5 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
+import com.gtzc.tweakify.client.FavoriteStarRenderer;
 import com.gtzc.tweakify.config.FavoritesStorage;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -25,7 +26,8 @@ public abstract class SelectWorldScreenFavoriteMixin {
 		if (this.deleteButton == null) {
 			return;
 		}
-		if (summary != null && FavoritesStorage.isWorldFavorite(summary.getLevelId())) {
+		if (summary != null && FavoriteStarRenderer.isEnabled()
+			&& FavoritesStorage.isWorldFavorite(summary.getLevelId())) {
 			this.deleteButton.active = false;
 			this.deleteButton.setTooltip(Tooltip.create(
 				Component.translatable("tweakify-mod.gui.world_list.favorite_delete_blocked")));

@@ -33,9 +33,17 @@ public final class GeneralConfigOptions {
 	public static final ConfigOptionList REMEMBER_SELECTED_TAB_FALLBACK = new ConfigOptionList(
 		"rememberSelectedTabFallback", ConfigGuiTab.ALL).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 收藏系统总开关：关闭后隐藏配置行与存档列表的收藏星。
+	public static final ConfigBoolean FAVORITE_SYSTEM = new ConfigBoolean(
+		"favoriteSystem", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 收藏星样式：自绘星形 / 原版下界之星，同时作用于配置行与存档列表的收藏星。
 	public static final ConfigOptionList FAVORITE_STAR_STYLE = new ConfigOptionList(
 		"favoriteStarStyle", FavoriteStarStyle.STAR).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 收藏包含子项：收藏父项时，它的全部子项也显示在收藏标签中。
+	public static final ConfigBoolean FAVORITE_INCLUDE_CHILDREN = new ConfigBoolean(
+		"favoriteIncludeChildren", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigHotkey OPEN_CONFIG_GUI = new ConfigHotkey(
 		"openConfigGui", "G,C", ConfigOptionKeys.OPEN_CONFIG_GUI_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);

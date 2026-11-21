@@ -326,7 +326,8 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 
 		@Override
 		protected boolean onMouseClickedImpl(MouseButtonEvent event, boolean notHovering) {
-			if (event.input() != ScanCodes.OFFSET_MOUSE_LEFT) {
+			if (!FavoriteStarRenderer.isEnabled()
+				|| event.input() != ScanCodes.OFFSET_MOUSE_LEFT) {
 				return false;
 			}
 			FavoritesStorage.toggleConfigFavorite(this.configName);

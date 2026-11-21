@@ -32,6 +32,9 @@ public final class WorldListFavorites {
 
 	// 切换收藏并立即刷新列表顺序与底部按钮状态。
 	public static boolean toggle(WorldSelectionList.WorldListEntry entry, WorldSelectionList list) {
+		if (!FavoriteStarRenderer.isEnabled()) {
+			return false;
+		}
 		boolean favorite = FavoritesStorage.toggleWorldFavorite(entry.getLevelSummary().getLevelId());
 		Minecraft.getInstance().getSoundManager().play(
 			SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
@@ -99,7 +102,8 @@ public final class WorldListFavorites {
 		if (!(entry instanceof WorldSelectionList.WorldListEntry worldEntry)) {
 			return rankFor(false, false);
 		}
-		return rankFor(true, FavoritesStorage.isWorldFavorite(worldEntry.getLevelSummary().getLevelId()));
+		return rankFor(true, FavoriteStarRenderer.isEnabled()
+			&& FavoritesStorage.isWorldFavorite(worldEntry.getLevelSummary().getLevelId()));
 	}
 
 	// 原始顺序索引：非世界项固定 0；未记录的存档（例如 Realms 列表）排到最后。

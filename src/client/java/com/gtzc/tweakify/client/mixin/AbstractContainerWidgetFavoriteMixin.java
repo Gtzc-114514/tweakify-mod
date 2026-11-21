@@ -23,7 +23,8 @@ public abstract class AbstractContainerWidgetFavoriteMixin {
 	@Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
 	private void tweakify$clickWorldFavoriteStar(MouseButtonEvent event, boolean doubleClick,
 												 CallbackInfoReturnable<Boolean> cir) {
-		if (event.input() != ScanCodes.OFFSET_MOUSE_LEFT
+		if (!FavoriteStarRenderer.isEnabled()
+			|| event.input() != ScanCodes.OFFSET_MOUSE_LEFT
 			|| !((Object) this instanceof WorldSelectionList list)
 			// 只处理列表矩形内的点击：children 里可能还有滚出可视区的条目，
 			// 不加这个边界检查会把底部按钮/列表外区域的点击误判成星标点击。

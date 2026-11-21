@@ -26,8 +26,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class TweakifyModConfigScreen extends GuiConfigsBase {
-	// 左上角分类标签：全部 / 通用 / 功能 / 修改 / 修复 / 优化 / 测试（枚举顺序即按钮顺序）。
+	// 左上角分类标签：全部 / 通用 / 功能 / 显示 / 修改 / 修复 / 优化 / 测试（枚举顺序即按钮顺序）。
 	// 功能标签按“分组根”归类：根节点及其全部子项都归入功能，其余进通用/修改。
+	// 显示标签放在功能右侧，集中世界内可视化与渲染叠加层。
 	private static final int TAB_X = 10;
 	private static final int TAB_Y = 30;
 	private static final int TAB_HEIGHT = 20;
@@ -56,6 +57,7 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		ALL("tweakify-mod.gui.tab.all"),
 		GENERAL("tweakify-mod.gui.tab.general"),
 		FUNCTIONS("tweakify-mod.gui.tab.functions"),
+		DISPLAY("tweakify-mod.gui.tab.display"),
 		MODIFIED("tweakify-mod.gui.tab.modified"),
 		FIXING("tweakify-mod.gui.tab.fix"),
 		OPTIMIZATION("tweakify-mod.gui.tab.optimization"),
@@ -141,6 +143,7 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		if (this.currentTab == ConfigTab.TESTING) {
 			visible.add(TestingConfigOptions.PROFILE_EDITOR);
 		} else if (this.currentTab == ConfigTab.FAVORITES
+			&& FavoriteStarRenderer.isEnabled()
 			&& FavoritesStorage.isConfigFavorite(TestingConfigOptions.PROFILE_EDITOR.getName())) {
 			// 档案编辑器不在配置目录里，不能被树遍历到；收藏后单独追加到收藏标签。
 			visible.add(TestingConfigOptions.PROFILE_EDITOR);
@@ -363,12 +366,19 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		List<IConfigBase> result = new ArrayList<>();
 		NODE_INFO.clear();
 		if (tab == ConfigTab.FAVORITES) {
-			// 收藏标签只列收藏项本身（缩进保留真实层级，但不提供展开按钮），
-			// 不把未收藏的父分组当作路径显示，避免收藏清单被分组噪声填满。
+			if (!FavoriteStarRenderer.isEnabled()) {
+				return result;
+			}
+			// 收藏标签只列收藏项（缩进保留真实层级，但不提供展开按钮），
+			// 不把未收藏的父分组当作路径显示，避免收藏清单被分组噪声填满；
+			// 开启「收藏包含子项」时，父项下的全部后代随父项一起显示。
 			// 先取一次快照：遍历配置树时逐项查询会把同一把锁重复加几十次。
 			Set<String> favorites = FavoritesStorage.configFavoriteSnapshot();
+			// 配置尚未初始化时按默认值（开启）处理。
+			boolean includeChildren = TweakifyMod.CONFIG == null
+				|| TweakifyMod.CONFIG.general.favoriteIncludeChildren;
 			for (ConfigGroupNode root : ROOTS) {
-				appendFavorites(root, 0, result, favorites);
+				appendFavorites(root, 0, result, favorites, false, includeChildren);
 			}
 			return result;
 		}
@@ -379,14 +389,18 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 	}
 
 	// 收藏项按配置树顺序展开为扁平清单：先父项后子项，缩进沿用真实深度。
+	// ancestorFavorite 表示某个祖先已被收藏：开启 includeChildren 时，整棵子树都进入清单。
 	private static void appendFavorites(ConfigGroupNode node, int depth, List<IConfigBase> result,
-										Set<String> favorites) {
-		if (favorites.contains(node.config().getName())) {
+										Set<String> favorites, boolean ancestorFavorite,
+										boolean includeChildren) {
+		boolean favorited = favorites.contains(node.config().getName());
+		if (favorited || (includeChildren && ancestorFavorite)) {
 			result.add(node.config());
 			NODE_INFO.put(node.config().getName(), new NodeInfo(depth, false, false));
 		}
+		boolean childrenInheritFavorite = ancestorFavorite || favorited;
 		for (ConfigGroupNode child : node.children()) {
-			appendFavorites(child, depth + 1, result, favorites);
+			appendFavorites(child, depth + 1, result, favorites, childrenInheritFavorite, includeChildren);
 		}
 	}
 
@@ -426,6 +440,8 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 			// 双标签项同时出现在“功能”与“通用”两个标签（当前无此类配置项，保留支持）。
 			case FUNCTIONS -> category == ConfigCatalog.Tab.FUNCTION
 				|| category == ConfigCatalog.Tab.FUNCTION_AND_GENERAL;
+			// 显示标签集中世界内可视化与渲染叠加层。
+			case DISPLAY -> category == ConfigCatalog.Tab.DISPLAY;
 			// 修改标签只放直接在目录里标记为 MODIFIED 的功能项。
 			case MODIFIED -> category == ConfigCatalog.Tab.MODIFIED;
 			// 修复标签只放直接在目录里标记为 FIX 的项。
