@@ -22,10 +22,10 @@
 
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
-| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 暂缓，快照方案复杂度高（最近复评 2026-11-20，见详情） |
+| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 已触发（2026-11-21 首轮采样 C 场景 6.11%，待 3 轮复测，见详情） |
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（真实 Loader 集成 + 源码契约，见详情） |
-| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解，待采样（第 1–5 项已预防性实施，采样优先级低于 T3/T6；最近复评 2026-11-20，见详情） |
-| T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（双缓冲 + generation 已落地，见详情）（最近复评 2026-11-21，见详情） |
+| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已触发（调试层整层渲染 4.21%、缓存子项 0.41%；2026-11-21 首轮采样，见详情） |
+| T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（渲染线程几何构建 0 样本、worker 空闲；峰值与写盘未覆盖，见详情）（最近复评 2026-11-21，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
 | T8 | `AllMixinApplicationLoaderTest` | 主配置 145 个 mixin 的 100 个去重目标类在真实 Loader 中全部加载；`require = 0` 的 73 个探针点按设计豁免 | 已修复（真实 Loader 全量织入，见详情） |
 
@@ -67,6 +67,10 @@
 > 2026-11-21 T8 落地：新增 loaderTest 全量织入验证，主配置 145 个 mixin 对应的 100 个目标类
 > 在真实 Loader 环境中全部加载成功（`initialize=false`，可加载白名单为空）；`require = 0` 的
 > 73 个探针点按设计豁免。提交 `36b7fa8`。
+>
+> 2026-11-21 T3/T5/T6 首轮实机采样（JFR，未装 Spark）：T3 在 C 场景 6.11% 达触发线、
+> T5 调试层整层渲染 4.21%、T6 渲染线程无几何构建；B/E 场景与 3 轮中位未做，
+> 数据见 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) §六。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -164,7 +168,14 @@
   `Executor` / `Thread` / `CompletableFuture` 用法（Grep 0 匹配），扫描与实体收集仍在主线程；
   `docs/t3-profiler-checklist.md` L92–L120 的 A–E 记录模板仍为空。架构未变、触发条件未采样，
   维持暂缓（P3）。
-- **待办**：按检查表完成 A–E 采集并回填记录模板；未完成前 T3 维持暂缓（采样优先级高于 T5）。
+- **实机采样（2026-11-21，首轮）**：JFR `settings=profile`、120 s/轮（静止 60 s + W/S 摆动 60 s），
+  单人超平坦，默认半径 32 / 刷新 6 Hz：D（三项全关）0.00%；A（屏障可见，441 个屏障）2.08%；
+  C（屏障可见 + 基岩高亮，另加 121 个单层基岩）6.11%。C 超过 5% 触发线，A 落在 2%–5% 观察区。
+  未安装 Spark，MSPT 与 FPS 1% low 未采集（FPS 仅为截图瞬时值）；B（下界顶棚）/E（实体密集）
+  与热缓存轮未做，C 的 6.11% 需 3 轮复测确认。明细见
+  [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) §六。
+- **待办**：补做 B/E 场景与 A/C 的热缓存轮（3 轮中位），确认 C 的 6.11% 是否稳定；
+  确认后按建议方案 3 评估降低刷新频率/缩小半径/降低上限，不足再启动快照预案。
 - **验证清单**：实机 profiler 采集步骤、场景矩阵、数据清单与判定标准见
   [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)。
 
@@ -204,9 +215,9 @@
   接缝测试/源码契约会失败；若删除 `loaderTest` 源集、任务或依赖，真实加载保护失效，
   需重新评估本条。
 
-## T5 详情（已缓解，待采样）：HUD/GUI 每帧重复计算
+## T5 详情（已触发）：HUD/GUI 每帧重复计算
 
-- **优先级**：P3 观察（已缓解，采样优先级低于 T3/T6）；触发后按 P2 近期处理。
+- **优先级**：P2 近期（2026-11-21 首轮采样触发，见下方「实机采样」；成本主要在绘制而非缓存缺失）。
 - **现状**：以下路径原本都在渲染帧内执行，且每次重新解析/格式化/分配：
   - `LocatorBarHeads.renderDot` 每个航点每帧调用 `splitNames(...)`（`split` + `trim` + `toLowerCase`
     建列表），并按玩家名调用 `font.width`（已于 2026-11-17 加缓存）；
@@ -269,8 +280,13 @@
   `ConnectedBlockOutlineState` 的 `MergedShapeCache`（L35、L206），对应 5 个测试均存在。
   原始「每帧重复解析/分配」风险已消除，状态降级为「已缓解，待采样」；仅剩一次 Render thread
   采样确认，采样优先级低于 T3/T6。
-- **待办**：完成一次 Render thread 采样并回填合计占比；已降级为「已缓解，待采样」，按结果决定
-  标为已修复或复测未达触发条件。
+- **实机采样（2026-11-21，首轮）**：开启 `debugInfoOverlay` 与药水 HUD，D/A/C 场景 Render thread：
+  `DebugInfoOverlay.render` 4.21%（整层渲染，含文本绘制）、`buildLines` 0.41%（缓存子项）；
+  定位栏 0%（单人无航点）、药水计时 0 样本、tooltip 与连接轮廓 0（未触发条件）。
+  按判定口径「含子调用合计 > 2%」，调试层满足触发条件；但成本主要在每帧绘制而非重复计算，
+  缓存已把重复计算压到 0.41%，后续应按「降低刷新频率/行数」处理，不要继续加缓存。
+- **待办**：补做剩余 4 项（定位栏/药水计时/tooltip/连接轮廓）的触发场景采样；调试层按「降低刷新频率/行数」评估，
+  剩余项未达 2% 前不继续加缓存。
 - **验证方式**：`LocatorBarHeadsTest` 已覆盖名单缓存复用/内容变化失效、宽度缓存字体变化失效与
   淘汰后取值正确；`StatusEffectTimerRendererTest` 已覆盖缓存键失效、tick 构建与无缓存
   `placementFor` 等价、无尽效果占位、阈值/隐藏图标过滤、演示偏移与按秒格式化；
@@ -351,8 +367,13 @@
   `prepareSaveHandle` 仍在配置锁内同步序列化。两项均未后台化、触发条件未采样。
 - **最近评估（2026-11-21）**：几何双缓冲已落地：共享 worker、不可变快照、旧任务开始丢弃与发布侧
   单调换代均有测试覆盖；配置序列化与几何两项均已完成，状态改为「已缓解，待采样」。
+- **实机采样（2026-11-21，首轮）**：C 场景 Render thread 中 `BedrockGeometryCache` /
+  `AttackRangeGeometryCache` 构建 0 样本（与后台构建一致）；`BedrockHighlightState.setMarkers`
+  1.45%（扫描侧内容摘要，属 T3）；`tweakify-geometry-worker` 在静态场景无 CPU 负载事件
+  （标记不变时按 T2 摘要去重跳过）；配置写盘只有 `pollSaveResults` 0.03%，窗口内无写盘。
+  worker 峰值与 256 上限回归仍未采样。
 - **待办**：采样确认 `tweakify-geometry-worker` 占用与渲染帧时间；在 256 上限下再做一次实机渲染回归
-  （默认上限已于 2026-11-21 通过）；配置项观察发版后是否出现格式漂移反馈；T3 维持暂缓。
+  （默认上限已于 2026-11-21 通过）；配置项观察发版后是否出现格式漂移反馈。
 - **验证方式**：`AttackRangeGeometryCacheTest` / `BedrockGeometryCacheTest` 断言顶点数、LOD 选档、
   缓存失效与后台发布；`stalePublishAfterNewerSnapshotIsRejected` 验证发布侧单调换代（旧代任务晚到
   不覆盖新快照），`reorderedBuildsKeepNewestSnapshot` 用 `ManualExecutor` 倒序执行验证旧任务被丢弃；
