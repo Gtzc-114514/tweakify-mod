@@ -133,6 +133,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		ElytraFireworkState.tick(client);
 		PiglinArmorSwapState.tick(client);
 		AttackRangeState.tick(client);
+		ExplosionRangeState.tick(client);
 		// 设备就绪后记录一次渲染后端，便于排查 Vulkan/OpenGL 差异。
 		logRenderBackendOnce();
 		// 远程服务器下服务端类功能不会生效，提示一次避免以为是开关失效。

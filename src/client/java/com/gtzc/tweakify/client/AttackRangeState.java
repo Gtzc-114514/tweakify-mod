@@ -33,7 +33,7 @@ public final class AttackRangeState {
 
 	// 按距离从近到远；并列时用坐标/半径做确定性次序，
 	// 避免等距实体因迭代顺序不同导致摘要变化与展示拖动。
-	private static final Comparator<Entry> BY_DISTANCE = Comparator
+	static final Comparator<Entry> BY_DISTANCE = Comparator
 		.comparingDouble(Entry::distanceSq)
 		.thenComparingDouble(Entry::x)
 		.thenComparingDouble(Entry::feetY)
@@ -106,7 +106,7 @@ public final class AttackRangeState {
 
 	// 精确兜底：摘要相同后再逐条比较几何字段，排除 distanceSq 与 bounds，
 	// 使哈希碰撞不会把已变化的坐标/半径误判为相同。
-	private static boolean sameGeometry(List<Entry> published, List<Entry> current) {
+	static boolean sameGeometry(List<Entry> published, List<Entry> current) {
 		if (published.size() != current.size()) {
 			return false;
 		}
@@ -124,7 +124,7 @@ public final class AttackRangeState {
 
 	// 轻量内容摘要：只含决定几何的坐标与半径；
 	// distanceSq 随玩家移动变化，不参与摘要，否则玩家移动会让缓存白重建。
-	private static int contentHash(List<Entry> entries) {
+	static int contentHash(List<Entry> entries) {
 		int hash = entries.size();
 		for (Entry entry : entries) {
 			hash = 31 * hash + Double.hashCode(entry.x());

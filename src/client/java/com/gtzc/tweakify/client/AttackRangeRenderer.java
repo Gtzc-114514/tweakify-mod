@@ -18,6 +18,8 @@ import java.util.List;
  */
 public final class AttackRangeRenderer {
 	private static final AttackRangeGeometryCache CACHE = new AttackRangeGeometryCache();
+	// filled 模式同时提交线条兜底时使用独立缓存，避免与 drawFilled 的构建代互相覆盖。
+	private static final AttackRangeGeometryCache FILLED_FALLBACK_CACHE = new AttackRangeGeometryCache();
 
 	private AttackRangeRenderer() {
 	}
@@ -26,16 +28,36 @@ public final class AttackRangeRenderer {
 	public static void drawLines(VertexConsumer vertices, PoseStack.Pose pose,
 								 List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
 								 Frustum frustum) {
-		CACHE.ensure(entries, sphere, false, paletteRgb());
-		writeVisible(vertices, pose, entries, camera, sphere, frustum, CACHE.snapshot());
+		drawLines(vertices, pose, entries, camera, sphere, frustum, CACHE, paletteRgb());
+	}
+
+	// 不同可视化（爆炸范围）共用渲染逻辑，但使用独立缓存与固定颜色。
+	static void drawLines(VertexConsumer vertices, PoseStack.Pose pose,
+						   List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
+						   Frustum frustum, AttackRangeGeometryCache cache, int rgb) {
+		cache.ensure(entries, sphere, false, rgb);
+		writeVisible(vertices, pose, entries, camera, sphere, frustum, cache.snapshot());
+	}
+
+	// filled 模式的线条兜底：独立缓存，保证与实心几何同帧提交时不会反复重建。
+	static void drawLinesFilledFallback(VertexConsumer vertices, PoseStack.Pose pose,
+									 List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
+									 Frustum frustum) {
+		drawLines(vertices, pose, entries, camera, sphere, frustum, FILLED_FALLBACK_CACHE, paletteRgb());
 	}
 
 	// 半透明实心模式：由 WorldOverlayRenderer 使用 debugFilledBox 提交。
 	public static void drawFilled(VertexConsumer vertices, PoseStack.Pose pose,
 								  List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
 								  Frustum frustum) {
-		CACHE.ensure(entries, sphere, true, paletteRgb());
-		writeVisible(vertices, pose, entries, camera, sphere, frustum, CACHE.snapshot());
+		drawFilled(vertices, pose, entries, camera, sphere, frustum, CACHE, paletteRgb());
+	}
+
+	static void drawFilled(VertexConsumer vertices, PoseStack.Pose pose,
+						   List<AttackRangeState.Entry> entries, Vec3 camera, boolean sphere,
+						   Frustum frustum, AttackRangeGeometryCache cache, int rgb) {
+		cache.ensure(entries, sphere, true, rgb);
+		writeVisible(vertices, pose, entries, camera, sphere, frustum, cache.snapshot());
 	}
 
 	// 提交前判断：是否有条目在视锥内；与 writeVisible 共用同一判定，避免提交空几何。
