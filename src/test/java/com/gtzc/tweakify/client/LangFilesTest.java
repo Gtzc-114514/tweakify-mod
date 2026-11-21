@@ -16,12 +16,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,6 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 语言文件必须保持相同键集：缺失键会静默回退到游戏语言，游戏内很难发现漏翻。
  */
 class LangFilesTest {
+	private static final Path OPTION_SOURCE_DIR = Path.of("src/client/java/com/gtzc/tweakify/client");
+	// 只认类型声明里的 implements：注释里提到接口名不算实现。
+	private static final Pattern IMPLEMENTS_OPTION_ENTRY =
+		Pattern.compile("(?s)\\bimplements\\b[^{]*?\\bCodeOptionEntry\\b");
+
 	// 选项实例需要枚举/注册表静态数据：先按其它测试类的方式引导一次。
 	@BeforeAll
 	static void bootstrapMinecraft() {
@@ -50,124 +61,35 @@ class LangFilesTest {
 		}
 	}
 
-	// 代码里引用的枚举翻译键必须在每种语言都存在，否则界面会显示原始键名。
+	// MaLiLib 的注释渲染会连续执行两次 String.format，comment 里的 % 必须写成 %%%%；
+	// 写成单 % 或 %s 都会在 tooltip 里显示 Format Error。这里对全部 comment 键做冒烟。
 	@Test
-	void blockOutlineOptionTranslationsExistInEveryLanguage() throws IOException {
+	void everyCommentSurvivesDoubleFormatting() throws IOException {
 		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (BlockOutlinePalette palette : BlockOutlinePalette.values()) {
-				assertTrue(keys.contains(palette.translationKey()),
-					"missing " + palette.translationKey() + " in " + code);
-			}
-			for (BlockOutlineColorMode mode : BlockOutlineColorMode.values()) {
-				assertTrue(keys.contains(mode.translationKey()),
-					"missing " + mode.translationKey() + " in " + code);
+			Map<String, String> values = valuesOf(code);
+			for (IConfigBase option : TweakifyModConfigOptions.ALL_OPTIONS) {
+				String key = expectedKeyPrefix(option) + "comment." + option.getName();
+				String raw = values.get(key);
+				assertNotNull(raw, code + " is missing " + key);
+				String rendered = assertDoesNotThrow(() ->
+					String.format(Locale.ROOT, String.format(Locale.ROOT, raw)),
+					code + " 的 " + key + " 无法通过两次 String.format");
+				assertFalse(rendered.contains("Format Error"),
+					code + " 的 " + key + " 出现了 Format Error");
 			}
 		}
 	}
 
-	// 新增配置项的名称/提示/说明键必须在四种语言都存在。
+	// 上一项只保证“不报错”，这里保留内容基线：%%%% 转义后必须原样显示 50%/200%。
 	@Test
-	void blockOutlineConfigTranslationsExistInEveryLanguage() throws IOException {
-		List<String> optionNames = List.of(
-			"customBlockOutline", "blockOutlineWidth", "blockOutlineAnimationSpeed",
-			"blockOutlinePalette", "blockOutlineColorMode");
-		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (String optionName : optionNames) {
-				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
-						+ kind + "." + optionName;
-					assertTrue(keys.contains(key), "missing " + key + " in " + code);
-				}
-			}
-		}
-	}
-
-	// 药水时间、地狱门延迟与肩膀鹦鹉的配置项翻译键必须在四种语言都存在。
-	@Test
-	void hudPortalAndParrotTranslationsExistInEveryLanguage() throws IOException {
-		List<String> optionNames = List.of(
-			"statusEffectDurationDisplay", "netherPortalTeleportDelay",
-			"netherPortalSurvivalInstantTeleport", "netherPortalCreativeDelayedTeleport",
-			"parrotDanceOnShoulder");
-		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (String optionName : optionNames) {
-				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
-						+ kind + "." + optionName;
-					assertTrue(keys.contains(key), "missing " + key + " in " + code);
-				}
-			}
-		}
-	}
-
-	// MaLiLib 的注释渲染会连续执行两次 String.format；百分号必须写成 %%%%,
-	// 否则 tooltip 会显示 Format Error。这里直接模拟两层格式化。
-	@Test
-	void statusEffectScaleCommentSurvivesDoubleFormatting() throws IOException {
+	void scalePercentCommentRendersLiteralPercent() throws IOException {
 		String key = "tweakify-mod.config.general.comment.statusEffectDurationScale";
 		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
 			String raw = valuesOf(code).get(key);
 			assertNotNull(raw, code + " is missing " + key);
-			String rendered = assertDoesNotThrow(() ->
-				String.format(Locale.ROOT, String.format(Locale.ROOT, raw)),
-				code + " comment must survive two String.format passes");
-			assertFalse(rendered.contains("Format Error"), code + " comment was formatted twice");
+			String rendered = String.format(Locale.ROOT, String.format(Locale.ROOT, raw));
 			assertTrue(rendered.contains("50%"), code + " comment must show 50% after formatting");
 			assertTrue(rendered.contains("200%"), code + " comment must show 200% after formatting");
-		}
-	}
-
-	// 生成控制、和平模式怪物与更好的粗体的翻译键必须在四种语言都存在。
-	@Test
-	void spawnBoldAndPeacefulTranslationsExistInEveryLanguage() throws IOException {
-		List<String> optionNames = List.of(
-			"betterBold", "disableSpecifiedMobSpawn", "disabledSpawnEntities",
-			"disabledSpawnAllowPlayerSpawn",
-			"peacefulModeMonsters", "peacefulModeMonsterEntities",
-			"peacefulModeMonsterSpawn", "peacefulModeMonsterNoAttack");
-		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (String optionName : optionNames) {
-				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
-						+ kind + "." + optionName;
-					assertTrue(keys.contains(key), "missing " + key + " in " + code);
-				}
-			}
-		}
-	}
-
-	// 新增功能的配置项与选项翻译键必须在四种语言都存在。
-	@Test
-	void newFeatureTranslationsExistInEveryLanguage() throws IOException {
-		List<String> optionNames = List.of(
-			"piglinGoldArmorSwap", "piglinGoldArmorSwapMode", "chatInputMemory",
-			"snowGolemBiomeImmunity", "cameraMotion", "cameraMotionIntensity",
-			"cameraMotionTurningRoll", "cameraMotionStrafingRoll", "cameraMotionForwardPitch",
-			"cameraMotionVerticalPitch", "cameraMotionIdleSway", "cameraMotionScreenShake",
-			"cameraMotionMouseSmoothing", "cameraMotionFirstPerson", "cameraMotionThirdPerson",
-			"itemGroups", "itemGroupsSort", "itemGroupsShowItems", "itemGroupsAddAll",
-			"customItemGroups");
-		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (String optionName : optionNames) {
-				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
-						+ kind + "." + optionName;
-					assertTrue(keys.contains(key), "missing " + key + " in " + code);
-				}
-			}
-			for (PiglinArmorSwapMode mode : PiglinArmorSwapMode.values()) {
-				assertTrue(keys.contains(mode.translationKey()),
-					"missing " + mode.translationKey() + " in " + code);
-			}
-			for (ItemGroupSort sort : ItemGroupSort.values()) {
-				assertTrue(keys.contains(sort.translationKey()),
-					"missing " + sort.translationKey() + " in " + code);
-			}
 		}
 	}
 
@@ -191,42 +113,6 @@ class LangFilesTest {
 			for (String name : names) {
 				String key = "group_name.inventory_item_groups." + name;
 				assertTrue(keys.contains(key), "missing " + key + " in " + code);
-			}
-		}
-	}
-
-	// 本轮新增功能（冰霜行者修复、定位栏头像、移动物理禁用、穿牌开容器、调试工具）的
-	// 名称/提示/说明键必须在四种语言都存在。
-	@Test
-	void physicsAndLocatorFeatureTranslationsExistInEveryLanguage() throws IOException {
-		List<String> optionNames = List.of(
-			"frostWalkerJumpFix", "locatorBarHeads", "locatorBarHeadScale",
-			"locatorBarHeadHatLayer", "locatorBarHeadBorder", "locatorBarHeadBorderThickness",
-			"locatorBarHeadBorderColor", "locatorBarHeadNames", "locatorBarHeadFilter",
-			"locatorBarHeadIncludedPlayers", "locatorBarHeadExcludedPlayers", "locatorBarHeadNearbyOnly", "locatorBarCompass",
-			"locatorBarCompassColor", "locatorBarCompassShadow", "locatorBarCompassCoordinates",
-			"locatorBarAlwaysShowXp",
-			"signOpenContainer",
-			"disableCobwebSlowdown", "cobwebSlowdownAllEntities",
-			"disableFluidPush", "disableWaterPush", "disableLavaPush",
-			"disableSlimeBlockSlowdown", "disableSlimeBlockBounce",
-			"disableHoneyBlockSlowdown", "disableHoneyBlockStick",
-			"debugInfoOverlay", "debugInfoShowPerformance", "debugInfoShowTarget",
-			"debugInfoShowBiome", "debugInfoShowSpeed", "debugInfoShowEntities",
-			"debugInfoShowConfigStats", "debugInfoShowEffects",
-			"debugInfoShowHooks", "debugProbeReport", "debugProbeReportCopy",
-			"debugEnabledFeaturesReport",
-			"barrierVisibilityMaxMarkers", "durabilityOverlayColorMode",
-			"copyItemIdNamespace", "statusEffectDurationAlwaysSeconds",
-			"attackRangeHostileOnly", "attackRangeIncludeInvisible");
-		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (String optionName : optionNames) {
-				for (String kind : List.of("name", "prettyName", "comment")) {
-					String key = expectedKeyPrefix(TweakifyModConfigOptions.optionOf(optionName))
-						+ kind + "." + optionName;
-					assertTrue(keys.contains(key), "missing " + key + " in " + code);
-				}
 			}
 		}
 	}
@@ -268,19 +154,6 @@ class LangFilesTest {
 	}
 
 	@Test
-	void resourcePackCompatibilityTranslationsExistInEveryLanguage() throws IOException {
-		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (String kind : List.of("name", "prettyName", "comment")) {
-				String key = expectedKeyPrefix(
-					TweakifyModConfigOptions.optionOf("disableResourcePackCompatibilityCheck")) + kind
-					+ ".disableResourcePackCompatibilityCheck";
-				assertTrue(keys.contains(key), "missing " + key + " in " + code);
-			}
-		}
-	}
-
-	@Test
 	void profileEditorTranslationsExistInEveryLanguage() throws IOException {
 		List<String> keysToCheck = List.of(
 			"tweakify-mod.gui.tab.testing",
@@ -310,7 +183,7 @@ class LangFilesTest {
 		}
 	}
 
-	// 收藏标签与收藏星样式的翻译键必须在四种语言都存在。
+	// 收藏相关的界面文本不在配置项目录里；配置项与枚举键由上面两个通用测试覆盖。
 	@Test
 	void favoriteTranslationsExistInEveryLanguage() throws IOException {
 		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
@@ -319,18 +192,10 @@ class LangFilesTest {
 				"missing favorites tab label in " + code);
 			assertTrue(keys.contains("tweakify-mod.gui.world_list.favorite_delete_blocked"),
 				"missing favorite delete hint in " + code);
-			for (String kind : List.of("name", "prettyName", "comment")) {
-				String key = "tweakify-mod.config.general." + kind + ".favoriteStarStyle";
-				assertTrue(keys.contains(key), "missing " + key + " in " + code);
-			}
-			for (FavoriteStarStyle style : FavoriteStarStyle.values()) {
-				assertTrue(keys.contains(style.translationKey()),
-					"missing " + style.translationKey() + " in " + code);
-			}
 		}
 	}
 
-	// 存档游玩时长显示文本与格式选项翻译键必须在四种语言都存在。
+	// 存档列表的时长文本不在配置项目录里；格式枚举键由枚举通用测试覆盖。
 	@Test
 	void worldPlayTimeTranslationsExistInEveryLanguage() throws IOException {
 		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
@@ -340,38 +205,6 @@ class LangFilesTest {
 				"tweakify-mod.world_play_time.duration",
 				"tweakify-mod.world_play_time.minutes")) {
 				assertTrue(keys.contains(key), "missing " + key + " in " + code);
-			}
-			for (SavePlayTimeFormat format : SavePlayTimeFormat.values()) {
-				assertTrue(keys.contains(format.translationKey()),
-					"missing " + format.translationKey() + " in " + code);
-			}
-		}
-	}
-
-	// 定位栏新增选项的枚举值翻译键必须在四种语言都存在（描边样式 / 名字时机 / 过滤 / 颜色）。
-	@Test
-	void locatorOptionValueTranslationsExistInEveryLanguage() throws IOException {
-		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (LocatorHeadBorder border : LocatorHeadBorder.values()) {
-				assertTrue(keys.contains(border.translationKey()),
-					"missing " + border.translationKey() + " in " + code);
-			}
-			for (LocatorHeadNames names : LocatorHeadNames.values()) {
-				assertTrue(keys.contains(names.translationKey()),
-					"missing " + names.translationKey() + " in " + code);
-			}
-			for (LocatorHeadFilter filter : LocatorHeadFilter.values()) {
-				assertTrue(keys.contains(filter.translationKey()),
-					"missing " + filter.translationKey() + " in " + code);
-			}
-			for (LocatorHeadColor color : LocatorHeadColor.values()) {
-				assertTrue(keys.contains(color.translationKey()),
-					"missing " + color.translationKey() + " in " + code);
-			}
-			for (LocatorHeadBorderThickness thickness : LocatorHeadBorderThickness.values()) {
-				assertTrue(keys.contains(thickness.translationKey()),
-					"missing " + thickness.translationKey() + " in " + code);
 			}
 		}
 	}
@@ -393,6 +226,31 @@ class LangFilesTest {
 		}
 	}
 
+	// 选项枚举的显示名走 CodeOptionEntry.translationKey()，漏配时界面会退回 code
+	//（例如 "one_block"）。这里按源码扫描自动发现所有实现，不维护清单。
+	@Test
+	void everyOptionListEntryTranslationKeyExistsInEveryLanguage() throws IOException {
+		Map<String, Set<String>> keysByLanguage = new HashMap<>();
+		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+			keysByLanguage.put(code, keysOf(code));
+		}
+		Set<Class<?>> entryEnums = optionEntryEnums();
+		assertFalse(entryEnums.isEmpty(), "必须能发现选项枚举，否则本测试形同虚设");
+		for (Class<?> type : entryEnums) {
+			for (Object constant : type.getEnumConstants()) {
+				String key = ((CodeOptionEntry) constant).translationKey();
+				// 返回 null 表示由实现类自行提供显示名（如语言自称），不走语言文件。
+				if (key == null) {
+					continue;
+				}
+				for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+					assertTrue(keysByLanguage.get(code).contains(key),
+						"missing " + key + " in " + code + "（" + type.getSimpleName() + "）");
+				}
+			}
+		}
+	}
+
 	private static String expectedKeyPrefix(IConfigBase option) {
 		if (ConfigCatalog.isInsideGroup("entityHighlight", option.getName())) {
 			return "tweakify-mod.config.highlight.";
@@ -401,6 +259,32 @@ class LangFilesTest {
 			return "tweakify-mod.config.lists.";
 		}
 		return "tweakify-mod.config.general.";
+	}
+
+	// 与 mixin 清单测试同一思路：按源码目录发现实现类，新增枚举无需登记到任何清单。
+	// 文件名与类名一致；只接受枚举，接口与普通类直接跳过。
+	private static Set<Class<?>> optionEntryEnums() throws IOException {
+		Set<Class<?>> types = new TreeSet<>(Comparator.comparing(Class::getName));
+		try (Stream<Path> files = Files.list(OPTION_SOURCE_DIR)) {
+			for (Path file : files.filter(path -> path.toString().endsWith(".java")).toList()) {
+				if (!IMPLEMENTS_OPTION_ENTRY.matcher(
+					Files.readString(file, StandardCharsets.UTF_8)).find()) {
+					continue;
+				}
+				String fileName = file.getFileName().toString();
+				String className = fileName.substring(0, fileName.length() - ".java".length());
+				Class<?> type;
+				try {
+					type = Class.forName(LangFilesTest.class.getPackageName() + "." + className);
+				} catch (ClassNotFoundException e) {
+					throw new AssertionError("源码扫描到 " + className + "，但测试类路径里没有该类", e);
+				}
+				if (type.isEnum()) {
+					types.add(type);
+				}
+			}
+		}
+		return types;
 	}
 
 	private static Set<String> keysOf(String code) throws IOException {
