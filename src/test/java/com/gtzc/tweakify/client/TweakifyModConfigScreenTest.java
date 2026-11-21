@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigBoolean;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
+import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.FavoritesStorage;
 import com.gtzc.tweakify.config.TweakifyModConfig;
@@ -148,6 +149,8 @@ class TweakifyModConfigScreenTest {
 			TweakifyModConfigScreen.ConfigTab.ALL,
 			TweakifyModConfigScreen.ConfigTab.GENERAL,
 			TweakifyModConfigScreen.ConfigTab.FUNCTIONS,
+			// 显示标签位于功能右侧。
+			TweakifyModConfigScreen.ConfigTab.DISPLAY,
 			TweakifyModConfigScreen.ConfigTab.MODIFIED,
 			TweakifyModConfigScreen.ConfigTab.FIXING,
 			TweakifyModConfigScreen.ConfigTab.OPTIMIZATION,
@@ -161,6 +164,11 @@ class TweakifyModConfigScreenTest {
 	// 取消收藏后重新取列表，该行应立即消失。
 	@Test
 	void favoritesTabShowsOnlyFavoritedOptions(@TempDir Path tempDir) {
+		TweakifyModConfig previousConfig = TweakifyMod.CONFIG;
+		TweakifyModConfig config = new TweakifyModConfig();
+		// 本用例验证「逐项收藏」旧行为：显式关闭父项连带子项。
+		config.general.favoriteIncludeChildren = false;
+		TweakifyMod.CONFIG = config;
 		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
 		try {
 			assertTrue(FavoritesStorage.toggleConfigFavorite("cameraMotion"));
@@ -179,7 +187,63 @@ class TweakifyModConfigScreenTest {
 			// 等待异步写盘完成任务，避免后台线程在临时目录清理时仍写文件。
 			AsyncFileWriter.drain(15_000L);
 			FavoritesStorage.clearForTest();
+			TweakifyMod.CONFIG = previousConfig;
 			// 恢复 ALL 标签的 NODE_INFO，避免影响其它用例。
+			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
+		}
+	}
+
+	// 收藏系统总开关关闭时：收藏标签为空、星标禁用，但收藏数据仍在存储层保留。
+	@Test
+	void disablingFavoriteSystemHidesFavoritesContent(@TempDir Path tempDir) {
+		TweakifyModConfig previousConfig = TweakifyMod.CONFIG;
+		TweakifyModConfig config = new TweakifyModConfig();
+		config.general.favoriteSystem = false;
+		TweakifyMod.CONFIG = config;
+		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
+		try {
+			assertTrue(FavoritesStorage.toggleConfigFavorite("cameraMotion"));
+			assertFalse(FavoriteStarRenderer.isEnabled(), "the master switch must disable star rendering");
+			assertTrue(TweakifyModConfigScreen.visibleConfigs(
+				TweakifyModConfigScreen.ConfigTab.FAVORITES).isEmpty(),
+				"the favorites tab must be empty while the system is disabled");
+		} finally {
+			AsyncFileWriter.drain(15_000L);
+			FavoritesStorage.clearForTest();
+			TweakifyMod.CONFIG = previousConfig;
+			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
+		}
+	}
+
+	// 「收藏包含子项」开启时，收藏父项会连带显示全部后代；关闭后回到逐项收藏。
+	@Test
+	void favoritesTabIncludesChildrenOfFavoritedParents(@TempDir Path tempDir) {
+		TweakifyModConfig previousConfig = TweakifyMod.CONFIG;
+		TweakifyModConfig config = new TweakifyModConfig();
+		config.general.favoriteIncludeChildren = true;
+		TweakifyMod.CONFIG = config;
+		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
+		try {
+			assertTrue(FavoritesStorage.toggleConfigFavorite("cameraMotion"));
+			List<String> names = TweakifyModConfigScreen.visibleConfigs(
+				TweakifyModConfigScreen.ConfigTab.FAVORITES).stream().map(IConfigBase::getName).toList();
+			assertTrue(names.contains("cameraMotion"), "the favorited parent must appear");
+			assertTrue(names.contains("cameraMotionIntensity"),
+				"children of a favorited parent must appear when the option is enabled");
+			assertTrue(names.contains("cameraMotionTurningRoll"),
+				"all descendants of a favorited parent must appear");
+			assertFalse(names.contains("smoothScroll"),
+				"unrelated options must stay hidden");
+
+			config.general.favoriteIncludeChildren = false;
+			names = TweakifyModConfigScreen.visibleConfigs(
+				TweakifyModConfigScreen.ConfigTab.FAVORITES).stream().map(IConfigBase::getName).toList();
+			assertEquals(List.of("cameraMotion"), names,
+				"disabling the option must return to per-item favorites only");
+		} finally {
+			AsyncFileWriter.drain(15_000L);
+			FavoritesStorage.clearForTest();
+			TweakifyMod.CONFIG = previousConfig;
 			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
 		}
 	}
@@ -242,6 +306,34 @@ class TweakifyModConfigScreenTest {
 		assertTab("disableSlimeBlockBounce", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("disableHoneyBlockSlowdown", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("disableHoneyBlockStick", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		// 盔甲架手臂与隐藏展示框归入修改标签。
+		assertTab("armorStandArms", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("hideItemFrames", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		// 附魔台附魔信息归入功能标签；收藏包含子项归入通用标签。
+		assertTab("enchantingTableInfo", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		// 收藏系统为通用标签父项，星标样式与包含子项为子设置。
+		assertTab("favoriteSystem", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		assertTab("favoriteStarStyle", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		assertTab("favoriteIncludeChildren", TweakifyModConfigScreen.ConfigTab.GENERAL);
+		// 世界内可视化迁移到显示标签。
+		for (String name : new String[] {
+			"attackRangeDisplay", "attackRangeDisplayMode", "attackRangeEntities",
+			"highlightSingleLayerBedrock", "barrierVisibility", "entityHighlight",
+			"highlightPreset1", "customBlockOutline"
+		}) {
+			assertTab(name, TweakifyModConfigScreen.ConfigTab.DISPLAY);
+		}
+		assertTab("explosionRangeDisplay", TweakifyModConfigScreen.ConfigTab.DISPLAY);
+		assertTab("sweepingView", TweakifyModConfigScreen.ConfigTab.DISPLAY);
+		for (String name : new String[] {
+			"sweepingViewWireframe", "sweepingViewWireframeColor", "sweepingViewFace",
+			"sweepingViewFaceSolid", "sweepingViewFaceColor", "sweepingViewSphere",
+			"sweepingViewSphereColor", "sweepingViewVehicles"
+		}) {
+			assertTab(name, TweakifyModConfigScreen.ConfigTab.DISPLAY);
+		}
+		// 取消速度上限归入修改标签。
+		assertTab("removeSpeedLimit", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		// 调试辅助功能归入测试标签。
 		assertTab("debugInfoOverlay", TweakifyModConfigScreen.ConfigTab.TESTING);
 		assertTab("debugInfoShowPerformance", TweakifyModConfigScreen.ConfigTab.TESTING);
@@ -287,6 +379,8 @@ class TweakifyModConfigScreenTest {
 		for (IConfigBase option : TweakifyModConfigOptions.ALL_OPTIONS) {
 			boolean functions = TweakifyModConfigScreen.matchesTab(
 				option, TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+			boolean display = TweakifyModConfigScreen.matchesTab(
+				option, TweakifyModConfigScreen.ConfigTab.DISPLAY);
 			boolean modified = TweakifyModConfigScreen.matchesTab(
 				option, TweakifyModConfigScreen.ConfigTab.MODIFIED);
 			boolean general = TweakifyModConfigScreen.matchesTab(
@@ -298,7 +392,9 @@ class TweakifyModConfigScreenTest {
 			boolean testing = TweakifyModConfigScreen.matchesTab(
 				option, TweakifyModConfigScreen.ConfigTab.TESTING);
 			assertFalse(functions && modified, "option is in both tabs: " + option.getName());
-			assertTrue(functions || modified || general || fixing || optimization || testing,
+			assertFalse(functions && display, "option is in both tabs: " + option.getName());
+			assertFalse(display && modified, "option is in both tabs: " + option.getName());
+			assertTrue(functions || display || modified || general || fixing || optimization || testing,
 				"option has no concrete tab: " + option.getName());
 		}
 	}
