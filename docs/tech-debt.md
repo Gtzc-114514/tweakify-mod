@@ -27,6 +27,7 @@
 | T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解，待采样（第 1–5 项已预防性实施，采样优先级低于 T3/T6；最近复评 2026-11-20，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（双缓冲 + generation 已落地，见详情）（最近复评 2026-11-21，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
+| T8 | `AllMixinApplicationLoaderTest` | 主配置 145 个 mixin 的 100 个去重目标类在真实 Loader 中全部加载；`require = 0` 的 73 个探针点按设计豁免 | 已修复（真实 Loader 全量织入，见详情） |
 
 ### 已闭环归档
 
@@ -62,6 +63,10 @@
 > 2026-11-21 T6 几何双缓冲落地（预防性实施，未采样）：共享单线程 `GeometryBuildWorker` + 不可变快照发布，
 > 渲染线程只读快照；新增乱序完成与旧代拒绝测试，`gradlew test` 718 例与 `gradlew build` 通过。
 > T6 状态改为「已缓解，待采样」，T3 维持暂缓。
+>
+> 2026-11-21 T8 落地：新增 loaderTest 全量织入验证，主配置 145 个 mixin 对应的 100 个目标类
+> 在真实 Loader 环境中全部加载成功（`initialize=false`，可加载白名单为空）；`require = 0` 的
+> 73 个探针点按设计豁免。提交 `36b7fa8`。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -386,12 +391,61 @@
   （`rowStarSitsRightOfTheResetButtonAndStaysClear`）与窄行隐藏断言（`starIsHiddenWhenRowCannotFitIt`）
   作为回归基线。
 
+## T8 详情：全量 mixin 织入验证
+
+- **修复前现状**：`loaderTest` 源集（T4 建立）只加载 `CreativeModeInventoryScreen` 一个目标类，
+  其余 mixin 的注入点没有自动化校验；MC 升级导致目标方法改名或签名变化时，`require >= 1`
+  的注入点会让客户端在启动阶段抛 `InvalidInjectionException` 崩溃，`require = 0` 的探针点
+  则静默失效，两者都要等到实机启动才暴露。
+- **原影响**：主配置 145 个 mixin 覆盖 100 个去重目标类（其中 2 个目标是 MaLiLib 的
+  `GuiConfigsBase` / `GuiListBase`）。任何一个 `require >= 1` 注入点失效，对应功能直接不可用
+  或客户端无法启动；原有自动化只锁住 `CreativeModeInventoryGroupingMixin` 一条链路。
+- **采用方案（编译产物解析 + 只加载不初始化 + 哨兵）**：
+  - `AllMixinApplicationLoaderTest` 从 classpath 读取 `tweakify-mod.client.mixins.json`，
+    遍历 145 个条目；
+  - mixin 类本身不能 `Class.forName`（Mixin 抛 `IllegalClassLoadError`），改用 JDK 25 自带的
+    `java.lang.classfile` 解析编译产物里的 `@Mixin`；`@Mixin` 是 CLASS retention，属性位于
+    `RuntimeInvisibleAnnotations` 而不是 `RuntimeVisibleAnnotations`；
+  - `value`（Class 常量，描述符形式，本项目主写法）与 `targets`（字符串数组）两种写法都支持；
+  - 目标类以 `initialize=false` 加载：织入发生在 defineClass 阶段，跳过 `<clinit>` 后 headless
+    环境没有不可加载的目标类，**可加载白名单为空**；
+  - 哨兵：先加载 `CreativeModeInventoryScreen` 并断言 `tweakify$lastConfigSignature` 存在，
+    证明主配置确实被 Loader 注册；否则遍历会在未织入的情况下空转通过；
+  - 复用 T4 的 `loaderTest` 源集与 `check` 依赖（`build.gradle` L130），CI 的 `./gradlew build`
+    自动执行，无需改 workflow。
+- **覆盖边界**：
+  - 覆盖：主配置 145 个 mixin、100 个目标类上 `require >= 1` 的全部注入点；目标类加载成功
+    等价于该类上所有注入点在 APPLY 阶段通过（定位失败会抛 `InvalidInjectionException`）；
+  - 豁免：73 个 `require = 0` 探针点（以 [`docs/mixin-probes.md`](mixin-probes.md) 为事实源）
+    按设计允许静默跳过，不在本测试判定范围；它们的存活仍只能靠实机日志
+    `Mixin hook active: <探针名>` 确认；
+  - 不覆盖 `tweakify-mod.minihud.mixins.json` / `tweakify-mod.modmenu.mixins.json`：目标是
+    MiniHUD/ModMenu 的类，不在 loaderTest 类路径，`required=false` 且由各自 plugin 在类
+    存在时才启用；
+  - 不覆盖运行期行为：只证明注入点存在，不证明逻辑在配置与状态下正确（由各自单测覆盖）；
+  - 白名单用途：只允许放「headless 环境不可加载」的目标类，不得用于掩盖注入错误；
+    当前为空，新增条目必须在注释里写明失败原因。
+- **修复记录（提交 `36b7fa8`）**：新增
+  `src/loaderTest/java/com/gtzc/tweakify/client/AllMixinApplicationLoaderTest.java`，
+  与 T4 的 `CreativeModeInventoryGroupingMixinLoaderTest` 共用 `loaderTest` 任务。
+- **验证**：`gradlew loaderTest` 2 例通过；`gradlew build` 通过（746 单测 + 2 loaderTest +
+  6 GameTest）。变异验证：
+  - `ChatScreenMixin` 的 `@Inject(method = "init")` 改为不存在的方法后，只有 `ChatScreen`
+    目标失败并展开 `InvalidInjectionException: could not find any targets matching ...`，
+    其余 99 个目标正常加载，证明是逐个目标真实校验而非整批跳过；
+  - 从 `fabric.mod.json` 移除主 mixin 配置后，哨兵断言失败（「主 mixin 配置没有被 Fabric
+    Loader 应用」），不会空转通过。
+- **回归条件**：若删除或绕过该测试、把注解读取改回 `RuntimeVisibleAnnotations`
+  （会全部报「没有类注解」）、更换哨兵目标或字段、或 `check` 不再依赖 `loaderTest`，重开本条；
+  把 `require = 0` 改为 `require >= 1` 时该注入点自动进入覆盖范围，需确认构建通过并同步
+  更新 [`docs/mixin-probes.md`](mixin-probes.md) 的统计。
+
 ## 与既有清单的关系
 
 | 文件 | 范围 |
 | --- | --- |
 | `docs/release-pipeline.md`「已知但决定不改的点」 | CI/发布流水线（L1–L4、H1–H2） |
-| `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖 |
+| `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖；T8 的 `require = 0` 豁免以该文档的探针清单为准 |
 | `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T5/T6 复用其 §三/§四 的采集步骤与线程名口径，不新增独立清单；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
-| 本文件 | 测试覆盖与性能取舍类技术债（现行 T3–T7；T1/T2 已闭环归档）；不搬运上述条目，避免两处维护漂移 |
+| 本文件 | 测试覆盖与性能取舍类技术债（现行 T3–T8；T1/T2 已闭环归档）；不搬运上述条目，避免两处维护漂移 |
