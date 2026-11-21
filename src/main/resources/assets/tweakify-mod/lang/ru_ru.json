@@ -1238,7 +1238,7 @@
   "tweakify-mod.config.general.comment.statusEffectDurationAlwaysSeconds": "Всегда показывать секунды (например, 125) вместо м:сс и сокращений ч/д; длинные значения уменьшаются, чтобы поместиться.",
   "tweakify-mod.config.general.name.statusEffectDurationScale": "Размер отображения эффектов",
   "tweakify-mod.config.general.prettyName.statusEffectDurationScale": "Размер отображения эффектов",
-  "tweakify-mod.config.general.comment.statusEffectDurationScale": "Общий масштаб значков эффектов и текста времени в процентах (50%–200%, 100% = как в оригинале).",
+  "tweakify-mod.config.general.comment.statusEffectDurationScale": "Общий масштаб значков эффектов и текста времени в процентах (50%%%%–200%%%%, 100%%%% = как в оригинале).",
   "tweakify-mod.config.general.name.statusEffectDurationLowThreshold": "Порог малого времени",
   "tweakify-mod.config.general.prettyName.statusEffectDurationLowThreshold": "Порог малого времени",
   "tweakify-mod.config.general.comment.statusEffectDurationLowThreshold": "Показывать время только если осталось не больше указанного числа секунд (0–600, 0 = без фильтра) — удобно следить за скорым окончанием эффектов.",

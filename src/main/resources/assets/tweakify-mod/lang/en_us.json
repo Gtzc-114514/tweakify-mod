@@ -882,7 +882,7 @@
   "tweakify-mod.config.general.comment.statusEffectDurationAlwaysSeconds": "Always use seconds (for example 125) instead of m:ss and h/d abbreviations; long values shrink to fit the icon.",
   "tweakify-mod.config.general.name.statusEffectDurationScale": "Effect Display Size",
   "tweakify-mod.config.general.prettyName.statusEffectDurationScale": "Effect Display Size",
-  "tweakify-mod.config.general.comment.statusEffectDurationScale": "Overall scale of the status effect icons and timer text in percent (50%–200%, 100% = vanilla size).",
+  "tweakify-mod.config.general.comment.statusEffectDurationScale": "Overall scale of the status effect icons and timer text in percent (50%%%%–200%%%%, 100%%%% = vanilla size).",
   "tweakify-mod.config.general.name.statusEffectDurationLowThreshold": "Low Threshold",
   "tweakify-mod.config.general.prettyName.statusEffectDurationLowThreshold": "Low Threshold",
   "tweakify-mod.config.general.comment.statusEffectDurationLowThreshold": "Only shows timers when the remaining time is at most this many seconds (0 to 600, 0 = no filter), useful to focus on effects about to expire.",

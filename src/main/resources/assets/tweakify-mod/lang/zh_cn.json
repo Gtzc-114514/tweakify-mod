@@ -882,7 +882,7 @@
   "tweakify-mod.config.general.comment.statusEffectDurationAlwaysSeconds": "始终使用秒数（如 125），不使用分:秒与小时/天缩写；长时间效果会缩小字号避免溢出。",
   "tweakify-mod.config.general.name.statusEffectDurationScale": "效果显示大小",
   "tweakify-mod.config.general.prettyName.statusEffectDurationScale": "效果显示大小",
-  "tweakify-mod.config.general.comment.statusEffectDurationScale": "右上角药水效果图标与时间文字的整体缩放百分比（50% ~ 200%，100% = 原版大小）。",
+  "tweakify-mod.config.general.comment.statusEffectDurationScale": "右上角药水效果图标与时间文字的整体缩放百分比（50%%%% ~ 200%%%%，100%%%% = 原版大小）。",
   "tweakify-mod.config.general.name.statusEffectDurationLowThreshold": "低时长阈值",
   "tweakify-mod.config.general.prettyName.statusEffectDurationLowThreshold": "低时长阈值",
   "tweakify-mod.config.general.comment.statusEffectDurationLowThreshold": "只在剩余时间不高于该秒数时显示时间（0 ~ 600，0 = 不过滤），便于只关注即将结束的效果。",
