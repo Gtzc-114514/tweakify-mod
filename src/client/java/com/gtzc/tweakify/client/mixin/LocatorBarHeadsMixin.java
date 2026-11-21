@@ -29,12 +29,12 @@ public class LocatorBarHeadsMixin {
 	@Unique
 	private static final AtomicBoolean TWEAKIFY$LOCATOR_HEADS_PROBE = new AtomicBoolean();
 
-	// 参考实现用 method = "*" + 7 参 blitSprite 定位圆点：该类里只有这一处 7 参调用（箭头是 6 参）。
+	// 参考实现用 method = "*" + 6 参 blitSprite 定位圆点：该类里只有这一处 6 参调用（箭头带 depth 参数）。
 	@WrapOperation(method = "*", require = 0, at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blitSprite"
-			+ "(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIIII)V"))
+			+ "(Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIII)V"))
 	private void tweakify$replaceDotWithHead(GuiGraphicsExtractor graphics, RenderPipeline pipeline, Identifier sprite,
-											  int x, int y, int width, int height, int depth,
+											  int x, int y, int width, int height,
 											  Operation<Void> original,
 											  @Local(argsOnly = true) Entity entity,
 											  @Local(argsOnly = true) Level level,
@@ -43,7 +43,7 @@ public class LocatorBarHeadsMixin {
 		LocatorBarHeads.DotResult result = LocatorBarHeads.renderDot(graphics, Minecraft.getInstance(),
 			entity, level, waypoint, x, y, width, height);
 		if (result == LocatorBarHeads.DotResult.VANILLA) {
-			original.call(graphics, pipeline, sprite, x, y, width, height, depth);
+			original.call(graphics, pipeline, sprite, x, y, width, height);
 		}
 	}
 }
