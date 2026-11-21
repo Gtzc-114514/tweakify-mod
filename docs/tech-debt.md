@@ -24,7 +24,7 @@
 | --- | --- | --- | --- |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 复测未达触发条件（2026-11-21，降负后中位 1.98%，见详情） |
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（真实 Loader 集成 + 源码契约，见详情） |
-| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已触发（调试层整层渲染 4.21%、缓存子项 0.41%；2026-11-21 首轮采样，见详情） |
+| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解（2026-11-21 降负后调试层中位 1.40%，缓存类 < 0.5%；药水 HUD 另有 1.14% 绘制成本，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（渲染线程几何构建 0 样本、worker 空闲；峰值与写盘未覆盖，见详情）（最近复评 2026-11-21，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
 | T8 | `AllMixinApplicationLoaderTest` | 主配置 145 个 mixin 的 100 个去重目标类在真实 Loader 中全部加载；`require = 0` 的 73 个探针点按设计豁免 | 已修复（真实 Loader 全量织入，见详情） |
@@ -71,6 +71,7 @@
 > 2026-11-21 T3/T5/T6 实机采样（JFR，未装 Spark）：T5 调试层整层渲染 4.21%、T6 渲染线程无几何构建。
 > T3 降负（4 Hz / 半径 24）后 C 场景 3 轮中位 1.98%（降负前 5.22%），低于 2% 触发观察线，
 > 状态改为「复测未达触发条件」；B/E 场景仍未采集。
+> T5 调试层降负后 D 场景中位 1.40%（降负前 4.21%）；药水 HUD 另有 1.14%，属绘制成本。
 > 数据见 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) §六。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
@@ -294,8 +295,16 @@
   定位栏 0%（单人无航点）、药水计时 0 样本、tooltip 与连接轮廓 0（未触发条件）。
   按判定口径「含子调用合计 > 2%」，调试层满足触发条件；但成本主要在每帧绘制而非重复计算，
   缓存已把重复计算压到 0.41%，后续应按「降低刷新频率/行数」处理，不要继续加缓存。
-- **待办**：补做剩余 4 项（定位栏/药水计时/tooltip/连接轮廓）的触发场景采样；调试层按「降低刷新频率/行数」评估，
-  剩余项未达 2% 前不继续加缓存。
+- **降负实施（2026-11-21）**：按方案 A+B 降低调试层绘制成本：缓存每行的
+  `FormattedCharSequence`（渲染帧不再每帧做 6 次字符串→字形序列化），
+  并把维度/方块/实体 ID 缩短为路径部分（glyph 数约减 30%）；746 单测与全量 build 通过。
+- **降负后复测（2026-11-21）**：D 场景（debugInfoOverlay + 药水 HUD 开启）3 轮：
+  `DebugInfoOverlay.render` 1.40% / 0.24% / 2.96%，**中位 1.40%**（降负前 4.21%，下降约 67%）；
+  `buildLines` 0.21%–0.26%；同场景 `StatusEffectTimerRenderer.render` 中位 1.14%。
+  两项合计中位 2.54%，仍略高于 2%，但剩余均为功能绘制（文本/图标），
+  缓存类重复计算已全部 < 0.5%；进一步降负需要减少版式元素，属于功能取舍。
+- **待办**：若要求合计 < 2%，需评估药水 HUD 的显示元素（图标/时间文本）取舍；
+  定位栏/tooltip/连接轮廓需在对应场景单独采样。
 - **验证方式**：`LocatorBarHeadsTest` 已覆盖名单缓存复用/内容变化失效、宽度缓存字体变化失效与
   淘汰后取值正确；`StatusEffectTimerRendererTest` 已覆盖缓存键失效、tick 构建与无缓存
   `placementFor` 等价、无尽效果占位、阈值/隐藏图标过滤、演示偏移与按秒格式化；
