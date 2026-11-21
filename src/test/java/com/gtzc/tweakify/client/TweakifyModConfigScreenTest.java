@@ -328,7 +328,8 @@ class TweakifyModConfigScreenTest {
 		for (String name : new String[] {
 			"sweepingViewWireframe", "sweepingViewWireframeColor", "sweepingViewFace",
 			"sweepingViewFaceSolid", "sweepingViewFaceColor", "sweepingViewSphere",
-			"sweepingViewSphereColor", "sweepingViewVehicles"
+			"sweepingViewSphereColor", "sweepingViewVehicles", "betterScreenshot",
+			"betterScreenshotF9", "betterScreenshotFormat"
 		}) {
 			assertTab(name, TweakifyModConfigScreen.ConfigTab.DISPLAY);
 		}
