@@ -1238,7 +1238,7 @@
   "tweakify-mod.config.general.comment.statusEffectDurationAlwaysSeconds": "Toujours afficher les secondes (par exemple 125) au lieu de m:ss et des abréviations h/j ; les valeurs longues sont réduites pour tenir dans l'icône.",
   "tweakify-mod.config.general.name.statusEffectDurationScale": "Taille de l'affichage",
   "tweakify-mod.config.general.prettyName.statusEffectDurationScale": "Taille de l'affichage",
-  "tweakify-mod.config.general.comment.statusEffectDurationScale": "Échelle globale des icônes d'effet et du texte du temps en pourcentage (50–200, 100 = taille d'origine).",
+  "tweakify-mod.config.general.comment.statusEffectDurationScale": "Échelle globale des icônes d'effet et du texte du temps en pourcentage (50%–200%, 100% = taille d'origine).",
   "tweakify-mod.config.general.name.statusEffectDurationLowThreshold": "Seuil de temps restant",
   "tweakify-mod.config.general.prettyName.statusEffectDurationLowThreshold": "Seuil de temps restant",
   "tweakify-mod.config.general.comment.statusEffectDurationLowThreshold": "N'affiche le temps que si le temps restant est inférieur ou égal à ce nombre de secondes (0 à 600, 0 = aucun filtre), pour se concentrer sur les effets qui vont expirer.",
