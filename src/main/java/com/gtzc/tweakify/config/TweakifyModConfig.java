@@ -571,6 +571,8 @@ public class TweakifyModConfig {
 	public static final String CONFIG_TAB_ALL = "all";
 	public static final String CONFIG_TAB_GENERAL = "general";
 	public static final String CONFIG_TAB_FUNCTIONS = "functions";
+	// 显示标签位于“功能”右侧：世界内可视化与渲染叠加层。
+	public static final String CONFIG_TAB_DISPLAY = "display";
 	public static final String CONFIG_TAB_MODIFIED = "modified";
 	public static final String CONFIG_TAB_FIX = "fix";
 	public static final String CONFIG_TAB_OPTIMIZATION = "optimization";
@@ -578,8 +580,9 @@ public class TweakifyModConfig {
 	// 收藏标签位于“测试”右侧：只显示已被收藏的配置项。
 	public static final String CONFIG_TAB_FAVORITES = "favorites";
 	public static final List<String> SUPPORTED_CONFIG_TABS = List.of(
-		CONFIG_TAB_ALL, CONFIG_TAB_GENERAL, CONFIG_TAB_FUNCTIONS, CONFIG_TAB_MODIFIED,
-		CONFIG_TAB_FIX, CONFIG_TAB_OPTIMIZATION, CONFIG_TAB_TESTING, CONFIG_TAB_FAVORITES);
+		CONFIG_TAB_ALL, CONFIG_TAB_GENERAL, CONFIG_TAB_FUNCTIONS, CONFIG_TAB_DISPLAY,
+		CONFIG_TAB_MODIFIED, CONFIG_TAB_FIX, CONFIG_TAB_OPTIMIZATION, CONFIG_TAB_TESTING,
+		CONFIG_TAB_FAVORITES);
 
 	// 收藏星样式：自绘星形 / 原版下界之星。
 	public static final String FAVORITE_STAR_STYLE_STAR = "star";

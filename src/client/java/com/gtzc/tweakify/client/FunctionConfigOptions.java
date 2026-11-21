@@ -556,8 +556,44 @@ public final class FunctionConfigOptions {
 	public static final ConfigStringList HIGHLIGHT_PRESET_2_ENTITIES = new EntityIdConfigStringList(
 		"highlightPreset2Entities", ImmutableList.of()).apply(ConfigOptionKeys.HIGHLIGHT_KEY);
 
+	// 爆炸范围与横扫范围：复用攻击范围的显示/渲染模式，颜色固定红色。
+	public static final ConfigBooleanHotkeyed EXPLOSION_RANGE_DISPLAY = new ConfigBooleanHotkeyed(
+		"explosionRangeDisplay", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBooleanHotkeyed SWEEPING_VIEW = new ConfigBooleanHotkeyed(
+		"sweepingView", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// sweeping-view 子设置：目标框线框 / 面框 / 球体与各自颜色。
+	public static final ConfigBoolean SWEEPING_VIEW_WIREFRAME = new ConfigBoolean(
+		"sweepingViewWireframe", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigOptionList SWEEPING_VIEW_WIREFRAME_COLOR = new ConfigOptionList(
+		"sweepingViewWireframeColor", AttackRangePalette.RED).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean SWEEPING_VIEW_FACE = new ConfigBoolean(
+		"sweepingViewFace", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean SWEEPING_VIEW_FACE_SOLID = new ConfigBoolean(
+		"sweepingViewFaceSolid", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigOptionList SWEEPING_VIEW_FACE_COLOR = new ConfigOptionList(
+		"sweepingViewFaceColor", AttackRangePalette.RED).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean SWEEPING_VIEW_SPHERE = new ConfigBoolean(
+		"sweepingViewSphere", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigOptionList SWEEPING_VIEW_SPHERE_COLOR = new ConfigOptionList(
+		"sweepingViewSphereColor", AttackRangePalette.RED).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean SWEEPING_VIEW_VEHICLES = new ConfigBoolean(
+		"sweepingViewVehicles", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigStringList HIGHLIGHT_PRESET_3_ENTITIES = new EntityIdConfigStringList(
 		"highlightPreset3Entities", ImmutableList.of()).apply(ConfigOptionKeys.HIGHLIGHT_KEY);
+
+	// 附魔台附魔信息：悬停附魔选项时显示实际将获得的附魔。
+	public static final ConfigBooleanHotkeyed ENCHANTING_TABLE_INFO = new ConfigBooleanHotkeyed(
+		"enchantingTableInfo", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigStringList NETHER_PORTAL_TELEPORT_BLACKLIST = new EntityIdConfigStringList(
 		"netherPortalTeleportBlacklist", ImmutableList.of()).apply(ConfigOptionKeys.LISTS_KEY);

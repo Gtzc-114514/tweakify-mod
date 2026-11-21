@@ -14,6 +14,8 @@ public enum ConfigGuiTab implements CodeOptionEntry {
 		TweakifyModConfigScreen.ConfigTab.GENERAL),
 	FUNCTIONS(TweakifyModConfig.CONFIG_TAB_FUNCTIONS, "tweakify-mod.gui.tab.functions",
 		TweakifyModConfigScreen.ConfigTab.FUNCTIONS),
+	DISPLAY(TweakifyModConfig.CONFIG_TAB_DISPLAY, "tweakify-mod.gui.tab.display",
+		TweakifyModConfigScreen.ConfigTab.DISPLAY),
 	MODIFIED(TweakifyModConfig.CONFIG_TAB_MODIFIED, "tweakify-mod.gui.tab.modified",
 		TweakifyModConfigScreen.ConfigTab.MODIFIED),
 	FIXING(TweakifyModConfig.CONFIG_TAB_FIX, "tweakify-mod.gui.tab.fix",

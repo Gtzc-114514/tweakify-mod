@@ -144,26 +144,7 @@ final class FunctionCatalogEntries {
 
 	// 原表中的第 7 段连续条目。
 	static void addPart7(List<Entry> entries) {
-		// 实体高亮（prettyName 使用 highlight 前缀）
-		entries.add(function("entityHighlight", true));
-		entries.add(child("entityHighlight", "entityHighlightStyle"));
-		entries.add(child("entityHighlight", "entityHighlightBlinkPeriod"));
-		entries.add(child("entityHighlight", "entityHighlightColor"));
-		entries.add(child("entityHighlight", "highlightPreset1", true));
-		entries.add(child("highlightPreset1", "highlightPreset1Entities"));
-		entries.add(child("entityHighlight", "highlightPreset2", true));
-		entries.add(child("highlightPreset2", "highlightPreset2Entities"));
-		entries.add(child("entityHighlight", "highlightPreset3", true));
-		entries.add(child("highlightPreset3", "highlightPreset3Entities"));
-		// 渲染
-		entries.add(function("highlightSingleLayerBedrock", true));
-		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockMaxMarkers"));
-		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockScanRadius"));
-		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockColor"));
-		entries.add(function("barrierVisibility", true));
-		entries.add(child("barrierVisibility", "barrierVisibilityMaxMarkers"));
-		entries.add(child("barrierVisibility", "barrierVisibilityScanRadius"));
-		entries.add(child("barrierVisibility", "barrierVisibilityParticleInterval"));
+		// 渲染与 HUD（世界内可视化项已迁移到显示标签）
 		entries.add(function("durabilityOverlay", true));
 		entries.add(child("durabilityOverlay", "durabilityDisplayMode"));
 		entries.add(child("durabilityOverlay", "durabilityOverlayColorMode"));
@@ -201,16 +182,6 @@ final class FunctionCatalogEntries {
 		entries.add(child("chatTextSelection", "chatSelectionColor"));
 		entries.add(child("chatTextSelection", "chatSelectionOpacity"));
 		entries.add(child("chatTextSelection", "chatSelectionAutoCopy"));
-		entries.add(function("attackRangeDisplay", true));
-		entries.add(child("attackRangeDisplay", "attackRangeDisplayMode"));
-		entries.add(child("attackRangeDisplay", "attackRangeRenderMode"));
-		entries.add(child("attackRangeDisplay", "attackRangePalette"));
-		entries.add(child("attackRangeDisplay", "attackRangeIncludeSelf", true));
-		entries.add(child("attackRangeDisplay", "attackRangeHostileOnly"));
-		entries.add(child("attackRangeDisplay", "attackRangeIncludeInvisible"));
-		entries.add(child("attackRangeDisplay", "attackRangeMaxDistance"));
-		entries.add(child("attackRangeDisplay", "attackRangeMaxTargets"));
-		entries.add(child("attackRangeDisplay", "attackRangeEntities"));
 		// 存档游玩时长（功能标签，子项为显示格式）
 		entries.add(function("savePlayTime", true));
 		entries.add(child("savePlayTime", "savePlayTimeFormat"));
@@ -218,11 +189,6 @@ final class FunctionCatalogEntries {
 
 	// 原表中的第 10 段连续条目。
 	static void addPart10(List<Entry> entries) {
-		entries.add(function("customBlockOutline", true));
-		entries.add(child("customBlockOutline", TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD));
-		entries.add(child("customBlockOutline", "blockOutlineAnimationSpeed"));
-		entries.add(child("customBlockOutline", "blockOutlinePalette"));
-		entries.add(child("customBlockOutline", "blockOutlineColorMode"));
 		entries.add(function("betterBlockPlacement", true));
 		entries.add(child("betterBlockPlacement", "betterBlockPlacementSneakBypass"));
 		entries.add(child("betterBlockPlacement", "betterBlockPlacementMode"));
@@ -230,5 +196,7 @@ final class FunctionCatalogEntries {
 		entries.add(function("betterBoneMeal", true));
 		entries.add(child("betterBoneMeal", "boneMealSugarCane"));
 		entries.add(child("betterBoneMeal", "boneMealFlowers"));
+		// 附魔台附魔信息：悬停附魔选项显示实际附魔。
+		entries.add(function("enchantingTableInfo", true));
 	}
 }

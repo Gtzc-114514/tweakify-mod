@@ -33,6 +33,9 @@ public final class FunctionConfig extends ConfigSection {
 				this::sanitizeAttackRangeLimits),
 			FieldSanitizer.of("attackRangeRenderMode", this::sanitizeAttackRangeRenderMode),
 			FieldSanitizer.of("attackRangePalette", this::sanitizeAttackRangePalette),
+			FieldSanitizer.of("sweepingViewWireframeColor", this::sanitizeSweepingViewWireframeColor),
+			FieldSanitizer.of("sweepingViewFaceColor", this::sanitizeSweepingViewFaceColor),
+			FieldSanitizer.of("sweepingViewSphereColor", this::sanitizeSweepingViewSphereColor),
 			FieldSanitizer.of("savePlayTimeFormat", this::sanitizeSavePlayTimeFormat),
 			FieldSanitizer.of("highlightSingleLayerBedrockMaxMarkers", this::sanitizeBedrockMarkerLimit),
 			FieldSanitizer.of("highlightSingleLayerBedrockScanRadius", this::sanitizeBedrockScanRadius),
@@ -303,6 +306,24 @@ public final class FunctionConfig extends ConfigSection {
 	// 攻击范围颜色调色板：只决定 RGB，透明度沿用各模式的固定档位。
 	public volatile String attackRangePalette = TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE;
 
+	// 爆炸范围可视化：用红色标记即将爆炸的 TNT、TNT 矿车、苦力怕与末地水晶。
+	public volatile boolean explosionRangeDisplay = false;
+
+	// 横扫范围可视化：参考 sweeping-view，目标扩展框 + 三格球体攻击范围。
+	public volatile boolean sweepingView = false;
+
+	// sweeping-view 子开关：目标框线框 / 面框 / 球体，以及各自的颜色。
+	public volatile boolean sweepingViewWireframe = true;
+	public volatile String sweepingViewWireframeColor = TweakifyModConfig.ATTACK_RANGE_PALETTE_RED;
+	public volatile boolean sweepingViewFace = true;
+	// 默认使用网格线；开启后改为原版 OIT 实心四边形（Vulkan 下可能不可见）。
+	public volatile boolean sweepingViewFaceSolid = false;
+	public volatile String sweepingViewFaceColor = TweakifyModConfig.ATTACK_RANGE_PALETTE_RED;
+	public volatile boolean sweepingViewSphere = true;
+	public volatile String sweepingViewSphereColor = TweakifyModConfig.ATTACK_RANGE_PALETTE_RED;
+	// 横扫目标是否包含船与矿车；关闭后仅对生物/玩家生效。
+	public volatile boolean sweepingViewVehicles = true;
+
 	// 存档列表显示游玩时长（参考 WorldPlayTime）：累加 stats 中每个玩家的 play_time。
 	public volatile boolean savePlayTime = false;
 
@@ -428,6 +449,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 右上角药水效果显示（图标与时间文字）的整体缩放百分比（50 ~ 200）。
 	public volatile int statusEffectDurationScale = TweakifyModConfig.DEFAULT_STATUS_EFFECT_SCALE;
 
+	// 附魔台附魔信息：悬停三个附魔选项时显示该档位将获得的附魔名称与等级。
+	public volatile boolean enchantingTableInfo = false;
+
 	// 各功能根开关的切换快捷键，默认无快捷键（空字符串）。
 	// 功能标签只给根功能提供快捷键，子设置不占快捷键栏。
 	public volatile String hotkeyMiningCooldown = "";
@@ -439,6 +463,8 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile String hotkeyDurabilityOverlay = "";
 	public volatile String hotkeyElytraFireworkCooldown = "";
 	public volatile String hotkeyAttackRangeDisplay = "";
+	public volatile String hotkeyExplosionRangeDisplay = "";
+	public volatile String hotkeySweepingView = "";
 	public volatile String hotkeySavePlayTime = "";
 	public volatile String hotkeyDisableDimensionTeleport = "";
 	public volatile String hotkeyChatTextSelection = "";
@@ -457,6 +483,7 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile String hotkeyPiglinGoldArmorSwap = "";
 	public volatile String hotkeyChatInputMemory = "";
 	public volatile String hotkeyStatusEffectDurationDisplay = "";
+	public volatile String hotkeyEnchantingTableInfo = "";
 	public volatile String hotkeyNetherPortalTeleportDelay = "";
 	public volatile String hotkeyDisableSpecifiedMobSpawn = "";
 	public volatile String hotkeyPeacefulModeMonsters = "";
@@ -659,6 +686,32 @@ public final class FunctionConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported attack range palette: {}", attackRangePalette);
 		attackRangePalette = TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE;
+		return true;
+	}
+
+	// 横扫子颜色：与攻击范围共用调色板，未知值回退到红色。
+	private boolean sanitizeSweepingViewWireframeColor() {
+		return sanitizeSweepingColor("sweepingViewWireframeColor", sweepingViewWireframeColor,
+			value -> sweepingViewWireframeColor = value);
+	}
+
+	private boolean sanitizeSweepingViewFaceColor() {
+		return sanitizeSweepingColor("sweepingViewFaceColor", sweepingViewFaceColor,
+			value -> sweepingViewFaceColor = value);
+	}
+
+	private boolean sanitizeSweepingViewSphereColor() {
+		return sanitizeSweepingColor("sweepingViewSphereColor", sweepingViewSphereColor,
+			value -> sweepingViewSphereColor = value);
+	}
+
+	private static boolean sanitizeSweepingColor(String field, String current,
+											 java.util.function.Consumer<String> setter) {
+		if (TweakifyModConfig.isSupportedValue(TweakifyModConfig.SUPPORTED_ATTACK_RANGE_PALETTES, current)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported {}: {}", field, current);
+		setter.accept(TweakifyModConfig.ATTACK_RANGE_PALETTE_RED);
 		return true;
 	}
 

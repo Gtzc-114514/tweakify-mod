@@ -21,6 +21,8 @@ public final class ConfigCatalog {
 	// 界面分类：未登记分类（含继承结果为 null）的配置项归入“通用”。
 	public enum Tab {
 		FUNCTION,
+		/** 世界内可视化（攻击范围、屏障、基岩、爆炸/横扫范围等）。 */
+		DISPLAY,
 		MODIFIED,
 		/** 修复类问题（草径卡船等）。 */
 		FIX,
@@ -79,6 +81,8 @@ public final class ConfigCatalog {
 		FunctionCatalogEntries.addPart9(entries);
 		ModifiedCatalogEntries.addPart10(entries);
 		FunctionCatalogEntries.addPart10(entries);
+		// 世界内可视化统一归入显示标签（顺序即该标签的界面顺序）。
+		DisplayCatalogEntries.addPart1(entries);
 		ModifiedCatalogEntries.addPart11(entries);
 		GeneralCatalogEntries.addPart2(entries);
 		TestingCatalogEntries.addPart1(entries);
@@ -103,6 +107,11 @@ public final class ConfigCatalog {
 	// 通用标签的根节点（可带命令）。
 	static Entry general(String name, boolean command) {
 		return new Entry(name, null, null, command);
+	}
+
+	// 显示标签的根节点（可带命令）。
+	static Entry display(String name, boolean command) {
+		return new Entry(name, null, Tab.DISPLAY, command);
 	}
 
 	static Entry modified(String name) {

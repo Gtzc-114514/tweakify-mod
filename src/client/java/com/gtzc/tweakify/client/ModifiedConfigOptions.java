@@ -376,4 +376,16 @@ public final class ModifiedConfigOptions {
 
 	public static final ConfigBoolean FARMLAND_TRAMPLING_PLAYER_ONLY = new ConfigBoolean(
 		"farmlandTramplingPlayerOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 盔甲架手臂：所有盔甲架默认显示手臂。
+	public static final ConfigBoolean ARMOR_STAND_ARMS = new ConfigBoolean(
+		"armorStandArms", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 隐藏物品展示框：装有物品时只渲染物品，不渲染外框。
+	public static final ConfigBoolean HIDE_ITEM_FRAMES = new ConfigBoolean(
+		"hideItemFrames", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 取消速度上限：关闭服务端的 moved too quickly 速度检查。
+	public static final ConfigBoolean REMOVE_SPEED_LIMIT = new ConfigBoolean(
+		"removeSpeedLimit", false).apply(ConfigOptionKeys.GENERAL_KEY);
 }

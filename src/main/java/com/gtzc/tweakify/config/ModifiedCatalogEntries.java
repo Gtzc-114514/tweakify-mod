@@ -167,5 +167,11 @@ final class ModifiedCatalogEntries {
 		entries.add(child("keepMiningProgressOnItemSwitch", "keepMiningProgressMaxDistance"));
 		entries.add(modified("disableFarmlandTrampling", true));
 		entries.add(child("disableFarmlandTrampling", "farmlandTramplingPlayerOnly"));
+		// 盔甲架默认显示手臂。
+		entries.add(modified("armorStandArms"));
+		// 装有物品的展示框只渲染物品，不渲染外框。
+		entries.add(modified("hideItemFrames"));
+		// 取消服务端 moved too quickly 速度上限。
+		entries.add(modified("removeSpeedLimit", true));
 	}
 }

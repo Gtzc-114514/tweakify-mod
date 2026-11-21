@@ -320,6 +320,15 @@ public final class ModifiedConfig extends ConfigSection {
 	// 「禁用屏幕覆盖层」的切换快捷键。
 	public volatile String hotkeyDisableOverlayEffects = "";
 
+	// 盔甲架手臂：所有盔甲架默认显示手臂；单人/局域网下可直接把物品放上双手。
+	public volatile boolean armorStandArms = false;
+
+	// 隐藏物品展示框：展示框内装有物品时只渲染物品，不再渲染外框；空展示框保持原样。
+	public volatile boolean hideItemFrames = false;
+
+	// 取消速度上限：关闭服务端的 moved too quickly 速度检查；仅在单人/局域网主机生效。
+	public volatile boolean removeSpeedLimit = false;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);
