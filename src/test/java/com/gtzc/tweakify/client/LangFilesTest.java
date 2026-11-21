@@ -19,9 +19,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -98,6 +100,23 @@ class LangFilesTest {
 					assertTrue(keys.contains(key), "missing " + key + " in " + code);
 				}
 			}
+		}
+	}
+
+	// MaLiLib 的注释渲染会连续执行两次 String.format；百分号必须写成 %%%%,
+	// 否则 tooltip 会显示 Format Error。这里直接模拟两层格式化。
+	@Test
+	void statusEffectScaleCommentSurvivesDoubleFormatting() throws IOException {
+		String key = "tweakify-mod.config.general.comment.statusEffectDurationScale";
+		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
+			String raw = valuesOf(code).get(key);
+			assertNotNull(raw, code + " is missing " + key);
+			String rendered = assertDoesNotThrow(() ->
+				String.format(Locale.ROOT, String.format(Locale.ROOT, raw)),
+				code + " comment must survive two String.format passes");
+			assertFalse(rendered.contains("Format Error"), code + " comment was formatted twice");
+			assertTrue(rendered.contains("50%"), code + " comment must show 50% after formatting");
+			assertTrue(rendered.contains("200%"), code + " comment must show 200% after formatting");
 		}
 	}
 
