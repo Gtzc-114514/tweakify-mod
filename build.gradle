@@ -110,13 +110,13 @@ dependencies {
 }
 
 configurations {
-	// 复用普通 test 的 JUnit 5.13.4 约束，避免 Fabric Loader JUnit 传递的旧版 launcher 触发额外下载。
+	// 与普通 test 的 JUnit 6.1.3 对齐，避免 Fabric Loader JUnit 传递的旧版 launcher 触发额外下载或版本错配。
 	loaderTestImplementation.extendsFrom testImplementation
 	loaderTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 dependencies {
-	loaderTestRuntimeOnly "org.junit.platform:junit-platform-launcher:1.13.4"
+	loaderTestRuntimeOnly "org.junit.platform:junit-platform-launcher:6.1.3"
 }
 
 tasks.register("loaderTest", Test) {
