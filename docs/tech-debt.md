@@ -24,7 +24,7 @@
 | --- | --- | --- | --- |
 | T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 复测未达触发条件（2026-11-21，降负后中位 1.98%，见详情） |
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（真实 Loader 集成 + 源码契约，见详情） |
-| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解（2026-11-21 降负后调试层中位 1.40%，缓存类 < 0.5%；药水 HUD 另有 1.14% 绘制成本，见详情） |
+| T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解（调试层 1.40%、连接轮廓 0.36%、描述缓存 0.49%；tooltip 整体 2.54% 为原版构建，定位栏待多人采样，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（渲染线程几何构建 0 样本、worker 空闲；峰值与写盘未覆盖，见详情）（最近复评 2026-11-21，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
 | T8 | `AllMixinApplicationLoaderTest` | 主配置 145 个 mixin 的 100 个去重目标类在真实 Loader 中全部加载；`require = 0` 的 73 个探针点按设计豁免 | 已修复（真实 Loader 全量织入，见详情） |
@@ -303,8 +303,17 @@
   `buildLines` 0.21%–0.26%；同场景 `StatusEffectTimerRenderer.render` 中位 1.14%。
   两项合计中位 2.54%，仍略高于 2%，但剩余均为功能绘制（文本/图标），
   缓存类重复计算已全部 < 0.5%；进一步降负需要减少版式元素，属于功能取舍。
-- **待办**：若要求合计 < 2%，需评估药水 HUD 的显示元素（图标/时间文本）取舍；
-  定位栏/tooltip/连接轮廓需在对应场景单独采样。
+- **其余三项场景采样（2026-11-21）**：
+  - tooltip：生存背包悬停附魔剑（锋利 V + 耐久 III），3 轮 `ItemStack.getTooltipLines`
+    2.54% / 2.89% / 0.00%（第三轮 tooltip 丢失，作废），有效两轮中位 **2.54%**；
+    其中模组描述缓存 `EnchantmentTooltipDescriptions` 0.49%，剩余为原版 tooltip 构建；
+  - 连接轮廓：准星对准双格门（`Target: oak_door`），3 轮
+    `ConnectedBlockOutlineState.mergedShape` 0.36% / 0.47% / 0.00%（第三轮窗口被遮挡），
+    中位 **0.36%**；
+  - 定位栏：单人世界无其他玩家航点，磁化指南针 + 磁石也未在 locator bar 产生航点，
+    `LocatorBarHeads.renderDot` 未触发；需要多人/局域网环境，本次未采集。
+- **待办**：定位栏需在双客户端或局域网环境补采；若要求 tooltip 合计 < 2%，
+  需要接管原版 tooltip 构建（兼容性风险高），建议维持现状。
 - **验证方式**：`LocatorBarHeadsTest` 已覆盖名单缓存复用/内容变化失效、宽度缓存字体变化失效与
   淘汰后取值正确；`StatusEffectTimerRendererTest` 已覆盖缓存键失效、tick 构建与无缓存
   `placementFor` 等价、无尽效果占位、阈值/隐藏图标过滤、演示偏移与按秒格式化；
