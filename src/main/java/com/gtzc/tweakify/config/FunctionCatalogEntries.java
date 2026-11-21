@@ -1,0 +1,234 @@
+package com.gtzc.tweakify.config;
+
+import java.util.List;
+
+import static com.gtzc.tweakify.config.ConfigCatalog.*;
+
+/**
+ * 「功能」标签的配置目录条目。
+ *
+ * <p>条目顺序即界面顺序：调用方 {@link ConfigCatalog#buildEntries()} 按原表顺序
+ * 逐段调用 addPartN。新增条目请追加到对应标签的最后一段，不要跨段搬动。
+ */
+final class FunctionCatalogEntries {
+	private FunctionCatalogEntries() {
+	}
+
+	// 原表中的第 1 段连续条目。
+	static void addPart1(List<Entry> entries) {
+		// 复制物体 ID
+		entries.add(function("copyItemId", true));
+		entries.add(child("copyItemId", "copyTargetId"));
+		entries.add(child("copyItemId", "copyItemIdFormat"));
+		entries.add(child("copyItemId", "copyItemIdNamespace"));
+		entries.add(child("copyItemId", "copyItemIdCloseContainer"));
+		entries.add(child("copyItemId", "copyItemIdChatMessage"));
+		// 交互冷却
+		entries.add(function("miningCooldown", true));
+		entries.add(child("miningCooldown", "miningCooldownAttacks"));
+		entries.add(function("useCooldown", true));
+		entries.add(child("useCooldown", "mainHandUseCooldown", true));
+		entries.add(child("mainHandUseCooldown", "mainHandUseCooldownItems"));
+		entries.add(child("useCooldown", "offhandUseCooldown", true));
+		entries.add(child("offhandUseCooldown", "offhandUseCooldownItems"));
+		entries.add(child("useCooldown", "blockOffhandFallback", true));
+		entries.add(child("blockOffhandFallback", "interceptBlockInteraction", true));
+		entries.add(child("blockOffhandFallback", "interceptEntityInteraction", true));
+		entries.add(child("blockOffhandFallback", "restrictedOffhandItems"));
+	}
+
+	// 原表中的第 2 段连续条目。
+	static void addPart2(List<Entry> entries) {
+		entries.add(function("disableFlightDrift", true));
+		entries.add(child("disableFlightDrift", "flightDriftVertical", true));
+		// 如履平地（功能标签，子项为跨步高度）
+		entries.add(function("autoStepUp", true));
+		entries.add(child("autoStepUp", "autoStepUpHeight"));
+		// 更好的攀爬（功能标签，子开关）
+		entries.add(function("betterClimbing", true));
+		entries.add(child("betterClimbing", "climbingFastDescend"));
+		entries.add(child("betterClimbing", "climbingFasterAscend"));
+		entries.add(child("betterClimbing", "climbingJumpFromGround"));
+		entries.add(child("betterClimbing", "climbingCancelCollision"));
+		// 主动爬行（功能标签，子项为按住键）
+		entries.add(function("forceCrawl", true));
+		entries.add(child("forceCrawl", "forceCrawlKey"));
+	}
+
+	// 原表中的第 3 段连续条目。
+	static void addPart3(List<Entry> entries) {
+		// 维度传送
+		entries.add(function("disableDimensionTeleport", true));
+		entries.add(child("disableDimensionTeleport", "dimensionTeleportPlayersOnly"));
+		entries.add(child("disableDimensionTeleport", "disableNetherPortalTeleport", true));
+		entries.add(child("disableNetherPortalTeleport", "netherPortalTeleportBlacklist"));
+		entries.add(child("disableDimensionTeleport", "disableEndPortalTeleport", true));
+		entries.add(child("disableEndPortalTeleport", "endPortalTeleportBlacklist"));
+		entries.add(child("disableDimensionTeleport", "disableEndGatewayTeleport", true));
+		entries.add(child("disableEndGatewayTeleport", "endGatewayTeleportBlacklist"));
+		// 地狱门传送延迟
+		entries.add(function("netherPortalTeleportDelay", true));
+		entries.add(child("netherPortalTeleportDelay", "netherPortalSurvivalInstantTeleport"));
+		entries.add(child("netherPortalTeleportDelay", "netherPortalCreativeDelayedTeleport"));
+	}
+
+	// 原表中的第 4 段连续条目。
+	static void addPart4(List<Entry> entries) {
+		// 剑穿草打生物（功能标签）
+		entries.add(function("swordCutThroughPlants", true));
+		entries.add(child("swordCutThroughPlants", "cutThroughItems"));
+		entries.add(child("swordCutThroughPlants", "cutThroughPlants"));
+		entries.add(child("swordCutThroughPlants", "cutThroughSneakBypass"));
+		// 中键获得液体桶（功能标签，子项为液体范围）
+		entries.add(function("pickFluidBucket", true));
+		entries.add(child("pickFluidBucket", "pickFluidBucketFluids"));
+		// 生存模式中键取物（功能标签，子项为液体分支）
+		entries.add(function("survivalPickBlock", true));
+		entries.add(child("survivalPickBlock", "survivalPickBlockIncludeFluids"));
+		// 防猪灵装备切换（功能标签）
+		entries.add(function("piglinGoldArmorSwap", true));
+		entries.add(child("piglinGoldArmorSwap", "piglinGoldArmorSwapMode"));
+		// 聊天框内容记忆（功能标签，子项为命令草稿放行）
+		entries.add(function("chatInputMemory", true));
+		entries.add(child("chatInputMemory", "chatInputMemoryIgnoreCommands"));
+		entries.add(function("disableShovelSnowFullBreak", true));
+		entries.add(child("disableShovelSnowFullBreak", "shovelSnowDropSnowball"));
+		entries.add(child("disableShovelSnowFullBreak", "shovelSnowConsumeDurability"));
+	}
+
+	// 原表中的第 5 段连续条目。
+	static void addPart5(List<Entry> entries) {
+		// 便捷焚烧（功能标签，子项为潜行确认）
+		entries.add(function("quickBurnItem", true));
+		entries.add(child("quickBurnItem", "quickBurnItemRequireSneak"));
+	}
+
+	// 原表中的第 6 段连续条目。
+	static void addPart6(List<Entry> entries) {
+		// 相机运动（功能标签，参考 CameraOverhaul：转向/横移/俯仰/晃动/震动/平滑）
+		entries.add(function("cameraMotion", true));
+		entries.add(child("cameraMotion", "cameraMotionIntensity"));
+		entries.add(child("cameraMotion", "cameraMotionTurningRoll"));
+		entries.add(child("cameraMotion", "cameraMotionStrafingRoll"));
+		entries.add(child("cameraMotion", "cameraMotionForwardPitch"));
+		entries.add(child("cameraMotion", "cameraMotionVerticalPitch"));
+		entries.add(child("cameraMotion", "cameraMotionIdleSway"));
+		entries.add(child("cameraMotion", "cameraMotionScreenShake"));
+		entries.add(child("cameraMotion", "cameraMotionMouseSmoothing"));
+		entries.add(child("cameraMotion", "cameraMotionFirstPerson"));
+		entries.add(child("cameraMotion", "cameraMotionThirdPerson"));
+		// 物品分组（功能标签，参考 inventory-item-groups 的基岩版分组）
+		entries.add(function("itemGroups", true));
+		entries.add(child("itemGroups", "itemGroupsSort"));
+		entries.add(child("itemGroups", "itemGroupsShowItems"));
+		entries.add(child("itemGroups", "itemGroupsAddAll"));
+		entries.add(child("itemGroups", "customItemGroups"));
+		// 定位栏优化（功能标签，参考 locator-heads：玩家头像 + 描边 + 名字 + 过滤 + 指南针）
+		entries.add(function("locatorBarHeads", true));
+		entries.add(child("locatorBarHeads", "locatorBarAlwaysShowXp"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadScale"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadHatLayer"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadBorder"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadBorderThickness"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadBorderColor"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadNames"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadFilter"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadIncludedPlayers"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadExcludedPlayers"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadNearbyOnly"));
+		entries.add(child("locatorBarHeads", "locatorBarCompass"));
+		entries.add(child("locatorBarHeads", "locatorBarCompassColor"));
+		entries.add(child("locatorBarHeads", "locatorBarCompassShadow"));
+		entries.add(child("locatorBarHeads", "locatorBarCompassCoordinates"));
+	}
+
+	// 原表中的第 7 段连续条目。
+	static void addPart7(List<Entry> entries) {
+		// 实体高亮（prettyName 使用 highlight 前缀）
+		entries.add(function("entityHighlight", true));
+		entries.add(child("entityHighlight", "entityHighlightStyle"));
+		entries.add(child("entityHighlight", "entityHighlightBlinkPeriod"));
+		entries.add(child("entityHighlight", "entityHighlightColor"));
+		entries.add(child("entityHighlight", "highlightPreset1", true));
+		entries.add(child("highlightPreset1", "highlightPreset1Entities"));
+		entries.add(child("entityHighlight", "highlightPreset2", true));
+		entries.add(child("highlightPreset2", "highlightPreset2Entities"));
+		entries.add(child("entityHighlight", "highlightPreset3", true));
+		entries.add(child("highlightPreset3", "highlightPreset3Entities"));
+		// 渲染
+		entries.add(function("highlightSingleLayerBedrock", true));
+		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockMaxMarkers"));
+		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockScanRadius"));
+		entries.add(child("highlightSingleLayerBedrock", "highlightSingleLayerBedrockColor"));
+		entries.add(function("barrierVisibility", true));
+		entries.add(child("barrierVisibility", "barrierVisibilityMaxMarkers"));
+		entries.add(child("barrierVisibility", "barrierVisibilityScanRadius"));
+		entries.add(child("barrierVisibility", "barrierVisibilityParticleInterval"));
+		entries.add(function("durabilityOverlay", true));
+		entries.add(child("durabilityOverlay", "durabilityDisplayMode"));
+		entries.add(child("durabilityOverlay", "durabilityOverlayColorMode"));
+		entries.add(child("durabilityOverlay", "durabilityOverlayHotbarOnly"));
+		entries.add(child("durabilityOverlay", "durabilityOverlayLowThreshold"));
+		entries.add(function("statusEffectDurationDisplay", true));
+		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationAlwaysSeconds"));
+		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationLowThreshold"));
+		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationColorMode"));
+		entries.add(child("statusEffectDurationDisplay", "statusEffectDurationScale"));
+		entries.add(function("elytraFireworkCooldown", true));
+		entries.add(child("elytraFireworkCooldown", "elytraFireworkCooldownTicks"));
+	}
+
+	// 原表中的第 8 段连续条目。
+	static void addPart8(List<Entry> entries) {
+		// 关闭指定生物生成（功能标签）
+		entries.add(function("disableSpecifiedMobSpawn", true));
+		entries.add(child("disableSpecifiedMobSpawn", "disabledSpawnEntities"));
+		entries.add(child("disableSpecifiedMobSpawn", "disabledSpawnAllowPlayerSpawn"));
+		// 和平模式怪物（功能标签）
+		entries.add(function("peacefulModeMonsters", true));
+		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterEntities"));
+		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterSpawn"));
+		entries.add(child("peacefulModeMonsters", "peacefulModeMonsterNoAttack"));
+		// 刷怪蛋投掷（功能标签，子项为速度与潜行放行）
+		entries.add(function("throwSpawnEgg", true));
+		entries.add(child("throwSpawnEgg", "throwSpawnEggVelocity"));
+		entries.add(child("throwSpawnEgg", "throwSpawnEggSneakBypass"));
+	}
+
+	// 原表中的第 9 段连续条目。
+	static void addPart9(List<Entry> entries) {
+		entries.add(function("chatTextSelection", true));
+		entries.add(child("chatTextSelection", "chatSelectionColor"));
+		entries.add(child("chatTextSelection", "chatSelectionOpacity"));
+		entries.add(child("chatTextSelection", "chatSelectionAutoCopy"));
+		entries.add(function("attackRangeDisplay", true));
+		entries.add(child("attackRangeDisplay", "attackRangeDisplayMode"));
+		entries.add(child("attackRangeDisplay", "attackRangeRenderMode"));
+		entries.add(child("attackRangeDisplay", "attackRangePalette"));
+		entries.add(child("attackRangeDisplay", "attackRangeIncludeSelf", true));
+		entries.add(child("attackRangeDisplay", "attackRangeHostileOnly"));
+		entries.add(child("attackRangeDisplay", "attackRangeIncludeInvisible"));
+		entries.add(child("attackRangeDisplay", "attackRangeMaxDistance"));
+		entries.add(child("attackRangeDisplay", "attackRangeMaxTargets"));
+		entries.add(child("attackRangeDisplay", "attackRangeEntities"));
+		// 存档游玩时长（功能标签，子项为显示格式）
+		entries.add(function("savePlayTime", true));
+		entries.add(child("savePlayTime", "savePlayTimeFormat"));
+	}
+
+	// 原表中的第 10 段连续条目。
+	static void addPart10(List<Entry> entries) {
+		entries.add(function("customBlockOutline", true));
+		entries.add(child("customBlockOutline", TweakifyModConfig.BLOCK_OUTLINE_WIDTH_FIELD));
+		entries.add(child("customBlockOutline", "blockOutlineAnimationSpeed"));
+		entries.add(child("customBlockOutline", "blockOutlinePalette"));
+		entries.add(child("customBlockOutline", "blockOutlineColorMode"));
+		entries.add(function("betterBlockPlacement", true));
+		entries.add(child("betterBlockPlacement", "betterBlockPlacementSneakBypass"));
+		entries.add(child("betterBlockPlacement", "betterBlockPlacementMode"));
+		// 更好的骨粉催熟（功能标签）
+		entries.add(function("betterBoneMeal", true));
+		entries.add(child("betterBoneMeal", "boneMealSugarCane"));
+		entries.add(child("betterBoneMeal", "boneMealFlowers"));
+	}
+}
