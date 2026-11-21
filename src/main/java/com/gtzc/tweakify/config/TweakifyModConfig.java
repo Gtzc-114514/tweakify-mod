@@ -239,7 +239,7 @@ public class TweakifyModConfig {
 	// 单层基岩高亮的扫描半径与标记颜色；半径上限与 BlockMarkerScanner 的数组容量一致。
 	public static final int MIN_BEDROCK_SCAN_RADIUS = 8;
 	public static final int MAX_BEDROCK_SCAN_RADIUS = 32;
-	public static final int DEFAULT_BEDROCK_SCAN_RADIUS = 32;
+	public static final int DEFAULT_BEDROCK_SCAN_RADIUS = 24;
 	public static final String BEDROCK_COLOR_GOLD = "gold";
 	public static final String BEDROCK_COLOR_WHITE = "white";
 	public static final String BEDROCK_COLOR_RED = "red";
@@ -259,7 +259,7 @@ public class TweakifyModConfig {
 	// 上限 32 与 BlockMarkerScanner 的数组容量一致，避免改配置后越界。
 	public static final int MIN_BARRIER_SCAN_RADIUS = 8;
 	public static final int MAX_BARRIER_SCAN_RADIUS = 32;
-	public static final int DEFAULT_BARRIER_SCAN_RADIUS = 32;
+	public static final int DEFAULT_BARRIER_SCAN_RADIUS = 24;
 	public static final int MIN_BARRIER_PARTICLE_INTERVAL = 20;
 	public static final int MAX_BARRIER_PARTICLE_INTERVAL = 200;
 	public static final int DEFAULT_BARRIER_PARTICLE_INTERVAL = 60;

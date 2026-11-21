@@ -19,7 +19,7 @@ class BlockMarkerScannerTest {
 	// 需求数值用字面量固定：常量被改动时必须在这里同步暴露，避免测试跟着常量漂移。
 	@Test
 	void refreshRateMatchesRequirement() {
-		assertEquals(6, BlockMarkerScanner.REFRESHES_PER_SECOND, "屏障/基岩每秒刷新 6 次");
+		assertEquals(4, BlockMarkerScanner.REFRESHES_PER_SECOND, "屏障/基岩每秒刷新 4 次");
 	}
 
 	// ===== section 预筛 =====

@@ -21,12 +21,12 @@ import java.util.function.Predicate;
  * 世界标记扫描调度：基岩高亮与屏障可见共用一次以两者较大半径为边长的方块遍历
  * （两者半径分别由 barrierVisibilityScanRadius / highlightSingleLayerBedrockScanRadius 控制）。
  *
- * <p>刷新频率：每秒 6 次（20/6 ≈ 3.33 tick），由 {@link RefreshScheduler} 累计调度，
- * 间隔在 3/4 tick 之间交替；开关或世界变化时立即补扫一次。
+ * <p>刷新频率：每秒 4 次（5 tick），由 {@link RefreshScheduler} 累计调度，
+ * 开关或世界变化时立即补扫一次。
  *
  * <p>整个体积分帧处理：每 tick 推进 {@link #LAYERS_PER_TICK} 层 y，
- * 65 层在 3 tick 内完成一轮，因此每次刷新窗口都能拿到完整结果；
- * 单层最多 65×65 次读取，一次刷新约 6.9 万次位置遍历（section 预筛会跳过大部分读取）。
+ * 默认半径 24 时 49 层在 3 tick 内完成一轮，因此每次刷新窗口都能拿到完整结果；
+ * 单层最多 49×49 次读取，一次刷新约 11.8 万次位置遍历（section 预筛会跳过大部分读取）。
  *
  * <p>section 预筛：逐层先查区块的 section palette 是否可能包含目标方块，
  * 不含（如纯石头/空气/越界层）则整段跳过，不再逐方块读取。
@@ -35,11 +35,11 @@ final class BlockMarkerScanner {
 	// 可见半径上限：两种功能的扫描半径都可配置（8 ~ 32），数组按上限分配，
 	// 因此调小半径不会越界，也不会超出容量。
 	private static final int MAX_SCAN_RADIUS = 32;
-	// 刷新频率：每秒 6 次（20/6 ≈ 3.33 tick 一次）。
+	// 刷新频率：每秒 4 次（5 tick 一次）。
 	// 包私有：单测需要把频率数值与需求固定下来。
-	static final int REFRESHES_PER_SECOND = 6;
+	static final int REFRESHES_PER_SECOND = 4;
 	private static final RefreshScheduler REFRESH = new RefreshScheduler(REFRESHES_PER_SECOND);
-	// 分帧层数：65 层 / 22 ≈ 3 tick 完成一轮，与 3~4 tick 的刷新窗口对齐。
+	// 分帧层数：默认半径 24 时 49 层 / 22 ≈ 3 tick 完成一轮，与 5 tick 的刷新窗口对齐。
 	private static final int LAYERS_PER_TICK = 22;
 	// 单层最多跨几个区块：跨度 2R+1 格，最坏情况下起点落在区块末格，
 	// 覆盖的区块数为 floor((跨度+14)/16) + 1（R=32 时为 5）。

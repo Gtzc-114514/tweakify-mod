@@ -142,13 +142,13 @@
 | `entityHighlightColor` 描边颜色 | `vanilla` | `vanilla` 原版队伍色（无队伍为白色）/ `white` / `red` / `green` / `blue` / `yellow` / `cyan` / `magenta` |
 | `highlightPreset1` / `highlightPreset2` / `highlightPreset3` 高亮预设 | 关 | 三个预设互斥，开启一个会自动关闭其他 |
 | `highlightPreset1Entities` / `highlightPreset2Entities` / `highlightPreset3Entities` 预设实体 | 空 | 各预设需要高亮的实体 ID 列表，支持 `minecraft:item` 等掉落物实体 |
-| `highlightSingleLayerBedrock` 高亮单层基岩 | 关 | 在扫描半径内（默认 32 格）的单层基岩朝向空气的顶面/底面显示凸出 1 像素的实心小方块，便于寻找下界顶棚的可击穿薄弱点；每秒刷新 6 次，扫描结果未变时复用已有顶点缓存 |
+| `highlightSingleLayerBedrock` 高亮单层基岩 | 关 | 在扫描半径内（默认 24 格）的单层基岩朝向空气的顶面/底面显示凸出 1 像素的实心小方块，便于寻找下界顶棚的可击穿薄弱点；每秒刷新 4 次，扫描结果未变时复用已有顶点缓存 |
 | `highlightSingleLayerBedrockMaxMarkers` 基岩标记最大数量 | 32 | 单次最多显示的标记数（1 ~ 256）；超出时保留最近的 |
-| `highlightSingleLayerBedrockScanRadius` 基岩扫描半径 | 32 | 扫描单层基岩的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
+| `highlightSingleLayerBedrockScanRadius` 基岩扫描半径 | 24 | 扫描单层基岩的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
 | `highlightSingleLayerBedrockColor` 基岩标记颜色 | `gold` | `gold` 金色 / `white` / `red` / `green` / `blue` / `cyan`；只影响小方块颜色，切换后顶点缓存自动重建 |
 | `barrierVisibility` 屏障可见 | 关 | 周围屏障方块显示与手持屏障物品时相同的原版标记粒子，粒子固定在方块中心并逐方块冷却，不会偏移或重叠；扫描半径与标记间隔可调 |
 | `barrierVisibilityMaxMarkers` 屏障标记最大数量 | 256 | 单次扫描最多保留的标记数（16 ~ 256）；超出时保留离玩家最近的 |
-| `barrierVisibilityScanRadius` 屏障扫描半径 | 32 | 扫描屏障方块的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
+| `barrierVisibilityScanRadius` 屏障扫描半径 | 24 | 扫描屏障方块的半径（8 ~ 32 格）；半径越小，扫描越快、可见范围越近 |
 | `barrierVisibilityParticleInterval` 屏障标记间隔 | 60 | 同一方块两次标记粒子之间的间隔（20 ~ 200 tick，20 tick = 1 秒）；越大越省性能、闪烁越慢 |
 | `durabilityOverlay` 装备耐久显示 | 关 | 在物品栏的耐久条上方叠加耐久文字；满耐久不显示，颜色随剩余耐久由绿转白、黄、红 |
 | `durabilityDisplayMode` 耐久显示内容 | `percent` | `percent` 耐久百分比 / `value` 剩余耐久数值（只显示当前剩余，不显示初始耐久）；两者字号一致 |
