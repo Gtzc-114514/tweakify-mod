@@ -266,13 +266,14 @@ public final class DebugInfoOverlay {
 		return "Entities: " + mobs + " mobs, " + items + " items, " + others + " other";
 	}
 
-	// 只统计“功能”标签的布尔开关：含根功能与它们的子开关，不含测试/修改类开关。
+	// 统计“功能”和“显示”标签的布尔开关：含根功能与它们的子开关，不含测试/修改类开关。
 	private static String configSummary() {
 		int enabled = 0;
 		int changed = 0;
 		for (IConfigBoolean toggle : TweakifyModConfigOptions.TOGGLE_OPTIONS) {
 			ConfigCatalog.Tab tab = ConfigCatalog.tabOf(toggle.getName());
-			if (tab != ConfigCatalog.Tab.FUNCTION && tab != ConfigCatalog.Tab.FUNCTION_AND_GENERAL) {
+			if (tab != ConfigCatalog.Tab.FUNCTION && tab != ConfigCatalog.Tab.FUNCTION_AND_GENERAL
+				&& tab != ConfigCatalog.Tab.DISPLAY) {
 				continue;
 			}
 			boolean value = toggle.getBooleanValue();
