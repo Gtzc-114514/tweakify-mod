@@ -493,6 +493,18 @@
   （会全部报「没有类注解」）、更换哨兵目标或字段、或 `check` 不再依赖 `loaderTest`，重开本条；
   把 `require = 0` 改为 `require >= 1` 时该注入点自动进入覆盖范围，需确认构建通过并同步
   更新 [`docs/mixin-probes.md`](mixin-probes.md) 的统计。
+- **补充门禁（2026-11-21，静态注入点校验）**：`require = 0` 的签名失配只能靠实机探针发现
+  （v1.1.9.1 修复的定位栏头像即 26.3 把 `blitSprite` 从 7 参改为 6 参、注入目标仍写 7 参，
+  头像从 1.1.7 起从未生效）。新增 `MixinInjectionTargetTest` 补齐静态校验：
+  - 注入注解会被 Loom 的 Mixin AP 从 class 文件剥离，因此从源码解析（支持跨行 `+` 拼接、
+    `{"a","b"}` 数组与常量引用跳过）；目标类仍从编译产物的 `@Mixin` 读取；
+  - 校验 `method` / `@At.target` 的成员存在性、`@At(INVOKE/FIELD/NEW)` 的调用点（目标类
+    字节码中的 invoke/field/new 指令），以及 `@WrapOperation` 处理器参数与 target 参数的
+    子序列匹配（捕获「重载仍存在但注入到错误重载」）；
+  - 覆盖 218 个注入点、115 个目标类；豁免 2 项（无 owner 的 NEW 描述符无法静态定位）；
+  - 变异验证：`LocatorBarHeadsMixin` 的 `blitSprite` 改回 7 参后测试失败并点名处理器；
+  - 边界：不证明运行期行为，`require = 0` 的探针存活仍需实机日志确认；
+    可选模组目标类不可加载时计入豁免（当前为空）。
 
 ## 与既有清单的关系
 
