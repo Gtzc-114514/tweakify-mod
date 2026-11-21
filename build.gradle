@@ -1,9 +1,12 @@
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id 'maven-publish'
+	id 'jacoco'
 }
 
 repositories {
+	// JaCoCo 的覆盖率工具（org.jacoco:*）从 Maven Central 解析。
+	mavenCentral()
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
@@ -137,6 +140,21 @@ test {
 		exceptionFormat = "full"
 	}
 }
+
+// 覆盖率只出报告，不设阈值门禁：阈值容易逼出为了数字而写的测试。
+// 要查看完整度时看 build/reports/jacoco/test/html/index.html。
+jacocoTestReport {
+	dependsOn test
+	// 普通 test 同时覆盖 main（配置/命令）与 client（Mixin/渲染）两个源集。
+	sourceSets sourceSets.main, sourceSets.client
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
+}
+
+test.finalizedBy jacocoTestReport
 
 processResources {
 	def version = project.version

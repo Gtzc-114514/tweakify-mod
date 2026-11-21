@@ -51,4 +51,5 @@ jobs:
           name: Test reports
           path: |
             build/reports/tests/
+            build/reports/jacoco/
             build/test-results/test/
