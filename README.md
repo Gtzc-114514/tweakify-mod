@@ -13,7 +13,7 @@
 
 </div>
 
-[快速开始](#quick-start) · [功能一览](#features) · [配置文件](#config-file) · [环境要求](#requirements) · [命令](#commands)
+[快速开始](#quick-start) · [界面预览](#screenshots) · [功能一览](#features) · [配置文件](#config-file) · [环境要求](#requirements) · [命令](#commands)
 
 > 纯客户端模组（`environment: client`），专用服务器无需安装；涉及服务端判定的功能仅在单人 / 局域网世界生效。
 
@@ -27,6 +27,15 @@
 4. 可选：安装 **Mod Menu**，在模组列表里获得本模组的配置入口；不装也能用 `G + C` 或 `/fconfig` 打开配置界面。
 
 进游戏后按 `G + C` 打开配置界面即可开始调整；完整版本要求见下方「环境要求」一节。
+
+<a name="screenshots"></a>
+
+## 📷 界面预览
+
+| 配置界面 | 存档列表 |
+| --- | --- |
+| <img src="docs/screenshots/config-screen.png" width="480" alt="配置界面"> | <img src="docs/screenshots/world-list-playtime.jpg" width="480" alt="存档列表"> |
+| 8 个标签页、关键词高亮与行内收藏星 | 每个存档的游玩时长、收藏置顶与收藏保护 |
 
 ## ✨ 功能概览
 
