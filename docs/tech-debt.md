@@ -22,7 +22,7 @@
 
 | # | 位置 | 内容 | 状态 |
 | --- | --- | --- | --- |
-| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 已触发（C 场景 3 轮中位 5.22%，见详情） |
+| T3 | `BlockMarkerScanner` / `AttackRangeState` 的扫描与收集 | 65³ 方块扫描与实体收集仍全部在主线程分帧执行，未线程化 | 复测未达触发条件（2026-11-21，降负后中位 1.98%，见详情） |
 | T4 | `CreativeModeInventoryGroupingMixin.tweakify$refreshOnConfigChange` | mixin 层配置热更新转发（`containerTick` 注入与 `refreshCurrentTabContents` 调用）无自动化覆盖，决策已抽到 `CreativeItemGroups.onConfigChanged` 并有单测 | 已修复（真实 Loader 集成 + 源码契约，见详情） |
 | T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已触发（调试层整层渲染 4.21%、缓存子项 0.41%；2026-11-21 首轮采样，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（渲染线程几何构建 0 样本、worker 空闲；峰值与写盘未覆盖，见详情）（最近复评 2026-11-21，见详情） |
@@ -68,9 +68,10 @@
 > 在真实 Loader 环境中全部加载成功（`initialize=false`，可加载白名单为空）；`require = 0` 的
 > 73 个探针点按设计豁免。提交 `36b7fa8`。
 >
-> 2026-11-21 T3/T5/T6 实机采样（JFR，未装 Spark）：T5 调试层整层渲染 4.21%、T6 渲染线程无几何构建；
-> T3 补做 3 轮复测后，C 场景中位 5.22%（> 5%，触发成立）、A 场景中位 1.36%（< 2%）；
-> B/E 场景仍未采集。数据见 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) §六。
+> 2026-11-21 T3/T5/T6 实机采样（JFR，未装 Spark）：T5 调试层整层渲染 4.21%、T6 渲染线程无几何构建。
+> T3 降负（4 Hz / 半径 24）后 C 场景 3 轮中位 1.98%（降负前 5.22%），低于 2% 触发观察线，
+> 状态改为「复测未达触发条件」；B/E 场景仍未采集。
+> 数据见 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) §六。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -177,8 +178,13 @@
   - D（三项全关）单轮 0.00%，仅作基线。
   未安装 Spark，MSPT 与 FPS 1% low 未采集（FPS 仅为截图瞬时值）；B（下界顶棚）/E（实体密集）
   仍未采集。明细见 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) §六。
-- **待办**：按建议方案 3 评估降低刷新频率/缩小半径/降低上限以压 C 场景的 5.22%；
-  补做 B/E 场景；MSPT 与 FPS 1% low 需要 Spark 才能补齐。
+- **降负实施（2026-11-21）**：按建议方案 3 下调默认参数：扫描刷新 6 → 4 Hz
+  （`BlockMarkerScanner.REFRESHES_PER_SECOND`），默认扫描半径 32 → 24（配置上限仍 32）；
+  语言注释、README 与到期测试同步更新，746 单测与全量 build 通过。
+- **降负后复测（2026-11-21）**：C 场景 3 轮（冷启动 + 2 热缓存，半径 24 / 4 Hz、1600×900、
+  正午晴天、maxFps 260）：1.78% / 1.98% / 1.99%，**中位 1.98%（< 2%，未达触发线）**，
+  相对降负前中位 5.22% 下降约 62%。按检查表判定为「复测未达触发条件」，维持现状并保留本表作基线。
+- **待办**：补做 B/E 场景；MSPT 与 FPS 1% low 需要 Spark 才能补齐。
 - **验证清单**：实机 profiler 采集步骤、场景矩阵、数据清单与判定标准见
   [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md)。
 
