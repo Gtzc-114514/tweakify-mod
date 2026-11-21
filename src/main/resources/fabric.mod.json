@@ -3,7 +3,7 @@
 	"id": "tweakify-mod",
 	"version": "${version}",
 	"name": "Tweakify Mod",
-	"description": "这是一个调整优化原版机制的工具",
+	"description": "把原版里零散、不可配置的行为整理成可开关、可绑定快捷键的选项。A collection of configurable vanilla tweaks.",
 	"authors": [
 		"Gtzc114514"
 	],
@@ -50,5 +50,13 @@
 	"suggests": {
 		"modmenu": "*",
 		"minihud": "*"
+	},
+	"custom": {
+		"modmenu": {
+			"links": {
+				"GitHub Releases": "https://github.com/Gtzc-114514/tweakify-mod/releases",
+				"Issue Tracker": "https://github.com/Gtzc-114514/tweakify-mod/issues"
+			}
+		}
 	}
 }
