@@ -116,7 +116,7 @@ configurations {
 }
 
 dependencies {
-	loaderTestRuntimeOnly "org.junit.platform:junit-platform-launcher:1.13.4"
+	loaderTestRuntimeOnly "org.junit.platform:junit-platform-launcher:6.1.3"
 }
 
 tasks.register("loaderTest", Test) {
