@@ -153,6 +153,11 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = 'UTF-8'
 	// -classfile 关闭第三方 jar 的类文件警告（gson/guava/joml 缺注解类），项目源码警告保持开启。
 	it.options.compilerArgs += ['-Xlint:all,-processing,-serial,-this-escape,-classfile']
+	// 主源集（main/client）的警告视为错误：新警告直接阻断构建，避免在增量提交里悄悄累积。
+	// 测试/游戏测试源集暂不开启，避免测试代码里验证废弃 API 时被迫加抑制。
+	if (it.name == 'compileJava' || it.name == 'compileClientJava') {
+		it.options.compilerArgs += ['-Werror']
+	}
 }
 
 java {
