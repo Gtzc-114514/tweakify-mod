@@ -1396,5 +1396,6 @@
   "tweakify-mod.chat.screenshot.delete": "[Delete]",
   "tweakify-mod.chat.screenshot.deleted": "Deleted screenshot: %s",
   "tweakify-mod.chat.screenshot.deleteFailed": "Could not delete screenshot: %s",
-  "tweakify-mod.chat.screenshot.saveFailed": "Could not save screenshot: %s"
+  "tweakify-mod.chat.screenshot.saveFailed": "Could not save screenshot: %s",
+  "tweakify-mod.chat.screenshot.busy": "A 4K screenshot is already in progress; please wait."
 }

@@ -1396,5 +1396,6 @@
   "tweakify-mod.chat.screenshot.delete": "[Supprimer]",
   "tweakify-mod.chat.screenshot.deleted": "Capture supprimée : %s",
   "tweakify-mod.chat.screenshot.deleteFailed": "Impossible de supprimer la capture : %s",
-  "tweakify-mod.chat.screenshot.saveFailed": "Impossible d'enregistrer la capture : %s"
+  "tweakify-mod.chat.screenshot.saveFailed": "Impossible d'enregistrer la capture : %s",
+  "tweakify-mod.chat.screenshot.busy": "Une capture 4K est déjà en cours ; veuillez patienter."
 }
