@@ -201,7 +201,9 @@ class MixinInjectionTargetTest {
 				continue;
 			}
 			visitedTargets.add(targetName);
-			boolean found = paramsOnly ? hasMethodParams(target, name, type) : hasMethod(target, name, type);
+			boolean found = "<init>".equals(name)
+				? hasConstructor(target, type)
+				: paramsOnly ? hasMethodParams(target, name, type) : hasMethod(target, name, type);
 			if (!found) {
 				failures.add(mixin + " 的 @" + annotation + " method=\"" + spec + "\" 在目标 "
 					+ targetName + " 中不存在");
@@ -558,9 +560,11 @@ class MixinInjectionTargetTest {
 		return index == target.size();
 	}
 
+	// 构造器只查目标类自身；methodType 为空表示任意构造器。
 	private static boolean hasConstructor(Class<?> type, MethodType methodType) {
 		for (Constructor<?> constructor : type.getDeclaredConstructors()) {
-			if (MethodType.methodType(void.class, constructor.getParameterTypes()).equals(methodType)) {
+			if (methodType == null
+					|| MethodType.methodType(void.class, constructor.getParameterTypes()).equals(methodType)) {
 				return true;
 			}
 		}

@@ -510,6 +510,8 @@ class TweakifyModConfigTest {
 		assertFalse(config.functions.piglinGoldArmorSwap);
 		assertEquals(TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO, config.functions.piglinGoldArmorSwapMode);
 		assertFalse(config.functions.chatInputMemory);
+		assertFalse(config.optimization.signTextOptimization,
+			"sign text optimization should be off by default");
 		assertTrue(config.functions.disabledSpawnAllowPlayerSpawn, "player spawning should be allowed by default");
 		assertEquals("", config.functions.hotkeyPiglinGoldArmorSwap);
 		assertEquals("", config.functions.hotkeyChatInputMemory);

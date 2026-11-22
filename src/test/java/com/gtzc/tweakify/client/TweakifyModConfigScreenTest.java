@@ -272,6 +272,7 @@ class TweakifyModConfigScreenTest {
 		assertTab("thirdPersonPlayerName", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("betterBold", TweakifyModConfigScreen.ConfigTab.FIXING);
 		assertTab("miniHudFpsOptimization", TweakifyModConfigScreen.ConfigTab.OPTIMIZATION);
+		assertTab("signTextOptimization", TweakifyModConfigScreen.ConfigTab.OPTIMIZATION);
 		// 冰霜行者跳跃修复归入修复标签。
 		assertTab("frostWalkerJumpFix", TweakifyModConfigScreen.ConfigTab.FIXING);
 		// 定位栏优化的主开关与子设置都归入功能标签。
