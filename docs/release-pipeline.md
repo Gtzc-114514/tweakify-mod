@@ -594,6 +594,32 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 
 同时 main 分支 push 触发的 `build.yml`（run `44908958806`）为 success。
 
+## 验证记录：v1.2.0 发布
+
+本次为显示标签、范围可视化、F2/F9 截图与告示牌优化的功能版本，`release.yml` 无改动：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `44970955635` |
+| 对应提交 | `dc371f2`（`v1.2.0` 标签提交；含 1.2.0 版本号、notes 与版本索引） |
+| 触发 | push tag `v1.2.0` |
+| 结论 | **success**，job 耗时 1 分 21 秒 |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面 16 行均通过） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.2.0` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.2.0` 去前缀后与版本 `1.2.0` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.2.0` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.2.0.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.2.0` 开头，含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.2.0.jar`（943,167 字节）、`tweakify-mod-1.2.0-sources.jar`（712,088 字节）。
+
+> 备注：本地构建的 jar 体积（947,851 字节）与 CI 产物略有差异，属打包时间戳差异，不影响版本校验。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
