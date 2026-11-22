@@ -42,7 +42,13 @@ public final class BetterScreenshotManager {
 	private static int highResOriginalHeight;
 	private static int highResOriginalWindowWidth;
 	private static int highResOriginalWindowHeight;
+	private static int highResOriginalWindowedX;
+	private static int highResOriginalWindowedY;
+	private static int highResOriginalWindowedWidth;
+	private static int highResOriginalWindowedHeight;
 	private static boolean highResWasFullscreen;
+	private static boolean highResFullscreenPreference;
+	private static int highResAttempt;
 	private static TweakifyModConfig highResConfig;
 
 	private BetterScreenshotManager() {
@@ -50,13 +56,17 @@ public final class BetterScreenshotManager {
 
 	public static void capture(Minecraft client, boolean fourK) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.functions.betterScreenshot || highResPending) {
+		if (config == null || !config.functions.betterScreenshot) {
+			return;
+		}
+		if (highResPending) {
+			if (!fourK) {
+				notifyBusy(client);
+			}
 			return;
 		}
 		if (fourK) {
 			requestHighResolution(client, config);
-		} else if (highResRestorePending) {
-			return;
 		} else {
 			captureNow(client, false, config);
 		}
@@ -82,19 +92,40 @@ public final class BetterScreenshotManager {
 			return;
 		}
 		Window window = client.getWindow();
+		WindowInvoker invoker = (WindowInvoker) (Object) window;
 		highResOriginalWidth = target.width;
 		highResOriginalHeight = target.height;
 		highResOriginalWindowWidth = window.getScreenWidth();
 		highResOriginalWindowHeight = window.getScreenHeight();
-		highResWasFullscreen = client.options.fullscreen().get();
+		highResOriginalWindowedX = invoker.tweakify$getWindowedX();
+		highResOriginalWindowedY = invoker.tweakify$getWindowedY();
+		highResOriginalWindowedWidth = invoker.tweakify$getWindowedWidth();
+		highResOriginalWindowedHeight = invoker.tweakify$getWindowedHeight();
+		highResWasFullscreen = invoker.tweakify$isWindowFullscreen();
+		highResFullscreenPreference = client.options.fullscreen().get();
 		highResConfig = config;
 		highResPending = true;
 		highResCaptureStarted = false;
 		highResRestorePending = false;
 		highResRenderedFrames = 0;
 		highResTimeoutTicks = 100;
-		window.setWindowed(FOUR_K_WIDTH, FOUR_K_HEIGHT);
-		client.gameRenderer.resize(FOUR_K_WIDTH, FOUR_K_HEIGHT);
+		highResAttempt++;
+		try {
+			window.setWindowed(logicalPixelSize(FOUR_K_WIDTH, window),
+				logicalPixelSize(FOUR_K_HEIGHT, window));
+			client.gameRenderer.resize(FOUR_K_WIDTH, FOUR_K_HEIGHT);
+		} catch (RuntimeException error) {
+			restoreResolution(client);
+			notifyError(client, error.getMessage());
+		}
+	}
+
+	private static int logicalPixelSize(int pixels, Window window) {
+		float density = window.getPixelDensity();
+		if (!Float.isFinite(density) || density <= 0.0f) {
+			return pixels;
+		}
+		return Math.max(1, Math.round(pixels / density));
 	}
 
 	public static void onHighResolutionFrameRendered() {
@@ -133,11 +164,17 @@ public final class BetterScreenshotManager {
 			return;
 		}
 		highResCaptureStarted = true;
+		int attempt = ++highResAttempt;
 		TweakifyModConfig config = highResConfig;
 		highResConfig = null;
 		try {
 			Screenshot.takeScreenshot(target, 1, image -> {
+				if (attempt != highResAttempt || !highResCaptureStarted) {
+					image.close();
+					return;
+				}
 				// 在下一 tick 恢复窗口，避免截图回调所在帧重新分配渲染目标。
+				highResCaptureStarted = false;
 				highResRestorePending = true;
 				save(client, image, true, config);
 			});
@@ -162,19 +199,63 @@ public final class BetterScreenshotManager {
 		if (!highResPending && !highResCaptureStarted && !highResRestorePending) {
 			return;
 		}
-		highResPending = false;
-		highResCaptureStarted = false;
-		highResRestorePending = false;
-		highResRenderedFrames = 0;
-		highResTimeoutTicks = 0;
-		highResConfig = null;
+		highResAttempt++;
 		Window window = client.getWindow();
-		window.setWindowed(highResOriginalWindowWidth, highResOriginalWindowHeight);
-		if (highResWasFullscreen) {
-			window.setFullscreen(true);
-			((WindowInvoker) (Object) window).tweakify$setMode();
+		WindowInvoker invoker = (WindowInvoker) (Object) window;
+		try {
+			try {
+				window.setWindowed(highResOriginalWindowWidth, highResOriginalWindowHeight);
+			} catch (RuntimeException error) {
+				logRestoreError("window size", error);
+			}
+			if (highResWasFullscreen) {
+				try {
+					window.setFullscreen(true);
+					invoker.tweakify$setMode();
+				} catch (RuntimeException error) {
+					logRestoreError("fullscreen", error);
+				}
+			}
+			try {
+				client.gameRenderer.resize(highResOriginalWidth, highResOriginalHeight);
+			} catch (RuntimeException error) {
+				logRestoreError("render target", error);
+			}
+			try {
+				invoker.tweakify$setWindowedX(highResOriginalWindowedX);
+				invoker.tweakify$setWindowedY(highResOriginalWindowedY);
+				invoker.tweakify$setWindowedWidth(highResOriginalWindowedWidth);
+				invoker.tweakify$setWindowedHeight(highResOriginalWindowedHeight);
+			} catch (RuntimeException error) {
+				logRestoreError("windowed geometry", error);
+			}
+			try {
+				if (client.options.fullscreen().get() != highResFullscreenPreference) {
+					client.options.fullscreen().set(highResFullscreenPreference);
+					client.options.save();
+				}
+			} catch (RuntimeException error) {
+				logRestoreError("fullscreen option", error);
+			}
+		} finally {
+			highResPending = false;
+			highResCaptureStarted = false;
+			highResRestorePending = false;
+			highResRenderedFrames = 0;
+			highResTimeoutTicks = 0;
+			highResConfig = null;
 		}
-		client.gameRenderer.resize(highResOriginalWidth, highResOriginalHeight);
+	}
+
+	private static void logRestoreError(String step, RuntimeException error) {
+		TweakifyMod.LOGGER.error("Failed to restore {} after 4K screenshot", step, error);
+	}
+
+	private static void notifyBusy(Minecraft client) {
+		if (client.gui != null && client.gui.hud != null) {
+			client.gui.hud.getChat().addClientSystemMessage(
+				Component.translatable("tweakify-mod.chat.screenshot.busy"));
+		}
 	}
 
 	private static void notifyError(Minecraft client, String message) {
