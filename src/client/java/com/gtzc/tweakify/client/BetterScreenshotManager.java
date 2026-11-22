@@ -1,17 +1,18 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.mixin.WindowInvoker;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
 import javax.imageio.ImageIO;
-import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -24,7 +25,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * 更好的 F2 截图：接管截图保存，支持聊天卡片、F9 4K 输出与多种文件格式。
  *
- * <p>截图回调在渲染线程触发；像素复制与坐标采样后立即把缩放、编码和磁盘 IO
+ * <p>截图回调在渲染线程触发；像素复制与坐标采样后立即把编码和磁盘 IO
  * 移到 IO 线程，聊天卡片/纹理注册再通过 {@link Minecraft#execute} 回渲染线程。
  */
 public final class BetterScreenshotManager {
@@ -32,20 +33,154 @@ public final class BetterScreenshotManager {
 	private static final int FOUR_K_HEIGHT = 2160;
 	private static final DateTimeFormatter FILE_TIME =
 		DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
+	private static boolean highResPending;
+	private static boolean highResCaptureStarted;
+	private static boolean highResRestorePending;
+	private static int highResRenderedFrames;
+	private static int highResTimeoutTicks;
+	private static int highResOriginalWidth;
+	private static int highResOriginalHeight;
+	private static int highResOriginalWindowWidth;
+	private static int highResOriginalWindowHeight;
+	private static boolean highResWasFullscreen;
+	private static TweakifyModConfig highResConfig;
 
 	private BetterScreenshotManager() {
 	}
 
 	public static void capture(Minecraft client, boolean fourK) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.functions.betterScreenshot) {
+		if (config == null || !config.functions.betterScreenshot || highResPending) {
 			return;
 		}
+		if (fourK) {
+			requestHighResolution(client, config);
+		} else if (highResRestorePending) {
+			return;
+		} else {
+			captureNow(client, false, config);
+		}
+	}
+
+	private static void captureNow(Minecraft client, boolean fourK,
+								 TweakifyModConfig config) {
 		try {
 			Screenshot.takeScreenshot(client.gameRenderer.mainRenderTarget(), 1,
 				image -> save(client, image, fourK, config));
 		} catch (RuntimeException error) {
 			TweakifyMod.LOGGER.error("Failed to request screenshot capture", error);
+		}
+	}
+
+	// F9：临时把窗口与主渲染目标一起切到 4K，等待至少两帧后再抓取。
+	private static void requestHighResolution(Minecraft client, TweakifyModConfig config) {
+		RenderTarget target = client.gameRenderer.mainRenderTarget();
+		if (target.width == FOUR_K_WIDTH && target.height == FOUR_K_HEIGHT
+			&& client.getWindow().getWidth() == FOUR_K_WIDTH
+			&& client.getWindow().getHeight() == FOUR_K_HEIGHT) {
+			captureNow(client, true, config);
+			return;
+		}
+		Window window = client.getWindow();
+		highResOriginalWidth = target.width;
+		highResOriginalHeight = target.height;
+		highResOriginalWindowWidth = window.getScreenWidth();
+		highResOriginalWindowHeight = window.getScreenHeight();
+		highResWasFullscreen = client.options.fullscreen().get();
+		highResConfig = config;
+		highResPending = true;
+		highResCaptureStarted = false;
+		highResRestorePending = false;
+		highResRenderedFrames = 0;
+		highResTimeoutTicks = 100;
+		window.setWindowed(FOUR_K_WIDTH, FOUR_K_HEIGHT);
+		client.gameRenderer.resize(FOUR_K_WIDTH, FOUR_K_HEIGHT);
+	}
+
+	public static void onHighResolutionFrameRendered() {
+		if (highResPending && !highResCaptureStarted) {
+			highResRenderedFrames++;
+		}
+	}
+
+	public static void tick(Minecraft client) {
+		if (!highResPending && !highResRestorePending) {
+			return;
+		}
+		if (highResRestorePending) {
+			restoreResolution(client);
+			return;
+		}
+		if (highResCaptureStarted) {
+			if (--highResTimeoutTicks <= 0) {
+				failHighResolution(client, "4K screenshot callback timed out");
+			}
+			return;
+		}
+		if (--highResTimeoutTicks <= 0) {
+			failHighResolution(client, "4K render target unavailable");
+			return;
+		}
+		RenderTarget target = client.gameRenderer.mainRenderTarget();
+		if (target.width != FOUR_K_WIDTH || target.height != FOUR_K_HEIGHT
+			|| client.getWindow().getWidth() != FOUR_K_WIDTH
+			|| client.getWindow().getHeight() != FOUR_K_HEIGHT
+			|| highResRenderedFrames < 2) {
+			return;
+		}
+		if (client.gui.screen() != null) {
+			failHighResolution(client, "4K screenshot cancelled: screen opened");
+			return;
+		}
+		highResCaptureStarted = true;
+		TweakifyModConfig config = highResConfig;
+		highResConfig = null;
+		try {
+			Screenshot.takeScreenshot(target, 1, image -> {
+				// 在下一 tick 恢复窗口，避免截图回调所在帧重新分配渲染目标。
+				highResRestorePending = true;
+				save(client, image, true, config);
+			});
+		} catch (RuntimeException error) {
+			restoreResolution(client);
+			notifyError(client, error.getMessage());
+		}
+	}
+
+	public static void cancelHighResolution(Minecraft client) {
+		if (highResPending || highResRestorePending) {
+			restoreResolution(client);
+		}
+	}
+
+	private static void failHighResolution(Minecraft client, String message) {
+		restoreResolution(client);
+		notifyError(client, message);
+	}
+
+	private static void restoreResolution(Minecraft client) {
+		if (!highResPending && !highResCaptureStarted && !highResRestorePending) {
+			return;
+		}
+		highResPending = false;
+		highResCaptureStarted = false;
+		highResRestorePending = false;
+		highResRenderedFrames = 0;
+		highResTimeoutTicks = 0;
+		highResConfig = null;
+		Window window = client.getWindow();
+		window.setWindowed(highResOriginalWindowWidth, highResOriginalWindowHeight);
+		if (highResWasFullscreen) {
+			window.setFullscreen(true);
+			((WindowInvoker) (Object) window).tweakify$setMode();
+		}
+		client.gameRenderer.resize(highResOriginalWidth, highResOriginalHeight);
+	}
+
+	private static void notifyError(Minecraft client, String message) {
+		if (client.gui != null && client.gui.hud != null) {
+			client.gui.hud.getChat().addClientSystemMessage(
+				Component.translatable("tweakify-mod.chat.screenshot.saveFailed", message));
 		}
 	}
 
@@ -85,10 +220,10 @@ public final class BetterScreenshotManager {
 			String base = (fourK ? "huge_" : "") + LocalDateTime.now().format(FILE_TIME)
 				+ coordinateSuffix(blockX, blockY, blockZ);
 			file = uniqueFile(directory, base, format.extension());
-			BufferedImage buffered = toBufferedImage(pixels, width, height);
-			if (fourK) {
-				buffered = scaleTo4K(buffered);
+			if (fourK && (width != FOUR_K_WIDTH || height != FOUR_K_HEIGHT)) {
+				throw new IOException("4K render target unavailable: " + width + "x" + height);
 			}
+			BufferedImage buffered = toBufferedImage(pixels, width, height);
 			write(format, buffered, file);
 			File savedFile = file;
 			int[] thumbnail = makeThumbnailPixels(pixels, width, height);
@@ -102,13 +237,7 @@ public final class BetterScreenshotManager {
 				file.delete();
 			}
 			TweakifyMod.LOGGER.error("Failed to save screenshot", error);
-			client.execute(() -> {
-				if (client.gui != null && client.gui.hud != null) {
-					client.gui.hud.getChat().addClientSystemMessage(
-						Component.translatable("tweakify-mod.chat.screenshot.saveFailed",
-							error.getMessage()));
-				}
-			});
+			client.execute(() -> notifyError(client, error.getMessage()));
 		}
 	}
 
@@ -116,33 +245,6 @@ public final class BetterScreenshotManager {
 		BufferedImage buffered = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		buffered.setRGB(0, 0, width, height, pixels, 0, width);
 		return buffered;
-	}
-
-	private static BufferedImage scaleTo4K(BufferedImage source) {
-		if (source.getWidth() == FOUR_K_WIDTH && source.getHeight() == FOUR_K_HEIGHT) {
-			return source;
-		}
-		BufferedImage scaled = new BufferedImage(
-			FOUR_K_WIDTH, FOUR_K_HEIGHT, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D graphics = scaled.createGraphics();
-		try {
-			graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-				RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-			graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
-				RenderingHints.VALUE_RENDER_QUALITY);
-			// 保持比例并补黑边，避免非 16:9 画面被拉伸。
-			double scale = Math.min((double) FOUR_K_WIDTH / source.getWidth(),
-				(double) FOUR_K_HEIGHT / source.getHeight());
-			int width = (int) Math.round(source.getWidth() * scale);
-			int height = (int) Math.round(source.getHeight() * scale);
-			graphics.setColor(Color.BLACK);
-			graphics.fillRect(0, 0, FOUR_K_WIDTH, FOUR_K_HEIGHT);
-			graphics.drawImage(source, (FOUR_K_WIDTH - width) / 2,
-				(FOUR_K_HEIGHT - height) / 2, width, height, null);
-		} finally {
-			graphics.dispose();
-		}
-		return scaled;
 	}
 
 	private static void write(ScreenshotFormat format, BufferedImage image, File file)

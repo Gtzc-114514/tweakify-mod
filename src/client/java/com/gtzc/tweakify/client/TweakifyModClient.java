@@ -51,6 +51,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
 			ChatInputMemoryState.beginSession());
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			BetterScreenshotManager.cancelHighResolution(client);
 			ChatInputMemoryState.endSession();
 			// 截图卡片绑定当前会话聊天；断线时释放缩略图纹理，避免累积。
 			ScreenshotChatCards.clear();
@@ -60,6 +61,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		// 配置写盘节流后的兜底：tick 结束时提交尚未写盘的修改，并把后台写盘结果取回客户端线程；
 		// 命令改值后也在这里把 MaLiLib 选项同步一次（服务端线程 → 客户端线程）。
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			BetterScreenshotManager.tick(client);
 			TweakifyModConfigOptions.flushPendingSave();
 			TweakifyModConfigOptions.pollSaveResults();
 			ScrollMemory.tick();
@@ -76,6 +78,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		// 顺序：先让滚动记忆在同一队列中写完，再让配置写最终快照；
 		// 配置超时兜底会关闭写盘线程并同步写，因此必须放在滚动记忆提交之后。
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+			BetterScreenshotManager.cancelHighResolution(client);
 			ScreenshotChatCards.clear();
 			ScrollMemory.flushOnShutdown();
 			// 收藏数据同样在写盘线程关闭前同步落盘一次。

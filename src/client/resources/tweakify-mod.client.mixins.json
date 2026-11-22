@@ -154,9 +154,11 @@
 		"SelectWorldScreenFavoriteMixin",
 		"ScreenshotKeyMixin",
 		"ChatScreenshotRenderMixin",
+		"GameRendererHighResMixin",
 		"SignTextOptimizationMixin",
 		"SignTextRenderFilterMixin",
-		"SignTextBoundTickingMixin"
+		"SignTextBoundTickingMixin",
+		"WindowInvoker"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"
