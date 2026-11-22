@@ -70,12 +70,13 @@
 
 ## 发布正文机制（resolve release notes）
 
-- 优先使用 `docs/release-notes/<tag>.md`（`-s` + `grep -q '[^[:space:]]'` 双条件，0 字节或纯空白都视为无效）；
-- 无效或缺失时输出 `::warning::` 并回退到 `generate_release_notes: true`（GitHub 自动生成）；
-- **约定**：notes 文件必须在**打标签之前**合入 main——tag 触发时 checkout 的是 tag 指向的提交，晚于 tag 的 notes 不会被看到；
+- 优先使用 `origin/main` 上同名的 `docs/release-notes/<tag>.md`（`-s` + `grep -q '[^[:space:]]'` 双条件，0 字节或纯空白都视为无效）；
+- 如果 main 不可用、文件不存在或为空白，回退到 tag checkout 中的同名文件；两者都无效时输出 `::warning::` 并回退到 `generate_release_notes: true`（GitHub 自动生成）；
+- **约定**：首次发布仍建议把 notes 在**打标签之前**合入 main，保证 tag 自包含；**从包含本改动的标签起**，重跑时优先读取 main 最新版本，tag 后修正 notes 不需要移动标签；
+- **旧标签例外**：GitHub re-run 使用原始 `GITHUB_SHA`/ref 对应的 workflow 文件。`v1.2.0` 标签仍指向旧提交，不包含本机制，直接重跑仍会用旧 workflow 和旧正文覆盖；不要直接重跑该标签，需创建新补丁标签，或显式移动标签并接受下方风险；
 - 文件名必须与标签名一致（`vX.Y.Z.md` ↔ `vX.Y.Z`）；
-- 发布后如需补充正文，用 `gh release edit <tag> --notes-file docs/release-notes/<tag>.md` 同步；
-  注意重跑该标签的 workflow 会以 tag 提交中的 notes 覆盖线上正文，补充内容应以提交方式回写并重新打标签；
+- 发布后如需补充正文，修改 main 上的 notes 并提交，再用 `gh release edit <tag> --notes-file docs/release-notes/<tag>.md` 同步；从包含本改动的新标签起，重跑该标签的 workflow 会读取 main 上的最新版，不再用 tag 提交中的旧正文覆盖；
+- **风险**：发布正文不再与 tag 提交严格一致，main 分支上后续对同名 notes 的修改会影响重跑结果；main 应保持受保护，且不要把无关版本的 notes 写到当前文件名；代码、jar 与 tag 指向仍保持不可变；
 - 详细约定见 `docs/release-notes/README.md`。
 
 ## 验证记录：v1.0.2 首次真实发布

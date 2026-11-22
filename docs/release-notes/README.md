@@ -5,10 +5,12 @@
 ## 约定
 
 - **文件名必须与标签名一致**：标签 `vX.Y.Z` 对应本目录下的 `vX.Y.Z.md`；
-- **必须在打标签之前提交到 main**：tag 触发时工作流 checkout 的是 tag 指向的提交，晚于 tag 的 notes 不会被看到，会回退到自动生成的 release notes，并在日志中打出一条 warning；
+- **首次发布建议在打标签之前提交到 main**：保证 tag 自包含；从包含新逻辑的标签起，release 工作流在重跑已有标签时会优先读取 `origin/main` 上的同名 notes，因此 tag 后修正无需移动标签；
+- **旧标签例外**：GitHub re-run 固定使用原始 tag 的 workflow 文件。`v1.2.0` 标签不包含新逻辑，直接重跑仍会用旧正文覆盖；不要直接重跑，需创建新补丁标签或显式移动标签。
 - **文件不能为空**：0 字节或只含空白的文件都会触发回退（脚本用 `-s` 加 `grep -q '[^[:space:]]'` 判断）；
 - **正文结构**与既有版本保持一致：一句话概述 → 按改动主题分节（如 性能 / 测试 / 兼容性 / 构建与发布）→ 末尾附 `compare/v上一个标签...v当前标签` 链接；
-- 标签打完后如果补充了 notes，用 `gh release edit <tag> --notes-file docs/release-notes/<tag>.md` 同步到线上 Release；注意重跑该标签的 release 工作流会以 tag 提交中的 notes 覆盖线上正文，补充内容应以提交方式回写并重新打标签。
+- 标签打完后如果补充了 notes，修改 main 上的同名文件并提交，再用 `gh release edit <tag> --notes-file docs/release-notes/<tag>.md` 同步到线上 Release；重跑该标签的 release 工作流会读取 main 上的最新版，不再用 tag 提交中的旧正文覆盖；
+- 注意：发布正文不再与 tag 提交严格一致，main 上对同名文件的后续修改会影响重跑结果；main 应保持受保护，代码与 jar 仍由 tag 固定。
 
 ## 版本索引
 
