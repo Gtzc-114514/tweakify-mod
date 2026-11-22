@@ -33,11 +33,7 @@ public final class BetterScreenshotManager {
 	private static final int FOUR_K_HEIGHT = 2160;
 	private static final DateTimeFormatter FILE_TIME =
 		DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
-	private static boolean highResPending;
-	private static boolean highResCaptureStarted;
-	private static boolean highResRestorePending;
-	private static int highResRenderedFrames;
-	private static int highResTimeoutTicks;
+	private static final HighResScreenshotState HIGH_RES_STATE = new HighResScreenshotState();
 	private static int highResOriginalWidth;
 	private static int highResOriginalHeight;
 	private static int highResOriginalWindowWidth;
@@ -48,7 +44,6 @@ public final class BetterScreenshotManager {
 	private static int highResOriginalWindowedHeight;
 	private static boolean highResWasFullscreen;
 	private static boolean highResFullscreenPreference;
-	private static int highResAttempt;
 	private static TweakifyModConfig highResConfig;
 
 	private BetterScreenshotManager() {
@@ -59,7 +54,7 @@ public final class BetterScreenshotManager {
 		if (config == null || !config.functions.betterScreenshot) {
 			return;
 		}
-		if (highResPending) {
+		if (HIGH_RES_STATE.isPending()) {
 			if (!fourK) {
 				notifyBusy(client);
 			}
@@ -104,12 +99,7 @@ public final class BetterScreenshotManager {
 		highResWasFullscreen = invoker.tweakify$isWindowFullscreen();
 		highResFullscreenPreference = client.options.fullscreen().get();
 		highResConfig = config;
-		highResPending = true;
-		highResCaptureStarted = false;
-		highResRestorePending = false;
-		highResRenderedFrames = 0;
-		highResTimeoutTicks = 100;
-		highResAttempt++;
+		HIGH_RES_STATE.beginRequest(100);
 		try {
 			window.setWindowed(logicalPixelSize(FOUR_K_WIDTH, window),
 				logicalPixelSize(FOUR_K_HEIGHT, window));
@@ -129,63 +119,52 @@ public final class BetterScreenshotManager {
 	}
 
 	public static void onHighResolutionFrameRendered() {
-		if (highResPending && !highResCaptureStarted) {
-			highResRenderedFrames++;
-		}
+		HIGH_RES_STATE.onFrameRendered();
 	}
 
 	public static void tick(Minecraft client) {
-		if (!highResPending && !highResRestorePending) {
-			return;
-		}
-		if (highResRestorePending) {
-			restoreResolution(client);
-			return;
-		}
-		if (highResCaptureStarted) {
-			if (--highResTimeoutTicks <= 0) {
-				failHighResolution(client, "4K screenshot callback timed out");
-			}
-			return;
-		}
-		if (--highResTimeoutTicks <= 0) {
-			failHighResolution(client, "4K render target unavailable");
+		if (!HIGH_RES_STATE.isActive()) {
 			return;
 		}
 		RenderTarget target = client.gameRenderer.mainRenderTarget();
-		if (target.width != FOUR_K_WIDTH || target.height != FOUR_K_HEIGHT
-			|| client.getWindow().getWidth() != FOUR_K_WIDTH
-			|| client.getWindow().getHeight() != FOUR_K_HEIGHT
-			|| highResRenderedFrames < 2) {
-			return;
-		}
-		if (client.gui.screen() != null) {
-			failHighResolution(client, "4K screenshot cancelled: screen opened");
-			return;
-		}
-		highResCaptureStarted = true;
-		int attempt = ++highResAttempt;
-		TweakifyModConfig config = highResConfig;
-		highResConfig = null;
-		try {
-			Screenshot.takeScreenshot(target, 1, image -> {
-				if (attempt != highResAttempt || !highResCaptureStarted) {
-					image.close();
+		boolean targetReady = target.width == FOUR_K_WIDTH && target.height == FOUR_K_HEIGHT
+			&& client.getWindow().getWidth() == FOUR_K_WIDTH
+			&& client.getWindow().getHeight() == FOUR_K_HEIGHT;
+		switch (HIGH_RES_STATE.tick(targetReady)) {
+			case IDLE, WAIT -> {
+			}
+			case RESTORE -> restoreResolution(client);
+			case TIMEOUT -> failHighResolution(client, "4K screenshot timed out");
+			case READY -> {
+				if (client.gui.screen() != null) {
+					failHighResolution(client, "4K screenshot cancelled: screen opened");
 					return;
 				}
-				// 在下一 tick 恢复窗口，避免截图回调所在帧重新分配渲染目标。
-				highResCaptureStarted = false;
-				highResRestorePending = true;
-				save(client, image, true, config);
-			});
-		} catch (RuntimeException error) {
-			restoreResolution(client);
-			notifyError(client, error.getMessage());
+				int attempt = HIGH_RES_STATE.beginCapture();
+				if (attempt < 0) {
+					return;
+				}
+				TweakifyModConfig config = highResConfig;
+				highResConfig = null;
+				try {
+					Screenshot.takeScreenshot(target, 1, image -> {
+						if (!HIGH_RES_STATE.onCaptureCallback(attempt)) {
+							image.close();
+							return;
+						}
+						// 在下一 tick 恢复窗口，避免截图回调所在帧重新分配渲染目标。
+						save(client, image, true, config);
+					});
+				} catch (RuntimeException error) {
+					restoreResolution(client);
+					notifyError(client, error.getMessage());
+				}
+			}
 		}
 	}
 
 	public static void cancelHighResolution(Minecraft client) {
-		if (highResPending || highResRestorePending) {
+		if (HIGH_RES_STATE.isActive()) {
 			restoreResolution(client);
 		}
 	}
@@ -196,10 +175,10 @@ public final class BetterScreenshotManager {
 	}
 
 	private static void restoreResolution(Minecraft client) {
-		if (!highResPending && !highResCaptureStarted && !highResRestorePending) {
+		if (!HIGH_RES_STATE.isActive()) {
 			return;
 		}
-		highResAttempt++;
+		HIGH_RES_STATE.beginRestore();
 		Window window = client.getWindow();
 		WindowInvoker invoker = (WindowInvoker) (Object) window;
 		try {
@@ -238,11 +217,7 @@ public final class BetterScreenshotManager {
 				logRestoreError("fullscreen option", error);
 			}
 		} finally {
-			highResPending = false;
-			highResCaptureStarted = false;
-			highResRestorePending = false;
-			highResRenderedFrames = 0;
-			highResTimeoutTicks = 0;
+			HIGH_RES_STATE.completeRestore();
 			highResConfig = null;
 		}
 	}
