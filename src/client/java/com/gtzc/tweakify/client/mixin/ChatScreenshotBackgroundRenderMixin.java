@@ -11,13 +11,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * 在聊天行绘制截图卡片缩略图；同时覆盖聊天未聚焦的后台通道与聚焦时的前景通道。
+ * 聊天未聚焦时（背景通道）在聊天行绘制截图卡片缩略图。
+ * <p>目标内部类是包级私有，只能按名字混入；Mixin 禁止多目标 Mixin 携带可重映射的 @Shadow，
+ * 因此前景通道与背景通道各用一个单目标 Mixin。
  */
-@Mixin(targets = {
-	"net.minecraft.client.gui.components.ChatComponent$DrawingFocusedGraphicsAccess",
-	"net.minecraft.client.gui.components.ChatComponent$DrawingBackgroundGraphicsAccess"
-})
-public abstract class ChatScreenshotRenderMixin {
+@Mixin(targets = "net.minecraft.client.gui.components.ChatComponent$DrawingBackgroundGraphicsAccess")
+public abstract class ChatScreenshotBackgroundRenderMixin {
 	@Shadow
 	@Final
 	private GuiGraphicsExtractor graphics;

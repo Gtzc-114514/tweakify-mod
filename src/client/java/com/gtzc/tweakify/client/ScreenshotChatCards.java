@@ -4,6 +4,7 @@ import com.gtzc.tweakify.TweakifyMod;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.ClickEvent;
@@ -26,6 +27,8 @@ public final class ScreenshotChatCards {
 	public static final int THUMB_WIDTH = 16;
 	public static final int THUMB_HEIGHT = 9;
 	private static final String MARKER_PREFIX = "tweakify:screenshot:";
+	/** 卡片占位缩进：4 个空格 = 16px，与缩略图宽度一致。 */
+	private static final String INDENT = "    ";
 	private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 	private static final int MAX_CARDS = 100;
 	private static final AtomicInteger NEXT_ID = new AtomicInteger(1);
@@ -69,14 +72,12 @@ public final class ScreenshotChatCards {
 			? "~ ~ ~" : "(" + blockX + ", " + blockY + ", " + blockZ + ")";
 		ClickEvent.OpenFile openFolder = new ClickEvent.OpenFile(file.getParentFile());
 		String marker = MARKER_PREFIX + id;
-		MutableComponent text = Component.literal("    ")
+		// 布局：第一行是可点击的截图信息，第二行左边占位画缩略图，右侧是时间与坐标。
+		// 第二行必须带实际文本：纯空格行会被 StringSplitter 裁掉，卡片就无处可画。
+		MutableComponent info = Component.translatable("tweakify-mod.chat.screenshot.label")
 			.withStyle(style -> style
-				.withInsertion(marker)
+				.withColor(ChatFormatting.GRAY)
 				.withClickEvent(openFolder))
-			.append(Component.translatable("tweakify-mod.chat.screenshot.label")
-				.withStyle(style -> style
-					.withColor(ChatFormatting.GRAY)
-					.withClickEvent(openFolder)))
 			.append(Component.literal(card.fileName())
 				.withStyle(style -> style
 					.withColor(ChatFormatting.WHITE)
@@ -87,24 +88,61 @@ public final class ScreenshotChatCards {
 				.withStyle(style -> style
 					.withColor(ChatFormatting.RED)
 					.withClickEvent(new ClickEvent.RunCommand(
-						"/tweakify_screenshot delete " + id))))
+						"/tweakify_screenshot delete " + id))));
+		MutableComponent text = info
+			.append(Component.literal("\n"))
+			.append(Component.literal(INDENT)
+				.withStyle(style -> style
+					.withInsertion(marker)
+					.withClickEvent(openFolder)))
 			.append(Component.literal(" " + LocalTime.now().format(TIME_FORMAT) + " " + coords)
 				.withStyle(ChatFormatting.GRAY));
 		client.gui.hud.getChat().addClientSystemMessage(text);
 	}
 
-	// 在聊天行的左侧绘制 16×9 缩略图；文本前预留 4 个空格。
+	// 在 marker 覆盖的占位区（卡片行的行首缩进后）绘制缩略图。
 	public static void render(GuiGraphicsExtractor graphics, int y, float alpha,
 							FormattedCharSequence content) {
 		if (alpha < 0.05f) {
 			return;
 		}
-		int cardId = findCardId(content);
-		Card card = CARDS_BY_ID.get(cardId);
-		if (card == null) {
+		Font font = Minecraft.getInstance().font;
+		int[] cardId = {-1};
+		int[] startX = {0};
+		int[] endX = {0};
+		int[] cursor = {0};
+		boolean[] found = {false};
+		content.accept((index, style, codepoint) -> {
+			String insertion = style.getInsertion();
+			if (insertion != null && insertion.startsWith(MARKER_PREFIX)) {
+				if (!found[0]) {
+					found[0] = true;
+					startX[0] = cursor[0];
+					cardId[0] = parseCardId(insertion);
+				}
+				cursor[0] += font.width(Character.toString(codepoint));
+				endX[0] = cursor[0];
+				return true;
+			}
+			if (found[0]) {
+				return false;
+			}
+			// marker 前只允许行首缩进（续行的 1 格空格），不是卡片行就提前退出。
+			if (codepoint != ' ') {
+				return false;
+			}
+			cursor[0] += font.width(Character.toString(codepoint));
+			return true;
+		});
+		Card card = CARDS_BY_ID.get(cardId[0]);
+		if (card == null || endX[0] <= startX[0]) {
 			return;
 		}
-		graphics.blit(card.texture(), 0, y - 1, THUMB_WIDTH, y - 1 + THUMB_HEIGHT,
+		int width = endX[0] - startX[0];
+		int height = Math.max(1, Math.round(THUMB_HEIGHT * width / (float) THUMB_WIDTH));
+		// 卡片行与 9px 行高居中对齐（卡片宽度等于占位宽度时正好占满一行）。
+		int top = y + Math.max(0, (9 - height) / 2);
+		graphics.blit(card.texture(), startX[0], top, endX[0], top + height,
 			0.0f, 1.0f, 0.0f, 1.0f);
 	}
 
@@ -134,20 +172,11 @@ public final class ScreenshotChatCards {
 	}
 
 	// 用不可见的 insertion 标记定位卡片，避免解析本地化文案。
-	private static int findCardId(FormattedCharSequence content) {
-		int[] found = {-1};
-		content.accept((index, style, codepoint) -> {
-			String insertion = style.getInsertion();
-			if (insertion != null && insertion.startsWith(MARKER_PREFIX)) {
-				try {
-					found[0] = Integer.parseInt(insertion.substring(MARKER_PREFIX.length()));
-				} catch (NumberFormatException ignored) {
-					found[0] = -1;
-				}
-				return false;
-			}
-			return true;
-		});
-		return found[0];
+	private static int parseCardId(String insertion) {
+		try {
+			return Integer.parseInt(insertion.substring(MARKER_PREFIX.length()));
+		} catch (NumberFormatException ignored) {
+			return -1;
+		}
 	}
 }
