@@ -25,6 +25,9 @@ public final class OptimizationConfig extends ConfigSection {
 	// MiniHUD 掉帧优化：放宽 HUD 行刷新间隔，减少重复重算造成的掉帧。
 	public volatile boolean miniHudFpsOptimization = false;
 
+	// 告示牌文本优化：缓存 hasMessage 结果并跳过客户端告示牌 tick。
+	public volatile boolean signTextOptimization = false;
+
 	// HUD 行刷新间隔（毫秒，50 ~ 1000，默认 150）。
 	public volatile int miniHudRefreshIntervalMs = TweakifyModConfig.DEFAULT_MINIHUD_REFRESH_INTERVAL_MS;
 

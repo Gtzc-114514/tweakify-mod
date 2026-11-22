@@ -19,5 +19,7 @@ final class OptimizationCatalogEntries {
 		// MiniHUD 掉帧优化（优化标签）
 		entries.add(optimization("miniHudFpsOptimization", true));
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));
+		// 告示牌文本优化（优化标签）
+		entries.add(optimization("signTextOptimization", true));
 	}
 }

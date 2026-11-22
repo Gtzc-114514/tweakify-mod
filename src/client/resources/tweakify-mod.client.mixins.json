@@ -153,7 +153,10 @@
 		"WorldSelectionListPlayTimeMixin",
 		"SelectWorldScreenFavoriteMixin",
 		"ScreenshotKeyMixin",
-		"ChatScreenshotRenderMixin"
+		"ChatScreenshotRenderMixin",
+		"SignTextOptimizationMixin",
+		"SignTextRenderFilterMixin",
+		"SignTextBoundTickingMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"

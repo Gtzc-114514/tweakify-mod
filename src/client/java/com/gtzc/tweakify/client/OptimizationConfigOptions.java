@@ -20,6 +20,10 @@ public final class OptimizationConfigOptions {
 	public static final ConfigBoolean MINI_HUD_FPS_OPTIMIZATION = new ConfigBoolean(
 		"miniHudFpsOptimization", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 告示牌文本优化：缓存原始/过滤文本状态并跳过客户端告示牌空 tick。
+	public static final ConfigBoolean SIGN_TEXT_OPTIMIZATION = new ConfigBoolean(
+		"signTextOptimization", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// HUD 行刷新间隔（毫秒，50 ~ 1000）。
 	public static final ConfigInteger MINI_HUD_REFRESH_INTERVAL_MS = new ConfigInteger(
 		"miniHudRefreshIntervalMs", TweakifyModConfig.DEFAULT_MINIHUD_REFRESH_INTERVAL_MS,
