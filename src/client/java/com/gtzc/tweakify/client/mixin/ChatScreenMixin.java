@@ -148,7 +148,7 @@ public class ChatScreenMixin {
 			ChatInputMemoryState.remember("");
 			return;
 		}
-		ChatInputMemoryState.remember(current);
+		ChatInputMemoryState.remember(current, config.functions.chatInputMemoryMaxLength);
 		if (!current.isBlank()) {
 			TweakifyMod.LOGGER.info("Chat input memory saved ({} chars)", current.length());
 		}

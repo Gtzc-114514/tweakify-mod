@@ -37,7 +37,11 @@ public final class ModifiedConfig extends ConfigSection {
 			FieldSanitizer.of("enchantmentLevelArabicStyle", this::sanitizeEnchantmentLevelStyle),
 			FieldSanitizer.of("smithingTemplateKeepChance", this::sanitizeSmithingTemplateChance),
 			FieldSanitizer.of("useItemSlowdownKeepPercent", this::sanitizeUseItemSlowdownKeep),
-			FieldSanitizer.of("ironGolemRideMinecartMaxDistance", this::sanitizeIronGolemPickupDistance));
+			FieldSanitizer.of("ironGolemRideMinecartMaxDistance", this::sanitizeIronGolemPickupDistance),
+			FieldSanitizer.of("visibleTradersFutureLevels", this::sanitizeVisibleTradersFutureLevels),
+			FieldSanitizer.of("visibleTradersMaxLockedOffers", this::sanitizeVisibleTradersMaxLockedOffers),
+			FieldSanitizer.of("enchantmentLevelArabicMinLevel", this::sanitizeEnchantmentArabicLevel),
+			FieldSanitizer.of("flatWorldSlimeSpawnBelowY", this::sanitizeFlatSlimeY));
 		// 启动期校验：新增数值/枚举字段忘记登记校验器时直接失败。
 		assertSanitizerCoverage(fieldNamesOf(this.sanitizers));
 	}
@@ -66,11 +70,17 @@ public final class ModifiedConfig extends ConfigSection {
 	// 关闭受伤抖动时保留死亡镜头倾斜（不清掉死亡倒下时的视角角度）。
 	public volatile boolean hurtShakeKeepDeathTilt = false;
 
+	// 只对玩家关闭受伤抖动。
+	public volatile boolean hurtShakePlayersOnly = false;
+
 	// 禁用受伤变红：受伤时不再为生物叠加红色 overlay（死亡变红保留）。
 	public volatile boolean disableHurtTint = false;
 
 	// 禁用受伤变红时保留受伤闪白（默认开启，与原行为一致）。
 	public volatile boolean hurtTintKeepWhiteFlash = true;
+
+	// 只对玩家关闭受伤变红。
+	public volatile boolean hurtTintPlayersOnly = false;
 
 	// 禁用水下挖掘惩罚：水下挖掘不再按 SUBMERGED_MINING_SPEED 属性减速。
 	public volatile boolean disableUnderwaterMiningPenalty = false;
@@ -78,11 +88,17 @@ public final class ModifiedConfig extends ConfigSection {
 	// 保留的水下挖掘惩罚百分比（0 = 完全去掉，100 = 原版）。
 	public volatile int underwaterMiningPenaltyKeep = TweakifyModConfig.DEFAULT_MINING_PENALTY_KEEP_PERCENT;
 
+	// 只在游泳状态下移除水下挖掘惩罚。
+	public volatile boolean underwaterMiningPenaltySwimmingOnly = false;
+
 	// 禁用空中挖掘惩罚：离地挖掘不再额外降低速度。
 	public volatile boolean disableAirMiningPenalty = false;
 
 	// 保留的空中挖掘惩罚百分比（0 = 完全去掉，100 = 原版）。
 	public volatile int airMiningPenaltyKeep = TweakifyModConfig.DEFAULT_MINING_PENALTY_KEEP_PERCENT;
+
+	// 只在向下运动（下落）时移除空中挖掘惩罚。
+	public volatile boolean airMiningPenaltyOnlyWhenFalling = false;
 
 	// 诅咒附魔可移除：砂轮可以去除诅咒附魔（原版会保留诅咒）。
 	public volatile boolean disableCurseEnchantmentRestriction = false;
@@ -105,17 +121,26 @@ public final class ModifiedConfig extends ConfigSection {
 	// 仅同类附魔：只解除同一互斥组（同一 exclusive_set 标签）内部的限制。
 	public volatile boolean removeEnchantmentConflictsSameGroupOnly = false;
 
+	// 只在潜行时解除附魔冲突。
+	public volatile boolean removeEnchantmentConflictsRequireSneak = false;
+
 	// 附魔描述：在物品提示中为每个附魔追加一行描述。
 	public volatile boolean enchantmentDescriptions = false;
 
 	// 只在按住潜行键时追加附魔描述。
 	public volatile boolean enchantmentDescriptionsSneakOnly = false;
 
+	// 为诅咒附魔也追加描述。
+	public volatile boolean enchantmentDescriptionsIncludeCurses = true;
+
 	// 第三人称自身名字：第三/第二人称显示玩家自己的名字。
 	public volatile boolean thirdPersonPlayerName = false;
 
 	// 只在按住潜行键时显示自己的名字。
 	public volatile boolean thirdPersonPlayerNameSneakOnly = false;
+
+	// 隐藏 HUD（F1）时仍显示自己的名字。
+	public volatile boolean thirdPersonPlayerNameIgnoreHudHidden = false;
 
 	// 雪傀儡不受群系影响：温暖/干燥群系不再让雪傀儡因群系属性融化。
 	// 雨、水和熔岩伤害仍按原版；判定在服务端执行，仅单人/局域网生效。
@@ -124,11 +149,17 @@ public final class ModifiedConfig extends ConfigSection {
 	// 只在主世界生效（下界/末地仍按原版群系属性融化）。
 	public volatile boolean snowGolemBiomeImmunityOverworldOnly = false;
 
+	// 只在当前正在下雨时抑制群系融化。
+	public volatile boolean snowGolemBiomeImmunityOnlyWhenRaining = false;
+
 	// 超平坦无史莱姆：超平坦世界中不再生成史莱姆。
 	public volatile boolean disableFlatWorldSlimeSpawn = false;
 
 	// 对所有世界类型生效（不再只限超平坦）。
 	public volatile boolean flatWorldSlimeSpawnAllWorlds = false;
+
+	// 超平坦世界只在该 Y 及以下禁用史莱姆生成（默认 320 = 全高度）。
+	public volatile int flatWorldSlimeSpawnBelowY = TweakifyModConfig.DEFAULT_FLAT_SLIME_Y;
 
 	// 更好的隐身：隐身时隐藏药水粒子、装备与第三人称手持物品。
 	public volatile boolean betterInvisibility = false;
@@ -148,6 +179,9 @@ public final class ModifiedConfig extends ConfigSection {
 	// 保留概率（0 ~ 100，默认 100 = 必定保留）。
 	public volatile int smithingTemplateKeepChance = TweakifyModConfig.DEFAULT_SMITHING_TEMPLATE_KEEP_CHANCE;
 
+	// 只在生存/冒险模式保留模板，创造模式恢复原版消耗。
+	public volatile boolean smithingTemplateSurvivalOnly = false;
+
 	// 夜视淡出：夜视效果结束前平滑淡出，不再闪烁。
 	public volatile boolean nightVisionFadeOut = false;
 
@@ -163,17 +197,26 @@ public final class ModifiedConfig extends ConfigSection {
 	// 数字样式：plain（锋利 3）/ parentheses（锋利 (3)）。
 	public volatile String enchantmentLevelArabicStyle = TweakifyModConfig.ENCHANTMENT_LEVEL_STYLE_PLAIN;
 
+	// 只在附魔等级不低于该值时使用阿拉伯数字（1 ~ 255）。
+	public volatile int enchantmentLevelArabicMinLevel = TweakifyModConfig.DEFAULT_ENCHANTMENT_ARABIC_LEVEL;
+
 	// 疣块分解：合成格里单独放下界疣块时，结果槽产出 9 个下界疣（仅单人/局域网生效）。
 	public volatile boolean wartBlockDecomposition = false;
 
 	// 产出数量（1 ~ 9，默认 9）。
 	public volatile int wartBlockDecompositionOutput = TweakifyModConfig.DEFAULT_WART_DECOMPOSITION_OUTPUT;
 
+	// 只在潜行时分解疣块。
+	public volatile boolean wartBlockDecompositionRequireSneak = false;
+
 	// 鞘翅水中飞行：滑翔时不再被流体移动逻辑接管，可在水中保持滑翔。
 	public volatile boolean elytraWaterFlight = false;
 
 	// 只在水中保持滑翔；岩浆中仍按原版下沉。
 	public volatile boolean elytraWaterFlightOnlyWater = false;
+
+	// 只在眼睛完全浸入水中时保持滑翔。
+	public volatile boolean elytraWaterFlightOnlySubmerged = false;
 
 	// 禁用地狱门特效：进入下界传送门时不再显示紫色覆盖层、镜头旋转与传送门音效。
 	public volatile boolean disableNetherPortalEffect = false;
@@ -200,20 +243,35 @@ public final class ModifiedConfig extends ConfigSection {
 	// 只在玩家附近自动上车（0 = 不限制，默认）。
 	public volatile int ironGolemRideMinecartMaxDistance = TweakifyModConfig.DEFAULT_IRON_GOLEM_PICKUP_DISTANCE;
 
+	// 只拾取主手与副手都为空的铁傀儡。
+	public volatile boolean ironGolemRideMinecartEmptyHandOnly = false;
+
 	// 穿牌打开容器：准星对准告示牌时，直接打开它背后的容器（潜行时仍走告示牌原版逻辑）。
 	public volatile boolean signOpenContainer = false;
 
 	// 潜行时保持原版：开启时潜行交给告示牌自身，关闭后潜行也能穿牌开容器。
 	public volatile boolean signOpenContainerSneakBypass = true;
 
+	// 跳过已上蜡的告示牌，避免覆盖玩家“锁住告示牌”的意图。
+	public volatile boolean signOpenContainerSkipWaxed = false;
+
 	// 不死图腾背包生效：图腾放在快捷栏或主背包（不限于主手/副手）也能触发。
 	public volatile boolean totemFromInventory = false;
+
+	// 背包查找是否包含快捷栏；关闭后只查主背包（9–35）。
+	public volatile boolean totemInventoryIncludeHotbar = true;
+
+	// 优先从快捷栏开始查找；关闭后先查主背包，再查快捷栏。
+	public volatile boolean totemInventoryHotbarFirst = true;
 
 	// 禁用蛛网减速：蜘蛛网不再把实体粘住并限制移动。
 	public volatile boolean disableCobwebSlowdown = false;
 
 	// 子开关：除玩家以外的实体也一起解除蛛网减速。
 	public volatile boolean cobwebSlowdownAllEntities = false;
+
+	// 只移除水平减速，仍保留跳跃减速。
+	public volatile boolean cobwebSlowdownKeepJumpPenalty = false;
 
 	// 禁用液体推动：水流与岩浆流不再对实体施加水平推力（垂直浮力保留）。
 	public volatile boolean disableFluidPush = false;
@@ -230,6 +288,9 @@ public final class ModifiedConfig extends ConfigSection {
 	// 子开关：同时取消粘液块的弹跳。
 	public volatile boolean disableSlimeBlockBounce = true;
 
+	// 只对玩家取消粘液块减速。
+	public volatile boolean disableSlimeBlockSlowdownPlayersOnly = false;
+
 	// 禁用蜂蜜块减速：蜂蜜块的 0.4 速度系数不再影响移动速度。
 	public volatile boolean disableHoneyBlockSlowdown = false;
 
@@ -241,6 +302,12 @@ public final class ModifiedConfig extends ConfigSection {
 
 	// 门使用 2 格视觉高度（关闭时门保持原版轮廓）。
 	public volatile boolean connectedBlockOutlineDoorFullHeight = true;
+
+	// 连接轮廓的方块类别开关。
+	public volatile boolean connectedBlockOutlineDoors = true;
+	public volatile boolean connectedBlockOutlineChests = true;
+	public volatile boolean connectedBlockOutlineBeds = true;
+	public volatile boolean connectedBlockOutlinePlants = true;
 
 	// 禁用屏幕覆盖层（细雪/岩浆/水下）的总开关。
 	public volatile boolean disableOverlayEffects = false;
@@ -269,6 +336,9 @@ public final class ModifiedConfig extends ConfigSection {
 	// 保留原版疾跑视野强度的百分比（0 = 完全禁用，100 = 原版）。
 	public volatile int sprintFovIntensity = TweakifyModConfig.DEFAULT_SPRINT_FOV_INTENSITY;
 
+	// 只在第一人称下禁用疾跑视野变化。
+	public volatile boolean sprintFovOnlyFirstPerson = false;
+
 	// 禁用耕地踩踏：从高处落到耕地上不会把耕地踩回泥土（仅单人/局域网生效）。
 	public volatile boolean disableFarmlandTrampling = false;
 
@@ -281,8 +351,14 @@ public final class ModifiedConfig extends ConfigSection {
 	// 保留进度的最大距离（格，0 = 不限制）；超出后按原版重置进度。
 	public volatile int keepMiningProgressMaxDistance = TweakifyModConfig.DEFAULT_KEEP_MINING_PROGRESS_DISTANCE;
 
+	// 只在切换前后是同一物品时保留进度。
+	public volatile boolean keepMiningProgressSameToolOnly = false;
+
 	// 不使用最后一根火把：包里只剩一根火把时不允许放置，避免把最后的火把用掉。
 	public volatile boolean keepLastTorch = false;
+
+	// 主手最后一根火把的判定忽略副手：副手还有火把时允许放置主手那根。
+	public volatile boolean keepLastTorchIgnoreOffhand = false;
 
 	// 剩余数量阈值（1 ~ 8）：剩余不超过该值时阻止放置。
 	public volatile int keepLastTorchMinCount = TweakifyModConfig.DEFAULT_KEEP_LAST_TORCH_COUNT;
@@ -293,11 +369,22 @@ public final class ModifiedConfig extends ConfigSection {
 	// 只在按住潜行键时生效。
 	public volatile boolean climbablePassNoSlowdownSneakOnly = false;
 
+	// 生效的可攀爬方块类型：梯子、藤蔓类、活板门。
+	public volatile boolean climbablePassLadders = true;
+	public volatile boolean climbablePassVines = true;
+	public volatile boolean climbablePassTrapdoors = true;
+
 	// 可见交易显示：在村民交易界面显示未来等级（锁定）的交易。
 	public volatile boolean visibleTraders = false;
 
 	// 只显示未解锁（锁定）的交易，隐藏当前等级已解锁的交易。
 	public volatile boolean visibleTradersOnlyLocked = false;
+
+	// 最多显示的未来等级数（1 ~ 4）；只影响下发展示，不影响升级时消耗的完整交易组。
+	public volatile int visibleTradersFutureLevels = TweakifyModConfig.DEFAULT_VISIBLE_TRADER_FUTURE_LEVELS;
+
+	// 单次最多下发的锁定交易条数（0 = 不限制）。
+	public volatile int visibleTradersMaxLockedOffers = TweakifyModConfig.DEFAULT_VISIBLE_TRADER_LOCKED_OFFERS;
 
 	// 强制关闭加载屏幕：跳过世界/资源包加载屏幕的渲染，世界仍在后台加载。
 	public volatile boolean forceCloseLoadingScreen = false;
@@ -317,17 +404,38 @@ public final class ModifiedConfig extends ConfigSection {
 	// 同时忽略数据包的兼容性提示（默认只作用于资源包）。
 	public volatile boolean resourcePackCompatibilityAlsoDataPacks = false;
 
+	// 仅警告：保留不兼容标记，但启用时不再弹确认框。
+	public volatile boolean resourcePackCompatibilityWarnOnly = false;
+
 	// 「禁用屏幕覆盖层」的切换快捷键。
 	public volatile String hotkeyDisableOverlayEffects = "";
 
 	// 盔甲架手臂：所有盔甲架默认显示手臂；单人/局域网下可直接把物品放上双手。
 	public volatile boolean armorStandArms = false;
 
+	// 只给手中拿着物品的盔甲架强制显示手臂。
+	public volatile boolean armorStandArmsOnlyWithItems = false;
+
+	// 只对小型盔甲架强制显示手臂。
+	public volatile boolean armorStandArmsOnlySmall = false;
+
 	// 隐藏物品展示框：展示框内装有物品时只渲染物品，不再渲染外框；空展示框保持原样。
 	public volatile boolean hideItemFrames = false;
 
+	// 只隐藏装有地图的展示框。
+	public volatile boolean hideItemFramesOnlyMaps = false;
+
+	// 连空展示框也隐藏外框。
+	public volatile boolean hideItemFramesHideEmpty = false;
+
 	// 取消速度上限：关闭服务端的 moved too quickly 速度检查；仅在单人/局域网主机生效。
 	public volatile boolean removeSpeedLimit = false;
+
+	// 只对骑乘中的玩家取消速度上限。
+	public volatile boolean removeSpeedLimitOnlyVehicles = false;
+
+	// 只对正在飞行/滑翔的玩家取消速度上限。
+	public volatile boolean removeSpeedLimitOnlyFlying = false;
 
 	@Override
 	boolean sanitize() {
@@ -529,6 +637,58 @@ public final class ModifiedConfig extends ConfigSection {
 		LOGGER.warn("Clamping useItemSlowdownKeepPercent from {} to {}",
 			useItemSlowdownKeepPercent, clamped);
 		useItemSlowdownKeepPercent = clamped;
+		return true;
+	}
+
+	// 修正可见交易的未来等级数。
+	private boolean sanitizeVisibleTradersFutureLevels() {
+		int clamped = Math.max(TweakifyModConfig.MIN_VISIBLE_TRADER_FUTURE_LEVELS,
+			Math.min(TweakifyModConfig.MAX_VISIBLE_TRADER_FUTURE_LEVELS, visibleTradersFutureLevels));
+		if (clamped == visibleTradersFutureLevels) {
+			return false;
+		}
+		LOGGER.warn("Clamping visibleTradersFutureLevels from {} to {}",
+			visibleTradersFutureLevels, clamped);
+		visibleTradersFutureLevels = clamped;
+		return true;
+	}
+
+	// 修正超平坦史莱姆 Y 上限。
+	private boolean sanitizeFlatSlimeY() {
+		int clamped = Math.max(TweakifyModConfig.MIN_FLAT_SLIME_Y,
+			Math.min(TweakifyModConfig.MAX_FLAT_SLIME_Y, flatWorldSlimeSpawnBelowY));
+		if (clamped == flatWorldSlimeSpawnBelowY) {
+			return false;
+		}
+		LOGGER.warn("Clamping flatWorldSlimeSpawnBelowY from {} to {}",
+			flatWorldSlimeSpawnBelowY, clamped);
+		flatWorldSlimeSpawnBelowY = clamped;
+		return true;
+	}
+
+	// 修正附魔阿拉伯数字的等级下限。
+	private boolean sanitizeEnchantmentArabicLevel() {
+		int clamped = Math.max(TweakifyModConfig.MIN_ENCHANTMENT_ARABIC_LEVEL,
+			Math.min(TweakifyModConfig.MAX_ENCHANTMENT_ARABIC_LEVEL, enchantmentLevelArabicMinLevel));
+		if (clamped == enchantmentLevelArabicMinLevel) {
+			return false;
+		}
+		LOGGER.warn("Clamping enchantmentLevelArabicMinLevel from {} to {}",
+			enchantmentLevelArabicMinLevel, clamped);
+		enchantmentLevelArabicMinLevel = clamped;
+		return true;
+	}
+
+	// 修正可见交易的锁定交易条数上限。
+	private boolean sanitizeVisibleTradersMaxLockedOffers() {
+		int clamped = Math.max(TweakifyModConfig.MIN_VISIBLE_TRADER_LOCKED_OFFERS,
+			Math.min(TweakifyModConfig.MAX_VISIBLE_TRADER_LOCKED_OFFERS, visibleTradersMaxLockedOffers));
+		if (clamped == visibleTradersMaxLockedOffers) {
+			return false;
+		}
+		LOGGER.warn("Clamping visibleTradersMaxLockedOffers from {} to {}",
+			visibleTradersMaxLockedOffers, clamped);
+		visibleTradersMaxLockedOffers = clamped;
 		return true;
 	}
 

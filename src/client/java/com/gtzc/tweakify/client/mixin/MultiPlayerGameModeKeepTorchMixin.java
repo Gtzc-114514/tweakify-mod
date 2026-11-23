@@ -38,9 +38,12 @@ public class MultiPlayerGameModeKeepTorchMixin {
 		Player player = context.getPlayer();
 		if (config != null && config.modified.keepLastTorch && player != null && !player.isCreative()) {
 			HookProbe.markOnce(TWEAKIFY$KEEP_TORCH_CLIENT_PROBE, "keepLastTorchClient");
+			boolean offhandSpare = config.modified.keepLastTorchIgnoreOffhand
+				&& player.getOffhandItem().getItem() == stack.getItem();
 			if (KeepLastTorchFeature.shouldBlockPlacement(
-				stack.getItem(), KeepLastTorchFeature.countTorches(player, stack.getItem()),
-				config.modified.keepLastTorchMinCount)) {
+				stack.getItem(), KeepLastTorchFeature.countTorches(player, stack.getItem(),
+					!config.modified.keepLastTorchIgnoreOffhand),
+				config.modified.keepLastTorchMinCount, offhandSpare)) {
 				return InteractionResult.PASS;
 			}
 		}

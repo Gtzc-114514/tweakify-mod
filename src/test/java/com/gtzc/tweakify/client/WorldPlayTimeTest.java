@@ -105,6 +105,14 @@ class WorldPlayTimeTest {
 	}
 
 	@Test
+	void hoursTextHonorsConfiguredDecimals() {
+		assertEquals("1", WorldPlayTime.hoursText(72000L, 0));
+		assertEquals("1.00", WorldPlayTime.hoursText(72000L, 2));
+		assertEquals("12.50", WorldPlayTime.hoursText(900000L, 2));
+		assertEquals("100", WorldPlayTime.hoursText(7200000L, 2));
+	}
+
+	@Test
 	void durationPartsKeepRemainderMinutes() {
 		assertEquals(1L, WorldPlayTime.durationHours(73200L));
 		assertEquals(1L, WorldPlayTime.durationMinutes(73200L));

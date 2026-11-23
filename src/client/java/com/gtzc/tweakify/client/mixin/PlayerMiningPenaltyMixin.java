@@ -24,6 +24,11 @@ public class PlayerMiningPenaltyMixin {
 		if (config == null || !config.modified.disableUnderwaterMiningPenalty) {
 			return value;
 		}
+		Player self = (Player) (Object) this;
+		if (!MiningPenaltyState.shouldRemoveUnderwaterPenalty(
+			config.modified.underwaterMiningPenaltySwimmingOnly, self.isSwimming())) {
+			return value;
+		}
 		return MiningPenaltyState.underwaterMultiplier(value, config.modified.underwaterMiningPenaltyKeep);
 	}
 
@@ -32,6 +37,11 @@ public class PlayerMiningPenaltyMixin {
 	private float tweakify$removeAirPenalty(float original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.modified.disableAirMiningPenalty) {
+			return original;
+		}
+		Player self = (Player) (Object) this;
+		if (config.modified.airMiningPenaltyOnlyWhenFalling
+			&& self.getDeltaMovement().y >= 0.0) {
 			return original;
 		}
 		return MiningPenaltyState.airDivisor(original, config.modified.airMiningPenaltyKeep);

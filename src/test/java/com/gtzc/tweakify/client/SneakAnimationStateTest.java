@@ -25,4 +25,18 @@ class SneakAnimationStateTest {
 	void keepsPoseForOtherEntities() {
 		assertFalse(SneakAnimationState.shouldStripPose(true, false));
 	}
+
+	@Test
+	void onlyOnGroundGatesTheFix() {
+		assertTrue(SneakAnimationState.shouldStripPose(true, true, true, true));
+		assertFalse(SneakAnimationState.shouldStripPose(true, true, true, false));
+		assertTrue(SneakAnimationState.shouldStripPose(true, false, true, false));
+	}
+
+	@Test
+	void onlyWhenSneakingGatesTheFix() {
+		assertTrue(SneakAnimationState.shouldStripPose(true, false, true, true, true, true));
+		assertFalse(SneakAnimationState.shouldStripPose(true, false, true, true, true, false));
+		assertTrue(SneakAnimationState.shouldStripPose(true, false, false, true, true, false));
+	}
 }

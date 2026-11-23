@@ -10,6 +10,9 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.LadderBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -61,10 +64,20 @@ public abstract class LivingEntityClimbingMixin {
 		HookProbe.markOnce(TWEAKIFY$NO_SLOWDOWN_PROBE, "climbablePassNoSlowdown");
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && ClimbablePassState.shouldSkipClamp(config.modified.climbablePassNoSlowdown,
-			config.modified.climbablePassNoSlowdownSneakOnly, self.isShiftKeyDown())
-			&& self instanceof LocalPlayer && self.level().isClientSide()) {
-			return speed;
+		if (config != null && self instanceof LocalPlayer && self.level().isClientSide()
+			&& ClimbablePassState.shouldSkipClamp(config.modified.climbablePassNoSlowdown,
+				config.modified.climbablePassNoSlowdownSneakOnly, self.isShiftKeyDown())) {
+			BlockState inBlock = self.getInBlockState();
+			boolean ladder = inBlock.getBlock() instanceof LadderBlock;
+			boolean trapdoor = inBlock.getBlock() instanceof TrapDoorBlock;
+			// 其它可攀爬方块统一按藤蔓类处理，兼容模组添加的攀爬方块。
+			boolean vine = !ladder && !trapdoor;
+			if (ClimbablePassState.allowsBlock(ladder, vine, trapdoor,
+				config.modified.climbablePassLadders,
+				config.modified.climbablePassVines,
+				config.modified.climbablePassTrapdoors)) {
+				return speed;
+			}
 		}
 		return original.call(speed, min, max);
 	}

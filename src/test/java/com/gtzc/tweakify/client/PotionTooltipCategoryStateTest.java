@@ -27,6 +27,16 @@ class PotionTooltipCategoryStateTest {
 	}
 
 	@Test
+	void eachEffectCanBeDisabledSeparately() {
+		assertEquals(MobEffectCategory.NEUTRAL, PotionTooltipCategoryState.tooltipCategory(
+			true, true, false, false, true, MobEffectCategory.NEUTRAL));
+		assertEquals(MobEffectCategory.NEUTRAL, PotionTooltipCategoryState.tooltipCategory(
+			true, false, true, true, false, MobEffectCategory.NEUTRAL));
+		assertEquals(MobEffectCategory.HARMFUL, PotionTooltipCategoryState.tooltipCategory(
+			true, true, false, true, false, MobEffectCategory.NEUTRAL));
+	}
+
+	@Test
 	void enabledLeavesOtherEffectsUnchanged() {
 		assertEquals(MobEffectCategory.BENEFICIAL, PotionTooltipCategoryState.tooltipCategory(
 			true, false, false, MobEffectCategory.BENEFICIAL));

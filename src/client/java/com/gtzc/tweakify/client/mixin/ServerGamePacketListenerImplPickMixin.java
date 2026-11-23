@@ -64,6 +64,23 @@ public class ServerGamePacketListenerImplPickMixin {
 			config.functions.pickFluidBucketFluids, water, lava)) {
 			return cloneStack;
 		}
+		if (creative && config.functions.pickFluidBucketSourceOnly
+			&& !state.getFluidState().isSource()) {
+			return cloneStack;
+		}
+		if (!creative && config.functions.survivalPickBlockHotbarOnly) {
+			boolean found = false;
+			for (int slot = 0; slot < 9; slot++) {
+				if (this.player.getInventory().getItem(slot)
+					.is(water ? Items.WATER_BUCKET : Items.LAVA_BUCKET)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				return cloneStack;
+			}
+		}
 		if (water) {
 			return new ItemStack(Items.WATER_BUCKET);
 		}

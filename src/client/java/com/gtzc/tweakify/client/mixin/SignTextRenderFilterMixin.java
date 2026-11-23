@@ -15,6 +15,7 @@ public class SignTextRenderFilterMixin {
 		target = "Lnet/minecraft/client/Minecraft;isTextFilteringEnabled()Z"))
 	private boolean tweakify$disableSignTextFiltering(boolean original) {
 		return TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.optimization.signTextOptimization
+			&& TweakifyMod.CONFIG.optimization.signTextOptimizationSkipFiltering
 			? false
 			: original;
 	}

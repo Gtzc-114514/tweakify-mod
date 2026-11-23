@@ -15,7 +15,14 @@ public final class PotionTooltipCategoryState {
 
 	public static MobEffectCategory tooltipCategory(boolean enabled, boolean glowing, boolean badOmen,
 			MobEffectCategory original) {
-		if (!enabled || (!glowing && !badOmen)) {
+		return tooltipCategory(enabled, glowing, badOmen, true, true, original);
+	}
+
+	// 带子开关的版本：只修正启用的效果类型。
+	public static MobEffectCategory tooltipCategory(boolean enabled, boolean glowing, boolean badOmen,
+			boolean fixGlowing, boolean fixBadOmen, MobEffectCategory original) {
+		boolean fix = (glowing && fixGlowing) || (badOmen && fixBadOmen);
+		if (!enabled || !fix) {
 			return original;
 		}
 		return MobEffectCategory.HARMFUL;

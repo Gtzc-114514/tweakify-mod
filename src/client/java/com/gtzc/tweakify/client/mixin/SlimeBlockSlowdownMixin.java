@@ -4,6 +4,7 @@ import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SlimeBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,7 +25,8 @@ public class SlimeBlockSlowdownMixin {
 	private void tweakify$disableSlowdown(Level level, BlockPos pos, BlockState state, Entity entity,
 										  CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.modified.disableSlimeBlockSlowdown) {
+		if (config != null && config.modified.disableSlimeBlockSlowdown
+			&& (!config.modified.disableSlimeBlockSlowdownPlayersOnly || entity instanceof Player)) {
 			ci.cancel();
 		}
 	}

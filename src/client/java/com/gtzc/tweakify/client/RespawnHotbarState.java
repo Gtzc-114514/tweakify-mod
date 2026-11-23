@@ -15,4 +15,9 @@ public final class RespawnHotbarState {
 	public static int slotToRestore(boolean enabled, int oldSelectedSlot) {
 		return enabled ? oldSelectedSlot : NO_CHANGE;
 	}
+
+	// 是否在本次重生恢复槽位：可配置维度切换时是否也恢复。
+	public static boolean shouldRestore(boolean enabled, boolean keepOnDimensionChange, boolean dimensionChange) {
+		return enabled && (keepOnDimensionChange || !dimensionChange);
+	}
 }

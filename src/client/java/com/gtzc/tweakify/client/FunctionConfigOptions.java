@@ -46,6 +46,12 @@ public final class FunctionConfigOptions {
 	public static final ConfigBoolean MINING_COOLDOWN_ATTACKS = new ConfigBoolean(
 		"miningCooldownAttacks", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 一次挖掘/攻击成功后额外锁定的时间（tick）。
+	public static final ConfigInteger MINING_COOLDOWN_COOLDOWN_TICKS = new ConfigInteger(
+		"miningCooldownCooldownTicks", TweakifyModConfig.DEFAULT_MINING_COOLDOWN_TICKS,
+		TweakifyModConfig.MIN_MINING_COOLDOWN_TICKS,
+		TweakifyModConfig.MAX_MINING_COOLDOWN_TICKS).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBooleanHotkeyed USE_COOLDOWN = new ConfigBooleanHotkeyed(
 		"useCooldown", true, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
 
@@ -60,6 +66,10 @@ public final class FunctionConfigOptions {
 
 	public static final ConfigBoolean FLIGHT_DRIFT_VERTICAL = new ConfigBoolean(
 		"flightDriftVertical", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 只对创造模式飞行生效。
+	public static final ConfigBoolean FLIGHT_DRIFT_ONLY_CREATIVE = new ConfigBoolean(
+		"flightDriftOnlyCreative", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigBooleanHotkeyed DISABLE_DIMENSION_TELEPORT = new ConfigBooleanHotkeyed(
 		"disableDimensionTeleport", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -76,6 +86,12 @@ public final class FunctionConfigOptions {
 
 	public static final ConfigBoolean NETHER_PORTAL_CREATIVE_DELAYED_TELEPORT = new ConfigBoolean(
 		"netherPortalCreativeDelayedTeleport", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 自定义等待时间（tick）：0 = 使用上面的子开关与原版规则。
+	public static final ConfigInteger NETHER_PORTAL_TELEPORT_DELAY_TICKS = new ConfigInteger(
+		"netherPortalTeleportDelayTicks", TweakifyModConfig.DEFAULT_NETHER_PORTAL_DELAY_TICKS,
+		TweakifyModConfig.MIN_NETHER_PORTAL_DELAY_TICKS,
+		TweakifyModConfig.MAX_NETHER_PORTAL_DELAY_TICKS).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigBoolean DISABLE_NETHER_PORTAL_TELEPORT = new ConfigBoolean(
 		"disableNetherPortalTeleport", true).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -253,6 +269,12 @@ public final class FunctionConfigOptions {
 		"elytraFireworkCooldownTicks", TweakifyModConfig.MIN_ELYTRA_FIREWORK_TICKS,
 		TweakifyModConfig.MIN_ELYTRA_FIREWORK_TICKS, TweakifyModConfig.MAX_ELYTRA_FIREWORK_TICKS).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 等待烟花加速结束时的最长锁定时间（tick）。
+	public static final ConfigInteger ELYTRA_FIREWORK_COOLDOWN_MAX_TICKS = new ConfigInteger(
+		"elytraFireworkCooldownMaxTicks", TweakifyModConfig.DEFAULT_ELYTRA_FIREWORK_MAX_TICKS,
+		TweakifyModConfig.MIN_ELYTRA_FIREWORK_MAX_TICKS,
+		TweakifyModConfig.MAX_ELYTRA_FIREWORK_MAX_TICKS).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 关闭指定生物生成：列表为空时不生效。
 	public static final ConfigBooleanHotkeyed DISABLE_SPECIFIED_MOB_SPAWN = new ConfigBooleanHotkeyed(
 		"disableSpecifiedMobSpawn", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -333,6 +355,11 @@ public final class FunctionConfigOptions {
 	public static final ConfigOptionList SAVE_PLAY_TIME_FORMAT = new ConfigOptionList(
 		"savePlayTimeFormat", SavePlayTimeFormat.HOURS).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigInteger SAVE_PLAY_TIME_DECIMALS = new ConfigInteger(
+		"savePlayTimeDecimals", TweakifyModConfig.DEFAULT_SAVE_PLAY_TIME_DECIMALS,
+		TweakifyModConfig.MIN_SAVE_PLAY_TIME_DECIMALS,
+		TweakifyModConfig.MAX_SAVE_PLAY_TIME_DECIMALS).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 自定义方块轮廓：总开关与色调/线宽子项。
 	public static final ConfigBooleanHotkeyed CUSTOM_BLOCK_OUTLINE = new ConfigBooleanHotkeyed(
 		"customBlockOutline", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -364,6 +391,16 @@ public final class FunctionConfigOptions {
 
 	public static final ConfigBoolean BONE_MEAL_FLOWERS = new ConfigBoolean(
 		"boneMealFlowers", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigInteger BONE_MEAL_FLOWER_COUNT = new ConfigInteger(
+		"boneMealFlowerCount", TweakifyModConfig.DEFAULT_BONE_MEAL_FLOWER_COUNT,
+		TweakifyModConfig.MIN_BONE_MEAL_FLOWER_COUNT,
+		TweakifyModConfig.MAX_BONE_MEAL_FLOWER_COUNT).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigInteger BONE_MEAL_FLOWER_RADIUS = new ConfigInteger(
+		"boneMealFlowerRadius", TweakifyModConfig.DEFAULT_BONE_MEAL_FLOWER_RADIUS,
+		TweakifyModConfig.MIN_BONE_MEAL_FLOWER_RADIUS,
+		TweakifyModConfig.MAX_BONE_MEAL_FLOWER_RADIUS).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 放置覆盖范围。
 	public static final ConfigOptionList BETTER_BLOCK_PLACEMENT_MODE = new ConfigOptionList(
@@ -462,6 +499,10 @@ public final class FunctionConfigOptions {
 	public static final ConfigOptionList PICK_FLUID_BUCKET_FLUIDS = new ConfigOptionList(
 		"pickFluidBucketFluids", FluidPickScope.WATER_AND_LAVA).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 只取源头液体。
+	public static final ConfigBoolean PICK_FLUID_BUCKET_SOURCE_ONLY = new ConfigBoolean(
+		"pickFluidBucketSourceOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 生存模式中键取物：背包里有对应物品就切换到主手。
 	public static final ConfigBooleanHotkeyed SURVIVAL_PICK_BLOCK = new ConfigBooleanHotkeyed(
 		"survivalPickBlock", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -469,6 +510,9 @@ public final class FunctionConfigOptions {
 	// 生存取物是否也处理液体分支（水/岩浆 → 已有的桶）。
 	public static final ConfigBoolean SURVIVAL_PICK_BLOCK_INCLUDE_FLUIDS = new ConfigBoolean(
 		"survivalPickBlockIncludeFluids", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean SURVIVAL_PICK_BLOCK_HOTBAR_ONLY = new ConfigBoolean(
+		"survivalPickBlockHotbarOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 便捷焚烧：右键点击岩浆桶或打火石焚烧光标上的物品。
 	public static final ConfigBooleanHotkeyed QUICK_BURN_ITEM = new ConfigBooleanHotkeyed(
@@ -478,6 +522,15 @@ public final class FunctionConfigOptions {
 	public static final ConfigBoolean QUICK_BURN_ITEM_REQUIRE_SNEAK = new ConfigBoolean(
 		"quickBurnItemRequireSneak", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 悬停在可焚烧组合上时显示提示。
+	public static final ConfigBoolean QUICK_BURN_ITEM_SHOW_HINT = new ConfigBoolean(
+		"quickBurnItemShowHint", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 可用作点燃物的物品 ID 列表。
+	public static final ConfigStringList QUICK_BURN_ITEM_IGNITERS = new ItemIdConfigStringList(
+		"quickBurnItemIgniters", ImmutableList.copyOf(TweakifyModConfig.DEFAULT_QUICK_BURN_IGNITERS))
+		.apply(ConfigOptionKeys.LISTS_KEY);
+
 	// 如履平地：自动跨上 1 格高的方块。
 	public static final ConfigBooleanHotkeyed AUTO_STEP_UP = new ConfigBooleanHotkeyed(
 		"autoStepUp", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -485,6 +538,10 @@ public final class FunctionConfigOptions {
 	// 跨步高度：1 格 / 1.5 格 / 2 格。
 	public static final ConfigOptionList AUTO_STEP_UP_HEIGHT = new ConfigOptionList(
 		"autoStepUpHeight", AutoStepUpHeight.ONE_BLOCK).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 潜行时保持原版步高。
+	public static final ConfigBoolean AUTO_STEP_UP_SNEAK_BYPASS = new ConfigBoolean(
+		"autoStepUpSneakBypass", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 更好的攀爬：攀爬方块相关的移动优化。
 	public static final ConfigBooleanHotkeyed BETTER_CLIMBING = new ConfigBooleanHotkeyed(
@@ -510,6 +567,10 @@ public final class FunctionConfigOptions {
 	public static final ConfigHotkey FORCE_CRAWL_KEY = new ConfigHotkey(
 		"forceCrawlKey", "", KeybindSettings.PRESS_ALLOWEXTRA).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 只在地面时强制爬行。
+	public static final ConfigBoolean FORCE_CRAWL_ONLY_ON_GROUND = new ConfigBoolean(
+		"forceCrawlOnlyOnGround", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 防猪灵装备切换：附近有猪灵时把背包里的金制装备换到身上，猪灵离开后换回。
 	public static final ConfigBooleanHotkeyed PIGLIN_GOLD_ARMOR_SWAP = new ConfigBooleanHotkeyed(
 		"piglinGoldArmorSwap", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -518,6 +579,12 @@ public final class FunctionConfigOptions {
 	public static final ConfigOptionList PIGLIN_GOLD_ARMOR_SWAP_MODE = new ConfigOptionList(
 		"piglinGoldArmorSwapMode", PiglinArmorSwapMode.AUTO).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 探测猪灵的半径（格）。
+	public static final ConfigInteger PIGLIN_GOLD_ARMOR_SWAP_RANGE = new ConfigInteger(
+		"piglinGoldArmorSwapRange", TweakifyModConfig.DEFAULT_PIGLIN_SWAP_RANGE,
+		TweakifyModConfig.MIN_PIGLIN_SWAP_RANGE,
+		TweakifyModConfig.MAX_PIGLIN_SWAP_RANGE).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 聊天框内容记忆：关闭聊天框后保留未发送的输入内容。
 	public static final ConfigBooleanHotkeyed CHAT_INPUT_MEMORY = new ConfigBooleanHotkeyed(
 		"chatInputMemory", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -525,6 +592,12 @@ public final class FunctionConfigOptions {
 	// 以 / 开头的命令草稿不记忆。
 	public static final ConfigBoolean CHAT_INPUT_MEMORY_IGNORE_COMMANDS = new ConfigBoolean(
 		"chatInputMemoryIgnoreCommands", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 草稿最大保留长度（字符）。
+	public static final ConfigInteger CHAT_INPUT_MEMORY_MAX_LENGTH = new ConfigInteger(
+		"chatInputMemoryMaxLength", TweakifyModConfig.DEFAULT_CHAT_INPUT_MEMORY_LENGTH,
+		TweakifyModConfig.MIN_CHAT_INPUT_MEMORY_LENGTH,
+		TweakifyModConfig.MAX_CHAT_INPUT_MEMORY_LENGTH).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigBooleanHotkeyed ENTITY_HIGHLIGHT = new ConfigBooleanHotkeyed(
 		"entityHighlight", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.HIGHLIGHT_KEY);
@@ -560,6 +633,19 @@ public final class FunctionConfigOptions {
 	public static final ConfigBooleanHotkeyed EXPLOSION_RANGE_DISPLAY = new ConfigBooleanHotkeyed(
 		"explosionRangeDisplay", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 爆炸范围子开关：分别控制 TNT（含 TNT 方块）、TNT 矿车、苦力怕与末地水晶。
+	public static final ConfigBoolean EXPLOSION_RANGE_SHOW_TNT = new ConfigBoolean(
+		"explosionRangeShowTnt", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean EXPLOSION_RANGE_SHOW_TNT_MINECARTS = new ConfigBoolean(
+		"explosionRangeShowTntMinecarts", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean EXPLOSION_RANGE_SHOW_CREEPERS = new ConfigBoolean(
+		"explosionRangeShowCreepers", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean EXPLOSION_RANGE_SHOW_END_CRYSTALS = new ConfigBoolean(
+		"explosionRangeShowEndCrystals", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 更好的 F2 截图：F9 为子项，输出格式覆盖 PNG/JPG/TGA/BMP。
 	public static final ConfigBoolean BETTER_SCREENSHOT = new ConfigBoolean(
 		"betterScreenshot", true).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -569,6 +655,10 @@ public final class FunctionConfigOptions {
 
 	public static final ConfigOptionList BETTER_SCREENSHOT_FORMAT = new ConfigOptionList(
 		"betterScreenshotFormat", ScreenshotFormat.PNG).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 截图后是否在聊天栏显示可点击的截图卡片。
+	public static final ConfigBoolean BETTER_SCREENSHOT_CHAT_CARD = new ConfigBoolean(
+		"betterScreenshotChatCard", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigBooleanHotkeyed SWEEPING_VIEW = new ConfigBooleanHotkeyed(
 		"sweepingView", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -604,6 +694,145 @@ public final class FunctionConfigOptions {
 	// 附魔台附魔信息：悬停附魔选项时显示实际将获得的附魔。
 	public static final ConfigBooleanHotkeyed ENCHANTING_TABLE_INFO = new ConfigBooleanHotkeyed(
 		"enchantingTableInfo", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 附魔台信息子项：显示经验消耗、显示最高等级与仅潜行时显示。
+	public static final ConfigBoolean ENCHANTING_TABLE_INFO_SHOW_COST = new ConfigBoolean(
+		"enchantingTableInfoShowCost", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean ENCHANTING_TABLE_INFO_SHOW_MAX_LEVEL = new ConfigBoolean(
+		"enchantingTableInfoShowMaxLevel", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean ENCHANTING_TABLE_INFO_REQUIRE_SNEAK = new ConfigBoolean(
+		"enchantingTableInfoRequireSneak", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 手持物品信息（参考 held-item-info）：名称下方显示附魔、容器内容、告示牌等。
+	public static final ConfigBooleanHotkeyed HELD_ITEM_INFO = new ConfigBooleanHotkeyed(
+		"heldItemInfo", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 内容开关：与参考实现的选项一一对应。
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_NAME = new ConfigBoolean(
+		"heldItemInfoShowName", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_ENCHANTMENTS = new ConfigBoolean(
+		"heldItemInfoShowEnchantments", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_POTION_EFFECTS = new ConfigBoolean(
+		"heldItemInfoShowPotionEffects", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_CONTAINER_CONTENT = new ConfigBoolean(
+		"heldItemInfoShowContainerContent", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_MERGE_SIMILAR_CONTAINER_ITEMS = new ConfigBoolean(
+		"heldItemInfoMergeSimilarContainerItems", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_FIREWORK_ATTRIBUTES = new ConfigBoolean(
+		"heldItemInfoShowFireworkAttributes", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_COMMAND_BLOCK_INFO = new ConfigBoolean(
+		"heldItemInfoShowCommandBlockInfo", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_BEEHIVE_CONTENT = new ConfigBoolean(
+		"heldItemInfoShowBeehiveContent", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_SPAWNER_ENTITY = new ConfigBoolean(
+		"heldItemInfoShowSpawnerEntity", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_CROSSBOW_PROJECTILES = new ConfigBoolean(
+		"heldItemInfoShowCrossbowProjectiles", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_LORE = new ConfigBoolean(
+		"heldItemInfoShowLore", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_UNBREAKABLE = new ConfigBoolean(
+		"heldItemInfoShowUnbreakable", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_SIGN_TEXT = new ConfigBoolean(
+		"heldItemInfoShowSignText", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_MUSIC_DISC_DESCRIPTION = new ConfigBoolean(
+		"heldItemInfoShowMusicDiscDescription", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_PAINTING_DESCRIPTION = new ConfigBoolean(
+		"heldItemInfoShowPaintingDescription", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_GOAT_HORN_INSTRUMENT = new ConfigBoolean(
+		"heldItemInfoShowGoatHornInstrument", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_BOOK_META = new ConfigBoolean(
+		"heldItemInfoShowBookMeta", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_FILLED_MAP_ID = new ConfigBoolean(
+		"heldItemInfoShowFilledMapId", false).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_ENTITY_BUCKET_CONTENT = new ConfigBoolean(
+		"heldItemInfoShowEntityBucketContent", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_BLOCK_STATE = new ConfigBoolean(
+		"heldItemInfoShowBlockState", true).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_HIDDEN_LINES_COUNT = new ConfigBoolean(
+		"heldItemInfoShowHiddenLinesCount", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 行数 / 行宽限制。
+	public static final ConfigInteger HELD_ITEM_INFO_MAX_LINES = new ConfigInteger(
+		"heldItemInfoMaxLines", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_MAX_LINES,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_LINES,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_LINES).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigInteger HELD_ITEM_INFO_MAX_LINE_LENGTH = new ConfigInteger(
+		"heldItemInfoMaxLineLength", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_MAX_LINE_LENGTH,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_LINE_LENGTH,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_LINE_LENGTH).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigInteger HELD_ITEM_INFO_MAX_COMMAND_LINES = new ConfigInteger(
+		"heldItemInfoMaxCommandLines", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_MAX_COMMAND_LINES,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_LINES,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_LINES).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigInteger HELD_ITEM_INFO_MAX_LORE_LINES = new ConfigInteger(
+		"heldItemInfoMaxLoreLines", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_MAX_LORE_LINES,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_LINES,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_LINES).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 是否只显示“在物品栏提示框里可见”的数据组件。
+	public static final ConfigBoolean HELD_ITEM_INFO_RESPECT_HIDE_FLAGS = new ConfigBoolean(
+		"heldItemInfoRespectHideFlags", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 排版：行高、额外行偏移、名称间距与整体垂直偏移。
+	public static final ConfigInteger HELD_ITEM_INFO_LINE_HEIGHT = new ConfigInteger(
+		"heldItemInfoLineHeight", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_LINE_HEIGHT,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_LINE_HEIGHT,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_LINE_HEIGHT).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigDouble HELD_ITEM_INFO_OFFSET_PER_EXTRA_LINE = new ConfigDouble(
+		"heldItemInfoOffsetPerExtraLine", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_OFFSET_PER_LINE,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_OFFSET_PER_LINE,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_OFFSET_PER_LINE).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigInteger HELD_ITEM_INFO_ITEM_NAME_SPACING = new ConfigInteger(
+		"heldItemInfoItemNameSpacing", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_NAME_SPACING,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_NAME_SPACING,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_NAME_SPACING).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigInteger HELD_ITEM_INFO_VERTICAL_OFFSET = new ConfigInteger(
+		"heldItemInfoVerticalOffset", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_VERTICAL_OFFSET,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_VERTICAL_OFFSET,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_VERTICAL_OFFSET).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 淡出时长（秒）：单行基础时长与每多一行的追加时长。
+	public static final ConfigDouble HELD_ITEM_INFO_BASE_FADE_DURATION = new ConfigDouble(
+		"heldItemInfoBaseFadeDuration", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_BASE_FADE,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_FADE_DURATION,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_FADE_DURATION).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigDouble HELD_ITEM_INFO_FADE_DURATION_PER_EXTRA_LINE = new ConfigDouble(
+		"heldItemInfoFadeDurationPerExtraLine", TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_FADE_PER_LINE,
+		TweakifyModConfig.MIN_HELD_ITEM_INFO_FADE_DURATION,
+		TweakifyModConfig.MAX_HELD_ITEM_INFO_FADE_PER_LINE).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 与血量条/动作栏消息错开。
+	public static final ConfigBoolean HELD_ITEM_INFO_PREVENT_OVERLAP = new ConfigBoolean(
+		"heldItemInfoPreventOverlap", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 背景可见性。
+	public static final ConfigOptionList HELD_ITEM_INFO_BACKGROUND = new ConfigOptionList(
+		"heldItemInfoBackground", HeldItemInfoBackground.VANILLA).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 附魔过滤：只保留（或只排除）名单内的附魔。
+	public static final ConfigBoolean HELD_ITEM_INFO_SHOW_ONLY_FILTERED_ENCHANTMENTS = new ConfigBoolean(
+		"heldItemInfoShowOnlyFilteredEnchantments", false).apply(ConfigOptionKeys.GENERAL_KEY);
+	public static final ConfigStringList HELD_ITEM_INFO_FILTERED_ENCHANTMENTS = new ConfigStringList(
+		"heldItemInfoFilteredEnchantments", ImmutableList.of()).apply(ConfigOptionKeys.LISTS_KEY);
+
+	// 背包快捷右键：右键点击背包里的方块物品直接打开对应界面。
+	public static final ConfigBooleanHotkeyed INVENTORY_QUICK_RIGHT_CLICK = new ConfigBooleanHotkeyed(
+		"inventoryQuickRightClick", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean QUICK_RIGHT_CLICK_FUNCTIONAL_BLOCKS = new ConfigBoolean(
+		"quickRightClickFunctionalBlocks", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean QUICK_RIGHT_CLICK_SHULKER_BOXES = new ConfigBoolean(
+		"quickRightClickShulkerBoxes", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean QUICK_RIGHT_CLICK_ENDER_CHEST = new ConfigBoolean(
+		"quickRightClickEnderChest", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 需要潜行才打开，避免整理背包时误触。
+	public static final ConfigBoolean QUICK_RIGHT_CLICK_REQUIRE_SNEAK = new ConfigBoolean(
+		"quickRightClickRequireSneak", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigStringList NETHER_PORTAL_TELEPORT_BLACKLIST = new EntityIdConfigStringList(
 		"netherPortalTeleportBlacklist", ImmutableList.of()).apply(ConfigOptionKeys.LISTS_KEY);

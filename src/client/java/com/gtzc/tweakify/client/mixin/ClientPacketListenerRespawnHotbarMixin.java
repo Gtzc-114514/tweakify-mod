@@ -38,10 +38,15 @@ public abstract class ClientPacketListenerRespawnHotbarMixin {
 			@Local(ordinal = 0) LocalPlayer oldPlayer,
 			@Local(ordinal = 1) LocalPlayer newPlayer) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		boolean enabled = config != null && config.fix.respawnHotbarFix;
 		if (oldPlayer == null || newPlayer == null) {
 			return;
 		}
+		// 死亡重生与维度切换都会走 handleRespawn：先用旧玩家死亡状态区分，再比较维度。
+		boolean death = oldPlayer.isDeadOrDying();
+		boolean dimensionChange = !death && !oldPlayer.level().dimension()
+			.equals(packet.commonPlayerSpawnInfo().dimension());
+		boolean enabled = config != null && RespawnHotbarState.shouldRestore(
+			config.fix.respawnHotbarFix, config.fix.respawnHotbarKeepOnDimensionChange, dimensionChange);
 		int slot = RespawnHotbarState.slotToRestore(enabled,
 			oldPlayer.getInventory().getSelectedSlot());
 		if (slot < 0) {

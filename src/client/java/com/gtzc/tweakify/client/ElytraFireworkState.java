@@ -38,6 +38,12 @@ public final class ElytraFireworkState {
 			return;
 		}
 		blockingTicks++;
+		// 最长锁定时间：即使烟花加速仍未结束，也会强制解除限制。
+		int maxTicks = config.functions.elytraFireworkCooldownMaxTicks;
+		if (shouldReleaseByMax(maxTicks, blockingTicks)) {
+			reset();
+			return;
+		}
 		// 配置了固定间隔时按 tick 解锁，不再等待烟花实体消失。
 		int fixedTicks = config.functions.elytraFireworkCooldownTicks;
 		if (fixedTicks > 0) {
@@ -59,6 +65,11 @@ public final class ElytraFireworkState {
 	// 纯判定：锁定期间没看到烟花实体，且（之前看到过烟花或等待已超时）时解除限制。
 	static boolean shouldRelease(boolean sawRocket, boolean rocketPresent, int blockingTicks) {
 		return !rocketPresent && (sawRocket || blockingTicks > ROCKET_APPEAR_TIMEOUT_TICKS);
+	}
+
+	// 纯判定：配置了最长锁定时，达到上限即解除。
+	static boolean shouldReleaseByMax(int maxTicks, int blockingTicks) {
+		return maxTicks > 0 && blockingTicks >= maxTicks;
 	}
 
 	// 由 MinecraftUseMixin 在右键开始时调用：锁定期间阻止再次使用烟花。

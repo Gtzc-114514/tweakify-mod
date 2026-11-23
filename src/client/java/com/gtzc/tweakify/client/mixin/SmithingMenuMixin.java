@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client.mixin;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.SmithingTemplateState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.SmithingMenu;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -29,10 +30,17 @@ public class SmithingMenuMixin {
 	private void tweakify$skipTemplateShrink(SmithingMenu menu, int slot) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && config.modified.disableSmithingTemplateConsumption
-			&& slot == SmithingMenu.TEMPLATE_SLOT
-			&& SmithingTemplateState.shouldKeepTemplate(true, config.modified.smithingTemplateKeepChance,
+			&& slot == SmithingMenu.TEMPLATE_SLOT) {
+			Player player = ((ItemCombinerMenuAccessor) (Object) this).tweakify$getPlayer();
+			if (config.modified.smithingTemplateSurvivalOnly
+				&& player != null && player.isCreative()) {
+				this.shrinkStackInSlot(slot);
+				return;
+			}
+			if (SmithingTemplateState.shouldKeepTemplate(true, config.modified.smithingTemplateKeepChance,
 				ThreadLocalRandom.current().nextInt(100))) {
-			return;
+				return;
+			}
 		}
 		this.shrinkStackInSlot(slot);
 	}

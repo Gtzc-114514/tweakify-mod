@@ -37,6 +37,10 @@ public class SnowGolemBiomeImmunityMixin {
 		if (config != null && attribute == EnvironmentAttributes.SNOW_GOLEM_MELTS) {
 			SnowGolem self = (SnowGolem) (Object) this;
 			boolean overworld = self.level().dimension() == Level.OVERWORLD;
+			if (config.modified.snowGolemBiomeImmunityOnlyWhenRaining
+				&& !self.level().isRainingAt(self.blockPosition())) {
+				return system.getValue(attribute, pos);
+			}
 			if (SnowGolemBiomeState.shouldSuppressMelting(config.modified.snowGolemBiomeImmunity,
 				config.modified.snowGolemBiomeImmunityOverworldOnly, overworld)) {
 				return Boolean.FALSE;

@@ -23,6 +23,9 @@ public class AbstractClientPlayerFovMixin {
 		if (config == null || !config.modified.disableSprintFov || !self.isSprinting() || self.isScoping()) {
 			return original;
 		}
+		if (config.modified.sprintFovOnlyFirstPerson && !firstPerson) {
+			return original;
+		}
 		if (self.isUsingItem() && self.getUseItem().is(Items.BOW)) {
 			return original;
 		}

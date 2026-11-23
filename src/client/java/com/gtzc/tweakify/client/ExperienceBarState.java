@@ -13,7 +13,12 @@ public final class ExperienceBarState {
 
 	// 关闭时原样返回；开启时只修掉“小于等于 0 就整条不画”的分支。
 	public static int xpNeededForNextLevel(boolean enabled, int xpNeeded) {
-		if (!enabled) {
+		return xpNeededForNextLevel(enabled, 0, 0, xpNeeded);
+	}
+
+	// 带等级下限的版本：低于下限时保持原版（不修复）。
+	public static int xpNeededForNextLevel(boolean enabled, int minLevel, int currentLevel, int xpNeeded) {
+		if (!enabled || currentLevel < minLevel) {
 			return xpNeeded;
 		}
 		// 不能夹到 0：原版同样会跳过绘制，至少保留 1 才能让经验条可见。

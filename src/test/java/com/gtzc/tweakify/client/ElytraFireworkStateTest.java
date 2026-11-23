@@ -25,6 +25,14 @@ class ElytraFireworkStateTest {
 	}
 
 	@Test
+	void maximumWaitReleasesTheLock() {
+		assertFalse(ElytraFireworkState.shouldReleaseByMax(0, 1000));
+		assertFalse(ElytraFireworkState.shouldReleaseByMax(100, 99));
+		assertTrue(ElytraFireworkState.shouldReleaseByMax(100, 100));
+		assertTrue(ElytraFireworkState.shouldReleaseByMax(100, 101));
+	}
+
+	@Test
 	void markUsedBlocksUntilReset() {
 		ElytraFireworkState.reset();
 		assertFalse(ElytraFireworkState.shouldBlockUse());

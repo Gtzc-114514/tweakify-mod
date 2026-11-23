@@ -33,6 +33,14 @@ class KeepLastTorchFeatureTest {
 		assertFalse(KeepLastTorchFeature.shouldBlockPlacement(Items.STONE, 1));
 	}
 
+	@Test
+	void offhandSpareAllowsPlacingLastTorch() {
+		assertFalse(KeepLastTorchFeature.shouldBlockPlacement(Items.TORCH, 1, 1, true));
+		assertTrue(KeepLastTorchFeature.shouldBlockPlacement(Items.TORCH, 1, 1, false));
+		assertFalse(KeepLastTorchFeature.shouldBlockPlacement(Items.STONE, 1, 1, true),
+			"非火把仍然不拦截");
+	}
+
 	// 可配置阈值：剩余数量不超过阈值时阻挡；阈值夹紧到 1 ~ 8。
 	@Test
 	void thresholdBlocksUpToConfiguredCount() {

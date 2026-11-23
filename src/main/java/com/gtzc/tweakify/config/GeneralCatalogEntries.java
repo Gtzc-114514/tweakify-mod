@@ -38,6 +38,7 @@ final class GeneralCatalogEntries {
 		entries.add(child("favoriteSystem", "favoriteStarStyle"));
 		entries.add(child("favoriteSystem", "favoriteIncludeChildren"));
 		entries.add(general("searchHighlight", true));
+		entries.add(child("searchHighlight", "searchHighlightColor"));
 		entries.add(general("smoothScroll", true));
 		entries.add(child("smoothScroll", "smoothScrollConfigList"));
 		entries.add(child("smoothScroll", "smoothScrollCreative"));

@@ -48,6 +48,14 @@ class IronGolemMinecartStateTest {
 	}
 
 	@Test
+	void emptyHandsGateRequiresBothHands() {
+		assertTrue(IronGolemMinecartState.hasEmptyHands(true, true));
+		assertFalse(IronGolemMinecartState.hasEmptyHands(false, true));
+		assertFalse(IronGolemMinecartState.hasEmptyHands(true, false));
+		assertFalse(IronGolemMinecartState.hasEmptyHands(false, false));
+	}
+
+	@Test
 	void searchBoxExpandsInAllThreeAxes() {
 		AABB cart = new AABB(0.0, 0.0, 0.0, 1.0, 0.7, 1.0);
 		AABB box = IronGolemMinecartState.searchBox(cart);

@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client.mixin;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,9 +19,18 @@ public class ArmorStandArmsMixin {
 	@ModifyReturnValue(method = "showArms", at = @At("RETURN"))
 	private boolean tweakify$forceShowArms(boolean original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.modified.armorStandArms) {
-			return true;
+		if (config == null || !config.modified.armorStandArms) {
+			return original;
 		}
-		return original;
+		ArmorStand stand = (ArmorStand) (Object) this;
+		if (config.modified.armorStandArmsOnlySmall && !stand.isSmall()) {
+			return original;
+		}
+		if (config.modified.armorStandArmsOnlyWithItems
+			&& stand.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()
+			&& stand.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty()) {
+			return original;
+		}
+		return true;
 	}
 }

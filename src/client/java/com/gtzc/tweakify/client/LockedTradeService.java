@@ -99,12 +99,24 @@ public final class LockedTradeService {
 		return Optional.of(locked.remove(0));
 	}
 
-	// 合并所有剩余锁定交易，用于下发给客户端。
+	// 合并剩余锁定交易，用于下发给客户端；只限制展示内容，不改变升级时消耗的完整组。
 	public static Optional<MerchantOffers> condense(Villager villager) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		int configuredLevels = config == null
+			? TweakifyModConfig.DEFAULT_VISIBLE_TRADER_FUTURE_LEVELS
+			: config.modified.visibleTradersFutureLevels;
+		int configuredOffers = config == null
+			? TweakifyModConfig.DEFAULT_VISIBLE_TRADER_LOCKED_OFFERS
+			: config.modified.visibleTradersMaxLockedOffers;
 		List<MerchantOffers> locked = getOrGenerate(villager);
 		MerchantOffers combined = new MerchantOffers();
-		for (MerchantOffers offers : locked) {
-			combined.addAll(offers);
+		int levelsToShow = VisibleTradersState.futureLevelsToShow(configuredLevels, locked.size());
+		for (int i = 0; i < levelsToShow; i++) {
+			combined.addAll(locked.get(i));
+		}
+		int offerLimit = VisibleTradersState.limitLockedOffers(configuredOffers, combined.size());
+		while (combined.size() > offerLimit) {
+			combined.remove(combined.size() - 1);
 		}
 		return combined.isEmpty() ? Optional.empty() : Optional.of(combined);
 	}

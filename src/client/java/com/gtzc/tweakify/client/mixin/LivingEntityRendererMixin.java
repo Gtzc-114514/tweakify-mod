@@ -6,6 +6,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.entity.EntityTypes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -28,6 +29,10 @@ public class LivingEntityRendererMixin {
 			float whiteOverlayProgress) {
 		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.modified.disableHurtTint
 			|| !state.hasRedOverlay || state.deathTime > 0.0f) {
+			return original;
+		}
+		if (TweakifyMod.CONFIG.modified.hurtTintPlayersOnly
+			&& state.entityType != EntityTypes.PLAYER) {
 			return original;
 		}
 		// 保留白色 overlay 进度（受伤闪白等），仅关闭红色 overlay。

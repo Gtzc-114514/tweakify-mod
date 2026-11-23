@@ -32,7 +32,8 @@ public class SlimeSpawnMixin {
 			return false;
 		}
 		if (level instanceof ServerLevel serverLevel
-			&& serverLevel.getChunkSource().getGenerator() instanceof FlatLevelSource) {
+			&& serverLevel.getChunkSource().getGenerator() instanceof FlatLevelSource
+			&& pos.getY() <= config.modified.flatWorldSlimeSpawnBelowY) {
 			return false;
 		}
 		return original;

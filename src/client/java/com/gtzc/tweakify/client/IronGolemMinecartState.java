@@ -31,6 +31,11 @@ public final class IronGolemMinecartState {
 		return maxDistance <= 0 || playerFound;
 	}
 
+	// 只拾取双手都为空的铁傀儡：命令召唤的持物铁傀儡不参与自动上车。
+	public static boolean hasEmptyHands(boolean mainHandEmpty, boolean offHandEmpty) {
+		return mainHandEmpty && offHandEmpty;
+	}
+
 	// 只认普通矿车：漏斗/运输/动力/TNT/刷怪笼/命令方块矿车都是 AbstractMinecart 的其它子类，
 	// 它们各自有界面或特殊功能，让铁傀儡坐进去会直接堵死。
 	public static boolean isPlainMinecart(AbstractMinecart minecart) {

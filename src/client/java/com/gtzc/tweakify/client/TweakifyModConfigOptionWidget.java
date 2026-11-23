@@ -1,7 +1,9 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.mixin.EditBoxAccessor;
 import com.gtzc.tweakify.config.FavoritesStorage;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigDouble;
 import fi.dy.masa.malilib.config.IConfigSlider;
@@ -55,7 +57,12 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 	private static final int KEY_LABEL_Y_OFFSET = 16;
 
 	// 搜索高亮色：只给命中片段换色，其余文字保持原色，不引入额外背景色块。
-	private static final int HIGHLIGHT_COLOR = 0xFFFFD54F;
+	private static int highlightColor() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return SearchHighlightColor.argbOf(config == null
+			? TweakifyModConfig.DEFAULT_SEARCH_HIGHLIGHT_COLOR
+			: config.general.searchHighlightColor);
+	}
 
 	// 树形缩进与展开按钮布局。
 	public static final int INDENT_WIDTH = 10;
@@ -417,6 +424,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		}
 		int cursor = 0;
 		int drawX = x;
+		int highlight = highlightColor();
 		for (ConfigSearchHighlighter.Range range : ranges) {
 			if (range.start() > cursor) {
 				String plain = text.substring(cursor, range.start());
@@ -424,7 +432,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 				drawX += font.width(plain);
 			}
 			String match = text.substring(range.start(), range.end());
-			gui.text(font, match, drawX, y, HIGHLIGHT_COLOR, shadow);
+			gui.text(font, match, drawX, y, highlight, shadow);
 			drawX += font.width(match);
 			cursor = range.end();
 		}

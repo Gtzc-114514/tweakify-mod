@@ -3,6 +3,8 @@ package com.gtzc.tweakify.client;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 挖掘惩罚保留强度：0% 完全去掉，100% 保持原版，中间线性插值。
@@ -14,6 +16,13 @@ class MiningPenaltyStateTest {
 		assertEquals(1.0, MiningPenaltyState.underwaterMultiplier(0.2, 0), 1.0e-9);
 		assertEquals(0.6, MiningPenaltyState.underwaterMultiplier(0.2, 50), 1.0e-9);
 		assertEquals(0.2, MiningPenaltyState.underwaterMultiplier(0.2, 100), 1.0e-9);
+	}
+
+	@Test
+	void swimmingOnlyGateRequiresSwimming() {
+		assertTrue(MiningPenaltyState.shouldRemoveUnderwaterPenalty(false, false));
+		assertTrue(MiningPenaltyState.shouldRemoveUnderwaterPenalty(true, true));
+		assertFalse(MiningPenaltyState.shouldRemoveUnderwaterPenalty(true, false));
 	}
 
 	@Test

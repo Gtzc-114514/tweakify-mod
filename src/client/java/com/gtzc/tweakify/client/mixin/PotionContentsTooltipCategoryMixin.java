@@ -41,6 +41,8 @@ public abstract class PotionContentsTooltipCategoryMixin {
 		boolean enabled = config != null && config.fix.potionTooltipCategoryFix;
 		boolean glowing = effect.is(MobEffects.GLOWING);
 		boolean badOmen = effect.is(MobEffects.BAD_OMEN);
+		boolean fixGlowing = config == null || config.fix.potionTooltipCategoryGlowing;
+		boolean fixBadOmen = config == null || config.fix.potionTooltipCategoryBadOmen;
 		if (enabled) {
 			if (glowing) {
 				HookProbe.markOnce(TWEAKIFY$GLOWING_TOOLTIP_PROBE, "potionTooltipCategoryGlowing");
@@ -49,6 +51,7 @@ public abstract class PotionContentsTooltipCategoryMixin {
 				HookProbe.markOnce(TWEAKIFY$BAD_OMEN_TOOLTIP_PROBE, "potionTooltipCategoryBadOmen");
 			}
 		}
-		return PotionTooltipCategoryState.tooltipCategory(enabled, glowing, badOmen, original);
+		return PotionTooltipCategoryState.tooltipCategory(enabled, glowing, badOmen,
+			fixGlowing, fixBadOmen, original);
 	}
 }

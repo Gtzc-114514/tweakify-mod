@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.config.TweakifyModConfig;
+
 /**
  * 聊天框内容记忆：记住上次关闭聊天框时输入框里的内容，下次打开时恢复。
  *
@@ -22,7 +24,18 @@ public final class ChatInputMemoryState {
 
 	// 保存本次关闭时的输入内容；纯空白与原版一样视为没有草稿。
 	public static void remember(String text) {
-		saved = text == null || text.isBlank() ? "" : text;
+		remember(text, TweakifyModConfig.DEFAULT_CHAT_INPUT_MEMORY_LENGTH);
+	}
+
+	// 带长度上限的版本：超过上限时截断，避免恢复一份超出输入框容量的草稿。
+	public static void remember(String text, int maxLength) {
+		if (text == null || text.isBlank()) {
+			saved = "";
+			return;
+		}
+		int limit = Math.max(TweakifyModConfig.MIN_CHAT_INPUT_MEMORY_LENGTH,
+			Math.min(TweakifyModConfig.MAX_CHAT_INPUT_MEMORY_LENGTH, maxLength));
+		saved = text.length() <= limit ? text : text.substring(0, limit);
 	}
 
 	// 发送消息：记下发送内容，关闭聊天框时据此判断是否清空记忆。

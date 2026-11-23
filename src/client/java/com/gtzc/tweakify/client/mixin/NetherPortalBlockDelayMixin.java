@@ -27,6 +27,11 @@ public class NetherPortalBlockDelayMixin {
 		if (config == null || !(entity instanceof Player player)) {
 			return original;
 		}
+		// 自定义等待时间优先：大于 0 时对所有玩家统一生效，忽略下面的子开关。
+		int customDelay = config.functions.netherPortalTeleportDelayTicks;
+		if (config.functions.netherPortalTeleportDelay && customDelay > 0) {
+			return customDelay;
+		}
 		int survivalDelay = level.getGameRules().get(GameRules.PLAYERS_NETHER_PORTAL_DEFAULT_DELAY);
 		int override = NetherPortalDelayState.overrideDelay(config.functions.netherPortalTeleportDelay,
 			config.functions.netherPortalSurvivalInstantTeleport, config.functions.netherPortalCreativeDelayedTeleport,

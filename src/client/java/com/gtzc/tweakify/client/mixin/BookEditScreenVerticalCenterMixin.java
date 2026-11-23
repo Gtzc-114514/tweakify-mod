@@ -58,6 +58,7 @@ public abstract class BookEditScreenVerticalCenterMixin {
 	@Unique
 	private static boolean bookCenterEnabled() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.fix.bookGuiVerticalCenterFix;
+		return config != null && config.fix.bookGuiVerticalCenterFix
+			&& config.fix.bookGuiCenterEditScreen;
 	}
 }

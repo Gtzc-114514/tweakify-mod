@@ -11,9 +11,14 @@ public final class CooldownIndicatorState {
 	}
 
 	public static boolean shouldDrawProgress(boolean enabled, float attackStrengthScale) {
+		return shouldDrawProgress(enabled, 0, attackStrengthScale);
+	}
+
+	// 带最小像素进度的版本：低于阈值的背景条也跳过。
+	public static boolean shouldDrawProgress(boolean enabled, int minProgress, float attackStrengthScale) {
 		if (!enabled) {
 			return true;
 		}
-		return attackStrengthScale * 17.0F > 0.0F;
+		return attackStrengthScale * 17.0F > Math.max(0, minProgress);
 	}
 }

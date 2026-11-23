@@ -41,6 +41,7 @@ public class EntityRendererSelfNameMixin {
 		boolean showSelfName = SelfNameVisibility.shouldShowSelfName(
 			config.modified.thirdPersonPlayerName, true,
 			client.options.getCameraType().isFirstPerson(), client.gui.hud.isHidden(),
+			config.modified.thirdPersonPlayerNameIgnoreHudHidden,
 			entity.isInvisible(), entity.isSpectator(),
 			config.modified.thirdPersonPlayerNameSneakOnly, entity.isShiftKeyDown());
 		if (!showSelfName) {

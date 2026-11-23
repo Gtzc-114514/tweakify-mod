@@ -71,11 +71,12 @@ public class ItemStackEnchantmentTooltipMixin {
 		// 潜行门控只决定是否追加；未开启门控时潜行状态不参与缓存键，避免无谓失效。
 		boolean sneaking = config.modified.enchantmentDescriptionsSneakOnly
 			&& player != null && player.isShiftKeyDown();
+		boolean includeCurses = config.modified.enchantmentDescriptionsIncludeCurses;
 		HolderLookup.Provider registries = context.registries();
 		// lambda 只能捕获 effectively final：enchantments 在上面可能被重新赋值。
 		ItemEnchantments cachedEnchantments = enchantments;
 		return EnchantmentTooltipDescriptions.appendCached(original, registries, stack.getItem(),
-			cachedEnchantments, type, sneaking, Language.getInstance(),
-			() -> EnchantmentTooltipDescriptions.buildPlan(registries, cachedEnchantments));
+			cachedEnchantments, type, sneaking, includeCurses, Language.getInstance(),
+			() -> EnchantmentTooltipDescriptions.buildPlan(registries, cachedEnchantments, includeCurses));
 	}
 }

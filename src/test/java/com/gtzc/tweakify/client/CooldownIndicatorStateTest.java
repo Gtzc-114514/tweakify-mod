@@ -26,4 +26,11 @@ class CooldownIndicatorStateTest {
 		assertTrue(CooldownIndicatorState.shouldDrawProgress(true, 0.01F));
 		assertTrue(CooldownIndicatorState.shouldDrawProgress(true, 1.0F));
 	}
+
+	@Test
+	void minimumProgressSkipsNarrowBars() {
+		assertFalse(CooldownIndicatorState.shouldDrawProgress(true, 5, 0.2F));
+		assertTrue(CooldownIndicatorState.shouldDrawProgress(true, 5, 0.4F));
+		assertTrue(CooldownIndicatorState.shouldDrawProgress(false, 5, 0.0F));
+	}
 }

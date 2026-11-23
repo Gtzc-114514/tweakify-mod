@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -34,6 +35,9 @@ public abstract class MinecraftServicesUserApiServiceChatLagMixin {
 	private volatile Set<UUID> tweakify$asyncBlockList;
 
 	@Unique
+	private volatile long tweakify$asyncExpiresAt;
+
+	@Unique
 	private final AtomicBoolean tweakify$fetching = new AtomicBoolean();
 
 	@Inject(method = "isBlockedPlayer", at = @At("HEAD"), cancellable = true, require = 0)
@@ -44,24 +48,38 @@ public abstract class MinecraftServicesUserApiServiceChatLagMixin {
 		}
 		HookProbe.markOnce(TWEAKIFY$CHAT_LAG_PROBE, "chatLagFix");
 		Set<UUID> list = this.blockList;
+		int cacheSeconds = config.fix.chatLagFixCacheSeconds;
 		if (list == null) {
 			list = this.tweakify$asyncBlockList;
+			if (list != null && cacheSeconds > 0
+				&& System.currentTimeMillis() >= this.tweakify$asyncExpiresAt) {
+				this.tweakify$asyncBlockList = null;
+				list = null;
+			}
 		}
 		if (list != null) {
 			cir.setReturnValue(list.contains(uuid));
 			return;
 		}
 		if (this.tweakify$fetching.compareAndSet(false, true)) {
-			CompletableFuture.runAsync(() -> {
+			int timeoutSeconds = config.fix.chatLagFixTimeoutSeconds;
+			CompletableFuture.supplyAsync(() -> {
 				try {
-					Set<UUID> fetched = this.fetchBlockList();
+					return this.fetchBlockList();
+				} catch (RuntimeException error) {
+					return null;
+				}
+			}).completeOnTimeout(null, timeoutSeconds, TimeUnit.SECONDS)
+				.whenComplete((fetched, error) -> {
 					if (fetched != null) {
 						this.tweakify$asyncBlockList = Set.copyOf(fetched);
+						if (cacheSeconds > 0) {
+							this.tweakify$asyncExpiresAt = System.currentTimeMillis()
+								+ cacheSeconds * 1000L;
+						}
 					}
-				} finally {
 					this.tweakify$fetching.set(false);
-				}
-			});
+				});
 		}
 		// 首次调用不等网络：先按“未屏蔽”处理，后台完成后后续消息使用新名单。
 		cir.setReturnValue(false);

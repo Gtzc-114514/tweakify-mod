@@ -41,12 +41,13 @@ public abstract class AbstractContainerScreenMouseInventoryFixMixin {
 		}
 		HookProbe.markOnce(TWEAKIFY$MOUSE_BUTTON_INVENTORY_PROBE, "mouseButtonInventoryFix");
 		Minecraft client = Minecraft.getInstance();
-		if (client.options.keyInventory.matchesMouse(event)) {
+		if (config.fix.mouseButtonInventoryClose && client.options.keyInventory.matchesMouse(event)) {
 			((AbstractContainerScreen<?>) (Object) this).onClose();
 			cir.setReturnValue(true);
 			return;
 		}
-		if (this.hoveredSlot != null && client.options.keyDrop.matchesMouse(event)) {
+		if (config.fix.mouseButtonInventoryDrop && this.hoveredSlot != null
+			&& client.options.keyDrop.matchesMouse(event)) {
 			// 与键盘 Q 一致：按住 Ctrl 时丢弃整组，否则丢一个。
 			this.slotClicked(this.hoveredSlot, this.hoveredSlot.index,
 				event.hasControlDown() ? 1 : 0, ContainerInput.THROW);

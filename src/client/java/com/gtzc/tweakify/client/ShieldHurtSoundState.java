@@ -12,7 +12,13 @@ public final class ShieldHurtSoundState {
 	}
 
 	public static boolean shouldPlayHurtSound(boolean enabled, boolean blocked, float remainingDamage) {
-		if (!enabled) {
+		return shouldPlayHurtSound(enabled, false, true, blocked, remainingDamage);
+	}
+
+	// 带“仅玩家”范围的版本：范围外保持原版播放。
+	public static boolean shouldPlayHurtSound(boolean enabled, boolean playersOnly, boolean isPlayer,
+			boolean blocked, float remainingDamage) {
+		if (!enabled || (playersOnly && !isPlayer)) {
 			return true;
 		}
 		return !blocked || remainingDamage > 0.0F;

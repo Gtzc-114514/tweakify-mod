@@ -142,6 +142,42 @@ public class TweakifyModConfig {
 		DURABILITY_COLOR_MODE_AUTO, DURABILITY_COLOR_MODE_WHITE,
 		DURABILITY_COLOR_MODE_YELLOW, DURABILITY_COLOR_MODE_RED);
 
+	// 手持物品信息（参考 held-item-info）：行数、行宽、排版与淡出时长的范围与默认值。
+	// 默认值保持与参考实现一致，方便按原模组的观感直接使用。
+	public static final int MIN_HELD_ITEM_INFO_LINES = 0;
+	public static final int MAX_HELD_ITEM_INFO_LINES = 40;
+	public static final int DEFAULT_HELD_ITEM_INFO_MAX_LINES = 6;
+	public static final int MIN_HELD_ITEM_INFO_LINE_LENGTH = 1;
+	public static final int MAX_HELD_ITEM_INFO_LINE_LENGTH = 240;
+	public static final int DEFAULT_HELD_ITEM_INFO_MAX_LINE_LENGTH = 48;
+	public static final int DEFAULT_HELD_ITEM_INFO_MAX_COMMAND_LINES = 2;
+	public static final int DEFAULT_HELD_ITEM_INFO_MAX_LORE_LINES = 3;
+	public static final int MIN_HELD_ITEM_INFO_LINE_HEIGHT = 1;
+	public static final int MAX_HELD_ITEM_INFO_LINE_HEIGHT = 40;
+	public static final int DEFAULT_HELD_ITEM_INFO_LINE_HEIGHT = 8;
+	public static final int MIN_HELD_ITEM_INFO_NAME_SPACING = 0;
+	public static final int MAX_HELD_ITEM_INFO_NAME_SPACING = 40;
+	public static final int DEFAULT_HELD_ITEM_INFO_NAME_SPACING = 2;
+	public static final int MIN_HELD_ITEM_INFO_VERTICAL_OFFSET = -40;
+	public static final int MAX_HELD_ITEM_INFO_VERTICAL_OFFSET = 40;
+	public static final int DEFAULT_HELD_ITEM_INFO_VERTICAL_OFFSET = 0;
+	public static final double MIN_HELD_ITEM_INFO_OFFSET_PER_LINE = 0.0;
+	public static final double MAX_HELD_ITEM_INFO_OFFSET_PER_LINE = 1.0;
+	public static final double DEFAULT_HELD_ITEM_INFO_OFFSET_PER_LINE = 0.3334;
+	public static final double MIN_HELD_ITEM_INFO_FADE_DURATION = 0.0;
+	public static final double MAX_HELD_ITEM_INFO_FADE_DURATION = 20.0;
+	public static final double DEFAULT_HELD_ITEM_INFO_BASE_FADE = 2.0;
+	public static final double MAX_HELD_ITEM_INFO_FADE_PER_LINE = 10.0;
+	public static final double DEFAULT_HELD_ITEM_INFO_FADE_PER_LINE = 0.2;
+
+	// 手持物品信息的背景：vanilla（跟随文字背景无障碍选项）/ always / never。
+	public static final String HELD_ITEM_INFO_BACKGROUND_VANILLA = "vanilla";
+	public static final String HELD_ITEM_INFO_BACKGROUND_ALWAYS = "always";
+	public static final String HELD_ITEM_INFO_BACKGROUND_NEVER = "never";
+	public static final List<String> SUPPORTED_HELD_ITEM_INFO_BACKGROUNDS = List.of(
+		HELD_ITEM_INFO_BACKGROUND_VANILLA, HELD_ITEM_INFO_BACKGROUND_ALWAYS,
+		HELD_ITEM_INFO_BACKGROUND_NEVER);
+
 	// 自定义方块轮廓：字段名、步进、线宽范围与默认值。
 	public static final String BLOCK_OUTLINE_WIDTH_FIELD = "blockOutlineWidth";
 	public static final double BLOCK_OUTLINE_WIDTH_STEP = 0.5;
@@ -280,6 +316,34 @@ public class TweakifyModConfig {
 	public static final List<String> SUPPORTED_AUTO_STEP_UP_HEIGHTS = List.of(
 		AUTO_STEP_UP_HEIGHT_ONE_BLOCK, AUTO_STEP_UP_HEIGHT_ONE_AND_HALF,
 		AUTO_STEP_UP_HEIGHT_TWO_BLOCKS);
+
+	// 地狱门自定义等待时间（tick）：0 = 使用子开关与原版规则。
+	public static final int MIN_NETHER_PORTAL_DELAY_TICKS = 0;
+	public static final int MAX_NETHER_PORTAL_DELAY_TICKS = 600;
+	public static final int DEFAULT_NETHER_PORTAL_DELAY_TICKS = 0;
+
+	// 防猪灵装备切换的探测半径（格）。
+	public static final int MIN_PIGLIN_SWAP_RANGE = 4;
+	public static final int MAX_PIGLIN_SWAP_RANGE = 48;
+	public static final int DEFAULT_PIGLIN_SWAP_RANGE = 16;
+
+	// 可见交易：最多显示的未来等级数（村民最高 5 级，当前等级之后最多 4 组）。
+	public static final int MIN_VISIBLE_TRADER_FUTURE_LEVELS = 1;
+	public static final int MAX_VISIBLE_TRADER_FUTURE_LEVELS = 4;
+	public static final int DEFAULT_VISIBLE_TRADER_FUTURE_LEVELS = 4;
+
+	// 可见交易：单次最多下发的锁定交易条数（0 = 不限制）。
+	public static final int MIN_VISIBLE_TRADER_LOCKED_OFFERS = 0;
+	public static final int MAX_VISIBLE_TRADER_LOCKED_OFFERS = 64;
+	public static final int DEFAULT_VISIBLE_TRADER_LOCKED_OFFERS = 0;
+
+	// 骨粉催花：单次最多扩散数量与随机取点半径。
+	public static final int MIN_BONE_MEAL_FLOWER_COUNT = 1;
+	public static final int MAX_BONE_MEAL_FLOWER_COUNT = 9;
+	public static final int DEFAULT_BONE_MEAL_FLOWER_COUNT = 5;
+	public static final int MIN_BONE_MEAL_FLOWER_RADIUS = 1;
+	public static final int MAX_BONE_MEAL_FLOWER_RADIUS = 4;
+	public static final int DEFAULT_BONE_MEAL_FLOWER_RADIUS = 3;
 
 	// 枚举代码 → 实际步高（未知取值回退 1.0，与旧版固定值一致）。
 	public static double autoStepUpHeight(String code) {
@@ -433,6 +497,54 @@ public class TweakifyModConfig {
 	// 鞘翅烟花最短间隔（tick）：0 表示等本次加速结束（原行为）。
 	public static final int MIN_ELYTRA_FIREWORK_TICKS = 0;
 	public static final int MAX_ELYTRA_FIREWORK_TICKS = 200;
+	// 等待烟花加速结束时的最长锁定时间（tick）；0 = 不额外限制。
+	public static final int MIN_ELYTRA_FIREWORK_MAX_TICKS = 0;
+	public static final int MAX_ELYTRA_FIREWORK_MAX_TICKS = 400;
+	public static final int DEFAULT_ELYTRA_FIREWORK_MAX_TICKS = 0;
+
+	// 便捷焚烧默认可用的点燃物（物品 ID）；列表项由 ItemIdConfigStringList 校验与规范化。
+	public static final List<String> DEFAULT_QUICK_BURN_IGNITERS = List.of(
+		"minecraft:lava_bucket", "minecraft:flint_and_steel");
+
+	// 聊天屏蔽名单异步拉取的超时时间（秒）。
+	public static final int MIN_CHAT_LAG_TIMEOUT_SECONDS = 1;
+	public static final int MAX_CHAT_LAG_TIMEOUT_SECONDS = 30;
+	public static final int DEFAULT_CHAT_LAG_TIMEOUT_SECONDS = 10;
+
+	// 一次挖掘成功后额外锁定的时间（tick）。
+	public static final int MIN_MINING_COOLDOWN_TICKS = 0;
+	public static final int MAX_MINING_COOLDOWN_TICKS = 40;
+	public static final int DEFAULT_MINING_COOLDOWN_TICKS = 0;
+
+	// 聊天屏蔽名单异步缓存的刷新间隔（秒，0 = 永不过期）。
+	public static final int MIN_CHAT_LAG_CACHE_SECONDS = 0;
+	public static final int MAX_CHAT_LAG_CACHE_SECONDS = 3600;
+	public static final int DEFAULT_CHAT_LAG_CACHE_SECONDS = 0;
+
+	// 经验条高等级修复的生效等级下限。
+	public static final int MIN_XP_HIGH_LEVEL_FIX_LEVEL = 0;
+	public static final int MAX_XP_HIGH_LEVEL_FIX_LEVEL = 1000;
+	public static final int DEFAULT_XP_HIGH_LEVEL_FIX_LEVEL = 0;
+
+	// 冷却指示器背景的最小进度（像素，0 = 与原行为一致）。
+	public static final int MIN_COOLDOWN_INDICATOR_PROGRESS = 0;
+	public static final int MAX_COOLDOWN_INDICATOR_PROGRESS = 16;
+	public static final int DEFAULT_COOLDOWN_INDICATOR_PROGRESS = 0;
+
+	// 第三人称鱼线修复的下移量（格）。
+	public static final double MIN_FISHING_LINE_FIX_OFFSET = 0.0;
+	public static final double MAX_FISHING_LINE_FIX_OFFSET = 0.5;
+	public static final double DEFAULT_FISHING_LINE_FIX_OFFSET = 0.1;
+
+	// 超平坦世界禁用史莱姆生成的 Y 上限（-64 ~ 320）。
+	public static final int MIN_FLAT_SLIME_Y = -64;
+	public static final int MAX_FLAT_SLIME_Y = 320;
+	public static final int DEFAULT_FLAT_SLIME_Y = 320;
+
+	// 存档游玩时长的小数位数（0 ~ 2）。
+	public static final int MIN_SAVE_PLAY_TIME_DECIMALS = 0;
+	public static final int MAX_SAVE_PLAY_TIME_DECIMALS = 2;
+	public static final int DEFAULT_SAVE_PLAY_TIME_DECIMALS = 1;
 
 	// 药水时间显示：低时长过滤阈值（秒，0 = 不过滤）与文字配色模式。
 	public static final int MIN_STATUS_DURATION_THRESHOLD = 0;
@@ -454,6 +566,23 @@ public class TweakifyModConfig {
 	public static final int MIN_CHAT_SELECTION_OPACITY = 10;
 	public static final int MAX_CHAT_SELECTION_OPACITY = 100;
 	public static final int DEFAULT_CHAT_SELECTION_OPACITY = 33;
+
+	// 聊天输入记忆的最大保留长度（字符）；原版输入框上限为 256。
+	public static final int MIN_CHAT_INPUT_MEMORY_LENGTH = 1;
+	public static final int MAX_CHAT_INPUT_MEMORY_LENGTH = 256;
+	public static final int DEFAULT_CHAT_INPUT_MEMORY_LENGTH = 256;
+
+	// 配置界面搜索高亮颜色。
+	public static final String SEARCH_HIGHLIGHT_GOLD = "gold";
+	public static final String SEARCH_HIGHLIGHT_YELLOW = "yellow";
+	public static final String SEARCH_HIGHLIGHT_GREEN = "green";
+	public static final String SEARCH_HIGHLIGHT_AQUA = "aqua";
+	public static final String SEARCH_HIGHLIGHT_RED = "red";
+	public static final String SEARCH_HIGHLIGHT_WHITE = "white";
+	public static final List<String> SUPPORTED_SEARCH_HIGHLIGHT_COLORS = List.of(
+		SEARCH_HIGHLIGHT_GOLD, SEARCH_HIGHLIGHT_YELLOW, SEARCH_HIGHLIGHT_GREEN,
+		SEARCH_HIGHLIGHT_AQUA, SEARCH_HIGHLIGHT_RED, SEARCH_HIGHLIGHT_WHITE);
+	public static final String DEFAULT_SEARCH_HIGHLIGHT_COLOR = SEARCH_HIGHLIGHT_GOLD;
 
 	public static int withOpacity(int argb, int percent) {
 		int clamped = Math.max(MIN_CHAT_SELECTION_OPACITY,
@@ -560,6 +689,11 @@ public class TweakifyModConfig {
 	public static final String ENCHANTMENT_LEVEL_STYLE_PARENTHESES = "parentheses";
 	public static final List<String> SUPPORTED_ENCHANTMENT_LEVEL_STYLES = List.of(
 		ENCHANTMENT_LEVEL_STYLE_PLAIN, ENCHANTMENT_LEVEL_STYLE_PARENTHESES);
+
+	// 附魔等级阿拉伯数字的生效等级下限（1 ~ 255）。
+	public static final int MIN_ENCHANTMENT_ARABIC_LEVEL = 1;
+	public static final int MAX_ENCHANTMENT_ARABIC_LEVEL = 255;
+	public static final int DEFAULT_ENCHANTMENT_ARABIC_LEVEL = 1;
 
 	// 更好的粗体偏移百分比（10 ~ 100，默认 50 = 0.5 像素）。
 	public static final int MIN_BETTER_BOLD_OFFSET_PERCENT = 10;
@@ -1577,6 +1711,15 @@ public class TweakifyModConfig {
 			// 注册表未初始化（如单测环境）时 BuiltInRegistries 会抛 Error，不能让它穿透。
 			return null;
 		}
+	}
+
+	// 快捷焚烧的点燃物判定：列表项为规范化后的物品 ID。
+	public boolean isQuickBurnIgniter(Item item) {
+		if (item == null || item == Items.AIR) {
+			return false;
+		}
+		Identifier id = idOf(item);
+		return id != null && functions.quickBurnItemIgniters.contains(id.toString());
 	}
 
 	// 添加一个物品 ID，返回是否新增了（已存在返回 false）。

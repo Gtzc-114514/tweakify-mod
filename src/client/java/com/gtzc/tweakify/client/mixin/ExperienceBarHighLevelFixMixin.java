@@ -5,6 +5,7 @@ import com.gtzc.tweakify.client.ExperienceBarState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.contextualbar.ExperienceBar;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -34,6 +35,9 @@ public abstract class ExperienceBarHighLevelFixMixin {
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$EXPERIENCE_BAR_HIGH_LEVEL_PROBE, "experienceBarHighLevelFix");
 		}
-		return ExperienceBarState.xpNeededForNextLevel(enabled, original);
+		int minLevel = config == null ? 0 : config.fix.experienceBarHighLevelFixMinLevel;
+		Minecraft client = Minecraft.getInstance();
+		int currentLevel = client.player == null ? 0 : client.player.experienceLevel;
+		return ExperienceBarState.xpNeededForNextLevel(enabled, minLevel, currentLevel, original);
 	}
 }

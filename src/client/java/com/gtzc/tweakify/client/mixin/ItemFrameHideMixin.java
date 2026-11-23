@@ -5,6 +5,7 @@ import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.renderer.entity.ItemFrameRenderer;
 import net.minecraft.client.renderer.entity.state.ItemFrameRenderState;
 import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,8 +27,16 @@ public class ItemFrameHideMixin {
 	private void tweakify$hideFilledFrame(ItemFrame frame, ItemFrameRenderState state,
 									float partialTick, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && config.modified.hideItemFrames && !state.item.isEmpty()) {
-			state.frameModel.clear();
+		if (config == null || !config.modified.hideItemFrames) {
+			return;
 		}
+		boolean empty = state.item.isEmpty();
+		if (empty && !config.modified.hideItemFramesHideEmpty) {
+			return;
+		}
+		if (config.modified.hideItemFramesOnlyMaps && !frame.getItem().is(Items.FILLED_MAP)) {
+			return;
+		}
+		state.frameModel.clear();
 	}
 }

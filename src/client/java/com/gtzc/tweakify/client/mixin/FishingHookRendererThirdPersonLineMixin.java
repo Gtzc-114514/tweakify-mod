@@ -33,6 +33,8 @@ public abstract class FishingHookRendererThirdPersonLineMixin {
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$FISHING_LINE_PROBE, "fishingLineThirdPersonFix");
 		}
-		return FishingLineState.crouchOffset(enabled, original);
+		double offset = config == null ? TweakifyModConfig.DEFAULT_FISHING_LINE_FIX_OFFSET
+			: config.fix.fishingLineThirdPersonFixOffset;
+		return FishingLineState.crouchOffset(enabled, offset, original);
 	}
 }

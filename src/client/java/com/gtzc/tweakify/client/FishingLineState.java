@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.config.TweakifyModConfig;
+
 /**
  * 第三人称鱼线修复（MC-4490）的纯函数。
  *
@@ -11,6 +13,15 @@ public final class FishingLineState {
 	}
 
 	public static float crouchOffset(boolean enabled, float original) {
-		return enabled ? original - 0.1F : original;
+		return crouchOffset(enabled, TweakifyModConfig.DEFAULT_FISHING_LINE_FIX_OFFSET, original);
+	}
+
+	public static float crouchOffset(boolean enabled, double offset, float original) {
+		if (!enabled) {
+			return original;
+		}
+		double clamped = Math.max(TweakifyModConfig.MIN_FISHING_LINE_FIX_OFFSET,
+			Math.min(TweakifyModConfig.MAX_FISHING_LINE_FIX_OFFSET, offset));
+		return (float) (original - clamped);
 	}
 }

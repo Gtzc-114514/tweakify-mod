@@ -282,10 +282,11 @@ public final class BetterScreenshotManager {
 			BufferedImage buffered = toBufferedImage(pixels, width, height);
 			write(format, buffered, file);
 			File savedFile = file;
-			int[] thumbnail = makeThumbnailPixels(pixels, width, height);
-			int[] finalPixels = thumbnail;
-			client.execute(() -> ScreenshotChatCards.add(savedFile, finalPixels,
-				blockX, blockY, blockZ));
+			if (config.functions.betterScreenshotChatCard) {
+				int[] thumbnail = makeThumbnailPixels(pixels, width, height);
+				client.execute(() -> ScreenshotChatCards.add(savedFile, thumbnail,
+					blockX, blockY, blockZ));
+			}
 			TweakifyMod.LOGGER.info("Saved screenshot: {} ({}x{})",
 				savedFile.getName(), buffered.getWidth(), buffered.getHeight());
 		} catch (Exception error) {

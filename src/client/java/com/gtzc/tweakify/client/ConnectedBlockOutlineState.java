@@ -37,15 +37,25 @@ public final class ConnectedBlockOutlineState {
 	private ConnectedBlockOutlineState() {
 	}
 
-	// 当前方块是否属于需要合并的“连接方块”。
+	// 当前方块是否属于需要合并的“连接方块”，并受对应类别开关限制。
 	public static boolean isSupported(BlockState state) {
 		if (state == null) {
 			return false;
 		}
-		return state.getBlock() instanceof DoorBlock
-			|| state.getBlock() instanceof AbstractBedBlock
-			|| state.getBlock() instanceof ChestBlock
-			|| state.getBlock() instanceof DoublePlantBlock;
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (state.getBlock() instanceof DoorBlock) {
+			return config == null || config.modified.connectedBlockOutlineDoors;
+		}
+		if (state.getBlock() instanceof AbstractBedBlock) {
+			return config == null || config.modified.connectedBlockOutlineBeds;
+		}
+		if (state.getBlock() instanceof ChestBlock) {
+			return config == null || config.modified.connectedBlockOutlineChests;
+		}
+		if (state.getBlock() instanceof DoublePlantBlock) {
+			return config == null || config.modified.connectedBlockOutlinePlants;
+		}
+		return false;
 	}
 
 	// 与当前方块构成整体的相邻位置；不查世界，只依据方块状态。

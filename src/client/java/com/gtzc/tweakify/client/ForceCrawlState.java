@@ -32,7 +32,9 @@ public final class ForceCrawlState {
 
 	public static boolean shouldForceCrawl(Player player) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.functions.forceCrawl && crawlKeyHeld && isControlledPlayer(player);
+		return config != null && config.functions.forceCrawl && crawlKeyHeld
+			&& isControlledPlayer(player)
+			&& (!config.functions.forceCrawlOnlyOnGround || player.onGround());
 	}
 
 	// 客户端只认本地玩家；服务端只认单人/局域网房主，避免 LAN 访客跟着房主的按键一起爬。

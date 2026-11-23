@@ -51,4 +51,12 @@ class SelfNameVisibilityTest {
 		assertTrue(SelfNameVisibility.shouldShowSelfName(true, true, false, false, false, false, false, false),
 			"关闭仅潜行时不受潜行影响");
 	}
+
+	@Test
+	void canShowNameWhileHudIsHidden() {
+		assertFalse(SelfNameVisibility.shouldShowSelfName(true, true, false, true, false,
+			false, false, false, false));
+		assertTrue(SelfNameVisibility.shouldShowSelfName(true, true, false, true, true,
+			false, false, false, false));
+	}
 }

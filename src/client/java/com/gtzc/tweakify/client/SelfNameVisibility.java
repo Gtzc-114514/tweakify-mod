@@ -19,7 +19,16 @@ public final class SelfNameVisibility {
 											boolean firstPerson, boolean hudHidden,
 											boolean invisible, boolean spectator,
 											boolean sneakOnly, boolean sneaking) {
-		return enabled && localPlayer && !firstPerson && !hudHidden
+		return shouldShowSelfName(enabled, localPlayer, firstPerson, hudHidden, false,
+			invisible, spectator, sneakOnly, sneaking);
+	}
+
+	// 隐藏 HUD 时仍可显示名字（用于截图）。
+	public static boolean shouldShowSelfName(boolean enabled, boolean localPlayer,
+											boolean firstPerson, boolean hudHidden, boolean ignoreHudHidden,
+											boolean invisible, boolean spectator,
+											boolean sneakOnly, boolean sneaking) {
+		return enabled && localPlayer && !firstPerson && (!hudHidden || ignoreHudHidden)
 			&& !invisible && !spectator && (!sneakOnly || sneaking);
 	}
 }

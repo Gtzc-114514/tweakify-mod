@@ -49,6 +49,7 @@ public abstract class HudCooldownIndicatorMixin {
 		}
 		HookProbe.markOnce(TWEAKIFY$COOLDOWN_INDICATOR_PROBE, "cooldownIndicatorFix");
 		return CooldownIndicatorState.shouldDrawProgress(true,
+			config.fix.cooldownIndicatorFixMinProgress,
 			this.minecraft.player.getAttackStrengthScale(0.0F));
 	}
 }

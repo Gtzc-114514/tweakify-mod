@@ -25,6 +25,9 @@ public final class FlightDriftState {
 		if (!player.getAbilities().flying || player.isPassenger()) {
 			return;
 		}
+		if (config.functions.flightDriftOnlyCreative && player.isSpectator()) {
+			return;
+		}
 
 		Vec3 movement = player.getDeltaMovement();
 		boolean stopHorizontal = shouldStopHorizontalDrift(hasHorizontalInput(client),

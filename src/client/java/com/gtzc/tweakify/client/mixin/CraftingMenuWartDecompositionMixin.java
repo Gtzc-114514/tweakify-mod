@@ -37,6 +37,9 @@ public class CraftingMenuWartDecompositionMixin {
 		if (config == null || !config.modified.wartBlockDecomposition) {
 			return;
 		}
+		if (config.modified.wartBlockDecompositionRequireSneak && !player.isShiftKeyDown()) {
+			return;
+		}
 		// 原版已有产出时不覆盖（例如其它模组加了疣块配方）。
 		if (!result.getItem(0).isEmpty()) {
 			return;

@@ -54,6 +54,10 @@ final class DisplayCatalogEntries {
 		entries.add(child("attackRangeDisplay", "attackRangeEntities"));
 		// 爆炸范围：复用攻击范围的显示/渲染模式，颜色固定红色。
 		entries.add(display("explosionRangeDisplay", true));
+		entries.add(child("explosionRangeDisplay", "explosionRangeShowTnt"));
+		entries.add(child("explosionRangeDisplay", "explosionRangeShowTntMinecarts"));
+		entries.add(child("explosionRangeDisplay", "explosionRangeShowCreepers"));
+		entries.add(child("explosionRangeDisplay", "explosionRangeShowEndCrystals"));
 		// 横扫范围：参考 sweeping-view，目标扩展框 + 三格球体攻击范围。
 		entries.add(display("sweepingView", true));
 		entries.add(child("sweepingView", "sweepingViewWireframe"));
@@ -68,5 +72,6 @@ final class DisplayCatalogEntries {
 		entries.add(display("betterScreenshot", false));
 		entries.add(child("betterScreenshot", "betterScreenshotF9"));
 		entries.add(child("betterScreenshot", "betterScreenshotFormat"));
+		entries.add(child("betterScreenshot", "betterScreenshotChatCard"));
 	}
 }

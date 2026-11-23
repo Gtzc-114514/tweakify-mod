@@ -65,6 +65,10 @@ public final class GeneralConfigOptions {
 	public static final ConfigBoolean SEARCH_HIGHLIGHT = new ConfigBoolean(
 		"searchHighlight", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 搜索命中的文字颜色。
+	public static final ConfigOptionList SEARCH_HIGHLIGHT_COLOR = new ConfigOptionList(
+		"searchHighlightColor", SearchHighlightColor.GOLD).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 平滑滚动：配置界面列表、创造物品栏、聊天栏与 Mod Menu 列表共用总开关。
 	public static final ConfigBoolean SMOOTH_SCROLL = new ConfigBoolean(
 		"smoothScroll", true).apply(ConfigOptionKeys.GENERAL_KEY);

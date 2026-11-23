@@ -26,4 +26,16 @@ class ClimbablePassStateTest {
 		assertTrue(ClimbablePassState.shouldSkipClamp(true, true, true));
 		assertFalse(ClimbablePassState.shouldSkipClamp(true, true, false));
 	}
+
+	@Test
+	void blockTypeTogglesAreIndependent() {
+		assertTrue(ClimbablePassState.allowsBlock(true, false, false, true, true, true));
+		assertTrue(ClimbablePassState.allowsBlock(false, true, false, true, true, true));
+		assertTrue(ClimbablePassState.allowsBlock(false, false, true, true, true, true));
+
+		assertFalse(ClimbablePassState.allowsBlock(true, false, false, false, true, true));
+		assertFalse(ClimbablePassState.allowsBlock(false, true, false, true, false, true));
+		assertFalse(ClimbablePassState.allowsBlock(false, false, true, true, true, false));
+		assertFalse(ClimbablePassState.allowsBlock(false, false, false, true, true, true));
+	}
 }

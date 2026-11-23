@@ -29,6 +29,10 @@ public class GameRendererMixin {
 		if (config == null || !config.modified.disableHurtShake) {
 			return;
 		}
+		if (config.modified.hurtShakePlayersOnly
+			&& (camera.entityRenderState == null || !camera.entityRenderState.isPlayer)) {
+			return;
+		}
 		if (config.modified.hurtShakeKeepDeathTilt) {
 			CameraEntityRenderState entityState = camera.entityRenderState;
 			if (entityState.isLiving && entityState.isDeadOrDying) {

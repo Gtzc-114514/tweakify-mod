@@ -50,6 +50,9 @@ public class FrostWalkerJumpFixMixin {
 		if (!(entity instanceof Player)) {
 			return false;
 		}
+		if (config.fix.frostWalkerJumpFixSprintOnly && !entity.isSprinting()) {
+			return false;
+		}
 		if (!FrostWalkerJumpState.shouldRelax(true, config.fix.frostWalkerJumpFixJumpOnly,
 			entity.isPassenger(), entity.onGround(), entity.getDeltaMovement().y)) {
 			return false;

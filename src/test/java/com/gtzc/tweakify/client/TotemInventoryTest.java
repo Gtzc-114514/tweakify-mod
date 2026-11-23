@@ -54,6 +54,36 @@ class TotemInventoryTest {
 	}
 
 	@Test
+	void inventoryFirstPrefersMainInventory() {
+		List<ItemStack> items = new ArrayList<>(
+			Collections.nCopies(Inventory.INVENTORY_SIZE, ItemStack.EMPTY));
+		items.set(2, stack(Items.TOTEM_OF_UNDYING));
+		items.set(20, stack(Items.TOTEM_OF_UNDYING));
+
+		assertEquals(20, TotemInventory.findTotemSlot(items, Inventory.INVENTORY_SIZE, true, false));
+	}
+
+	@Test
+	void canExcludeHotbarFromSearch() {
+		List<ItemStack> items = new ArrayList<>(
+			Collections.nCopies(Inventory.INVENTORY_SIZE, ItemStack.EMPTY));
+		items.set(2, stack(Items.TOTEM_OF_UNDYING));
+		items.set(20, stack(Items.TOTEM_OF_UNDYING));
+
+		assertEquals(20, TotemInventory.findTotemSlot(items, Inventory.INVENTORY_SIZE, false, true));
+		assertEquals(20, TotemInventory.findTotemSlot(items, Inventory.INVENTORY_SIZE, false, false));
+	}
+
+	@Test
+	void inventoryFirstFallsBackToHotbar() {
+		List<ItemStack> items = new ArrayList<>(
+			Collections.nCopies(Inventory.INVENTORY_SIZE, ItemStack.EMPTY));
+		items.set(2, stack(Items.TOTEM_OF_UNDYING));
+
+		assertEquals(2, TotemInventory.findTotemSlot(items, Inventory.INVENTORY_SIZE, true, false));
+	}
+
+	@Test
 	void ignoresPlainItemsAndEmptyStacks() {
 		List<ItemStack> items = List.of(
 			ItemStack.EMPTY,

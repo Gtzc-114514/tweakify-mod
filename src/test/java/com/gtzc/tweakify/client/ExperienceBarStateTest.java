@@ -30,4 +30,11 @@ class ExperienceBarStateTest {
 		assertEquals(1, ExperienceBarState.xpNeededForNextLevel(true, -1));
 		assertEquals(1, ExperienceBarState.xpNeededForNextLevel(true, Integer.MIN_VALUE));
 	}
+
+	@Test
+	void minimumLevelGatesTheFix() {
+		assertEquals(-1, ExperienceBarState.xpNeededForNextLevel(true, 100, 99, -1));
+		assertEquals(1, ExperienceBarState.xpNeededForNextLevel(true, 100, 100, -1));
+		assertEquals(-1, ExperienceBarState.xpNeededForNextLevel(false, 0, 1000, -1));
+	}
 }

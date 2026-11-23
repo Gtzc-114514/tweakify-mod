@@ -41,6 +41,10 @@ public class EnchantmentScreenInfoMixin {
 		if (client.level == null) {
 			return;
 		}
+		if (config.functions.enchantingTableInfoRequireSneak
+			&& (client.player == null || !client.player.isShiftKeyDown())) {
+			return;
+		}
 		ItemStack stack = menu.getSlot(0).getItem();
 		if (stack.isEmpty()) {
 			return;
@@ -54,7 +58,9 @@ public class EnchantmentScreenInfoMixin {
 				continue;
 			}
 			List<Component> lines = EnchantingTableInfo.describeOffers(
-				client.level.registryAccess(), stack, menu.getEnchantmentSeed(), slot, menu.costs[slot]);
+				client.level.registryAccess(), stack, menu.getEnchantmentSeed(), slot, menu.costs[slot],
+				config.functions.enchantingTableInfoShowCost,
+				config.functions.enchantingTableInfoShowMaxLevel);
 			if (!lines.isEmpty()) {
 				gui.setComponentTooltipForNextFrame(client.font, lines, mouseX, mouseY);
 			}

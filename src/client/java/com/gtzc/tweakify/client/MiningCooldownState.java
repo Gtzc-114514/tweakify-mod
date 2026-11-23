@@ -22,6 +22,9 @@ public final class MiningCooldownState {
 	// 写入时所属的 tick 序号：与 TickClock 不一致时标记自动失效。
 	private static long markedTick = Long.MIN_VALUE;
 
+	// 一次挖掘/攻击成功后的额外锁定时间（tick）。
+	private static int cooldownTicksRemaining = 0;
+
 	private MiningCooldownState() {
 	}
 
@@ -30,6 +33,9 @@ public final class MiningCooldownState {
 		if (config == null || !config.functions.miningCooldown || client.player == null) {
 			reset();
 			return;
+		}
+		if (cooldownTicksRemaining > 0) {
+			cooldownTicksRemaining--;
 		}
 		updateFromInput(client.options.keyAttack.isDown());
 	}
@@ -50,14 +56,15 @@ public final class MiningCooldownState {
 	// 挖掘拦截：总开关关闭或标记不属于当前 tick 时不拦截。
 	public static boolean shouldBlockMining() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		return config != null && config.functions.miningCooldown && isMarkedThisTick();
+		return config != null && config.functions.miningCooldown
+			&& (isMarkedThisTick() || cooldownTicksRemaining > 0);
 	}
 
 	// 攻击拦截：除总开关外还需要 miningCooldownAttacks。
 	public static boolean shouldBlockAttack() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		return config != null && config.functions.miningCooldown && config.functions.miningCooldownAttacks
-			&& isMarkedThisTick();
+			&& (isMarkedThisTick() || cooldownTicksRemaining > 0);
 	}
 
 	// 标记只在写入它的那个 tick 内有效：状态机 tick 没执行时序号对不上，自动失效。
@@ -72,6 +79,7 @@ public final class MiningCooldownState {
 			return;
 		}
 		SESSION.mark();
+		cooldownTicksRemaining = config.functions.miningCooldownCooldownTicks;
 	}
 
 	// 攻击实体后同样标记：miningCooldownAttacks 开启时一次按住只打一下。
@@ -81,12 +89,14 @@ public final class MiningCooldownState {
 			return;
 		}
 		SESSION.mark();
+		cooldownTicksRemaining = config.functions.miningCooldownCooldownTicks;
 	}
 
 	private static void reset() {
 		SESSION.reset();
 		blockMiningThisTick = false;
 		markedTick = Long.MIN_VALUE;
+		cooldownTicksRemaining = 0;
 	}
 
 	// 纯拦截判定：按住期间已经挖掉过方块 -> 拦截后续挖掘。

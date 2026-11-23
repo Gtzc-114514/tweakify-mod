@@ -44,6 +44,18 @@ class ChatInputMemoryStateTest {
 	}
 
 	@Test
+	void draftIsTruncatedToConfiguredLength() {
+		ChatInputMemoryState.remember("abcdef", 3);
+		assertEquals("abc", ChatInputMemoryState.savedText());
+
+		ChatInputMemoryState.remember("abc", 0);
+		assertEquals("a", ChatInputMemoryState.savedText(), "长度下限为 1");
+
+		ChatInputMemoryState.remember("abc", 999);
+		assertEquals("abc", ChatInputMemoryState.savedText(), "长度上限为 256");
+	}
+
+	@Test
 	void sentTextIsNotKept() {
 		ChatInputMemoryState.remember("old draft");
 		ChatInputMemoryState.markSubmitted("sent message");

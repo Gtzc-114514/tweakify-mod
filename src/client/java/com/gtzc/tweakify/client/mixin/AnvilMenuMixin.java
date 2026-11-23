@@ -73,10 +73,15 @@ public class AnvilMenuMixin {
 	// “仅同类”时要求双方互斥组来自同一个 exclusive_set 标签，否则保留原版判定。
 	@WrapOperation(method = "createResult", require = 0, at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/item/enchantment/Enchantment;areCompatible(Lnet/minecraft/core/Holder;Lnet/minecraft/core/Holder;)Z"))
-	private static boolean tweakify$ignoreEnchantmentConflicts(Holder<Enchantment> first, Holder<Enchantment> second,
+	private boolean tweakify$ignoreEnchantmentConflicts(Holder<Enchantment> first, Holder<Enchantment> second,
 			Operation<Boolean> original) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config == null || !config.modified.removeEnchantmentConflicts) {
+			return original.call(first, second);
+		}
+		Player player = ((ItemCombinerMenuAccessor) (Object) this).tweakify$getPlayer();
+		if (config.modified.removeEnchantmentConflictsRequireSneak
+			&& (player == null || !player.isShiftKeyDown())) {
 			return original.call(first, second);
 		}
 		boolean sameGroup = EnchantmentConflictState.sameExclusiveGroup(

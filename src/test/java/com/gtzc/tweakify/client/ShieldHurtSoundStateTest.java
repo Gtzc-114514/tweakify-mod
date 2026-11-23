@@ -26,4 +26,10 @@ class ShieldHurtSoundStateTest {
 		assertTrue(ShieldHurtSoundState.shouldPlayHurtSound(true, true, 1.0F));
 		assertTrue(ShieldHurtSoundState.shouldPlayHurtSound(true, false, 0.0F));
 	}
+
+	@Test
+	void playersOnlyScopeLeavesMobsAlone() {
+		assertTrue(ShieldHurtSoundState.shouldPlayHurtSound(true, true, false, true, 0.0F));
+		assertFalse(ShieldHurtSoundState.shouldPlayHurtSound(true, true, true, true, 0.0F));
+	}
 }

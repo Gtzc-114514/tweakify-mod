@@ -67,8 +67,10 @@ public final class ExplosionRangeState {
 		double maxDistanceSq = maxDistance * maxDistance;
 		List<AttackRangeState.Entry> found = new ArrayList<>();
 		for (Entity entity : client.level.getEntities(client.player, searchBox,
-			e -> e instanceof PrimedTnt || e instanceof MinecartTNT
-				|| e instanceof Creeper || e instanceof EndCrystal)) {
+			e -> (config.functions.explosionRangeShowTnt && e instanceof PrimedTnt)
+				|| (config.functions.explosionRangeShowTntMinecarts && e instanceof MinecartTNT)
+				|| (config.functions.explosionRangeShowCreepers && e instanceof Creeper)
+				|| (config.functions.explosionRangeShowEndCrystals && e instanceof EndCrystal))) {
 			if (!entity.isAlive() || entity.isRemoved()) {
 				continue;
 			}
@@ -88,7 +90,9 @@ public final class ExplosionRangeState {
 				x + radius, centerY + radius, z + radius);
 			found.add(new AttackRangeState.Entry(x, feetY, centerY, z, radius, bounds, distanceSq));
 		}
-		addTntBlocks(client, found, maxDistanceSq);
+		if (config.functions.explosionRangeShowTnt) {
+			addTntBlocks(client, found, maxDistanceSq);
+		}
 		publishEntries(found, maxTargets);
 		if (!loggedActive && !entries.isEmpty()) {
 			loggedActive = true;

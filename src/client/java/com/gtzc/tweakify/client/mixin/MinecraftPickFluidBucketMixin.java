@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -66,6 +67,24 @@ public class MinecraftPickFluidBucketMixin {
 		if (creative && !TweakifyModConfig.fluidPickAllows(config.functions.pickFluidBucketFluids,
 			state.is(Blocks.WATER), state.is(Blocks.LAVA))) {
 			return;
+		}
+		if (creative && config.functions.pickFluidBucketSourceOnly
+			&& !state.getFluidState().isSource()) {
+			return;
+		}
+		if (!creative && config.functions.survivalPickBlockHotbarOnly) {
+			boolean water = state.is(Blocks.WATER);
+			boolean found = false;
+			for (int slot = 0; slot < 9; slot++) {
+				if (client.player.getInventory().getItem(slot)
+					.is(water ? Items.WATER_BUCKET : Items.LAVA_BUCKET)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				return;
+			}
 		}
 		HookProbe.markOnce("pickFluidBucket");
 		client.gameMode.handlePickItemFromBlock(blockHit.getBlockPos(), client.hasControlDown());

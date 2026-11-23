@@ -9,6 +9,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +18,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -54,6 +56,17 @@ public class MultiPlayerGameModeMixin {
 		return original;
 	}
 
+	// 记录开始挖掘时的工具，供“仅同工具保留进度”判定。
+	@Inject(method = "startDestroyBlock", at = @At("HEAD"), require = 0)
+	private void tweakify$recordMiningTool(BlockPos pos, Direction direction, CallbackInfoReturnable<Boolean> cir) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		Minecraft client = Minecraft.getInstance();
+		if (config != null && config.modified.keepMiningProgressOnItemSwitch
+			&& config.modified.keepMiningProgressSameToolOnly && client.player != null) {
+			KeepMiningProgressState.recordTool(client.player.getMainHandItem().getItem());
+		}
+	}
+
 	// 切换物品不打断挖掘：原版 sameDestroyTarget 同时比较位置与手持物品，
 	// 切换物品时返回 false，continueDestroyBlock 会重新 startDestroyBlock 并清空进度。
 	// 开关开启时只比较位置；距离子设置大于 0 时还要求玩家仍在指定距离内。
@@ -65,8 +78,11 @@ public class MultiPlayerGameModeMixin {
 			Minecraft client = Minecraft.getInstance();
 			double distanceSq = client.player == null ? 0.0
 				: client.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+			boolean sameTool = !config.modified.keepMiningProgressSameToolOnly
+				|| (client.player != null
+					&& KeepMiningProgressState.isSameTool(client.player.getMainHandItem().getItem()));
 			return KeepMiningProgressState.shouldKeep(true, pos.equals(this.destroyBlockPos),
-				distanceSq, config.modified.keepMiningProgressMaxDistance);
+				sameTool, distanceSq, config.modified.keepMiningProgressMaxDistance);
 		}
 		return original;
 	}

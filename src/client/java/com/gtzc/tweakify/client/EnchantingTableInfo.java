@@ -1,9 +1,11 @@
 package com.gtzc.tweakify.client;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
@@ -30,13 +32,30 @@ public final class EnchantingTableInfo {
 	// 生成悬停提示的每一行；没有可用结果时返回空列表，由调用方决定是否显示提示。
 	public static List<Component> describeOffers(RegistryAccess registryAccess, ItemStack stack,
 												 int seed, int slot, int cost) {
+		return describeOffers(registryAccess, stack, seed, slot, cost, false, false);
+	}
+
+	// 带显示子项的版本：可追加经验消耗行，并在每条附魔后标注最高等级。
+	public static List<Component> describeOffers(RegistryAccess registryAccess, ItemStack stack,
+												 int seed, int slot, int cost,
+												 boolean showCost, boolean showMaxLevel) {
 		List<EnchantmentInstance> enchantments = compute(registryAccess, stack, seed, slot, cost);
 		if (enchantments.isEmpty()) {
 			return List.of();
 		}
-		List<Component> lines = new ArrayList<>(enchantments.size());
+		List<Component> lines = new ArrayList<>(enchantments.size() + 1);
 		for (EnchantmentInstance instance : enchantments) {
-			lines.add(Enchantment.getFullname(instance.enchantment(), instance.level()));
+			MutableComponent line = Enchantment.getFullname(instance.enchantment(), instance.level()).copy();
+			if (showMaxLevel) {
+				line.append(Component.literal(" "));
+				line.append(Component.translatable("tweakify-mod.enchanting_table_info.max_level",
+					instance.enchantment().value().getMaxLevel()).withStyle(ChatFormatting.DARK_GRAY));
+			}
+			lines.add(line);
+		}
+		if (showCost && cost > 0) {
+			lines.add(Component.translatable("tweakify-mod.enchanting_table_info.cost", cost)
+				.withStyle(ChatFormatting.GRAY));
 		}
 		return List.copyOf(lines);
 	}

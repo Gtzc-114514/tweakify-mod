@@ -21,5 +21,8 @@ final class OptimizationCatalogEntries {
 		entries.add(child("miniHudFpsOptimization", "miniHudRefreshIntervalMs"));
 		// 告示牌文本优化（优化标签）
 		entries.add(optimization("signTextOptimization", true));
+		entries.add(child("signTextOptimization", "signTextOptimizationCachedText"));
+		entries.add(child("signTextOptimization", "signTextOptimizationSkipTicking"));
+		entries.add(child("signTextOptimization", "signTextOptimizationSkipFiltering"));
 	}
 }

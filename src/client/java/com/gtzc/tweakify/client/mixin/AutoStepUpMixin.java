@@ -29,7 +29,11 @@ public abstract class AutoStepUpMixin {
 	private float tweakify$autoStepUp(float original) {
 		HookProbe.markOnce(TWEAKIFY$STEP_UP_PROBE, "autoStepUp");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.functions.autoStepUp || !((Object) this instanceof LocalPlayer)) {
+		if (config == null || !config.functions.autoStepUp
+			|| !((Object) this instanceof LocalPlayer player)) {
+			return original;
+		}
+		if (config.functions.autoStepUpSneakBypass && player.isShiftKeyDown()) {
 			return original;
 		}
 		// 跨步高度由子设置决定（默认 1.0 = 像马一样跨上 1 格），仍只抬高不压低原值。

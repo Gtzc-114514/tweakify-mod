@@ -24,7 +24,8 @@ public class SignTextBoundTickingMixin<T extends BlockEntity> {
 
 	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
 	private void tweakify$skipClientSignTick(CallbackInfo ci) {
-		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.optimization.signTextOptimization) {
+		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.optimization.signTextOptimization
+			|| !TweakifyMod.CONFIG.optimization.signTextOptimizationSkipTicking) {
 			return;
 		}
 		// 只跳过原版告示牌，避免误伤第三方模组给子类挂载的客户端 ticker。

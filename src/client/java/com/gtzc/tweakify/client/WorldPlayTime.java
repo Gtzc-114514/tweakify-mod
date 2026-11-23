@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -202,10 +204,23 @@ public final class WorldPlayTime {
 		return new PlayTimeText(DURATION_TRANSLATION_KEY, new Object[]{hours, minutes});
 	}
 
-	// 小时文本：100 小时以上取整，否则保留 1 位小数（参考实现）。
+	// 小时文本：100 小时以上取整，否则按配置保留小数位。
 	static String hoursText(long ticks) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		int decimals = config == null
+			? TweakifyModConfig.DEFAULT_SAVE_PLAY_TIME_DECIMALS
+			: config.functions.savePlayTimeDecimals;
+		return hoursText(ticks, decimals);
+	}
+
+	static String hoursText(long ticks, int decimals) {
 		double hours = (double) ticks / TICKS_PER_HOUR;
-		return hours >= 100.0 ? String.valueOf((long) hours) : String.format(Locale.ROOT, "%.1f", hours);
+		if (hours >= 100.0) {
+			return String.valueOf((long) hours);
+		}
+		int clamped = Math.max(TweakifyModConfig.MIN_SAVE_PLAY_TIME_DECIMALS,
+			Math.min(TweakifyModConfig.MAX_SAVE_PLAY_TIME_DECIMALS, decimals));
+		return String.format(Locale.ROOT, "%." + clamped + "f", hours);
 	}
 
 	// 时:分（不足 1 小时为 0:MM）；负数/0 返回空。

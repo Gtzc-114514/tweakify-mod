@@ -26,6 +26,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.network.chat.Component;
@@ -119,6 +120,14 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		TweakifyMod.LOGGER.info("Item despawn hook uses a behavior probe; watch for "
 			+ "'Mixin hook active: itemDespawnTick' after the first item tick");
 
+		// 背包快捷右键：客户端 → 服务端请求打开背包物品；接收器只在集成服务端执行。
+		// 远程服务器未安装模组时 canSend 为 false，客户端不会发送也不会拦下原版点击。
+		PayloadTypeRegistry.serverboundPlay().register(
+			QuickRightClickPayload.TYPE, QuickRightClickPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(QuickRightClickPayload.TYPE, (payload, context) ->
+			context.server().execute(() -> QuickRightClickService.open(
+				context.player(), payload.containerId(), payload.slot(), payload.sneaking())));
+
 		// 可见交易：注册锁定交易包，并在交易界面打开时把数据合并进 MerchantMenu。
 		PayloadTypeRegistry.clientboundPlay().register(LockedTradesPayload.TYPE, LockedTradesPayload.CODEC);
 		ClientPlayNetworking.registerGlobalReceiver(LockedTradesPayload.TYPE, (payload, context) ->
@@ -166,8 +175,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		remoteServerLogged = true;
 		TweakifyMod.LOGGER.warn("Connected to a remote server: server-side features (anvil, shovel snow, item despawn, "
 			+ "slime spawn, farmland, pick block, smithing, iron golem minecart, bone meal, active crawling, "
-			+ "thrown spawn eggs, cobweb/fluid/slime/honey physics, frost walker jump fix) only work in single "
-			+ "player or on a LAN host");
+			+ "thrown spawn eggs, cobweb/fluid/slime/honey physics, frost walker jump fix, "
+			+ "inventory quick right click) only work in single player or on a LAN host");
 	}
 
 	private static void logRenderBackendOnce() {

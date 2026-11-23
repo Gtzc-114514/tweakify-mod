@@ -45,8 +45,17 @@ public abstract class LevelExtractorSpectatorOverlayMixin {
 			return;
 		}
 		HookProbe.markOnce(TWEAKIFY$SPECTATOR_OVERLAY_PROBE, "spectatorOverlayFix");
-		state.portalEffectIntensity = SpectatorOverlayState.intensity(enabled, spectator, state.portalEffectIntensity);
-		state.nauseaEffectIntensity = SpectatorOverlayState.intensity(enabled, spectator, state.nauseaEffectIntensity);
-		state.spinningEffectAngle = SpectatorOverlayState.intensity(enabled, spectator, state.spinningEffectAngle);
+		if (config.fix.spectatorOverlayHidePortal) {
+			state.portalEffectIntensity = SpectatorOverlayState.intensity(enabled, spectator,
+				state.portalEffectIntensity);
+		}
+		if (config.fix.spectatorOverlayHideNausea) {
+			state.nauseaEffectIntensity = SpectatorOverlayState.intensity(enabled, spectator,
+				state.nauseaEffectIntensity);
+		}
+		if (config.fix.spectatorOverlayHideSpinning) {
+			state.spinningEffectAngle = SpectatorOverlayState.intensity(enabled, spectator,
+				state.spinningEffectAngle);
+		}
 	}
 }

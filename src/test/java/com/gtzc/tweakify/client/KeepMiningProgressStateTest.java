@@ -34,4 +34,10 @@ class KeepMiningProgressStateTest {
 			"阈值夹紧到 16 格，16² = 256 命中");
 		assertFalse(KeepMiningProgressState.shouldKeep(true, true, 256.01, 999));
 	}
+
+	@Test
+	void sameToolGateCanResetProgress() {
+		assertTrue(KeepMiningProgressState.shouldKeep(true, true, true, 0.0, 0));
+		assertFalse(KeepMiningProgressState.shouldKeep(true, true, false, 0.0, 0));
+	}
 }

@@ -28,6 +28,15 @@ public final class OptimizationConfig extends ConfigSection {
 	// 告示牌文本优化：缓存 hasMessage 结果并跳过客户端告示牌 tick。
 	public volatile boolean signTextOptimization = false;
 
+	// 子开关：缓存 hasMessage 结果。
+	public volatile boolean signTextOptimizationCachedText = true;
+
+	// 子开关：跳过客户端告示牌 block entity tick。
+	public volatile boolean signTextOptimizationSkipTicking = true;
+
+	// 子开关：告示牌渲染跳过文本过滤（会忽略服务器过滤后的文本）。
+	public volatile boolean signTextOptimizationSkipFiltering = true;
+
 	// HUD 行刷新间隔（毫秒，50 ~ 1000，默认 150）。
 	public volatile int miniHudRefreshIntervalMs = TweakifyModConfig.DEFAULT_MINIHUD_REFRESH_INTERVAL_MS;
 

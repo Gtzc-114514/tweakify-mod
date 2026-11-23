@@ -15,6 +15,11 @@ public final class MiningPenaltyState {
 			Math.min(TweakifyModConfig.MAX_MINING_PENALTY_KEEP_PERCENT, keepPercent));
 	}
 
+	// 水下惩罚只在游泳时处理；未开启“仅游泳”时保持旧行为。
+	public static boolean shouldRemoveUnderwaterPenalty(boolean swimmingOnly, boolean swimming) {
+		return !swimmingOnly || swimming;
+	}
+
 	// 属性值 ≥ 1 时视为增益（如其它模组加成），保持原值不动。
 	public static double underwaterMultiplier(double original, int keepPercent) {
 		if (original >= 1.0) {

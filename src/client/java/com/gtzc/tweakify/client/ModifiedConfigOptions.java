@@ -45,12 +45,18 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean HURT_SHAKE_KEEP_DEATH_TILT = new ConfigBoolean(
 		"hurtShakeKeepDeathTilt", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean HURT_SHAKE_PLAYERS_ONLY = new ConfigBoolean(
+		"hurtShakePlayersOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBoolean DISABLE_HURT_TINT = new ConfigBoolean(
 		"disableHurtTint", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 关闭红色覆盖时保留受伤闪白。
 	public static final ConfigBoolean HURT_TINT_KEEP_WHITE_FLASH = new ConfigBoolean(
 		"hurtTintKeepWhiteFlash", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean HURT_TINT_PLAYERS_ONLY = new ConfigBoolean(
+		"hurtTintPlayersOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigBoolean DISABLE_UNDERWATER_MINING_PENALTY = new ConfigBoolean(
 		"disableUnderwaterMiningPenalty", false).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -61,6 +67,9 @@ public final class ModifiedConfigOptions {
 		TweakifyModConfig.MIN_MINING_PENALTY_KEEP_PERCENT,
 		TweakifyModConfig.MAX_MINING_PENALTY_KEEP_PERCENT).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean UNDERWATER_MINING_PENALTY_SWIMMING_ONLY = new ConfigBoolean(
+		"underwaterMiningPenaltySwimmingOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBoolean DISABLE_AIR_MINING_PENALTY = new ConfigBoolean(
 		"disableAirMiningPenalty", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
@@ -69,6 +78,9 @@ public final class ModifiedConfigOptions {
 		"airMiningPenaltyKeep", TweakifyModConfig.DEFAULT_MINING_PENALTY_KEEP_PERCENT,
 		TweakifyModConfig.MIN_MINING_PENALTY_KEEP_PERCENT,
 		TweakifyModConfig.MAX_MINING_PENALTY_KEEP_PERCENT).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean AIR_MINING_PENALTY_ONLY_WHEN_FALLING = new ConfigBoolean(
+		"airMiningPenaltyOnlyWhenFalling", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigBoolean DISABLE_CURSE_ENCHANTMENT_RESTRICTION = new ConfigBoolean(
 		"disableCurseEnchantmentRestriction", false).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -98,6 +110,9 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean REMOVE_ENCHANTMENT_CONFLICTS_SAME_GROUP_ONLY = new ConfigBoolean(
 		"removeEnchantmentConflictsSameGroupOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean REMOVE_ENCHANTMENT_CONFLICTS_REQUIRE_SNEAK = new ConfigBoolean(
+		"removeEnchantmentConflictsRequireSneak", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 附魔描述：在物品提示中为每个附魔追加一行描述。
 	public static final ConfigBoolean ENCHANTMENT_DESCRIPTIONS = new ConfigBoolean(
 		"enchantmentDescriptions", false).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -105,6 +120,9 @@ public final class ModifiedConfigOptions {
 	// 只在按住潜行键时追加附魔描述。
 	public static final ConfigBoolean ENCHANTMENT_DESCRIPTIONS_SNEAK_ONLY = new ConfigBoolean(
 		"enchantmentDescriptionsSneakOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean ENCHANTMENT_DESCRIPTIONS_INCLUDE_CURSES = new ConfigBoolean(
+		"enchantmentDescriptionsIncludeCurses", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 第三人称自身名字：第三/第二人称显示玩家自己的名字。
 	public static final ConfigBoolean THIRD_PERSON_PLAYER_NAME = new ConfigBoolean(
@@ -114,6 +132,9 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean THIRD_PERSON_PLAYER_NAME_SNEAK_ONLY = new ConfigBoolean(
 		"thirdPersonPlayerNameSneakOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean THIRD_PERSON_PLAYER_NAME_IGNORE_HUD_HIDDEN = new ConfigBoolean(
+		"thirdPersonPlayerNameIgnoreHudHidden", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 雪傀儡不受群系影响：温暖/干燥群系不再因群系属性融化；雨/水仍会伤害，仅单人/局域网生效。
 	public static final ConfigBoolean SNOW_GOLEM_BIOME_IMMUNITY = new ConfigBoolean(
 		"snowGolemBiomeImmunity", false).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -122,12 +143,20 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean SNOW_GOLEM_BIOME_IMMUNITY_OVERWORLD_ONLY = new ConfigBoolean(
 		"snowGolemBiomeImmunityOverworldOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean SNOW_GOLEM_BIOME_IMMUNITY_ONLY_WHEN_RAINING = new ConfigBoolean(
+		"snowGolemBiomeImmunityOnlyWhenRaining", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 超平坦无史莱姆：超平坦世界中不再生成史莱姆。
 	public static final ConfigBoolean DISABLE_FLAT_WORLD_SLIME_SPAWN = new ConfigBoolean(
 		"disableFlatWorldSlimeSpawn", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigBoolean FLAT_WORLD_SLIME_SPAWN_ALL_WORLDS = new ConfigBoolean(
 		"flatWorldSlimeSpawnAllWorlds", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigInteger FLAT_WORLD_SLIME_SPAWN_BELOW_Y = new ConfigInteger(
+		"flatWorldSlimeSpawnBelowY", TweakifyModConfig.DEFAULT_FLAT_SLIME_Y,
+		TweakifyModConfig.MIN_FLAT_SLIME_Y,
+		TweakifyModConfig.MAX_FLAT_SLIME_Y).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 更好的隐身：隐身后去掉药水粒子，装备与第三人称手持物品也隐藏。
 	public static final ConfigBoolean BETTER_INVISIBILITY = new ConfigBoolean(
@@ -142,6 +171,9 @@ public final class ModifiedConfigOptions {
 		"smithingTemplateKeepChance", TweakifyModConfig.DEFAULT_SMITHING_TEMPLATE_KEEP_CHANCE,
 		TweakifyModConfig.MIN_SMITHING_TEMPLATE_KEEP_CHANCE,
 		TweakifyModConfig.MAX_SMITHING_TEMPLATE_KEEP_CHANCE).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean SMITHING_TEMPLATE_SURVIVAL_ONLY = new ConfigBoolean(
+		"smithingTemplateSurvivalOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 夜视淡出：夜视结束前平滑淡出。
 	public static final ConfigBoolean NIGHT_VISION_FADE_OUT = new ConfigBoolean(
@@ -158,6 +190,12 @@ public final class ModifiedConfigOptions {
 	public static final ConfigOptionList ENCHANTMENT_LEVEL_ARABIC_STYLE = new ConfigOptionList(
 		"enchantmentLevelArabicStyle", EnchantmentLevelStyle.PLAIN).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 只在附魔等级不低于该值时使用阿拉伯数字。
+	public static final ConfigInteger ENCHANTMENT_LEVEL_ARABIC_MIN_LEVEL = new ConfigInteger(
+		"enchantmentLevelArabicMinLevel", TweakifyModConfig.DEFAULT_ENCHANTMENT_ARABIC_LEVEL,
+		TweakifyModConfig.MIN_ENCHANTMENT_ARABIC_LEVEL,
+		TweakifyModConfig.MAX_ENCHANTMENT_ARABIC_LEVEL).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 疣块分解：合成格里单独放下界疣块时产出 9 个下界疣。
 	public static final ConfigBoolean WART_BLOCK_DECOMPOSITION = new ConfigBoolean(
 		"wartBlockDecomposition", false).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -168,12 +206,18 @@ public final class ModifiedConfigOptions {
 		TweakifyModConfig.MIN_WART_DECOMPOSITION_OUTPUT,
 		TweakifyModConfig.MAX_WART_DECOMPOSITION_OUTPUT).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean WART_BLOCK_DECOMPOSITION_REQUIRE_SNEAK = new ConfigBoolean(
+		"wartBlockDecompositionRequireSneak", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 鞘翅水中飞行：滑翔时不再被流体移动逻辑接管。
 	public static final ConfigBoolean ELYTRA_WATER_FLIGHT = new ConfigBoolean(
 		"elytraWaterFlight", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	public static final ConfigBoolean ELYTRA_WATER_FLIGHT_ONLY_WATER = new ConfigBoolean(
 		"elytraWaterFlightOnlyWater", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean ELYTRA_WATER_FLIGHT_ONLY_SUBMERGED = new ConfigBoolean(
+		"elytraWaterFlightOnlySubmerged", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 禁用地狱门特效：不再显示紫色覆盖层、镜头旋转与传送门音效。
 	public static final ConfigBoolean DISABLE_NETHER_PORTAL_EFFECT = new ConfigBoolean(
@@ -199,6 +243,9 @@ public final class ModifiedConfigOptions {
 		TweakifyModConfig.MIN_IRON_GOLEM_PICKUP_DISTANCE,
 		TweakifyModConfig.MAX_IRON_GOLEM_PICKUP_DISTANCE).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean IRON_GOLEM_RIDE_MINECART_EMPTY_HAND_ONLY = new ConfigBoolean(
+		"ironGolemRideMinecartEmptyHandOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 穿牌打开容器：准星对准告示牌时直接打开它背后的容器。
 	public static final ConfigBoolean SIGN_OPEN_CONTAINER = new ConfigBoolean(
 		"signOpenContainer", false).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -207,9 +254,20 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean SIGN_OPEN_CONTAINER_SNEAK_BYPASS = new ConfigBoolean(
 		"signOpenContainerSneakBypass", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean SIGN_OPEN_CONTAINER_SKIP_WAXED = new ConfigBoolean(
+		"signOpenContainerSkipWaxed", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 不死图腾背包生效：图腾在快捷栏或背包即可触发，不再要求主手/副手。
 	public static final ConfigBoolean TOTEM_FROM_INVENTORY = new ConfigBoolean(
 		"totemFromInventory", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 背包查找是否包含快捷栏。
+	public static final ConfigBoolean TOTEM_INVENTORY_INCLUDE_HOTBAR = new ConfigBoolean(
+		"totemInventoryIncludeHotbar", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 优先从快捷栏开始查找。
+	public static final ConfigBoolean TOTEM_INVENTORY_HOTBAR_FIRST = new ConfigBoolean(
+		"totemInventoryHotbarFirst", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 禁用蛛网减速：蜘蛛网不再粘住并限制移动。
 	public static final ConfigBoolean DISABLE_COBWEB_SLOWDOWN = new ConfigBoolean(
@@ -217,6 +275,9 @@ public final class ModifiedConfigOptions {
 
 	public static final ConfigBoolean COBWEB_SLOWDOWN_ALL_ENTITIES = new ConfigBoolean(
 		"cobwebSlowdownAllEntities", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean COBWEB_SLOWDOWN_KEEP_JUMP_PENALTY = new ConfigBoolean(
+		"cobwebSlowdownKeepJumpPenalty", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 禁用液体推动：水流与岩浆流不再施加水平推力。
 	public static final ConfigBoolean DISABLE_FLUID_PUSH = new ConfigBoolean(
@@ -235,6 +296,9 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean DISABLE_SLIME_BLOCK_BOUNCE = new ConfigBoolean(
 		"disableSlimeBlockBounce", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean DISABLE_SLIME_BLOCK_SLOWDOWN_PLAYERS_ONLY = new ConfigBoolean(
+		"disableSlimeBlockSlowdownPlayersOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 禁用蜂蜜块减速：蜂蜜块不再降低移动速度。
 	public static final ConfigBoolean DISABLE_HONEY_BLOCK_SLOWDOWN = new ConfigBoolean(
 		"disableHoneyBlockSlowdown", false).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -249,6 +313,18 @@ public final class ModifiedConfigOptions {
 	// 门使用 2 格视觉高度（关闭时门保持原版轮廓）。
 	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE_DOOR_FULL_HEIGHT = new ConfigBoolean(
 		"connectedBlockOutlineDoorFullHeight", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE_DOORS = new ConfigBoolean(
+		"connectedBlockOutlineDoors", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE_CHESTS = new ConfigBoolean(
+		"connectedBlockOutlineChests", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE_BEDS = new ConfigBoolean(
+		"connectedBlockOutlineBeds", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean CONNECTED_BLOCK_OUTLINE_PLANTS = new ConfigBoolean(
+		"connectedBlockOutlinePlants", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 更好的隐身子项。
 	public static final ConfigBoolean BETTER_INVISIBILITY_EFFECT_PARTICLES = new ConfigBoolean(
@@ -315,6 +391,9 @@ public final class ModifiedConfigOptions {
 		TweakifyModConfig.MIN_SPRINT_FOV_INTENSITY,
 		TweakifyModConfig.MAX_SPRINT_FOV_INTENSITY).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean SPRINT_FOV_ONLY_FIRST_PERSON = new ConfigBoolean(
+		"sprintFovOnlyFirstPerson", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBoolean KEEP_MINING_PROGRESS_ON_ITEM_SWITCH = new ConfigBoolean(
 		"keepMiningProgressOnItemSwitch", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
@@ -323,6 +402,9 @@ public final class ModifiedConfigOptions {
 		"keepMiningProgressMaxDistance", TweakifyModConfig.DEFAULT_KEEP_MINING_PROGRESS_DISTANCE,
 		TweakifyModConfig.MIN_KEEP_MINING_PROGRESS_DISTANCE,
 		TweakifyModConfig.MAX_KEEP_MINING_PROGRESS_DISTANCE).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean KEEP_MINING_PROGRESS_SAME_TOOL_ONLY = new ConfigBoolean(
+		"keepMiningProgressSameToolOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 不使用最后一根火把：只剩一根时不允许放置。
 	public static final ConfigBoolean KEEP_LAST_TORCH = new ConfigBoolean(
@@ -334,6 +416,10 @@ public final class ModifiedConfigOptions {
 		TweakifyModConfig.MIN_KEEP_LAST_TORCH_COUNT,
 		TweakifyModConfig.MAX_KEEP_LAST_TORCH_COUNT).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 主手最后一根火把的判定忽略副手。
+	public static final ConfigBoolean KEEP_LAST_TORCH_IGNORE_OFFHAND = new ConfigBoolean(
+		"keepLastTorchIgnoreOffhand", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 经过可攀爬方块不减速：蹭到梯子/藤蔓边缘时不再夹紧水平速度。
 	public static final ConfigBoolean CLIMBABLE_PASS_NO_SLOWDOWN = new ConfigBoolean(
 		"climbablePassNoSlowdown", false).apply(ConfigOptionKeys.GENERAL_KEY);
@@ -342,13 +428,35 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean CLIMBABLE_PASS_NO_SLOWDOWN_SNEAK_ONLY = new ConfigBoolean(
 		"climbablePassNoSlowdownSneakOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
-	// 可见交易显示：村民/流浪商人头顶显示交易结果物品。
+	// 生效的可攀爬方块类型。
+	public static final ConfigBoolean CLIMBABLE_PASS_LADDERS = new ConfigBoolean(
+		"climbablePassLadders", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean CLIMBABLE_PASS_VINES = new ConfigBoolean(
+		"climbablePassVines", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean CLIMBABLE_PASS_TRAPDOORS = new ConfigBoolean(
+		"climbablePassTrapdoors", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 可见交易显示：在村民交易界面显示未来等级（锁定）的交易。
 	public static final ConfigBoolean VISIBLE_TRADERS = new ConfigBoolean(
 		"visibleTraders", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 只显示未解锁（锁定）的交易。
 	public static final ConfigBoolean VISIBLE_TRADERS_ONLY_LOCKED = new ConfigBoolean(
 		"visibleTradersOnlyLocked", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 最多显示的未来等级数。
+	public static final ConfigInteger VISIBLE_TRADERS_FUTURE_LEVELS = new ConfigInteger(
+		"visibleTradersFutureLevels", TweakifyModConfig.DEFAULT_VISIBLE_TRADER_FUTURE_LEVELS,
+		TweakifyModConfig.MIN_VISIBLE_TRADER_FUTURE_LEVELS,
+		TweakifyModConfig.MAX_VISIBLE_TRADER_FUTURE_LEVELS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 单次最多下发的锁定交易条数（0 = 不限制）。
+	public static final ConfigInteger VISIBLE_TRADERS_MAX_LOCKED_OFFERS = new ConfigInteger(
+		"visibleTradersMaxLockedOffers", TweakifyModConfig.DEFAULT_VISIBLE_TRADER_LOCKED_OFFERS,
+		TweakifyModConfig.MIN_VISIBLE_TRADER_LOCKED_OFFERS,
+		TweakifyModConfig.MAX_VISIBLE_TRADER_LOCKED_OFFERS).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 强制关闭加载屏幕：加载世界时立即关闭加载界面。
 	public static final ConfigBoolean FORCE_CLOSE_LOADING_SCREEN = new ConfigBoolean(
@@ -371,6 +479,9 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean RESOURCE_PACK_COMPATIBILITY_ALSO_DATA_PACKS = new ConfigBoolean(
 		"resourcePackCompatibilityAlsoDataPacks", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean RESOURCE_PACK_COMPATIBILITY_WARN_ONLY = new ConfigBoolean(
+		"resourcePackCompatibilityWarnOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBoolean DISABLE_FARMLAND_TRAMPLING = new ConfigBoolean(
 		"disableFarmlandTrampling", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
@@ -381,11 +492,35 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean ARMOR_STAND_ARMS = new ConfigBoolean(
 		"armorStandArms", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 只给手中拿着物品的盔甲架显示手臂。
+	public static final ConfigBoolean ARMOR_STAND_ARMS_ONLY_WITH_ITEMS = new ConfigBoolean(
+		"armorStandArmsOnlyWithItems", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 只对小型盔甲架显示手臂。
+	public static final ConfigBoolean ARMOR_STAND_ARMS_ONLY_SMALL = new ConfigBoolean(
+		"armorStandArmsOnlySmall", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 隐藏物品展示框：装有物品时只渲染物品，不渲染外框。
 	public static final ConfigBoolean HIDE_ITEM_FRAMES = new ConfigBoolean(
 		"hideItemFrames", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 只隐藏装有地图的展示框。
+	public static final ConfigBoolean HIDE_ITEM_FRAMES_ONLY_MAPS = new ConfigBoolean(
+		"hideItemFramesOnlyMaps", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 连空展示框也隐藏外框。
+	public static final ConfigBoolean HIDE_ITEM_FRAMES_HIDE_EMPTY = new ConfigBoolean(
+		"hideItemFramesHideEmpty", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 取消速度上限：关闭服务端的 moved too quickly 速度检查。
 	public static final ConfigBoolean REMOVE_SPEED_LIMIT = new ConfigBoolean(
 		"removeSpeedLimit", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 只对骑乘中的玩家取消速度上限。
+	public static final ConfigBoolean REMOVE_SPEED_LIMIT_ONLY_VEHICLES = new ConfigBoolean(
+		"removeSpeedLimitOnlyVehicles", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 只对正在飞行/滑翔的玩家取消速度上限。
+	public static final ConfigBoolean REMOVE_SPEED_LIMIT_ONLY_FLYING = new ConfigBoolean(
+		"removeSpeedLimitOnlyFlying", false).apply(ConfigOptionKeys.GENERAL_KEY);
 }

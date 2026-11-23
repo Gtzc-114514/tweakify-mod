@@ -24,6 +24,15 @@ public final class OptimizationConfigOptions {
 	public static final ConfigBoolean SIGN_TEXT_OPTIMIZATION = new ConfigBoolean(
 		"signTextOptimization", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean SIGN_TEXT_OPTIMIZATION_CACHED_TEXT = new ConfigBoolean(
+		"signTextOptimizationCachedText", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean SIGN_TEXT_OPTIMIZATION_SKIP_TICKING = new ConfigBoolean(
+		"signTextOptimizationSkipTicking", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	public static final ConfigBoolean SIGN_TEXT_OPTIMIZATION_SKIP_FILTERING = new ConfigBoolean(
+		"signTextOptimizationSkipFiltering", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// HUD 行刷新间隔（毫秒，50 ~ 1000）。
 	public static final ConfigInteger MINI_HUD_REFRESH_INTERVAL_MS = new ConfigInteger(
 		"miniHudRefreshIntervalMs", TweakifyModConfig.DEFAULT_MINIHUD_REFRESH_INTERVAL_MS,

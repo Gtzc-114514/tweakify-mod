@@ -130,7 +130,9 @@ public final class PiglinArmorSwapState {
 
 		if (--scanCooldown <= 0) {
 			scanCooldown = SCAN_INTERVAL_TICKS;
-			if (hasPiglinsNearby(client.level, player)) {
+			int range = Math.max(TweakifyModConfig.MIN_PIGLIN_SWAP_RANGE,
+				Math.min(TweakifyModConfig.MAX_PIGLIN_SWAP_RANGE, config.functions.piglinGoldArmorSwapRange));
+			if (hasPiglinsNearby(client.level, player, range)) {
 				piglinNearby = true;
 				missedScans = 0;
 			} else if (++missedScans >= MISSED_SCANS_TO_LEAVE) {
@@ -158,7 +160,11 @@ public final class PiglinArmorSwapState {
 
 	// 附近是否存在存活的成年猪灵（幼崽不会攻击玩家）。
 	static boolean hasPiglinsNearby(ClientLevel level, Player player) {
-		AABB area = player.getBoundingBox().inflate(DETECTION_RANGE);
+		return hasPiglinsNearby(level, player, DETECTION_RANGE);
+	}
+
+	static boolean hasPiglinsNearby(ClientLevel level, Player player, double range) {
+		AABB area = player.getBoundingBox().inflate(range);
 		for (Piglin piglin : level.getEntitiesOfClass(Piglin.class, area, Piglin::isAlive)) {
 			if (!piglin.isBaby()) {
 				return true;

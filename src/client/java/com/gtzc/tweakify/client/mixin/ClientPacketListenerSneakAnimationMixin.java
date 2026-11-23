@@ -38,7 +38,12 @@ public abstract class ClientPacketListenerSneakAnimationMixin {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		boolean enabled = config != null && config.fix.sneakAnimationFix;
 		Minecraft client = Minecraft.getInstance();
-		if (!SneakAnimationState.shouldStripPose(enabled, entity != null && entity == client.player)) {
+		boolean onlyOnGround = config != null && config.fix.sneakAnimationFixOnlyOnGround;
+		boolean onlyWhenSneaking = config != null && config.fix.sneakAnimationFixOnlyWhenSneaking;
+		boolean onGround = entity != null && entity.onGround();
+		boolean sneaking = entity != null && entity.isShiftKeyDown();
+		if (!SneakAnimationState.shouldStripPose(enabled, onlyOnGround, onlyWhenSneaking,
+			entity != null && entity == client.player, onGround, sneaking)) {
 			return;
 		}
 		HookProbe.markOnce(TWEAKIFY$SNEAK_ANIMATION_PROBE, "sneakAnimationFix");

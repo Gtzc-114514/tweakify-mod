@@ -54,8 +54,11 @@ public class MinecartPickUpIronGolemMixin {
 			return;
 		}
 		AABB searchBox = IronGolemMinecartState.searchBox(minecart.getBoundingBox());
+		boolean emptyHandOnly = config != null && config.modified.ironGolemRideMinecartEmptyHandOnly;
 		List<IronGolem> golems = minecart.level().getEntitiesOfClass(IronGolem.class, searchBox,
-			golem -> !golem.isPassenger() && !golem.isVehicle() && golem.isAlive());
+			golem -> !golem.isPassenger() && !golem.isVehicle() && golem.isAlive()
+				&& (!emptyHandOnly || IronGolemMinecartState.hasEmptyHands(
+					golem.getMainHandItem().isEmpty(), golem.getOffhandItem().isEmpty())));
 		if (!golems.isEmpty()) {
 			golems.get(0).startRiding(minecart);
 		}

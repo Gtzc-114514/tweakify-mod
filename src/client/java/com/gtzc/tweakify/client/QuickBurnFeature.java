@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.ParticleTypes;
@@ -31,9 +32,25 @@ public final class QuickBurnFeature {
 	private QuickBurnFeature() {
 	}
 
-	// 可用来焚烧物品的工具：岩浆桶与打火石。
+	// 默认可用来焚烧物品的工具：岩浆桶与打火石。
 	static boolean isBurnTool(Item item) {
 		return item == Items.LAVA_BUCKET || item == Items.FLINT_AND_STEEL;
+	}
+
+	// 读取配置的点燃物列表；配置缺失时回退到默认两种工具。
+	static boolean isConfiguredBurnTool(ItemStack stack) {
+		return !stack.isEmpty() && isConfiguredBurnTool(stack.getItem());
+	}
+
+	static boolean isConfiguredBurnTool(Item item) {
+		if (item == null || item == Items.AIR) {
+			return false;
+		}
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (config == null) {
+			return isBurnTool(item);
+		}
+		return config.isQuickBurnIgniter(item);
 	}
 
 	// 触发条件：需要潜行时，未潜行既不焚烧也不显示提示，避免整理背包时误触。
@@ -44,7 +61,7 @@ public final class QuickBurnFeature {
 	// 右键目标槽位是否为可焚烧工具，且光标上确实拿着物品。
 	public static boolean canBurn(AbstractContainerMenu menu, Slot slot) {
 		return menu != null && slot != null && slot.hasItem()
-			&& isBurnTool(slot.getItem().getItem())
+			&& isConfiguredBurnTool(slot.getItem())
 			&& !menu.getCarried().isEmpty();
 	}
 

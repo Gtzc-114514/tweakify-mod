@@ -2,6 +2,7 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
@@ -22,7 +23,8 @@ public class ElytraWaterFlightMixin {
 	private boolean tweakify$keepGlidingInWater(LivingEntity self, FluidState fluidState) {
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		if (config != null && config.modified.elytraWaterFlight && self.isFallFlying()
-			&& (!config.modified.elytraWaterFlightOnlyWater || fluidState.getType().isSame(Fluids.WATER))) {
+			&& (!config.modified.elytraWaterFlightOnlyWater || fluidState.getType().isSame(Fluids.WATER))
+			&& (!config.modified.elytraWaterFlightOnlySubmerged || self.isEyeInFluid(FluidTags.WATER))) {
 			return false;
 		}
 		// 原逻辑：处于液体、受流体影响且无法站在该流体上时才走流体移动。

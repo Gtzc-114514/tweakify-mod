@@ -26,10 +26,6 @@ import java.util.List;
  * 不是本功能处理的方块，交回原版逻辑。世界改动只在服务端执行，客户端只做预测。
  */
 public final class BetterBoneMeal {
-	// 花扩散的最大数量与随机取点范围（7x7）。
-	private static final int FLOWER_SPREAD_COUNT = 5;
-	private static final int FLOWER_SPREAD_RADIUS = 3;
-
 	// 骨粉成功的粒子数量与扩散范围（与原版 addGrowthParticles 的量级一致）。
 	private static final int GROWTH_PARTICLES = 45;
 	private static final double PARTICLE_RADIUS = 1.5;
@@ -53,7 +49,11 @@ public final class BetterBoneMeal {
 			return growSugarCane(stack, level, pos);
 		}
 		if (config.functions.boneMealFlowers && state.getBlock() instanceof FlowerBlock) {
-			return spreadFlowers(stack, level, pos, state);
+			int count = Math.max(TweakifyModConfig.MIN_BONE_MEAL_FLOWER_COUNT,
+				Math.min(TweakifyModConfig.MAX_BONE_MEAL_FLOWER_COUNT, config.functions.boneMealFlowerCount));
+			int radius = Math.max(TweakifyModConfig.MIN_BONE_MEAL_FLOWER_RADIUS,
+				Math.min(TweakifyModConfig.MAX_BONE_MEAL_FLOWER_RADIUS, config.functions.boneMealFlowerRadius));
+			return spreadFlowers(stack, level, pos, state, count, radius);
 		}
 		return null;
 	}
@@ -106,22 +106,23 @@ public final class BetterBoneMeal {
 		return true;
 	}
 
-	// 花：像基岩版一样在周围扩散同类花，最多 5 朵；没有可生长的位置时不消耗骨粉。
-	private static boolean spreadFlowers(ItemStack stack, Level level, BlockPos origin, BlockState flowerState) {
+	// 花：像基岩版一样在周围扩散同类花，数量与半径由子项控制；没有可生长的位置时不消耗骨粉。
+	private static boolean spreadFlowers(ItemStack stack, Level level, BlockPos origin, BlockState flowerState,
+									   int count, int radius) {
 		// 基岩版的骨粉对凋零玫瑰无效。
 		if (flowerState.is(Blocks.WITHER_ROSE)) {
 			return false;
 		}
 		if (!(level instanceof ServerLevel serverLevel)) {
 			// 客户端只做预测：有任何可扩散位置就返回成功，让手臂正常挥动。
-			return hasFlowerSpot(level, origin, flowerState);
+			return hasFlowerSpot(level, origin, flowerState, radius);
 		}
 
 		RandomSource random = serverLevel.getRandom();
-		// 先收集全部合法位置，再随机选最多 5 个：只要客户端预测有一个位置，服务端就一定能种下至少一朵。
+		// 先收集全部合法位置，再随机选最多 count 个：只要客户端预测有一个位置，服务端就一定能种下至少一朵。
 		List<BlockPos> candidates = new ArrayList<>();
-		for (int dx = -FLOWER_SPREAD_RADIUS; dx <= FLOWER_SPREAD_RADIUS; dx++) {
-			for (int dz = -FLOWER_SPREAD_RADIUS; dz <= FLOWER_SPREAD_RADIUS; dz++) {
+		for (int dx = -radius; dx <= radius; dx++) {
+			for (int dz = -radius; dz <= radius; dz++) {
 				if (dx == 0 && dz == 0) {
 					continue;
 				}
@@ -135,7 +136,7 @@ public final class BetterBoneMeal {
 			return false;
 		}
 
-		int placeCount = Math.min(FLOWER_SPREAD_COUNT, candidates.size());
+		int placeCount = Math.min(count, candidates.size());
 		for (int i = 0; i < placeCount; i++) {
 			BlockPos pos = candidates.remove(random.nextInt(candidates.size()));
 			serverLevel.setBlockAndUpdate(pos, flowerState);
@@ -145,10 +146,10 @@ public final class BetterBoneMeal {
 		return true;
 	}
 
-	// 客户端预测用的确定性检查：7x7 范围内是否存在可放置同类花的位置。
-	private static boolean hasFlowerSpot(Level level, BlockPos origin, BlockState flowerState) {
-		for (int dx = -FLOWER_SPREAD_RADIUS; dx <= FLOWER_SPREAD_RADIUS; dx++) {
-			for (int dz = -FLOWER_SPREAD_RADIUS; dz <= FLOWER_SPREAD_RADIUS; dz++) {
+	// 客户端预测用的确定性检查：指定半径内是否存在可放置同类花的位置。
+	private static boolean hasFlowerSpot(Level level, BlockPos origin, BlockState flowerState, int radius) {
+		for (int dx = -radius; dx <= radius; dx++) {
+			for (int dz = -radius; dz <= radius; dz++) {
 				if (dx == 0 && dz == 0) {
 					continue;
 				}

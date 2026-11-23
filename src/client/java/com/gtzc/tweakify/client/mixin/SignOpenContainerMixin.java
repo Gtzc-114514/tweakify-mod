@@ -11,6 +11,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -58,6 +59,11 @@ public class SignOpenContainerMixin {
 			return;
 		}
 		BlockPos signPos = blockHit.getBlockPos();
+		if (config.modified.signOpenContainerSkipWaxed
+			&& this.level.getBlockEntity(signPos) instanceof SignBlockEntity sign
+			&& sign.isWaxed()) {
+			return;
+		}
 		if (!SignContainerTargets.shouldOpenContainer(config.modified.signOpenContainer,
 			config.modified.signOpenContainerSneakBypass,
 			SignContainerTargets.isSign(this.level.getBlockState(signPos)),

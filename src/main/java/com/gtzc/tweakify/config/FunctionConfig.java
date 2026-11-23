@@ -45,11 +45,19 @@ public final class FunctionConfig extends ConfigSection {
 			new FieldSanitizer(List.of("barrierVisibilityScanRadius", "barrierVisibilityParticleInterval"),
 				this::sanitizeBarrierScanAndInterval),
 			FieldSanitizer.of("autoStepUpHeight", this::sanitizeAutoStepUpHeight),
+			FieldSanitizer.of("netherPortalTeleportDelayTicks", this::sanitizeNetherPortalDelayTicks),
+			FieldSanitizer.of("piglinGoldArmorSwapRange", this::sanitizePiglinSwapRange),
+			new FieldSanitizer(List.of("boneMealFlowerCount", "boneMealFlowerRadius"),
+				this::sanitizeBoneMealFlowerSpread),
 			FieldSanitizer.of("throwSpawnEggVelocity", this::sanitizeSpawnEggVelocity),
 			FieldSanitizer.of("pickFluidBucketFluids", this::sanitizeFluidPickScope),
 			FieldSanitizer.of("cutThroughItems", this::sanitizeCutThroughItems),
 			FieldSanitizer.of("cutThroughPlants", this::sanitizeCutThroughPlants),
 			FieldSanitizer.of("elytraFireworkCooldownTicks", this::sanitizeElytraFireworkTicks),
+			FieldSanitizer.of("elytraFireworkCooldownMaxTicks", this::sanitizeElytraFireworkMaxTicks),
+			FieldSanitizer.of("chatInputMemoryMaxLength", this::sanitizeChatInputMemoryLength),
+			FieldSanitizer.of("miningCooldownCooldownTicks", this::sanitizeMiningCooldownTicks),
+			FieldSanitizer.of("savePlayTimeDecimals", this::sanitizeSavePlayTimeDecimals),
 			FieldSanitizer.of("blockOutlineWidth", this::sanitizeBlockOutlineWidth),
 			FieldSanitizer.of("blockOutlinePalette", this::sanitizeBlockOutlinePalette),
 			FieldSanitizer.of("blockOutlineColorMode", this::sanitizeBlockOutlineColorMode),
@@ -69,7 +77,16 @@ public final class FunctionConfig extends ConfigSection {
 			FieldSanitizer.of("cameraMotionIntensity", this::sanitizeCameraMotionIntensity),
 			FieldSanitizer.of("statusEffectDurationLowThreshold", this::sanitizeStatusDurationThreshold),
 			FieldSanitizer.of("statusEffectDurationColorMode", this::sanitizeStatusDurationColorMode),
-			FieldSanitizer.of("statusEffectDurationScale", this::sanitizeStatusEffectScale));
+			FieldSanitizer.of("statusEffectDurationScale", this::sanitizeStatusEffectScale),
+			new FieldSanitizer(List.of(
+				"heldItemInfoMaxLines", "heldItemInfoMaxLineLength",
+				"heldItemInfoMaxCommandLines", "heldItemInfoMaxLoreLines",
+				"heldItemInfoLineHeight", "heldItemInfoItemNameSpacing",
+				"heldItemInfoVerticalOffset"), this::sanitizeHeldItemInfoLayout),
+			new FieldSanitizer(List.of(
+				"heldItemInfoOffsetPerExtraLine", "heldItemInfoBaseFadeDuration",
+				"heldItemInfoFadeDurationPerExtraLine"), this::sanitizeHeldItemInfoTiming),
+			FieldSanitizer.of("heldItemInfoBackground", this::sanitizeHeldItemInfoBackground));
 		// 启动期校验：新增数值/枚举字段忘记登记校验器时直接失败。
 		assertSanitizerCoverage(fieldNamesOf(this.sanitizers));
 	}
@@ -114,6 +131,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 攻击实体也受“一次左键一次”限制（与挖方块共用按住周期）。
 	public volatile boolean miningCooldownAttacks = false;
 
+	// 一次挖掘/攻击成功后额外锁定的时间（tick，0 = 只按松开左键解锁）。
+	public volatile int miningCooldownCooldownTicks = TweakifyModConfig.DEFAULT_MINING_COOLDOWN_TICKS;
+
 	// 右键交互冷却总开关（主闸）：关闭时主/副手使用冷却全部失效。
 	public volatile boolean useCooldown = true;
 
@@ -130,6 +150,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 垂直飞行影响：开启移除飞行漂移时，松开跳跃/潜行键后也立即停止升降。
 	public volatile boolean flightDriftVertical = false;
 
+	// 只对创造模式飞行生效，旁观者仍保留惯性。
+	public volatile boolean flightDriftOnlyCreative = false;
+
 	// 禁用维度传送：总开关，阻止实体通过传送门切换维度。
 	public volatile boolean disableDimensionTeleport = false;
 
@@ -144,6 +167,9 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 子开关：创造模式玩家进入地狱门也等待生存模式的延迟，不再秒传。
 	public volatile boolean netherPortalCreativeDelayedTeleport = false;
+
+	// 自定义等待时间（tick）：大于 0 时覆盖上面的子开关，所有玩家统一等待该时长。
+	public volatile int netherPortalTeleportDelayTicks = TweakifyModConfig.DEFAULT_NETHER_PORTAL_DELAY_TICKS;
 
 	// 禁用地狱门传送：总开关开启时，阻止实体通过下界传送门。
 	public volatile boolean disableNetherPortalTeleport = true;
@@ -257,6 +283,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 两次烟花之间的最短间隔（tick）；0 = 等本次加速结束（原行为）。
 	public volatile int elytraFireworkCooldownTicks = TweakifyModConfig.MIN_ELYTRA_FIREWORK_TICKS;
 
+	// 等待烟花加速结束时的最长锁定时间（tick）；0 = 不额外限制。
+	public volatile int elytraFireworkCooldownMaxTicks = TweakifyModConfig.DEFAULT_ELYTRA_FIREWORK_MAX_TICKS;
+
 	// 聊天框文字框选：在聊天界面拖动鼠标选择消息文字，Ctrl+C 复制。
 	public volatile boolean chatTextSelection = false;
 
@@ -275,11 +304,17 @@ public final class FunctionConfig extends ConfigSection {
 	// 切换模式：auto（有哪个金制就换哪个）/ helmet / chestplate / leggings / boots。
 	public volatile String piglinGoldArmorSwapMode = TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO;
 
+	// 探测猪灵的半径（格）。
+	public volatile int piglinGoldArmorSwapRange = TweakifyModConfig.DEFAULT_PIGLIN_SWAP_RANGE;
+
 	// 聊天框内容记忆：关闭聊天框后保留未发送的输入内容，再次打开时恢复。
 	public volatile boolean chatInputMemory = false;
 
 	// 以 / 开头的命令草稿不记忆（避免把未发送的命令带回来误执行）。
 	public volatile boolean chatInputMemoryIgnoreCommands = false;
+
+	// 草稿最大保留长度（字符，1 ~ 256）。
+	public volatile int chatInputMemoryMaxLength = TweakifyModConfig.DEFAULT_CHAT_INPUT_MEMORY_LENGTH;
 
 	// 生物攻击范围显示：以生物为中心画半透明蓝色范围，列表为空时作用于全部生物与玩家。
 	public volatile boolean attackRangeDisplay = false;
@@ -310,10 +345,19 @@ public final class FunctionConfig extends ConfigSection {
 	// 爆炸范围可视化：用红色标记即将爆炸的 TNT、TNT 矿车、苦力怕与末地水晶。
 	public volatile boolean explosionRangeDisplay = false;
 
+	// 子开关：分别控制 TNT（含 TNT 方块）、TNT 矿车、苦力怕与末地水晶。
+	public volatile boolean explosionRangeShowTnt = true;
+	public volatile boolean explosionRangeShowTntMinecarts = true;
+	public volatile boolean explosionRangeShowCreepers = true;
+	public volatile boolean explosionRangeShowEndCrystals = true;
+
 	// 更好的 F2 截图：截图卡片、输出格式；F9 可额外触发 4K 输出。
 	public volatile boolean betterScreenshot = true;
 	public volatile boolean betterScreenshotF9 = false;
 	public volatile String betterScreenshotFormat = TweakifyModConfig.SCREENSHOT_FORMAT_PNG;
+
+	// 截图后是否在聊天栏显示可点击的截图卡片。
+	public volatile boolean betterScreenshotChatCard = true;
 
 	// 横扫范围可视化：参考 sweeping-view，目标扩展框 + 三格球体攻击范围。
 	public volatile boolean sweepingView = false;
@@ -335,6 +379,9 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 时长显示格式：hours（小数小时）/ clock（时:分）/ duration（小时与分钟）。
 	public volatile String savePlayTimeFormat = TweakifyModConfig.SAVE_PLAY_TIME_FORMAT_HOURS;
+
+	// 小时格式的小数位数（0 ~ 2）。
+	public volatile int savePlayTimeDecimals = TweakifyModConfig.DEFAULT_SAVE_PLAY_TIME_DECIMALS;
 
 	// 自定义方块轮廓：总开关、线宽、调色板与彩色模式。
 	public volatile boolean customBlockOutline = false;
@@ -361,6 +408,10 @@ public final class FunctionConfig extends ConfigSection {
 	// 子开关：骨粉在一格高的花周围长出一片相同的花（凋零玫瑰除外）。
 	public volatile boolean boneMealFlowers = true;
 
+	// 单次骨粉最多扩散的花数量与随机取点半径（格）。
+	public volatile int boneMealFlowerCount = TweakifyModConfig.DEFAULT_BONE_MEAL_FLOWER_COUNT;
+	public volatile int boneMealFlowerRadius = TweakifyModConfig.DEFAULT_BONE_MEAL_FLOWER_RADIUS;
+
 	// 剑穿草打生物：主手持剑时跳过花草，直接选中后方的生物。
 	public volatile boolean swordCutThroughPlants = false;
 
@@ -379,11 +430,17 @@ public final class FunctionConfig extends ConfigSection {
 	// 液体范围：水与岩浆 / 仅水 / 仅岩浆。
 	public volatile String pickFluidBucketFluids = TweakifyModConfig.FLUID_PICK_WATER_AND_LAVA;
 
+	// 只取源头液体；关闭后流动液体也能取桶（保持旧行为）。
+	public volatile boolean pickFluidBucketSourceOnly = false;
+
 	// 生存模式中键取物：准星指向方块/液体/实体时，背包里有对应物品就切换到主手。
 	public volatile boolean survivalPickBlock = false;
 
 	// 生存取物也处理液体（水/岩浆 → 已有的桶）；关闭后退回原版，只取方块与实体。
 	public volatile boolean survivalPickBlockIncludeFluids = true;
+
+	// 只在快捷栏已有对应桶时取液体，避免从主背包切换。
+	public volatile boolean survivalPickBlockHotbarOnly = false;
 
 	// 便捷焚烧：背包/容器里拿着物品，右键点击岩浆桶或打火石即焚烧该物品。
 	public volatile boolean quickBurnItem = false;
@@ -391,11 +448,20 @@ public final class FunctionConfig extends ConfigSection {
 	// 需要潜行才焚烧：避免在整理背包时误触销毁物品。
 	public volatile boolean quickBurnItemRequireSneak = false;
 
+	// 悬停在可焚烧组合上时显示操作提示。
+	public volatile boolean quickBurnItemShowHint = true;
+
+	// 可作为点燃物的物品 ID 列表（默认岩浆桶与打火石）。
+	volatile List<String> quickBurnItemIgniters = new ArrayList<>(TweakifyModConfig.DEFAULT_QUICK_BURN_IGNITERS);
+
 	// 如履平地：自动跨上 1 格及以上的方块（像马一样）；步高由子设置控制。
 	public volatile boolean autoStepUp = false;
 
 	// 跨步高度：one_block（1.0）/ one_and_half（1.5）/ two_blocks（2.0）。
 	public volatile String autoStepUpHeight = TweakifyModConfig.AUTO_STEP_UP_HEIGHT_ONE_BLOCK;
+
+	// 潜行时保持原版步高，避免在窄处自动跨上方块。
+	public volatile boolean autoStepUpSneakBypass = false;
 
 	// 更好的攀爬：攀爬方块相关的移动优化（子开关见下）。
 	public volatile boolean betterClimbing = false;
@@ -414,6 +480,9 @@ public final class FunctionConfig extends ConfigSection {
 
 	// 主动爬行：按住绑定的爬行键时强制进入爬行姿态。
 	public volatile boolean forceCrawl = false;
+
+	// 只在地面时强制爬行；跳跃/下落时保持原版姿态。
+	public volatile boolean forceCrawlOnlyOnGround = false;
 
 	// 屏障可见：开启后在周围屏障方块中心显示红色标记，未手持屏障物品也能看到。
 	public volatile boolean barrierVisibility = false;
@@ -458,6 +527,89 @@ public final class FunctionConfig extends ConfigSection {
 	// 附魔台附魔信息：悬停三个附魔选项时显示该档位将获得的附魔名称与等级。
 	public volatile boolean enchantingTableInfo = false;
 
+	// 追加该档位的经验消耗行。
+	public volatile boolean enchantingTableInfoShowCost = true;
+
+	// 在每条附魔后标注该附魔的最高等级。
+	public volatile boolean enchantingTableInfoShowMaxLevel = false;
+
+	// 只在潜行时显示附魔信息。
+	public volatile boolean enchantingTableInfoRequireSneak = false;
+
+	// 手持物品信息（参考 held-item-info）：在物品名称下方显示附魔、药水效果、容器内容等。
+	// 开启后替换原版“切换快捷栏物品时显示名称”的渲染，各子项决定显示哪些内容。
+	public volatile boolean heldItemInfo = false;
+
+	// 是否显示物品名称（作为信息列表的第一行）。
+	public volatile boolean heldItemInfoShowName = true;
+
+	// 内容开关：与参考实现的选项一一对应。
+	public volatile boolean heldItemInfoShowEnchantments = true;
+	public volatile boolean heldItemInfoShowPotionEffects = true;
+	public volatile boolean heldItemInfoShowContainerContent = true;
+	public volatile boolean heldItemInfoMergeSimilarContainerItems = true;
+	public volatile boolean heldItemInfoShowFireworkAttributes = true;
+	public volatile boolean heldItemInfoShowCommandBlockInfo = true;
+	public volatile boolean heldItemInfoShowBeehiveContent = true;
+	public volatile boolean heldItemInfoShowSpawnerEntity = true;
+	public volatile boolean heldItemInfoShowCrossbowProjectiles = true;
+	public volatile boolean heldItemInfoShowLore = true;
+	public volatile boolean heldItemInfoShowUnbreakable = true;
+	public volatile boolean heldItemInfoShowSignText = true;
+	public volatile boolean heldItemInfoShowMusicDiscDescription = true;
+	public volatile boolean heldItemInfoShowPaintingDescription = true;
+	public volatile boolean heldItemInfoShowGoatHornInstrument = true;
+	public volatile boolean heldItemInfoShowBookMeta = true;
+	public volatile boolean heldItemInfoShowFilledMapId = false;
+	public volatile boolean heldItemInfoShowEntityBucketContent = true;
+	public volatile boolean heldItemInfoShowBlockState = true;
+	public volatile boolean heldItemInfoShowHiddenLinesCount = true;
+
+	// 行数 / 行宽限制（0 行表示隐藏名称以外的全部内容）。
+	public volatile int heldItemInfoMaxLines = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_MAX_LINES;
+	public volatile int heldItemInfoMaxLineLength = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_MAX_LINE_LENGTH;
+	public volatile int heldItemInfoMaxCommandLines = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_MAX_COMMAND_LINES;
+	public volatile int heldItemInfoMaxLoreLines = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_MAX_LORE_LINES;
+
+	// 是否只显示“在物品栏提示框里可见”的数据组件（TooltipDisplay）。
+	public volatile boolean heldItemInfoRespectHideFlags = true;
+
+	// 排版：行高、额外行向上偏移量、名称与正文的间距、整体垂直偏移。
+	public volatile int heldItemInfoLineHeight = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_LINE_HEIGHT;
+	public volatile double heldItemInfoOffsetPerExtraLine = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_OFFSET_PER_LINE;
+	public volatile int heldItemInfoItemNameSpacing = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_NAME_SPACING;
+	public volatile int heldItemInfoVerticalOffset = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_VERTICAL_OFFSET;
+
+	// 淡出时长：单行基础时长与每多一行的追加时长（秒）。
+	public volatile double heldItemInfoBaseFadeDuration = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_BASE_FADE;
+	public volatile double heldItemInfoFadeDurationPerExtraLine = TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_FADE_PER_LINE;
+
+	// 与血量条/动作栏消息错开，避免重叠。
+	public volatile boolean heldItemInfoPreventOverlap = true;
+
+	// 背景：vanilla（跟随文字背景无障碍选项）/ always / never。
+	public volatile String heldItemInfoBackground = TweakifyModConfig.HELD_ITEM_INFO_BACKGROUND_VANILLA;
+
+	// 附魔过滤：只在显示列表中保留（或排除）名单内的附魔 ID。
+	public volatile boolean heldItemInfoShowOnlyFilteredEnchantments = false;
+	public volatile List<String> heldItemInfoFilteredEnchantments = new ArrayList<>();
+
+	// 背包快捷右键：在背包/容器界面右键点击物品，直接打开对应的功能方块或潜影盒。
+	// 仅当光标为空时触发；服务端需要安装本模组（单人/局域网主机生效）。
+	public volatile boolean inventoryQuickRightClick = false;
+
+	// 可打开的功能方块（工作台、铁砧、附魔台、锻造台、织布机、制图台、切石机、砂轮）。
+	public volatile boolean quickRightClickFunctionalBlocks = true;
+
+	// 可打开的潜影盒（内容随物品读写）。
+	public volatile boolean quickRightClickShulkerBoxes = true;
+
+	// 可打开末影箱（使用玩家自己的末影箱空间）。
+	public volatile boolean quickRightClickEnderChest = true;
+
+	// 需要潜行才打开，避免整理背包时误触。
+	public volatile boolean quickRightClickRequireSneak = false;
+
 	// 各功能根开关的切换快捷键，默认无快捷键（空字符串）。
 	// 功能标签只给根功能提供快捷键，子设置不占快捷键栏。
 	public volatile String hotkeyMiningCooldown = "";
@@ -490,6 +642,8 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile String hotkeyChatInputMemory = "";
 	public volatile String hotkeyStatusEffectDurationDisplay = "";
 	public volatile String hotkeyEnchantingTableInfo = "";
+	public volatile String hotkeyHeldItemInfo = "";
+	public volatile String hotkeyInventoryQuickRightClick = "";
 	public volatile String hotkeyNetherPortalTeleportDelay = "";
 	public volatile String hotkeyDisableSpecifiedMobSpawn = "";
 	public volatile String hotkeyPeacefulModeMonsters = "";
@@ -732,6 +886,31 @@ public final class FunctionConfig extends ConfigSection {
 		return true;
 	}
 
+	// 修正挖掘冷却时间。
+	private boolean sanitizeMiningCooldownTicks() {
+		int clamped = Math.max(TweakifyModConfig.MIN_MINING_COOLDOWN_TICKS,
+			Math.min(TweakifyModConfig.MAX_MINING_COOLDOWN_TICKS, miningCooldownCooldownTicks));
+		if (clamped == miningCooldownCooldownTicks) {
+			return false;
+		}
+		LOGGER.warn("Clamping miningCooldownCooldownTicks from {} to {}",
+			miningCooldownCooldownTicks, clamped);
+		miningCooldownCooldownTicks = clamped;
+		return true;
+	}
+
+	// 修正存档时长小数位数。
+	private boolean sanitizeSavePlayTimeDecimals() {
+		int clamped = Math.max(TweakifyModConfig.MIN_SAVE_PLAY_TIME_DECIMALS,
+			Math.min(TweakifyModConfig.MAX_SAVE_PLAY_TIME_DECIMALS, savePlayTimeDecimals));
+		if (clamped == savePlayTimeDecimals) {
+			return false;
+		}
+		LOGGER.warn("Clamping savePlayTimeDecimals from {} to {}", savePlayTimeDecimals, clamped);
+		savePlayTimeDecimals = clamped;
+		return true;
+	}
+
 	// 修正不合法的存档时长格式，回退到小数小时。
 	private boolean sanitizeSavePlayTimeFormat() {
 		if (TweakifyModConfig.isSupportedValue(
@@ -833,6 +1012,48 @@ public final class FunctionConfig extends ConfigSection {
 		return true;
 	}
 
+	// 修正地狱门自定义等待时间。
+	private boolean sanitizeNetherPortalDelayTicks() {
+		int clamped = Math.max(TweakifyModConfig.MIN_NETHER_PORTAL_DELAY_TICKS,
+			Math.min(TweakifyModConfig.MAX_NETHER_PORTAL_DELAY_TICKS, netherPortalTeleportDelayTicks));
+		if (clamped == netherPortalTeleportDelayTicks) {
+			return false;
+		}
+		LOGGER.warn("Clamping netherPortalTeleportDelayTicks from {} to {}",
+			netherPortalTeleportDelayTicks, clamped);
+		netherPortalTeleportDelayTicks = clamped;
+		return true;
+	}
+
+	// 修正猪灵探测半径。
+	private boolean sanitizePiglinSwapRange() {
+		int clamped = Math.max(TweakifyModConfig.MIN_PIGLIN_SWAP_RANGE,
+			Math.min(TweakifyModConfig.MAX_PIGLIN_SWAP_RANGE, piglinGoldArmorSwapRange));
+		if (clamped == piglinGoldArmorSwapRange) {
+			return false;
+		}
+		LOGGER.warn("Clamping piglinGoldArmorSwapRange from {} to {}",
+			piglinGoldArmorSwapRange, clamped);
+		piglinGoldArmorSwapRange = clamped;
+		return true;
+	}
+
+	// 修正骨粉催花的数量与半径。
+	private boolean sanitizeBoneMealFlowerSpread() {
+		int count = Math.max(TweakifyModConfig.MIN_BONE_MEAL_FLOWER_COUNT,
+			Math.min(TweakifyModConfig.MAX_BONE_MEAL_FLOWER_COUNT, boneMealFlowerCount));
+		int radius = Math.max(TweakifyModConfig.MIN_BONE_MEAL_FLOWER_RADIUS,
+			Math.min(TweakifyModConfig.MAX_BONE_MEAL_FLOWER_RADIUS, boneMealFlowerRadius));
+		if (count == boneMealFlowerCount && radius == boneMealFlowerRadius) {
+			return false;
+		}
+		LOGGER.warn("Clamping bone meal flower spread: count {} -> {}, radius {} -> {}",
+			boneMealFlowerCount, count, boneMealFlowerRadius, radius);
+		boneMealFlowerCount = count;
+		boneMealFlowerRadius = radius;
+		return true;
+	}
+
 	// 修正刷怪蛋投掷速度，手工改坏配置时夹回允许范围。
 	private boolean sanitizeSpawnEggVelocity() {
 		int clamped = Math.max(TweakifyModConfig.MIN_SPAWN_EGG_VELOCITY,
@@ -873,6 +1094,32 @@ public final class FunctionConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported cut through plant scope: {}", cutThroughPlants);
 		cutThroughPlants = TweakifyModConfig.CUT_THROUGH_PLANTS_ALL;
+		return true;
+	}
+
+	// 修正聊天草稿最大长度。
+	private boolean sanitizeChatInputMemoryLength() {
+		int clamped = Math.max(TweakifyModConfig.MIN_CHAT_INPUT_MEMORY_LENGTH,
+			Math.min(TweakifyModConfig.MAX_CHAT_INPUT_MEMORY_LENGTH, chatInputMemoryMaxLength));
+		if (clamped == chatInputMemoryMaxLength) {
+			return false;
+		}
+		LOGGER.warn("Clamping chatInputMemoryMaxLength from {} to {}",
+			chatInputMemoryMaxLength, clamped);
+		chatInputMemoryMaxLength = clamped;
+		return true;
+	}
+
+	// 修正鞘翅烟花最长锁定时间。
+	private boolean sanitizeElytraFireworkMaxTicks() {
+		int clamped = Math.max(TweakifyModConfig.MIN_ELYTRA_FIREWORK_MAX_TICKS,
+			Math.min(TweakifyModConfig.MAX_ELYTRA_FIREWORK_MAX_TICKS, elytraFireworkCooldownMaxTicks));
+		if (clamped == elytraFireworkCooldownMaxTicks) {
+			return false;
+		}
+		LOGGER.warn("Clamping elytraFireworkCooldownMaxTicks from {} to {}",
+			elytraFireworkCooldownMaxTicks, clamped);
+		elytraFireworkCooldownMaxTicks = clamped;
 		return true;
 	}
 
@@ -1088,5 +1335,96 @@ public final class FunctionConfig extends ConfigSection {
 		LOGGER.warn("Ignoring unsupported entity highlight color: {}", entityHighlightColor);
 		entityHighlightColor = TweakifyModConfig.ENTITY_HIGHLIGHT_COLOR_VANILLA;
 		return true;
+	}
+
+	// 手持物品信息的行数与排版：手工改坏配置时逐项夹回允许范围。
+	private boolean sanitizeHeldItemInfoLayout() {
+		int maxLines = clampInt(heldItemInfoMaxLines,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_LINES,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_LINES);
+		int maxLineLength = clampInt(heldItemInfoMaxLineLength,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_LINE_LENGTH,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_LINE_LENGTH);
+		int maxCommandLines = clampInt(heldItemInfoMaxCommandLines,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_LINES,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_LINES);
+		int maxLoreLines = clampInt(heldItemInfoMaxLoreLines,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_LINES,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_LINES);
+		int lineHeight = clampInt(heldItemInfoLineHeight,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_LINE_HEIGHT,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_LINE_HEIGHT);
+		int nameSpacing = clampInt(heldItemInfoItemNameSpacing,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_NAME_SPACING,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_NAME_SPACING);
+		int verticalOffset = clampInt(heldItemInfoVerticalOffset,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_VERTICAL_OFFSET,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_VERTICAL_OFFSET);
+		if (maxLines == heldItemInfoMaxLines && maxLineLength == heldItemInfoMaxLineLength
+			&& maxCommandLines == heldItemInfoMaxCommandLines && maxLoreLines == heldItemInfoMaxLoreLines
+			&& lineHeight == heldItemInfoLineHeight && nameSpacing == heldItemInfoItemNameSpacing
+			&& verticalOffset == heldItemInfoVerticalOffset) {
+			return false;
+		}
+		LOGGER.warn("Clamping held item info layout to [{}, {}, {}, {}, {}, {}, {}]",
+			maxLines, maxLineLength, maxCommandLines, maxLoreLines, lineHeight, nameSpacing,
+			verticalOffset);
+		heldItemInfoMaxLines = maxLines;
+		heldItemInfoMaxLineLength = maxLineLength;
+		heldItemInfoMaxCommandLines = maxCommandLines;
+		heldItemInfoMaxLoreLines = maxLoreLines;
+		heldItemInfoLineHeight = lineHeight;
+		heldItemInfoItemNameSpacing = nameSpacing;
+		heldItemInfoVerticalOffset = verticalOffset;
+		return true;
+	}
+
+	// 手持物品信息的偏移与淡出时长：NaN/无穷大回退默认值，其余夹回范围。
+	private boolean sanitizeHeldItemInfoTiming() {
+		double offsetPerLine = clampDouble(heldItemInfoOffsetPerExtraLine,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_OFFSET_PER_LINE,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_OFFSET_PER_LINE,
+			TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_OFFSET_PER_LINE);
+		double baseFade = clampDouble(heldItemInfoBaseFadeDuration,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_FADE_DURATION,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_FADE_DURATION,
+			TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_BASE_FADE);
+		double fadePerLine = clampDouble(heldItemInfoFadeDurationPerExtraLine,
+			TweakifyModConfig.MIN_HELD_ITEM_INFO_FADE_DURATION,
+			TweakifyModConfig.MAX_HELD_ITEM_INFO_FADE_PER_LINE,
+			TweakifyModConfig.DEFAULT_HELD_ITEM_INFO_FADE_PER_LINE);
+		if (offsetPerLine == heldItemInfoOffsetPerExtraLine
+			&& baseFade == heldItemInfoBaseFadeDuration
+			&& fadePerLine == heldItemInfoFadeDurationPerExtraLine) {
+			return false;
+		}
+		LOGGER.warn("Clamping held item info timing to [{}, {}, {}]",
+			offsetPerLine, baseFade, fadePerLine);
+		heldItemInfoOffsetPerExtraLine = offsetPerLine;
+		heldItemInfoBaseFadeDuration = baseFade;
+		heldItemInfoFadeDurationPerExtraLine = fadePerLine;
+		return true;
+	}
+
+	// 修正不合法的背景模式，回退到跟随原版文字背景。
+	private boolean sanitizeHeldItemInfoBackground() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_HELD_ITEM_INFO_BACKGROUNDS, heldItemInfoBackground)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported held item info background: {}", heldItemInfoBackground);
+		heldItemInfoBackground = TweakifyModConfig.HELD_ITEM_INFO_BACKGROUND_VANILLA;
+		return true;
+	}
+
+	private static int clampInt(int value, int min, int max) {
+		return Math.max(min, Math.min(max, value));
+	}
+
+	private static double clampDouble(double value, double min, double max, double fallback) {
+		if (!Double.isFinite(value)) {
+			return fallback;
+		}
+		return Math.max(min, Math.min(max, value));
 	}
 }

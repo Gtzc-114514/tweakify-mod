@@ -17,7 +17,8 @@ public final class GeneralConfig extends ConfigSection {
 
 	// 已登记字段级校验器的字段名：language 需要回退到支持的语言，标签回退需要合法代码，平滑时长需要夹紧范围。
 	private static final List<String> SANITIZED_FIELDS =
-		List.of("language", "rememberSelectedTabFallback", "smoothScrollDuration", "favoriteStarStyle");
+		List.of("language", "rememberSelectedTabFallback", "smoothScrollDuration",
+			"favoriteStarStyle", "searchHighlightColor");
 
 	// 模组界面语言代码（zh_cn / en_us / ru_ru / fr_fr）；跟随系统语言时忽略。
 	public volatile String language = "zh_cn";
@@ -39,6 +40,9 @@ public final class GeneralConfig extends ConfigSection {
 
 	// 配置界面搜索：命中的关键词在条目名称与英文配置键上高亮显示。
 	public volatile boolean searchHighlight = true;
+
+	// 搜索高亮颜色：gold / yellow / green / aqua / red / white。
+	public volatile String searchHighlightColor = TweakifyModConfig.DEFAULT_SEARCH_HIGHLIGHT_COLOR;
 
 	// 平滑滚动：配置界面列表、创造物品栏、聊天栏与 Mod Menu 列表共用总开关。
 	public volatile boolean smoothScroll = true;
@@ -81,6 +85,7 @@ public final class GeneralConfig extends ConfigSection {
 		changed |= sanitizeTabFallback();
 		changed |= sanitizeSmoothScrollDuration();
 		changed |= sanitizeFavoriteStarStyle();
+		changed |= sanitizeSearchHighlightColor();
 		return changed;
 	}
 
@@ -118,6 +123,17 @@ public final class GeneralConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported favorite star style: {}", favoriteStarStyle);
 		favoriteStarStyle = TweakifyModConfig.DEFAULT_FAVORITE_STAR_STYLE;
+		return true;
+	}
+
+	// 搜索高亮颜色只接受登记值，未知代码回退到金色。
+	private boolean sanitizeSearchHighlightColor() {
+		if (TweakifyModConfig.isSupportedValue(
+			TweakifyModConfig.SUPPORTED_SEARCH_HIGHLIGHT_COLORS, searchHighlightColor)) {
+			return false;
+		}
+		LOGGER.warn("Ignoring unsupported search highlight color: {}", searchHighlightColor);
+		searchHighlightColor = TweakifyModConfig.DEFAULT_SEARCH_HIGHLIGHT_COLOR;
 		return true;
 	}
 

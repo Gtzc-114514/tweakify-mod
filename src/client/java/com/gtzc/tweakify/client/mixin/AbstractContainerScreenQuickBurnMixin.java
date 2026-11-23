@@ -71,7 +71,8 @@ public class AbstractContainerScreenQuickBurnMixin {
 										  float partialTick, CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$QUICK_BURN_HINT_PROBE, "quickBurnHint");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null || !config.functions.quickBurnItem) {
+		if (config == null || !config.functions.quickBurnItem
+			|| !config.functions.quickBurnItemShowHint) {
 			return;
 		}
 		Minecraft client = Minecraft.getInstance();

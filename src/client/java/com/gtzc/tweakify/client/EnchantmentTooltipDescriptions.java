@@ -39,7 +39,7 @@ public final class EnchantmentTooltipDescriptions {
 	// 缓存键：字段用 Object 保存，比较语义沿用各值自身的 equals；
 	// 也便于单测用替身对象覆盖每个失效维度。
 	record CacheKey(Object registries, Object item, Object enchantments, Object type,
-					boolean sneaking, Object language) {
+					boolean sneaking, boolean includeCurses, Object language) {
 	}
 
 	// 描述行与插入位置：先收集、再按位置降序插入，避免前面的插入让后面的索引偏移。
@@ -55,19 +55,35 @@ public final class EnchantmentTooltipDescriptions {
 	public static List<Component> appendCached(List<Component> original, Object registries, Object item,
 			Object enchantments, Object type, boolean sneaking, Object language,
 			Supplier<List<DescriptionPlan>> builder) {
+		return appendCached(original, registries, item, enchantments, type, sneaking, true, language, builder);
+	}
+
+	public static List<Component> appendCached(List<Component> original, Object registries, Object item,
+			Object enchantments, Object type, boolean sneaking, boolean includeCurses, Object language,
+			Supplier<List<DescriptionPlan>> builder) {
 		return append(original, CACHE.get(
-			cacheKey(registries, item, enchantments, type, sneaking, language), builder));
+			cacheKey(registries, item, enchantments, type, sneaking, includeCurses, language), builder));
 	}
 
 	// 包私有：生产缓存键的唯一构造点，测试逐字段校验入参确实被写入。
 	static CacheKey cacheKey(Object registries, Object item, Object enchantments, Object type,
 			boolean sneaking, Object language) {
-		return new CacheKey(registries, item, enchantments, type, sneaking, language);
+		return cacheKey(registries, item, enchantments, type, sneaking, true, language);
+	}
+
+	static CacheKey cacheKey(Object registries, Object item, Object enchantments, Object type,
+			boolean sneaking, boolean includeCurses, Object language) {
+		return new CacheKey(registries, item, enchantments, type, sneaking, includeCurses, language);
 	}
 
 	// 构建描述计划：顺序与原本的内联实现完全一致，只是把结果交给缓存。
 	public static List<DescriptionPlan> buildPlan(HolderLookup.Provider registries,
 			ItemEnchantments enchantments) {
+		return buildPlan(registries, enchantments, true);
+	}
+
+	public static List<DescriptionPlan> buildPlan(HolderLookup.Provider registries,
+			ItemEnchantments enchantments, boolean includeCurses) {
 		// 按原版附魔行顺序（TOOLTIP_ORDER 标签序，其余按哈希序）遍历，重名时归属不会互换。
 		HolderSet<Enchantment> tooltipOrder = registries.lookupOrThrow(Registries.ENCHANTMENT)
 			.getOrThrow(EnchantmentTags.TOOLTIP_ORDER);
@@ -85,6 +101,9 @@ public final class EnchantmentTooltipDescriptions {
 
 		List<DescriptionPlan> plan = new ArrayList<>();
 		for (Holder<Enchantment> holder : ordered) {
+			if (!includeCurses && holder.is(EnchantmentTags.CURSE)) {
+				continue;
+			}
 			Identifier id = holder.unwrapKey().map(ResourceKey::identifier).orElse(null);
 			if (id == null) {
 				continue;
