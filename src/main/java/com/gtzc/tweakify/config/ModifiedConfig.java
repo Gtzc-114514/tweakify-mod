@@ -23,6 +23,9 @@ public final class ModifiedConfig extends ConfigSection {
 		this.sanitizers = List.of(
 			FieldSanitizer.of("itemDespawnTime", this::sanitizeItemDespawnTime),
 			FieldSanitizer.of("itemDespawnTimeXpOrbs", this::sanitizeXpOrbDespawnTime),
+			FieldSanitizer.of("itemCountScale", this::sanitizeItemCountScale),
+			FieldSanitizer.of("betterAdvancementsTabSpacing", this::sanitizeAdvancementTabSpacing),
+			FieldSanitizer.of("betterAdvancementsPinnedTabSpacing", this::sanitizeAdvancementPinnedTabSpacing),
 			FieldSanitizer.of("nightVisionFadeOutDuration", this::sanitizeNightVisionFadeDuration),
 			FieldSanitizer.of("nightVisionFadeOutCurve", this::sanitizeNightVisionCurve),
 			FieldSanitizer.of("sprintFovIntensity", this::sanitizeSprintFovIntensity),
@@ -54,6 +57,19 @@ public final class ModifiedConfig extends ConfigSection {
 
 	// 经验球消失时间（tick），默认 6000 = 原版 5 分钟。
 	public volatile int itemDespawnTimeXpOrbs = TweakifyModConfig.DEFAULT_ITEM_DESPAWN_TICKS;
+
+	// 物品栏与容器格子里数量数字的缩放百分比（50 ~ 200，100 = 原版）。
+	public volatile int itemCountScale = TweakifyModConfig.DEFAULT_ITEM_COUNT_SCALE;
+
+	// 更好的进度（参考 PaginatedAdvancements）：可缩放窗口 + 标签分页 + 固定标签 + 记住上次标签。
+	public volatile boolean betterAdvancements = false;
+	public volatile boolean betterAdvancementsPagination = true;
+	public volatile boolean betterAdvancementsPinTabs = true;
+	public volatile boolean betterAdvancementsRememberTab = true;
+	public volatile boolean betterAdvancementsDisableFade = false;
+	public volatile boolean betterAdvancementsCopyId = true;
+	public volatile int betterAdvancementsTabSpacing = TweakifyModConfig.DEFAULT_ADVANCEMENT_TAB_SPACING;
+	public volatile int betterAdvancementsPinnedTabSpacing = TweakifyModConfig.DEFAULT_ADVANCEMENT_PINNED_TAB_SPACING;
 
 	// 禁用使用物品减速：进食、拉弓、举盾等使用物品期间不再降低移动速度。
 	public volatile boolean disableUseItemSlowdown = false;
@@ -676,6 +692,44 @@ public final class ModifiedConfig extends ConfigSection {
 		LOGGER.warn("Clamping enchantmentLevelArabicMinLevel from {} to {}",
 			enchantmentLevelArabicMinLevel, clamped);
 		enchantmentLevelArabicMinLevel = clamped;
+		return true;
+	}
+
+	// 修正物品数量缩放百分比。
+	private boolean sanitizeItemCountScale() {
+		int clamped = Math.max(TweakifyModConfig.MIN_ITEM_COUNT_SCALE,
+			Math.min(TweakifyModConfig.MAX_ITEM_COUNT_SCALE, itemCountScale));
+		if (clamped == itemCountScale) {
+			return false;
+		}
+		LOGGER.warn("Clamping itemCountScale from {} to {}", itemCountScale, clamped);
+		itemCountScale = clamped;
+		return true;
+	}
+
+	// 修正进度标签间距。
+	private boolean sanitizeAdvancementTabSpacing() {
+		int clamped = Math.max(TweakifyModConfig.MIN_ADVANCEMENT_TAB_SPACING,
+			Math.min(TweakifyModConfig.MAX_ADVANCEMENT_TAB_SPACING, betterAdvancementsTabSpacing));
+		if (clamped == betterAdvancementsTabSpacing) {
+			return false;
+		}
+		LOGGER.warn("Clamping betterAdvancementsTabSpacing from {} to {}",
+			betterAdvancementsTabSpacing, clamped);
+		betterAdvancementsTabSpacing = clamped;
+		return true;
+	}
+
+	// 修正固定进度标签间距。
+	private boolean sanitizeAdvancementPinnedTabSpacing() {
+		int clamped = Math.max(TweakifyModConfig.MIN_ADVANCEMENT_TAB_SPACING,
+			Math.min(TweakifyModConfig.MAX_ADVANCEMENT_TAB_SPACING, betterAdvancementsPinnedTabSpacing));
+		if (clamped == betterAdvancementsPinnedTabSpacing) {
+			return false;
+		}
+		LOGGER.warn("Clamping betterAdvancementsPinnedTabSpacing from {} to {}",
+			betterAdvancementsPinnedTabSpacing, clamped);
+		betterAdvancementsPinnedTabSpacing = clamped;
 		return true;
 	}
 

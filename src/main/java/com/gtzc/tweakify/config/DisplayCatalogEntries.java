@@ -73,5 +73,7 @@ final class DisplayCatalogEntries {
 		entries.add(child("betterScreenshot", "betterScreenshotF9"));
 		entries.add(child("betterScreenshot", "betterScreenshotFormat"));
 		entries.add(child("betterScreenshot", "betterScreenshotChatCard"));
+		// 区块中心指示：原版区块边界（F3+G）开启时，在所在区块中心补一条竖线。
+		entries.add(display("chunkCenterIndicator", true));
 	}
 }

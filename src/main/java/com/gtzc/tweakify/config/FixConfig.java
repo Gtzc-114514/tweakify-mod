@@ -27,6 +27,9 @@ public final class FixConfig extends ConfigSection {
 		assertSanitizerCoverage(fieldNamesOf(this.sanitizers));
 	}
 
+	// MC-19830：睡在床上时不再推迟落地伤害，上床瞬间立即结算（仅单人/局域网生效）。
+	public volatile boolean bedFallDamageFix = false;
+
 	// 草径卡船修复：土径对船的碰撞按满方块处理，消除土径与完整方块之间的 1/16 台阶。
 	public volatile boolean fixBoatStuckOnDirtPath = false;
 

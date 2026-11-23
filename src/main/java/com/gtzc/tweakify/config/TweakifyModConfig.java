@@ -127,6 +127,17 @@ public class TweakifyModConfig {
 	public static final int MAX_ITEM_DESPAWN_TICKS = 36000;
 	public static final int DEFAULT_ITEM_DESPAWN_TICKS = 6000;
 
+	// 物品数量数字缩放百分比：50 ~ 200，默认 100 保持原版字号。
+	public static final int MIN_ITEM_COUNT_SCALE = 50;
+	public static final int MAX_ITEM_COUNT_SCALE = 200;
+	public static final int DEFAULT_ITEM_COUNT_SCALE = 100;
+
+	// 进度界面标签间距与固定标签间距（像素）：0 = 原版紧凑排列。
+	public static final int MIN_ADVANCEMENT_TAB_SPACING = 0;
+	public static final int MAX_ADVANCEMENT_TAB_SPACING = 8;
+	public static final int DEFAULT_ADVANCEMENT_TAB_SPACING = 0;
+	public static final int DEFAULT_ADVANCEMENT_PINNED_TAB_SPACING = 0;
+
 	// 耐久文字的显示内容：耐久百分比 / 剩余耐久数值。
 	public static final String DURABILITY_DISPLAY_PERCENT = "percent";
 	public static final String DURABILITY_DISPLAY_VALUE = "value";

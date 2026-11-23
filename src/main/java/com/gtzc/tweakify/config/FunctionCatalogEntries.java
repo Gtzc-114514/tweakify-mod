@@ -43,6 +43,8 @@ final class FunctionCatalogEntries {
 		entries.add(function("disableFlightDrift", true));
 		entries.add(child("disableFlightDrift", "flightDriftVertical", true));
 		entries.add(child("disableFlightDrift", "flightDriftOnlyCreative"));
+		// 创造飞行穿墙（功能标签）
+		entries.add(function("creativeFlightNoclip", true));
 		// 如履平地（功能标签，子项为跨步高度）
 		entries.add(function("autoStepUp", true));
 		entries.add(child("autoStepUp", "autoStepUpHeight"));
@@ -134,9 +136,10 @@ final class FunctionCatalogEntries {
 		entries.add(child("itemGroups", "itemGroupsShowItems"));
 		entries.add(child("itemGroups", "itemGroupsAddAll"));
 		entries.add(child("itemGroups", "customItemGroups"));
-		// 定位栏优化（功能标签，参考 locator-heads：玩家头像 + 描边 + 名字 + 过滤 + 指南针）
+		// 更好的定位栏（功能标签，按 locator-heads 重做：头像/只显名字 + 描边 + 名字 + 过滤 + 指南针）
 		entries.add(function("locatorBarHeads", true));
 		entries.add(child("locatorBarHeads", "locatorBarAlwaysShowXp"));
+		entries.add(child("locatorBarHeads", "locatorBarHeadRenderHeads"));
 		entries.add(child("locatorBarHeads", "locatorBarHeadScale"));
 		entries.add(child("locatorBarHeads", "locatorBarHeadHatLayer"));
 		entries.add(child("locatorBarHeads", "locatorBarHeadBorder"));

@@ -275,9 +275,10 @@ class TweakifyModConfigScreenTest {
 		assertTab("signTextOptimization", TweakifyModConfigScreen.ConfigTab.OPTIMIZATION);
 		// 冰霜行者跳跃修复归入修复标签。
 		assertTab("frostWalkerJumpFix", TweakifyModConfigScreen.ConfigTab.FIXING);
-		// 定位栏优化的主开关与子设置都归入功能标签。
+		// 更好的定位栏回到「功能」标签：主开关与子设置都归入功能。
 		assertTab("locatorBarHeads", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarAlwaysShowXp", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("locatorBarHeadRenderHeads", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarHeadScale", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarHeadHatLayer", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarHeadBorder", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
@@ -292,6 +293,19 @@ class TweakifyModConfigScreenTest {
 		assertTab("locatorBarCompassColor", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarCompassShadow", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("locatorBarCompassCoordinates", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		// 新增功能按需求分类。
+		assertTab("creativeFlightNoclip", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("chunkCenterIndicator", TweakifyModConfigScreen.ConfigTab.DISPLAY);
+		assertTab("itemCountScale", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("betterAdvancements", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("betterAdvancementsPagination", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("betterAdvancementsPinTabs", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("betterAdvancementsRememberTab", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("betterAdvancementsDisableFade", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("betterAdvancementsCopyId", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("betterAdvancementsTabSpacing", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("betterAdvancementsPinnedTabSpacing", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("bedFallDamageFix", TweakifyModConfigScreen.ConfigTab.FIXING);
 		// 物品分组的子设置同样归入功能标签。
 		assertTab("itemGroupsShowItems", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("itemGroupsAddAll", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);

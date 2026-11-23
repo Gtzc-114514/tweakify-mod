@@ -26,6 +26,12 @@ public final class ModifiedConfigOptions {
 		TweakifyModConfig.MIN_ITEM_DESPAWN_TICKS,
 		TweakifyModConfig.MAX_ITEM_DESPAWN_TICKS).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 物品数量数字缩放百分比（50 ~ 200，100 = 原版）：对背包与容器格子的数量文字生效。
+	public static final ConfigInteger ITEM_COUNT_SCALE = new ConfigInteger(
+		"itemCountScale", TweakifyModConfig.DEFAULT_ITEM_COUNT_SCALE,
+		TweakifyModConfig.MIN_ITEM_COUNT_SCALE,
+		TweakifyModConfig.MAX_ITEM_COUNT_SCALE, true).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBoolean DISABLE_USE_ITEM_SLOWDOWN = new ConfigBoolean(
 		"disableUseItemSlowdown", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
@@ -523,4 +529,40 @@ public final class ModifiedConfigOptions {
 	// 只对正在飞行/滑翔的玩家取消速度上限。
 	public static final ConfigBoolean REMOVE_SPEED_LIMIT_ONLY_FLYING = new ConfigBoolean(
 		"removeSpeedLimitOnlyFlying", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 更好的进度（参考 PaginatedAdvancements）：窗口随屏幕自适应，标签溢出时分页。
+	public static final ConfigBoolean BETTER_ADVANCEMENTS = new ConfigBoolean(
+		"betterAdvancements", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 标签溢出时显示前后翻页按钮，而不是丢弃超出原版上限的标签。
+	public static final ConfigBoolean BETTER_ADVANCEMENTS_PAGINATION = new ConfigBoolean(
+		"betterAdvancementsPagination", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 固定当前标签到窗口右侧，便于在多个进度树之间切换。
+	public static final ConfigBoolean BETTER_ADVANCEMENTS_PIN_TABS = new ConfigBoolean(
+		"betterAdvancementsPinTabs", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 重新打开进度界面时回到上次选中的标签。
+	public static final ConfigBoolean BETTER_ADVANCEMENTS_REMEMBER_TAB = new ConfigBoolean(
+		"betterAdvancementsRememberTab", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 鼠标悬停在进度上时不再压暗背景（参考实现的 Fade Out Background 反向开关）。
+	public static final ConfigBoolean BETTER_ADVANCEMENTS_DISABLE_FADE = new ConfigBoolean(
+		"betterAdvancementsDisableFade", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 在进度界面临时打开进度 ID 时，Ctrl+C 复制悬停进度的 ID。
+	public static final ConfigBoolean BETTER_ADVANCEMENTS_COPY_ID = new ConfigBoolean(
+		"betterAdvancementsCopyId", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 进度标签之间的水平间距（像素，0 = 原版紧凑排列）。
+	public static final ConfigInteger BETTER_ADVANCEMENTS_TAB_SPACING = new ConfigInteger(
+		"betterAdvancementsTabSpacing", TweakifyModConfig.DEFAULT_ADVANCEMENT_TAB_SPACING,
+		TweakifyModConfig.MIN_ADVANCEMENT_TAB_SPACING,
+		TweakifyModConfig.MAX_ADVANCEMENT_TAB_SPACING).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 右侧固定标签之间的垂直间距（像素）。
+	public static final ConfigInteger BETTER_ADVANCEMENTS_PINNED_TAB_SPACING = new ConfigInteger(
+		"betterAdvancementsPinnedTabSpacing", TweakifyModConfig.DEFAULT_ADVANCEMENT_PINNED_TAB_SPACING,
+		TweakifyModConfig.MIN_ADVANCEMENT_TAB_SPACING,
+		TweakifyModConfig.MAX_ADVANCEMENT_TAB_SPACING).apply(ConfigOptionKeys.GENERAL_KEY);
 }

@@ -153,6 +153,10 @@ public final class FunctionConfig extends ConfigSection {
 	// 只对创造模式飞行生效，旁观者仍保留惯性。
 	public volatile boolean flightDriftOnlyCreative = false;
 
+	// 创造飞行穿墙：创造模式飞行时不再被方块阻挡，可以直接穿过方块（世界边界与实体碰撞保留）。
+	public volatile boolean creativeFlightNoclip = false;
+	public volatile String hotkeyCreativeFlightNoclip = "";
+
 	// 禁用维度传送：总开关，阻止实体通过传送门切换维度。
 	public volatile boolean disableDimensionTeleport = false;
 
@@ -234,6 +238,9 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile boolean locatorBarAlwaysShowXp = false;
 	public volatile int locatorBarHeadScale = TweakifyModConfig.DEFAULT_LOCATOR_HEAD_SIZE;
 	public volatile boolean locatorBarHeadHatLayer = true;
+
+	// 是否渲染头像本体；关闭后定位栏只显示玩家名字（参考实现 Render Heads）。
+	public volatile boolean locatorBarHeadRenderHeads = true;
 
 	// 描边：样式（关/固定色/队伍色）、粗细（0.3/0.5/1.0/2.0 四档）与固定颜色。
 	public volatile String locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_OFF;
@@ -389,6 +396,10 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile int blockOutlineAnimationSpeed = TweakifyModConfig.DEFAULT_BLOCK_OUTLINE_ANIMATION_SPEED;
 	public volatile String blockOutlinePalette = TweakifyModConfig.BLOCK_OUTLINE_PALETTE_WHITE;
 	public volatile String blockOutlineColorMode = TweakifyModConfig.BLOCK_OUTLINE_MODE_PALETTE;
+
+	// 区块中心指示：原版区块边界显示（F3+G）开启时，在所在区块中心补一条竖线。
+	public volatile boolean chunkCenterIndicator = false;
+	public volatile String hotkeyChunkCenterIndicator = "";
 
 	// 更好的放置覆盖：手持方块右键时可直接替换花、高草等植物（仅单人/局域网生效）。
 	public volatile boolean betterBlockPlacement = false;

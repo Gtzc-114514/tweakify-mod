@@ -17,6 +17,10 @@ public final class FixConfigOptions {
 	private FixConfigOptions() {
 	}
 
+	// MC-19830：上床前未结算的落地伤害不再被推迟到离床后，上床瞬间立即结算。
+	public static final ConfigBoolean BED_FALL_DAMAGE_FIX = new ConfigBoolean(
+		"bedFallDamageFix", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 草径卡船修复：土径对船使用满方块碰撞。
 	public static final ConfigBoolean FIX_BOAT_STUCK_ON_DIRT_PATH = new ConfigBoolean(
 		"fixBoatStuckOnDirtPath", false).apply(ConfigOptionKeys.GENERAL_KEY);

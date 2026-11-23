@@ -75,5 +75,7 @@ final class FixCatalogEntries {
 		entries.add(child("skeletonAimingFix", "skeletonAimingOnlyTargetAbove"));
 		// 2×2 树苗生长（MC-8187）
 		entries.add(fix("saplingGrowthFix", true));
+		// 床边落地伤害（MC-19830）
+		entries.add(fix("bedFallDamageFix", true));
 	}
 }

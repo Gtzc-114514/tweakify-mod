@@ -157,6 +157,8 @@ public final class LocatorBarHeads {
 								 TrackedWaypoint waypoint, int x, int y, int width, int height,
 								 Identifier skin, Integer teamRgb, TweakifyModConfig config,
 								 String playerName, Player target, boolean showHat) {
+		// 参考实现 Render Heads：关闭时整条圆点隐藏，只保留名字。
+		boolean renderHeads = config.functions.locatorBarHeadRenderHeads;
 		// 贴图尺寸沿用原版“按距离插值”的算法，再乘上配置倍率。
 		WaypointStyle style = client.gui.hud.getWaypointStyles().get(waypoint.icon().style);
 		float near = style.nearDistance();
@@ -167,38 +169,43 @@ public final class LocatorBarHeads {
 		int scaledWidth = (int) (Mth.lerpInt(progress, 4 * POSE_UNIT + POSE_UNIT, width * POSE_UNIT) * multiplier);
 		int scaledHeight = (int) (Mth.lerpInt(progress, 4 * POSE_UNIT + POSE_UNIT, height * POSE_UNIT) * multiplier);
 		int borderRgb = resolveBorderRgb(config, teamRgb);
+		int nameRgb = resolveNameRgb(config, teamRgb);
 
-		graphics.pose().pushMatrix();
-		graphics.pose().scale(POSE_SCALE);
-		int centerX = (x * POSE_UNIT + DOT_HALF_UNIT) - (scaledWidth / 2);
-		int centerY = (y * POSE_UNIT + DOT_HALF_UNIT) - (scaledHeight / 2);
-		if (borderRgb != NO_BORDER) {
-			int thickness = (int) (TweakifyModConfig.locatorHeadBorderThicknessPixels(
-				config.functions.locatorBarHeadBorderThickness) * POSE_UNIT);
-			int argb = 0xFF000000 | borderRgb;
-			graphics.fill(centerX - thickness, centerY - thickness,
-				centerX + scaledWidth + thickness, centerY, argb);
-			graphics.fill(centerX - thickness, centerY + scaledHeight,
-				centerX + scaledWidth + thickness, centerY + scaledHeight + thickness, argb);
-			graphics.fill(centerX - thickness, centerY, centerX, centerY + scaledHeight, argb);
-			graphics.fill(centerX + scaledWidth, centerY,
-				centerX + scaledWidth + thickness, centerY + scaledHeight, argb);
-		}
-		graphics.blit(skin, centerX, centerY, centerX + scaledWidth, centerY + scaledHeight,
-			HEAD_U1, HEAD_U2, HEAD_V1, HEAD_V2);
-		if (showHat && config.functions.locatorBarHeadHatLayer) {
+		if (renderHeads) {
+			graphics.pose().pushMatrix();
+			graphics.pose().scale(POSE_SCALE);
+			int centerX = (x * POSE_UNIT + DOT_HALF_UNIT) - (scaledWidth / 2);
+			int centerY = (y * POSE_UNIT + DOT_HALF_UNIT) - (scaledHeight / 2);
+			if (borderRgb != NO_BORDER) {
+				int thickness = (int) (TweakifyModConfig.locatorHeadBorderThicknessPixels(
+					config.functions.locatorBarHeadBorderThickness) * POSE_UNIT);
+				int argb = 0xFF000000 | borderRgb;
+				graphics.fill(centerX - thickness, centerY - thickness,
+					centerX + scaledWidth + thickness, centerY, argb);
+				graphics.fill(centerX - thickness, centerY + scaledHeight,
+					centerX + scaledWidth + thickness, centerY + scaledHeight + thickness, argb);
+				graphics.fill(centerX - thickness, centerY, centerX, centerY + scaledHeight, argb);
+				graphics.fill(centerX + scaledWidth, centerY,
+					centerX + scaledWidth + thickness, centerY + scaledHeight, argb);
+			}
 			graphics.blit(skin, centerX, centerY, centerX + scaledWidth, centerY + scaledHeight,
-				HAT_U1, HAT_U2, HEAD_V1, HEAD_V2);
+				HEAD_U1, HEAD_U2, HEAD_V1, HEAD_V2);
+			if (showHat && config.functions.locatorBarHeadHatLayer) {
+				graphics.blit(skin, centerX, centerY, centerX + scaledWidth, centerY + scaledHeight,
+					HAT_U1, HAT_U2, HEAD_V1, HEAD_V2);
+			}
+			graphics.pose().popMatrix();
 		}
-		graphics.pose().popMatrix();
 
-		drawName(graphics, client, config, playerName, target, x, y, width, multiplier, borderRgb);
+		drawName(graphics, client, config, playerName, target, x, y, width, height, multiplier,
+			renderHeads, nameRgb);
 	}
 
 	// 名字：与参考实现一致，从下方滑入并淡入；关闭时反向淡出。
+	// renderHeads 关闭时名字垂直居中在圆点槽位里（只显名字模式）。
 	private static void drawName(GuiGraphicsExtractor graphics, Minecraft client, TweakifyModConfig config,
-								 String playerName, Player target, int x, int y, int width,
-								 double multiplier, int borderRgb) {
+								 String playerName, Player target, int x, int y, int width, int height,
+								 double multiplier, boolean renderHeads, int nameRgb) {
 		if (playerName == null) {
 			return;
 		}
@@ -225,12 +232,13 @@ public final class LocatorBarHeads {
 		float eased = 1.0F - (float) Math.pow(1.0F - effective, 3.0F);
 
 		int textX = x + width / 2 - nameWidth(client.font, playerName) / 2;
-		int baseY = y - (int) (NAME_BASE_OFFSET * multiplier);
+		int baseY = renderHeads
+			? y - (int) (NAME_BASE_OFFSET * multiplier)
+			: y + (height - client.font.lineHeight) / 2;
 		int textY = baseY + (int) (NAME_SLIDE_PIXELS * (1.0F - eased));
 		int alpha = (int) (NAME_ALPHA * eased);
 		if (alpha > 0) {
-			int rgb = borderRgb == NO_BORDER ? 0xFFFFFF : borderRgb;
-			graphics.text(client.font, playerName, textX, textY, (alpha << 24) | rgb, true);
+			graphics.text(client.font, playerName, textX, textY, (alpha << 24) | (nameRgb & 0xFFFFFF), true);
 		}
 		if (!fadeIn && progress >= 1.0F) {
 			NAME_FADE_START.remove(playerName);
@@ -263,20 +271,32 @@ public final class LocatorBarHeads {
 		return camera.getViewVector(1.0F).dot(direction.normalize()) >= LOOK_ANGLE_COS;
 	}
 
-	// 描边颜色：关闭或无有效样式时返回哨兵；跟随队伍但没有队伍时回退白色。
+	// 描边颜色：关闭或无有效样式时返回哨兵；跟随队伍但没有队伍时不画描边（与参考实现一致）。
 	static int resolveBorderRgb(TweakifyModConfig config, Integer teamRgb) {
 		String style = config.functions.locatorBarHeadBorder;
 		if (!LocatorHeadBorder.isVisible(style)) {
 			return NO_BORDER;
 		}
 		if (LocatorHeadBorder.followsTeam(style)) {
-			return teamRgb == null ? 0xFFFFFF : teamRgb & 0xFFFFFF;
+			return teamRgb == null ? NO_BORDER : teamRgb & 0xFFFFFF;
 		}
 		if (LocatorHeadBorder.usesStaticColor(style)) {
 			return LocatorHeadColor.rgbOf(config.functions.locatorBarHeadBorderColor);
 		}
 		// 未知取值（已由配置清洗器纠正，这里只是兜底）。
 		return NO_BORDER;
+	}
+
+	// 名字颜色：跟随描边样式；关闭描边或无队伍时用白色（与参考实现一致）。
+	static int resolveNameRgb(TweakifyModConfig config, Integer teamRgb) {
+		String style = config.functions.locatorBarHeadBorder;
+		if (LocatorHeadBorder.followsTeam(style) && teamRgb != null) {
+			return teamRgb & 0xFFFFFF;
+		}
+		if (LocatorHeadBorder.usesStaticColor(style)) {
+			return LocatorHeadColor.rgbOf(config.functions.locatorBarHeadBorderColor);
+		}
+		return 0xFFFFFF;
 	}
 
 	// 队伍颜色：没有队伍或队伍没设颜色时返回 null（调用方回退白色）。

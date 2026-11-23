@@ -206,12 +206,33 @@ class LocatorBarHeadsTest {
 
 		config.functions.locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_TEAM;
 		assertEquals(0x123456, LocatorBarHeads.resolveBorderRgb(config, 0x123456));
-		assertEquals(0xFFFFFF, LocatorBarHeads.resolveBorderRgb(config, null), "没有队伍时回退白色");
+		assertEquals(-1, LocatorBarHeads.resolveBorderRgb(config, null), "没有队伍时不画描边（与参考实现一致）");
 
 		config.functions.locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_STATIC;
 		config.functions.locatorBarHeadBorderColor = TweakifyModConfig.LOCATOR_COLOR_RED;
 		assertEquals(LocatorHeadColor.RED.rgb(), LocatorBarHeads.resolveBorderRgb(config, 0x123456),
 			"固定颜色样式忽略队伍颜色");
+	}
+
+	@Test
+	void nameColourFollowsBorderStyle() {
+		TweakifyModConfig config = new TweakifyModConfig();
+		config.functions.locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_OFF;
+		assertEquals(0xFFFFFF, LocatorBarHeads.resolveNameRgb(config, 0x123456), "关闭描边时名字白色");
+
+		config.functions.locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_TEAM;
+		assertEquals(0x123456, LocatorBarHeads.resolveNameRgb(config, 0x123456), "跟随队伍颜色");
+		assertEquals(0xFFFFFF, LocatorBarHeads.resolveNameRgb(config, null), "无队伍时名字白色");
+
+		config.functions.locatorBarHeadBorder = TweakifyModConfig.LOCATOR_HEAD_BORDER_STATIC;
+		config.functions.locatorBarHeadBorderColor = TweakifyModConfig.LOCATOR_COLOR_RED;
+		assertEquals(LocatorHeadColor.RED.rgb(), LocatorBarHeads.resolveNameRgb(config, 0x123456));
+	}
+
+	@Test
+	void renderHeadsDefaultsToOn() {
+		TweakifyModConfig config = new TweakifyModConfig();
+		assertTrue(config.functions.locatorBarHeadRenderHeads, "默认渲染头像，保持旧行为");
 	}
 
 	@Test

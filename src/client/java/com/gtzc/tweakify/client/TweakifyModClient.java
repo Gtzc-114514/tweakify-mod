@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.AdvancementsStateStorage;
 import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.FavoritesStorage;
 import com.gtzc.tweakify.config.TweakifyModConfig;
@@ -84,6 +85,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			ScrollMemory.flushOnShutdown();
 			// 收藏数据同样在写盘线程关闭前同步落盘一次。
 			FavoritesStorage.flushOnShutdown();
+			AdvancementsStateStorage.flushOnShutdown();
 			TweakifyModConfigOptions.flushOnShutdown();
 			AsyncFileWriter.shutdown(2000L);
 		});

@@ -20,6 +20,8 @@ final class ModifiedCatalogEntries {
 		entries.add(modified("itemDespawnTime"));
 		entries.add(child("itemDespawnTime", "itemDespawnPlayerDroppedOnly"));
 		entries.add(child("itemDespawnTime", "itemDespawnTimeXpOrbs"));
+		// 物品数量数字缩放（50% ~ 200%）
+		entries.add(modified("itemCountScale"));
 	}
 
 	// 原表中的第 2 段连续条目。
@@ -211,5 +213,14 @@ final class ModifiedCatalogEntries {
 		entries.add(modified("removeSpeedLimit", true));
 		entries.add(child("removeSpeedLimit", "removeSpeedLimitOnlyVehicles"));
 		entries.add(child("removeSpeedLimit", "removeSpeedLimitOnlyFlying"));
+		// 更好的进度（修改标签，参考 PaginatedAdvancements：自适应窗口 + 分页 + 固定标签 + 记住标签）
+		entries.add(modified("betterAdvancements", true));
+		entries.add(child("betterAdvancements", "betterAdvancementsPagination"));
+		entries.add(child("betterAdvancements", "betterAdvancementsPinTabs"));
+		entries.add(child("betterAdvancements", "betterAdvancementsRememberTab"));
+		entries.add(child("betterAdvancements", "betterAdvancementsDisableFade"));
+		entries.add(child("betterAdvancements", "betterAdvancementsCopyId"));
+		entries.add(child("betterAdvancements", "betterAdvancementsTabSpacing"));
+		entries.add(child("betterAdvancements", "betterAdvancementsPinnedTabSpacing"));
 	}
 }

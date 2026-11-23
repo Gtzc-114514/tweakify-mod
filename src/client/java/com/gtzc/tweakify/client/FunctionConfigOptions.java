@@ -71,6 +71,10 @@ public final class FunctionConfigOptions {
 	public static final ConfigBoolean FLIGHT_DRIFT_ONLY_CREATIVE = new ConfigBoolean(
 		"flightDriftOnlyCreative", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 创造飞行穿墙：创造模式飞行时不再被方块阻挡。
+	public static final ConfigBooleanHotkeyed CREATIVE_FLIGHT_NOCLIP = new ConfigBooleanHotkeyed(
+		"creativeFlightNoclip", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBooleanHotkeyed DISABLE_DIMENSION_TELEPORT = new ConfigBooleanHotkeyed(
 		"disableDimensionTeleport", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
 
@@ -221,6 +225,10 @@ public final class FunctionConfigOptions {
 
 	public static final ConfigBoolean LOCATOR_BAR_HEAD_HAT_LAYER = new ConfigBoolean(
 		"locatorBarHeadHatLayer", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 是否渲染头像本体；关闭后只保留名字（与参考实现的 Render Heads 一致）。
+	public static final ConfigBoolean LOCATOR_BAR_HEAD_RENDER_HEADS = new ConfigBoolean(
+		"locatorBarHeadRenderHeads", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 描边：样式（关/固定色/队伍色）、粗细与固定颜色。
 	public static final ConfigOptionList LOCATOR_BAR_HEAD_BORDER = new ConfigOptionList(
@@ -377,6 +385,10 @@ public final class FunctionConfigOptions {
 
 	public static final ConfigOptionList BLOCK_OUTLINE_COLOR_MODE = new ConfigOptionList(
 		"blockOutlineColorMode", BlockOutlineColorMode.PALETTE).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 区块中心指示：原版区块边界显示（F3+G）开启时，在所在区块中心补一条竖线。
+	public static final ConfigBooleanHotkeyed CHUNK_CENTER_INDICATOR = new ConfigBooleanHotkeyed(
+		"chunkCenterIndicator", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
 
 	// 更好的放置覆盖：可直接替换花、高草等植物。
 	public static final ConfigBooleanHotkeyed BETTER_BLOCK_PLACEMENT = new ConfigBooleanHotkeyed(

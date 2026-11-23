@@ -171,7 +171,12 @@
 		"SignTextOptimizationMixin",
 		"SignTextRenderFilterMixin",
 		"SignTextBoundTickingMixin",
-		"WindowInvoker"
+		"WindowInvoker",
+		"ChunkBorderRendererChunkCenterMixin",
+		"GuiGraphicsExtractorItemCountMixin",
+		"EntityCreativeFlightNoclipMixin",
+		"PlayerBedFallDamageFixMixin",
+		"GuiBetterAdvancementsMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"
