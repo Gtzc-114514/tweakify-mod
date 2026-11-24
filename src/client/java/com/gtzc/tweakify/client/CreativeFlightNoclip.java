@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 /**
@@ -33,5 +34,20 @@ public final class CreativeFlightNoclip {
 	static boolean shouldBypass(boolean enabled, boolean clientSide, boolean flying,
 								boolean creative, boolean passenger) {
 		return enabled && clientSide && flying && creative && !passenger;
+	}
+
+	// 集成服务端放行：创造飞行时跳过 ServerGamePacketListenerImpl 的碰撞回滚。
+	// 远程专用服务器仍需在服务端安装本模组才会生效。
+	public static boolean shouldBypassServer(ServerPlayer player) {
+		if (player == null) {
+			return false;
+		}
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return shouldBypassServer(config != null && config.functions.creativeFlightNoclip,
+			player.isCreative(), player.getAbilities().flying, player.isPassenger());
+	}
+
+	static boolean shouldBypassServer(boolean enabled, boolean creative, boolean flying, boolean passenger) {
+		return enabled && creative && flying && !passenger;
 	}
 }

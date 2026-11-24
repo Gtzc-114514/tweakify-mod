@@ -68,6 +68,28 @@ class BetterAdvancementsTest {
 	}
 
 	@Test
+	void spriteIndicesUseFirstAndLastCaps() {
+		assertEquals(0, BetterAdvancements.tabSpriteIndex(1, true, 21));
+		assertEquals(7, BetterAdvancements.tabSpriteIndex(21, true, 21), "末页未满时最后一个标签也是右端帽");
+		assertEquals(1, BetterAdvancements.tabSpriteIndex(10, true, 21));
+		assertEquals(0, BetterAdvancements.tabSpriteIndex(0, false, 30));
+		assertEquals(7, BetterAdvancements.tabSpriteIndex(29, false, 30));
+		assertEquals(1, BetterAdvancements.tabSpriteIndex(5, false, 30));
+
+		assertEquals(0, BetterAdvancements.pinnedSpriteIndex(0, 10));
+		assertEquals(1, BetterAdvancements.pinnedSpriteIndex(4, 10));
+		assertEquals(4, BetterAdvancements.pinnedSpriteIndex(9, 10), "固定标签超过 5 个时仍使用尾端帽");
+		assertEquals(0, BetterAdvancements.pinnedSpriteIndex(0, 1));
+	}
+
+	@Test
+	void tooltipOffsetMapsVanillaViewHeightToActualView() {
+		assertEquals(-187, BetterAdvancements.tooltipYOffset(300), "高视口用负偏移触发原版翻转阈值");
+		assertEquals(63, BetterAdvancements.tooltipYOffset(50));
+		assertEquals(0, BetterAdvancements.tooltipYOffset(113), "原版高度零偏移");
+	}
+
+	@Test
 	void defaultsMatchRequestedBehaviour() {
 		TweakifyModConfig config = new TweakifyModConfig();
 		assertFalse(config.modified.betterAdvancements, "默认不替换原版进度界面");

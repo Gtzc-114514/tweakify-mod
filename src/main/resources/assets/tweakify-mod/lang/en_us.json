@@ -1802,7 +1802,7 @@
   "tweakify-mod.command.label.chunkCenterIndicator": "Chunk Center Indicator",
   "tweakify-mod.config.general.name.creativeFlightNoclip": "Creative Flight Noclip",
   "tweakify-mod.config.general.prettyName.creativeFlightNoclip": "Creative Flight Noclip",
-  "tweakify-mod.config.general.comment.creativeFlightNoclip": "Creative-mode flight ignores block collisions and passes straight through blocks. World border and entity collisions are unchanged.",
+  "tweakify-mod.config.general.comment.creativeFlightNoclip": "Creative-mode flight ignores block collisions and passes straight through blocks. World border and entity collisions are unchanged. Works in singleplayer and on a LAN host; remote servers keep their own collision checks and are not bypassed.",
   "tweakify-mod.command.label.creativeFlightNoclip": "Creative Flight Noclip",
   "tweakify-mod.config.general.name.itemCountScale": "Item Count Scale",
   "tweakify-mod.config.general.prettyName.itemCountScale": "Item Count Scale",

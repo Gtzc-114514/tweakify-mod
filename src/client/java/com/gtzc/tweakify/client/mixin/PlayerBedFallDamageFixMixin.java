@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.BedFallDamageFix;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.core.BlockPos;
@@ -38,7 +39,9 @@ public class PlayerBedFallDamageFixMixin {
 		if (result == null || result.right().isEmpty()) {
 			return;
 		}
-		player.causeFallDamage(player.fallDistance, 1.0F, player.damageSources().fall());
+		player.causeFallDamage(BedFallDamageFix.damageDistance(
+			player.fallDistance, player.level().getBlockState(pos).getBlock().getFallDistanceReduction()),
+			1.0F, player.damageSources().fall());
 		player.resetFallDistance();
 	}
 }

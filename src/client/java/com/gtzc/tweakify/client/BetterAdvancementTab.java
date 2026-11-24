@@ -172,12 +172,8 @@ public final class BetterAdvancementTab extends AdvancementTab {
 		this.rootWidget.extractRenderState(graphics, treeX, treeY);
 	}
 
-	// 悬停检测与提示：坐标是相对窗口内部左上角的局部坐标。
-	public void drawWidgetTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-								  int viewWidth, int viewHeight, int screenX, int screenY, int screenWidth) {
-		if (!BetterAdvancements.disableFade() && this.fade > 0.0F) {
-			graphics.fill(0, 0, viewWidth, viewHeight, Mth.floor(this.fade * 255.0F) << 24);
-		}
+	// 悬停检测：只更新状态，不绘制。坐标是相对窗口内部左上角的局部坐标。
+	public void updateHover(int mouseX, int mouseY, int viewWidth, int viewHeight) {
 		boolean hovering = false;
 		if (mouseX > 0 && mouseX < viewWidth && mouseY > 0 && mouseY < viewHeight) {
 			int treeX = Mth.floor(this.originX);
@@ -186,7 +182,6 @@ public final class BetterAdvancementTab extends AdvancementTab {
 				if (widget.isMouseOver(treeX, treeY, mouseX, mouseY)) {
 					hovering = true;
 					this.hoveredWidget = widget;
-					widget.extractHover(graphics, treeX, treeY, this.fade, screenX, screenY, screenWidth);
 					break;
 				}
 			}
@@ -198,6 +193,30 @@ public final class BetterAdvancementTab extends AdvancementTab {
 		this.fade = hovering
 			? Mth.clamp(this.fade + 0.02F, 0.0F, 0.3F)
 			: Mth.clamp(this.fade - 0.04F, 0.0F, 0.3F);
+	}
+
+	// 悬停信息框：必须在关闭 scissor、画完窗口边框之后调用。
+	// 原版 extractHover 把 113 固定视图高度写死用于上下翻转；这里传入偏移后的 yo，
+	// 同时用 pose 平移补偿绘制位置，使翻转阈值按实际 viewHeight 生效。
+	public void renderTooltip(GuiGraphicsExtractor graphics, int viewWidth, int viewHeight,
+							 int screenX, int screenWidth) {
+		if (!BetterAdvancements.disableFade() && this.fade > 0.0F) {
+			graphics.fill(0, 0, viewWidth, viewHeight, Mth.floor(this.fade * 255.0F) << 24);
+		}
+		if (this.hoveredWidget == null) {
+			return;
+		}
+		int treeX = Mth.floor(this.originX);
+		int treeY = Mth.floor(this.originY);
+		int yOffset = BetterAdvancements.tooltipYOffset(viewHeight);
+		graphics.pose().pushMatrix();
+		try {
+			graphics.pose().translate(0.0F, -yOffset);
+			this.hoveredWidget.extractHover(graphics, treeX, treeY + yOffset, this.fade,
+				screenX, 0, screenWidth);
+		} finally {
+			graphics.pose().popMatrix();
+		}
 	}
 
 	public void scroll(double deltaX, double deltaY) {

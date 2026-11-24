@@ -16,6 +16,8 @@ public final class BetterAdvancements {
 	public static final int PINNED_TAB_HEIGHT = 28;
 	public static final int NAV_BUTTON_SIZE = 23;
 	public static final int PIN_BUTTON_SIZE = 18;
+	// 原版进度视图的固定高度：AdvancementWidget.extractHover 用它判断信息框是否向上翻转。
+	public static final int VANILLA_VIEW_HEIGHT = 113;
 	// 顶部标签行相对窗口顶边的垂直偏移：标签高 32，向下露出 4 像素。
 	public static final int TAB_ROW_OFFSET = 4;
 
@@ -118,6 +120,27 @@ public final class BetterAdvancements {
 		int base = startX + (paginated ? NAV_BUTTON_SIZE + 4 : 0);
 		int slot = paginated ? displayedPosition - 1 : displayedPosition;
 		return base + slot * tabStride();
+	}
+
+	// 顶部标签的端帽索引：0 = 左端帽，7 = 右端帽，1 = 中间段。
+	// 末页未满时最后一个标签的 position 是 visibleCount（分页）或 visibleCount - 1（非分页）。
+	public static int tabSpriteIndex(int position, boolean paginated, int visibleCount) {
+		int first = paginated ? 1 : 0;
+		int last = paginated ? visibleCount : visibleCount - 1;
+		return position == first ? 0 : (position == last ? 7 : 1);
+	}
+
+	// 固定标签使用 RIGHT 类型的 5 个槽位：0 = 首端帽，4 = 尾端帽，其余中间段。
+	public static int pinnedSpriteIndex(int index, int visibleCount) {
+		if (visibleCount <= 1) {
+			return 0;
+		}
+		return index == 0 ? 0 : (index >= visibleCount - 1 ? 4 : 1);
+	}
+
+	// 将原版写死的 113 高度换算到实际视口：配合 pose 反向平移，信息框仍画在原位。
+	public static int tooltipYOffset(int viewHeight) {
+		return VANILLA_VIEW_HEIGHT - viewHeight;
 	}
 
 	// 固定标签最多能放几个：从标签行顶部空出 24 像素给固定按钮标题。

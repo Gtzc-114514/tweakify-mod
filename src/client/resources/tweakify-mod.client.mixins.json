@@ -176,7 +176,8 @@
 		"GuiGraphicsExtractorItemCountMixin",
 		"EntityCreativeFlightNoclipMixin",
 		"PlayerBedFallDamageFixMixin",
-		"GuiBetterAdvancementsMixin"
+		"GuiBetterAdvancementsMixin",
+		"ServerGamePacketListenerImplCreativeFlightNoclipMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"

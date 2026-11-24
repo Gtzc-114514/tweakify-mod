@@ -35,4 +35,13 @@ class CreativeFlightNoclipTest {
 	void passengersNeverBypass() {
 		assertFalse(CreativeFlightNoclip.shouldBypass(true, true, true, true, true));
 	}
+
+	@Test
+	void serverSideOnlyNeedsCreativeFlight() {
+		assertTrue(CreativeFlightNoclip.shouldBypassServer(true, true, true, false));
+		assertFalse(CreativeFlightNoclip.shouldBypassServer(false, true, true, false));
+		assertFalse(CreativeFlightNoclip.shouldBypassServer(true, false, true, false));
+		assertFalse(CreativeFlightNoclip.shouldBypassServer(true, true, false, false));
+		assertFalse(CreativeFlightNoclip.shouldBypassServer(true, true, true, true));
+	}
 }

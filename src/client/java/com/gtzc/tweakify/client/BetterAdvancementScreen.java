@@ -259,6 +259,8 @@ public class BetterAdvancementScreen extends AdvancementsScreen implements Clien
 		}
 		drawPinnedTabs(graphics, geometry, mouseX, mouseY);
 		drawPinButton(graphics, geometry, mouseX, mouseY);
+		// 信息框必须在窗口边框、标签与固定栏都画完之后再画，否则会被裁掉或盖住。
+		drawTooltip(graphics, geometry);
 	}
 
 	private void drawTree(GuiGraphicsExtractor graphics, Geometry geometry, int mouseX, int mouseY) {
@@ -280,11 +282,29 @@ public class BetterAdvancementScreen extends AdvancementsScreen implements Clien
 		try {
 			graphics.pose().translate(geometry.viewLeft(), geometry.viewTop());
 			tab.render(graphics, viewWidth, viewHeight);
-			tab.drawWidgetTooltip(graphics, mouseX - geometry.viewLeft(), mouseY - geometry.viewTop(),
-				viewWidth, viewHeight, geometry.viewLeft(), geometry.viewTop(), this.width);
+			tab.updateHover(mouseX - geometry.viewLeft(), mouseY - geometry.viewTop(),
+				viewWidth, viewHeight);
 		} finally {
 			graphics.pose().popMatrix();
 			graphics.disableScissor();
+		}
+	}
+
+	// 信息框独立一遍，关闭裁剪并进入新的渲染层；翻转阈值由 tab 内部按实际高度换算。
+	private void drawTooltip(GuiGraphicsExtractor graphics, Geometry geometry) {
+		BetterAdvancementTab tab = this.selectedTab;
+		if (tab == null) {
+			return;
+		}
+		int viewWidth = geometry.viewWidth();
+		int viewHeight = geometry.viewHeight();
+		graphics.nextStratum();
+		graphics.pose().pushMatrix();
+		try {
+			graphics.pose().translate(geometry.viewLeft(), geometry.viewTop());
+			tab.renderTooltip(graphics, viewWidth, viewHeight, geometry.startX(), this.width);
+		} finally {
+			graphics.pose().popMatrix();
 		}
 	}
 
@@ -376,8 +396,7 @@ public class BetterAdvancementScreen extends AdvancementsScreen implements Clien
 			int position = BetterAdvancements.positionOnPage(index, maxTabs, this.currentPage, paginated);
 			int tabX = BetterAdvancements.tabX(geometry.startX(), position, paginated);
 			boolean selected = tab == this.selectedTab;
-			int spriteIndex = position == (paginated ? 1 : 0) ? 0
-				: (position == (paginated ? maxTabs : visibleCount - 1) ? 7 : 1);
+			int spriteIndex = BetterAdvancements.tabSpriteIndex(position, paginated, visibleCount);
 			AdvancementTabType.ABOVE.extractRenderState(graphics, tabX, tabY, selected, spriteIndex);
 			graphics.fakeItem(tab.getIcon(), tabX + 6, tabY + 9);
 			if (isOver(mouseX, mouseY, tabX, tabY, BetterAdvancements.TAB_WIDTH,
@@ -392,16 +411,18 @@ public class BetterAdvancementScreen extends AdvancementsScreen implements Clien
 			return;
 		}
 		int maxPinned = BetterAdvancements.maxPinnedTabs(geometry.startY(), geometry.endY());
+		int visiblePinned = Math.min(this.pinnedTabs.size(), maxPinned);
 		int index = 0;
 		for (BetterAdvancementTab tab : this.pinnedTabs.values()) {
-			if (index >= maxPinned) {
+			if (index >= visiblePinned) {
 				break;
 			}
 			// 固定标签向左叠进窗口边框：纹理左侧有约 3 像素透明内边距，
 			// 再叠加 15 像素宽的外框，-12 才能让可见部分贴住窗口而不是留缝。
 			int x = geometry.endXWindow() - 12;
 			int y = BetterAdvancements.pinnedTabY(geometry.startY(), index);
-			AdvancementTabType.RIGHT.extractRenderState(graphics, x, y, tab == this.selectedTab, index);
+			int spriteIndex = BetterAdvancements.pinnedSpriteIndex(index, visiblePinned);
+			AdvancementTabType.RIGHT.extractRenderState(graphics, x, y, tab == this.selectedTab, spriteIndex);
 			graphics.fakeItem(tab.getIcon(), x + 6, y + 5);
 			if (isOver(mouseX, mouseY, x, y, BetterAdvancements.PINNED_TAB_WIDTH,
 				BetterAdvancements.PINNED_TAB_HEIGHT)) {

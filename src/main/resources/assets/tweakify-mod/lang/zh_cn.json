@@ -1802,7 +1802,7 @@
   "tweakify-mod.command.label.chunkCenterIndicator": "区块中心指示",
   "tweakify-mod.config.general.name.creativeFlightNoclip": "创造飞行穿墙",
   "tweakify-mod.config.general.prettyName.creativeFlightNoclip": "创造飞行穿墙",
-  "tweakify-mod.config.general.comment.creativeFlightNoclip": "创造模式飞行时不再被方块阻挡，可以直接穿过方块；世界边界与实体碰撞保持不变。",
+  "tweakify-mod.config.general.comment.creativeFlightNoclip": "创造模式飞行时不再被方块阻挡，可以直接穿过方块；世界边界与实体碰撞保持不变。仅在单人/局域网主机生效；远程服务器的服务端校验不会放行，因此无法生效。",
   "tweakify-mod.command.label.creativeFlightNoclip": "创造飞行穿墙",
   "tweakify-mod.config.general.name.itemCountScale": "物品数量缩放",
   "tweakify-mod.config.general.prettyName.itemCountScale": "物品数量缩放",

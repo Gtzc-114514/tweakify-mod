@@ -1802,7 +1802,7 @@
   "tweakify-mod.command.label.chunkCenterIndicator": "Индикатор центра чанка",
   "tweakify-mod.config.general.name.creativeFlightNoclip": "Полёт сквозь блоки",
   "tweakify-mod.config.general.prettyName.creativeFlightNoclip": "Полёт сквозь блоки",
-  "tweakify-mod.config.general.comment.creativeFlightNoclip": "Творческий полёт игнорирует столкновения с блоками и проходит сквозь них. Граница мира и столкновения с сущностями сохраняются.",
+  "tweakify-mod.config.general.comment.creativeFlightNoclip": "Творческий полёт игнорирует столкновения с блоками и проходит сквозь них. Граница мира и столкновения с сущностями сохраняются. Работает в одиночной игре и на локальном сервере; удалённые серверы сохраняют собственные проверки столкновений.",
   "tweakify-mod.command.label.creativeFlightNoclip": "Полёт сквозь блоки",
   "tweakify-mod.config.general.name.itemCountScale": "Масштаб числа предметов",
   "tweakify-mod.config.general.prettyName.itemCountScale": "Масштаб числа предметов",

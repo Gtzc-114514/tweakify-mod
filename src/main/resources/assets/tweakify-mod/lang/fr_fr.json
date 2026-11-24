@@ -1802,7 +1802,7 @@
   "tweakify-mod.command.label.chunkCenterIndicator": "Indicateur du centre de chunk",
   "tweakify-mod.config.general.name.creativeFlightNoclip": "Vol créatif sans collision",
   "tweakify-mod.config.general.prettyName.creativeFlightNoclip": "Vol créatif sans collision",
-  "tweakify-mod.config.general.comment.creativeFlightNoclip": "En vol créatif, ignore les collisions de blocs et traverse les blocs. La bordure du monde et les collisions d'entités restent actives.",
+  "tweakify-mod.config.general.comment.creativeFlightNoclip": "En vol créatif, ignore les collisions de blocs et traverse les blocs. La bordure du monde et les collisions d'entités restent actives. Fonctionne en solo et sur l'hôte LAN ; les serveurs distants conservent leurs propres contrôles de collision.",
   "tweakify-mod.command.label.creativeFlightNoclip": "Vol créatif sans collision",
   "tweakify-mod.config.general.name.itemCountScale": "Échelle du nombre d'objets",
   "tweakify-mod.config.general.prettyName.itemCountScale": "Échelle du nombre d'objets",
