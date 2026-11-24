@@ -678,6 +678,34 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 > 备注：本次 main 与标签均直连推送首次成功，无需代理；本地构建的 jar 体积（1,059,488 字节）与 CI 产物略有差异，属打包时间戳差异，不影响版本校验。
 > PowerShell 控制台直接显示 Release 中文正文为乱码属终端解码问题，正文由 `body_path` 从仓库 notes 读取。
 
+## 验证记录：v1.2.2 发布
+
+本次为功能收尾版本（区块中心、物品数量缩放、创造飞行穿墙、MC-19830、更好的进度与定位栏），`release.yml` 无改动：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `45443253247` |
+| 对应提交 | `c922fd1`（`v1.2.2` 标签提交；含 1.2.2 版本号、notes、文档与全部收尾改动） |
+| 触发 | push tag `v1.2.2` |
+| 结论 | **success**，job 耗时 1 分 35 秒 |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面 16 行均通过） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.2.2` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.2.2` 去前缀后与版本 `1.2.2` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.2.2` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.2.2.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.2.2` 开头，含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.2.2.jar`（1,094,129 字节）、`tweakify-mod-1.2.2-sources.jar`（827,608 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `45443229753`）同为 success。
+
+> 备注：本次 main 与标签均直连推送首次成功，无需代理；本地构建的 jar 体积（1,098,988 字节）与 CI 产物略有差异，属打包时间戳差异，不影响版本校验。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
