@@ -27,6 +27,17 @@ class ItemCountScaleTest {
 	}
 
 	@Test
+	void scaleIsCappedByTextWidth() {
+		assertEquals(2.0F, ItemCountScale.effectiveScale(200, 6), 1.0E-4F, "一位数允许 200%");
+		assertEquals(17.0F / 12.0F, ItemCountScale.effectiveScale(200, 12), 1.0E-4F,
+			"两位数放大到格子宽度上限");
+		assertEquals(1.0F, ItemCountScale.effectiveScale(200, 18), 1.0E-4F,
+			"三位数保持原版字号，不遮挡左侧格子");
+		assertEquals(1.0F, ItemCountScale.effectiveScale(200, 17), 1.0E-4F);
+		assertEquals(0.5F, ItemCountScale.effectiveScale(50, 12), 1.0E-4F, "缩小不受宽度上限影响");
+	}
+
+	@Test
 	void rangeMatchesConfigConstants() {
 		assertEquals(50, TweakifyModConfig.MIN_ITEM_COUNT_SCALE);
 		assertEquals(200, TweakifyModConfig.MAX_ITEM_COUNT_SCALE);

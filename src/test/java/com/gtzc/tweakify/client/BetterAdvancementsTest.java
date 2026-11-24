@@ -53,7 +53,8 @@ class BetterAdvancementsTest {
 
 		assertTrue(BetterAdvancements.visibleOnPage(12, 11, 1, true));
 		assertFalse(BetterAdvancements.visibleOnPage(12, 11, 0, true));
-		assertTrue(BetterAdvancements.visibleOnPage(12, 11, 0, false));
+		assertTrue(BetterAdvancements.visibleOnPage(10, 11, 0, false));
+		assertFalse(BetterAdvancements.visibleOnPage(12, 11, 0, false), "关闭分页时超出窗口的标签不绘制");
 	}
 
 	@Test
@@ -65,6 +66,7 @@ class BetterAdvancementsTest {
 		assertEquals(10, BetterAdvancements.maxPinnedTabs(52, 400));
 		assertEquals(76, BetterAdvancements.pinnedTabY(52, 0));
 		assertEquals(132, BetterAdvancements.pinnedTabY(52, 2));
+		assertEquals(96, BetterAdvancements.pinnedTabX(100), "固定标签只压住外框，不侵入中间窗口");
 	}
 
 	@Test
@@ -87,6 +89,15 @@ class BetterAdvancementsTest {
 		assertEquals(-187, BetterAdvancements.tooltipYOffset(300), "高视口用负偏移触发原版翻转阈值");
 		assertEquals(63, BetterAdvancements.tooltipYOffset(50));
 		assertEquals(0, BetterAdvancements.tooltipYOffset(113), "原版高度零偏移");
+	}
+
+	@Test
+	void backgroundTilesScaleUpOnlyForLargeViews() {
+		assertEquals(16, BetterAdvancements.backgroundTileSize(100, 100));
+		assertEquals(32, BetterAdvancements.backgroundTileSize(960, 500));
+		assertEquals(48, BetterAdvancements.backgroundTileSize(1920, 1080));
+		assertEquals(96, BetterAdvancements.backgroundTileSize(3840, 2160));
+		assertEquals(128, BetterAdvancements.backgroundTileSize(7680, 4320), "极端分辨率封顶 128");
 	}
 
 	@Test

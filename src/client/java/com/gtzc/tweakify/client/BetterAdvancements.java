@@ -13,6 +13,8 @@ public final class BetterAdvancements {
 	public static final int TAB_WIDTH = 28;
 	public static final int TAB_HEIGHT = 32;
 	public static final int PINNED_TAB_WIDTH = 32;
+	// 固定标签纹理左侧 3 像素透明；相对窗口右边界左移 4 像素，可见部分只压住外框 1 像素。
+	public static final int PINNED_TAB_OVERLAP = 4;
 	public static final int PINNED_TAB_HEIGHT = 28;
 	public static final int NAV_BUTTON_SIZE = 23;
 	public static final int PIN_BUTTON_SIZE = 18;
@@ -112,7 +114,8 @@ public final class BetterAdvancements {
 	}
 
 	public static boolean visibleOnPage(int tabIndex, int maxTabsPerPage, int currentPage, boolean paginated) {
-		return !paginated || pageOf(tabIndex, maxTabsPerPage) == currentPage;
+		// 关闭分页时也必须限制在一行能容纳的标签数内，避免画到窗口外。
+		return paginated ? pageOf(tabIndex, maxTabsPerPage) == currentPage : tabIndex < maxTabsPerPage;
 	}
 
 	// 标签左上角 x：分页时第一个位置在翻页按钮右侧。
@@ -143,6 +146,16 @@ public final class BetterAdvancements {
 		return VANILLA_VIEW_HEIGHT - viewHeight;
 	}
 
+	// 背景平铺单元：小窗口保持原版 16 像素；大视口按面积放大单元，
+	// 将每帧 blit 数限制在约 1000 次以内（原版固定 170 次）。
+	public static int backgroundTileSize(int viewWidth, int viewHeight) {
+		final int maxTiles = 1024;
+		long area = (long) Math.max(1, viewWidth) * Math.max(1, viewHeight);
+		int needed = (int) Math.ceil(Math.sqrt(area / (double) maxTiles));
+		int tile = Math.max(16, ((needed + 15) / 16) * 16);
+		return Math.min(128, tile);
+	}
+
 	// 固定标签最多能放几个：从标签行顶部空出 24 像素给固定按钮标题。
 	public static int maxPinnedTabs(int startY, int endY) {
 		int usable = endY - startY - 56;
@@ -151,5 +164,10 @@ public final class BetterAdvancements {
 
 	public static int pinnedTabY(int startY, int index) {
 		return startY + 24 + index * pinnedTabStride();
+	}
+
+	// 固定标签左边界：可见部分从窗口外框内侧开始，既不露出缝隙也不压住中间窗口。
+	public static int pinnedTabX(int endXWindow) {
+		return endXWindow - PINNED_TAB_OVERLAP;
 	}
 }

@@ -45,6 +45,12 @@ public final class FavoriteStarRenderer {
 		if (!isEnabled()) {
 			return;
 		}
+		drawStar(gui, x, y, favorite, hovered);
+	}
+
+	// 只按当前收藏星样式与状态绘制，不检查收藏系统总开关。
+	// 进度界面的固定按钮即使关闭收藏系统也应继续可用，但仍跟随所选外观。
+	public static void drawStar(GuiGraphicsExtractor gui, int x, int y, boolean favorite, boolean hovered) {
 		FavoriteStarStyle style = selectedStyle();
 		FavoriteStarStyle.State state;
 		if (favorite) {

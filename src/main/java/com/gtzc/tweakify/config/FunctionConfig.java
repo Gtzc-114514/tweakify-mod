@@ -153,7 +153,7 @@ public final class FunctionConfig extends ConfigSection {
 	// 只对创造模式飞行生效，旁观者仍保留惯性。
 	public volatile boolean flightDriftOnlyCreative = false;
 
-	// 创造飞行穿墙：创造模式飞行时不再被方块阻挡，可以直接穿过方块（世界边界与实体碰撞保留）。
+	// 创造飞行穿墙：飞行时进入无碰撞状态，可以直接穿过方块。
 	public volatile boolean creativeFlightNoclip = false;
 	public volatile String hotkeyCreativeFlightNoclip = "";
 

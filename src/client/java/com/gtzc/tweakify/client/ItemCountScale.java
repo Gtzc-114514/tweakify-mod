@@ -9,10 +9,12 @@ import net.minecraft.world.item.ItemStack;
 /**
  * 物品数量数字缩放：只缩放数量文字，不改变物品图标与耐久条。
  *
- * <p>锚点保持在原版右下角（x + 17, y + 9 + 行高），缩放时数字向左上方展开，
- * 不会越过相邻格子；100% 时完全交回原版绘制。
+ * <p>锚点保持在原版右下角（x + 17, y + 9 + 行高），缩放时数字向左上方展开；
+ * 文字宽度超过原版右对齐区域时按比例回退，避免盖住左侧格子。100% 时完全交回原版绘制。
  */
 public final class ItemCountScale {
+	// 原版数量文字从 x+17 右对齐，可用宽度即 17 像素；三位数放大后会越出格子。
+	static final float VANILLA_TEXT_WIDTH = 17.0F;
 	private ItemCountScale() {
 	}
 
@@ -40,16 +42,32 @@ public final class ItemCountScale {
 		return y + 9.0F + lineHeight;
 	}
 
-	public static void draw(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int percent) {
-		float scale = percent / 100.0F;
+	// 根据文字实际宽度限制放大倍数：三位数最多保持原版字号，两位数可放大到约 140%。
+	public static float effectiveScale(int percent, int textWidth) {
+		float requested = percent / 100.0F;
+		if (textWidth <= 0) {
+			return requested;
+		}
+		float maxScale = Math.max(1.0F, VANILLA_TEXT_WIDTH / textWidth);
+		return Math.min(requested, maxScale);
+	}
+
+	// 返回是否自行绘制；缩放到原版大小（如三位数）时放行原版，保持零差异。
+	public static boolean draw(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int percent) {
+		int textWidth = font.width(text);
+		float scale = effectiveScale(percent, textWidth);
+		if (Math.abs(scale - 1.0F) < 1.0E-4F) {
+			return false;
+		}
 		graphics.pose().pushMatrix();
 		try {
 			graphics.pose().translate(anchorX(x), anchorY(y, font.lineHeight));
 			graphics.pose().scale(scale);
-			graphics.text(font, text, -font.width(text), -font.lineHeight, 0xFFFFFFFF, true);
+			graphics.text(font, text, -textWidth, -font.lineHeight, 0xFFFFFFFF, true);
 		} finally {
 			// 原版绘制可能抛异常：必须恢复矩阵，避免后续整个界面偏移。
 			graphics.pose().popMatrix();
 		}
+		return true;
 	}
 }

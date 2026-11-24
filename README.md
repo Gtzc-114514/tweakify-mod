@@ -58,7 +58,7 @@
 
 | 项 | 版本 |
 | --- | --- |
-| Tweakify Mod | 1.2.1 |
+| Tweakify Mod | 1.2.2 |
 | Minecraft | 26.3 |
 | Fabric Loader | >= 0.20.1 |
 | Fabric API | 0.163.0+26.3 |
@@ -102,7 +102,7 @@
 | --- | --- | --- | --- |
 | `disableFlightDrift` 禁用飞行漂移 | 飞行时松开方向键立即停止水平移动 | 布尔值 | 关 |
 | `flightDriftVertical` 垂直飞行影响 | 松开跳跃/潜行后也立即停止升降 | 布尔值 | 关 |
-| `creativeFlightNoclip` 创造飞行穿墙 | 创造模式飞行时不再被方块阻挡，可以直接穿过方块；世界边界与实体碰撞保持不变，非创造或未飞行时不生效。仅在单人/局域网主机生效；远程服务器由服务端校验，不会放行 | 布尔值 | 关 |
+| `creativeFlightNoclip` 创造飞行穿墙 | 创造模式飞行时进入无碰撞状态，可以直接穿过方块；非创造或未飞行时不生效。仅在单人/局域网主机生效；远程服务器由服务端校验，不会放行 | 布尔值 | 关 |
 | `autoStepUp` 如履平地 | 自动跨上 1 格高的方块（像马一样）；仅对本地玩家生效 | 布尔值 | 关 |
 | `autoStepUpHeight` 跨步高度 | `one_block` 1 格 / `one_and_half` 1.5 格 / `two_blocks` 2 格；越高越容易跨上台阶与斜坡 | 选项 | `one_block` |
 | `betterClimbing` 更好的攀爬 | 优化攀爬方块中的移动：向下看快速下降、上爬更快、可从地面起跳等，子项可单独开关；水平方向不减速请用「修改」标签的「经过可攀爬方块不减速」 | 布尔值 | 关 |
@@ -143,7 +143,7 @@
 | `statusEffectDurationLowThreshold` 低时长阈值 | 只在剩余时间不高于该秒数时显示（0 ~ 600）；0 表示不过滤，适合只关注即将结束的效果 | 整数 | 0 |
 | `statusEffectDurationColorMode` 时间文字配色 | `auto` 剩余 10 秒内变红、30 秒内变黄，其余白色 / `white` / `yellow` / `red` 固定单色 | 选项 | `auto` |
 | `statusEffectDurationScale` 效果显示大小 | 右上角药水效果图标与时间文字的整体缩放百分比（50% ~ 200%）；数字随图标同步缩放 | 整数 | 100 |
-| `itemCountScale` 物品数量缩放 | 物品栏与容器格子里物品数量数字的缩放百分比（50% ~ 200%，100% = 原版）；只改变数量文字，不影响物品图标、耐久条与冷却指示器 | 整数 | 100 |
+| `itemCountScale` 物品数量缩放 | 物品栏与容器格子里物品数量数字的缩放百分比（50% ~ 200%，100% = 原版）；只改变数量文字，不影响物品图标、耐久条与冷却指示器；数字位数较多时自动限制放大倍数，避免遮挡左侧格子 | 整数 | 100 |
 | `enchantingTableInfo` 附魔台附魔信息 | 悬停附魔台的三个附魔选项时，显示该选项实际会给出的附魔名称与等级；按客户端同步的附魔种子计算，多人服务器同样可用 | 布尔值 | 关 |
 | `savePlayTime` 存档游玩时长 | 在存档列表右上角显示该存档的累计游玩时长（读取 `stats` 中每个玩家的 `minecraft:play_time` 并累加；多人存档按全部玩家统计） | 布尔值 | 关 |
 | `savePlayTimeFormat` 时长显示格式 | `hours` 小数小时（不足 1 小时显示分钟）/ `clock` 时:分 / `duration` X 小时 Y 分 | 选项 | `hours` |
@@ -195,25 +195,25 @@
 | `throwSpawnEgg` 刷怪蛋投掷 | 像鸡蛋、雪球一样把刷怪蛋投掷出去，命中方块或实体后生成对应生物；对刷怪笼只设置类型且不消耗刷怪蛋；仅在单人/局域网生效 | 布尔值 | 关 |
 | `throwSpawnEggVelocity` 投掷速度 | 投掷速度百分比（50 ~ 200，100 = 原版鸡蛋速度） | 整数 | 100 |
 | `throwSpawnEggSneakBypass` 潜行时保持原版 | 开启后潜行时恢复原版放置，不再投掷刷怪蛋 | 布尔值 | 关 |
-| `itemGroups` 物品分组 | 与 `BizCub/inventory-item-groups` 一致的基岩版分组：分类页把楼梯、台阶、羊毛等同类物品折叠成组图标，点击图标上的 `+` / `-` 展开/收起，展开的成员紧跟在图标之后并使用专用底板；悬停在组图标上只显示组名 | 布尔值 | 关 |
+| `itemGroups` 物品分组 | 基岩版风格分组：分类页把楼梯、台阶、羊毛等同类物品折叠成组图标，点击图标上的 `+` / `-` 展开/收起，展开的成员紧跟在图标之后并使用专用底板；悬停在组图标上只显示组名 | 布尔值 | 关 |
 | `itemGroupsSort` 组内排序 | `default` 保持物品栏原顺序 / `alphabetical` 按物品 ID 字母序（组图标随之变化） | 选项 | `default` |
 | `itemGroupsShowItems` 显示组内物品 | 展开状态下图标每 1.5 秒轮播一个组内物品，而不是固定显示首个物品 | 布尔值 | 关 |
 | `itemGroupsAddAll` 启用默认组 | 启用内置的默认物品组；关闭后只使用下面的自定义组 | 布尔值 | 开 |
 | `customItemGroups` 自定义物品组 | 每行一个组：`标签页ID\|组名\|包含ID(逗号分隔)\|排除ID\|等价ID`，例如 `minecraft:building_blocks\|石英\|quartz`；组只在行首标签页生效（搜索/快捷栏/背包页不成组，只记录一次告警）；标签页 ID 大小写不敏感、缺命名空间按 `minecraft:` 补全（`:combat` 等价 `minecraft:combat`）；行内字段不足/标签页为空/包含项为空的行会在日志提示一次并忽略，整行空白忽略（格式错误行提示需开启物品分组）；组名可写进 `group_name.inventory_item_groups.<组名>` 翻译键 | 字符串列表 | 空 |
-| `locatorBarHeads` 更好的定位栏 | 参考 `Haage001/locator-heads` 重做：把定位栏上的彩色圆点换成本服玩家的头像，找不到皮肤时保留原版圆点；位于「功能」标签 | 布尔值 | 关 |
-| `locatorBarAlwaysShowXp` 经验条与定位栏同时显示 | 与参考 alwaysShowXP 一致：强制经验条优先显示，并把定位栏头像叠在经验条上；乘车时不强制 | 布尔值 | 关 |
-| `locatorBarHeadRenderHeads` 渲染头像本体 | 关闭后不绘制头像，只保留玩家名字（与参考实现的 Render Heads 一致）；名字仍按所选显示时机出现 | 布尔值 | 开 |
+| `locatorBarHeads` 更好的定位栏 | 把定位栏上的彩色圆点换成本服玩家的头像，找不到皮肤时保留原版圆点；位于「功能」标签 | 布尔值 | 关 |
+| `locatorBarAlwaysShowXp` 经验条与定位栏同时显示 | 强制经验条优先显示，并把定位栏头像叠在经验条上；乘车时不强制 | 布尔值 | 关 |
+| `locatorBarHeadRenderHeads` 渲染头像本体 | 关闭后不绘制头像，只保留玩家名字；名字仍按所选显示时机出现 | 布尔值 | 开 |
 | `locatorBarHeadScale` 头像尺寸 | 头像倍率档位（1 ~ 9）：0.5x / 0.6x / 0.7x / 0.8x / 1.0x / 1.1x / 1.2x / 1.3x / 1.5x；默认 5 = 原版圆点大小 | 整数 | 5 |
 | `locatorBarHeadHatLayer` 显示帽子层 | 叠加玩家皮肤的第二层（帽子/头盔） | 布尔值 | 开 |
-| `locatorBarHeadBorder` 头像描边 | `off` 不画 / `static` 固定颜色 / `team` 跟随计分板队伍颜色（无队伍时不画描边，名字仍为白色；与参考实现一致） | 选项 | `off` |
-| `locatorBarHeadBorderThickness` 描边粗细 | 与参考实现同一张表：`thin` 0.3 / `medium` 0.5 / `normal` 1.0 / `thick` 2.0 像素 | 选项 | `normal` |
+| `locatorBarHeadBorder` 头像描边 | `off` 不画 / `static` 固定颜色 / `team` 跟随计分板队伍颜色（无队伍时不画描边，名字仍为白色） | 选项 | `off` |
+| `locatorBarHeadBorderThickness` 描边粗细 | 四档：`thin` 0.3 / `medium` 0.5 / `normal` 1.0 / `thick` 2.0 像素 | 选项 | `normal` |
 | `locatorBarHeadBorderColor` 描边颜色 | 固定颜色描边使用的颜色；`team` 样式下忽略 | 选项 | `white` |
 | `locatorBarHeadNames` 玩家名字 | `never` 从不 / `always` 总是 / `looking_at` 注视时（±20°）/ `player_list` 玩家列表打开时 | 选项 | `never` |
 | `locatorBarHeadFilter` 玩家过滤 | `all` 全部 / `include` 仅包含名单 / `exclude` 排除名单；名单为空时 `include` 全部隐藏、`exclude` 全部显示 | 选项 | `all` |
-| `locatorBarHeadIncludedPlayers` 包含名单 | 与参考实现一致：仅在 `include` 模式生效，名单内玩家保留头像；玩家名可写在条目中并用逗号、分号、冒号或句点分隔，忽略大小写 | 字符串列表 | 空 |
-| `locatorBarHeadExcludedPlayers` 排除名单 | 与参考实现一致：仅在 `exclude` 模式生效，名单内玩家隐藏；分隔符与包含名单相同 | 字符串列表 | 空 |
-| `locatorBarHeadNearbyOnly` 仅显示附近玩家 | 只给当前已加载（在附近）的玩家画头像，远处航点整条隐藏（含圆点，与参考实现一致） | 布尔值 | 关 |
-| `locatorBarCompass` 显示指南针 | 与参考实现同一套坐标与画法（固定 `高度 - 31`，字母左移 2 像素），边缘淡出；字母画在 HUD 最上层（条带底图、圆点、头像都在它下面）；开启时经验等级数字上移 6 像素避让；Flashback 回放时不显示 | 布尔值 | 关 |
+| `locatorBarHeadIncludedPlayers` 包含名单 | 仅在 `include` 模式生效，名单内玩家保留头像；玩家名可写在条目中并用逗号、分号、冒号或句点分隔，忽略大小写 | 字符串列表 | 空 |
+| `locatorBarHeadExcludedPlayers` 排除名单 | 仅在 `exclude` 模式生效，名单内玩家隐藏；分隔符与包含名单相同 | 字符串列表 | 空 |
+| `locatorBarHeadNearbyOnly` 仅显示附近玩家 | 只给当前已加载（在附近）的玩家画头像，远处航点整条隐藏（含圆点） | 布尔值 | 关 |
+| `locatorBarCompass` 显示指南针 | 固定 `高度 - 31`，字母左移 2 像素），边缘淡出；字母画在 HUD 最上层（条带底图、圆点、头像都在它下面）；开启时经验等级数字上移 6 像素避让；Flashback 回放时不显示 | 布尔值 | 关 |
 | `locatorBarCompassColor` 指南针颜色 | 方位字母颜色 | 选项 | `white` |
 | `locatorBarCompassShadow` 指南针描边 | 给方位字母加四向黑色描边，亮色天空下更清晰 | 布尔值 | 开 |
 | `locatorBarCompassCoordinates` 坐标标记 | 用 `+Z` / `-X` / `-Z` / `+X` 代替 `S` / `W` / `N` / `E` | 布尔值 | 关 |
@@ -228,7 +228,7 @@
 
 | 功能 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| `heldItemInfo` 手持物品信息 | 参考 `held-item-info`：切换快捷栏物品时，在物品名称下方显示附魔、药水效果、容器内容等信息；子项控制内容、行数、行宽、排版、淡出与背景 | 布尔值 | 关 |
+| `heldItemInfo` 手持物品信息 | 切换快捷栏物品时，在物品名称下方显示附魔、药水效果、容器内容等信息；子项控制内容、行数、行宽、排版、淡出与背景 | 布尔值 | 关 |
 | `heldItemInfoShowName` 显示物品名称 | 把物品名称作为信息列表的第一行 | 布尔值 | 开 |
 | `heldItemInfoShowEnchantments` 显示附魔 | 显示物品附魔，以及附魔书里保存的附魔 | 布尔值 | 开 |
 | `heldItemInfoShowPotionEffects` 显示药水效果 | 显示药水、药箭等物品自带的效果 | 布尔值 | 开 |
@@ -284,7 +284,7 @@
 | `attackRangeMaxTargets` 最大显示数量 | 单次最多显示的数量（8 ~ 256）；超出时保留最近的实体；爆炸范围也使用该上限 | 整数 | 64 |
 | `attackRangeEntities` 攻击范围实体 | 需要显示范围的生物/玩家 ID 列表；为空时显示全部生物与玩家 | 字符串列表 | 空 |
 | `explosionRangeDisplay` 爆炸范围可视化 | 红色标记 TNT、已激活的 TNT 矿车、苦力怕与末地水晶的爆炸半径；平面/球体与线框/实心模式沿用攻击范围，实心模式会额外叠加线条，避免 Vulkan/Vitrail 下 OIT 实心不可见 | 布尔值 | 关 |
-| `sweepingView` 横扫范围可视化 | 参考 `sweeping-view`：手持剑时显示以脚底为中心的 3 格球体攻击范围；瞄准生物、船或矿车时附加目标扩展框（水平 +1 格、垂直 +0.25 格）；子项控制线框/面框/球体、载具目标与颜色；实心模式会额外叠加线条，避免 Vulkan 下实心不可见 | 布尔值 | 关 |
+| `sweepingView` 横扫范围可视化 | 手持剑时显示以脚底为中心的 3 格球体攻击范围；瞄准生物、船或矿车时附加目标扩展框（水平 +1 格、垂直 +0.25 格）；子项控制线框/面框/球体、载具目标与颜色；实心模式会额外叠加线条，避免 Vulkan 下实心不可见 | 布尔值 | 关 |
 | `sweepingViewWireframe` 横扫目标线框 | 显示目标扩展框的线框 | 布尔值 | 开 |
 | `sweepingViewWireframeColor` 横扫线框颜色 | 目标扩展框线框颜色，调色板与攻击范围一致 | 选项 | `red` |
 | `sweepingViewFace` 横扫目标面框 | 用网格线填充目标扩展框形成半透明面；不依赖 OIT 或线框子开关，关闭线框时也能在 Vulkan 下显示 | 布尔值 | 开 |
@@ -331,7 +331,7 @@
 
 | 功能 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| `betterAdvancements` 更好的进度 | 参考 `DaFuqs/PaginatedAdvancements`：进度窗口随屏幕放大，标签过多时自动分页，可固定标签、记住上次标签；子项控制分页/固定/记忆/背景压暗/复制 ID/标签间距 | 布尔值 | 关 |
+| `betterAdvancements` 更好的进度 | 进度窗口随屏幕放大，标签过多时自动分页，可固定标签、记住上次标签；子项控制分页/固定/记忆/背景压暗/复制 ID/标签间距 | 布尔值 | 关 |
 | `betterAdvancementsPagination` 标签分页 | 标签数量超出窗口宽度时显示前后翻页按钮，不再丢弃超出原版上限（26 个）的标签 | 布尔值 | 开 |
 | `betterAdvancementsPinTabs` 固定标签 | 窗口右上角星标按钮可把当前标签固定到右侧竖栏，方便在多个进度树之间切换 | 布尔值 | 开 |
 | `betterAdvancementsRememberTab` 记住上次标签 | 重新打开进度界面自动回到上次选中的标签 | 布尔值 | 开 |
@@ -721,7 +721,3 @@ MIT
 >
 > 收藏星纹理位于 `assets/tweakify-mod/textures/gui/sprites/favorite/`：星形一套为自绘；
 > 下界之星一套取自 Minecraft 原版物品纹理（版权归 Mojang），仅用于在界面上模仿原版外观。
->
-> 行为与布局参考：[DaFuqs/PaginatedAdvancements](https://github.com/DaFuqs/PaginatedAdvancements)（MIT，更好的进度）与
-> [Haage001/locator-heads](https://github.com/Haage001/locator-heads)（MIT，定位栏头像与指南针）；
-> 代码按本项目的配置、命名与测试规范重写，未直接嵌入对方模组的资源文件。

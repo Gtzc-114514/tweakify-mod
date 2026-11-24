@@ -156,15 +156,17 @@ public final class BetterAdvancementTab extends AdvancementTab {
 		clampToView(viewWidth, viewHeight);
 		int treeX = Mth.floor(this.originX);
 		int treeY = Mth.floor(this.originY);
-		int offsetX = Math.floorMod(treeX, 16);
-		int offsetY = Math.floorMod(treeY, 16);
+		int tile = BetterAdvancements.backgroundTileSize(viewWidth, viewHeight);
+		int offsetX = Math.floorMod(treeX, tile);
+		int offsetY = Math.floorMod(treeY, tile);
 
-		int countX = viewWidth / 16 + 2;
-		int countY = viewHeight / 16 + 2;
+		int countX = viewWidth / tile + 2;
+		int countY = viewHeight / tile + 2;
 		for (int tileX = -1; tileX < countX; tileX++) {
 			for (int tileY = -1; tileY < countY; tileY++) {
+				// 大视口用放大的单元一次性铺一块，避免 4K 下每帧数万次 blit。
 				graphics.blit(RenderPipelines.GUI_TEXTURED, this.background,
-					offsetX + 16 * tileX, offsetY + 16 * tileY, 0.0F, 0.0F, 16, 16, 16, 16);
+					offsetX + tile * tileX, offsetY + tile * tileY, 0.0F, 0.0F, tile, tile, 16, 16);
 			}
 		}
 		this.rootWidget.extractConnectivity(graphics, treeX, treeY, true);

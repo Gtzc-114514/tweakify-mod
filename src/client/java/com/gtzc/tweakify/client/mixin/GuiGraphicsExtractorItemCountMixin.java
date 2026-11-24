@@ -27,7 +27,8 @@ public class GuiGraphicsExtractorItemCountMixin {
 			return;
 		}
 		GuiGraphicsExtractor graphics = (GuiGraphicsExtractor) (Object) this;
-		ItemCountScale.draw(graphics, font, ItemCountScale.textOf(stack, countText), x, y, percent);
-		ci.cancel();
+		if (ItemCountScale.draw(graphics, font, ItemCountScale.textOf(stack, countText), x, y, percent)) {
+			ci.cancel();
+		}
 	}
 }

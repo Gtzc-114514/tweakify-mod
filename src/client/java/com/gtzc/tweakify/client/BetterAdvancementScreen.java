@@ -1,6 +1,5 @@
 package com.gtzc.tweakify.client;
 
-import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.AdvancementsStateStorage;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementNode;
@@ -40,10 +39,6 @@ public class BetterAdvancementScreen extends AdvancementsScreen implements Clien
 	private static final int BOTTOM_ELEMENT_HEIGHT = 15;
 	private static final Identifier WINDOW_TEXTURE =
 		Identifier.withDefaultNamespace("textures/gui/advancements/window.png");
-	private static final Identifier PIN_STAR_TEXTURE =
-		Identifier.fromNamespaceAndPath(TweakifyMod.MOD_ID, "textures/gui/sprites/favorite/star/favorite.png");
-	private static final Identifier PIN_EMPTY_TEXTURE =
-		Identifier.fromNamespaceAndPath(TweakifyMod.MOD_ID, "textures/gui/sprites/favorite/star/empty.png");
 	private static final Component TITLE = Component.translatable("gui.advancements");
 	private static final Component EMPTY_LABEL = Component.translatable("advancements.empty");
 	private static final Component SAD_LABEL = Component.translatable("advancements.sad_label");
@@ -418,8 +413,8 @@ public class BetterAdvancementScreen extends AdvancementsScreen implements Clien
 				break;
 			}
 			// 固定标签向左叠进窗口边框：纹理左侧有约 3 像素透明内边距，
-			// 再叠加 15 像素宽的外框，-12 才能让可见部分贴住窗口而不是留缝。
-			int x = geometry.endXWindow() - 12;
+			// 只压住窗口外框内侧，不进入中间的内容区。
+			int x = BetterAdvancements.pinnedTabX(geometry.endXWindow());
 			int y = BetterAdvancements.pinnedTabY(geometry.startY(), index);
 			int spriteIndex = BetterAdvancements.pinnedSpriteIndex(index, visiblePinned);
 			AdvancementTabType.RIGHT.extractRenderState(graphics, x, y, tab == this.selectedTab, spriteIndex);
@@ -445,9 +440,9 @@ public class BetterAdvancementScreen extends AdvancementsScreen implements Clien
 				y + BetterAdvancements.PIN_BUTTON_SIZE, 0x33FFFFFF);
 		}
 		boolean pinned = AdvancementsStateStorage.isPinned(this.selectedTab.getId().toString());
-		Identifier texture = pinned ? PIN_STAR_TEXTURE : PIN_EMPTY_TEXTURE;
-		graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x + 4, y + 4,
-			0.0F, 0.0F, 9, 9, 9, 9);
+		int starX = x + (BetterAdvancements.PIN_BUTTON_SIZE - FavoriteStarRenderer.SIZE) / 2;
+		int starY = y + (BetterAdvancements.PIN_BUTTON_SIZE - FavoriteStarRenderer.SIZE) / 2;
+		FavoriteStarRenderer.drawStar(graphics, starX, starY, pinned, hovered);
 	}
 
 	// ---- 输入 ----
@@ -507,7 +502,7 @@ public class BetterAdvancementScreen extends AdvancementsScreen implements Clien
 					if (pinnedIndex >= maxPinned) {
 						break;
 					}
-					int x = geometry.endXWindow() - 12;
+					int x = BetterAdvancements.pinnedTabX(geometry.endXWindow());
 					int y = BetterAdvancements.pinnedTabY(geometry.startY(), pinnedIndex);
 					if (isOver(click.x(), click.y(), x, y, BetterAdvancements.PINNED_TAB_WIDTH,
 						BetterAdvancements.PINNED_TAB_HEIGHT)) {

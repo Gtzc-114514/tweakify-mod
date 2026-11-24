@@ -174,10 +174,9 @@
 		"WindowInvoker",
 		"ChunkBorderRendererChunkCenterMixin",
 		"GuiGraphicsExtractorItemCountMixin",
-		"EntityCreativeFlightNoclipMixin",
+		"PlayerCreativeFlightNoclipMixin",
 		"PlayerBedFallDamageFixMixin",
-		"GuiBetterAdvancementsMixin",
-		"ServerGamePacketListenerImplCreativeFlightNoclipMixin"
+		"GuiBetterAdvancementsMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"
