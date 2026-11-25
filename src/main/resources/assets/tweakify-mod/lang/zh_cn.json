@@ -1,5 +1,5 @@
 {
-  "modmenu.descriptionTranslation.tweakify-mod": "这是一个调整优化原版机制的工具",
+  "modmenu.descriptionTranslation.tweakify-mod": "这是一个深度自定义调整优化原版机制的工具",
   "tweakify-mod.gui.title.configs": "Tweakify Mod 配置界面 - %s",
   "tweakify-mod.gui.stats.footer": "总数 %s  可用 %s  已修改 %s  已禁用 %s",
   "tweakify-mod.gui.button.config_gui.all": "全部",

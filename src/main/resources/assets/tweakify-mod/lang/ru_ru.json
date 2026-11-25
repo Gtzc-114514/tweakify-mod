@@ -1,5 +1,5 @@
 {
-  "modmenu.descriptionTranslation.tweakify-mod": "Инструмент для настройки и оптимизации ванильных механик",
+  "modmenu.descriptionTranslation.tweakify-mod": "Инструмент для глубокой настройки, кастомизации и оптимизации ванильных механик",
   "tweakify-mod.gui.title.configs": "Настройки Tweakify Mod - %s",
   "tweakify-mod.gui.stats.footer": "Всего %s  Включено %s  Изменено %s  Отключено %s",
   "tweakify-mod.gui.button.config_gui.all": "Все",
