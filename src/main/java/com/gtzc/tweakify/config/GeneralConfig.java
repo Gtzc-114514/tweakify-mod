@@ -52,6 +52,7 @@ public final class GeneralConfig extends ConfigSection {
 	public volatile boolean smoothScrollCreative = true;
 	public volatile boolean smoothScrollChat = true;
 	public volatile boolean smoothScrollModMenu = true;
+	public volatile boolean smoothScrollAdvancements = true;
 
 	// 平滑时长（毫秒，30 ~ 400）：越大越柔和、越小越跟手。
 	public volatile int smoothScrollDuration = TweakifyModConfig.DEFAULT_SMOOTH_SCROLL_DURATION;

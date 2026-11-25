@@ -15,6 +15,7 @@ import net.minecraft.core.ClientAsset;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Util;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,6 +52,12 @@ public final class BetterAdvancementTab extends AdvancementTab {
 	private int lastViewWidth = -1;
 	private int lastViewHeight = -1;
 	private @Nullable AdvancementWidget hoveredWidget;
+
+	// 平滑滚动：动画器位置以“origin - 左/上边界”为坐标系，与原版列表一样夹紧到 [0, max]。
+	private final SmoothScrollAnimator smoothX = new SmoothScrollAnimator();
+	private final SmoothScrollAnimator smoothY = new SmoothScrollAnimator();
+	private boolean smoothInitialized;
+	private long smoothFrameMillis;
 
 	private BetterAdvancementTab(Minecraft client, BetterAdvancementScreen screen, int index,
 								 AdvancementNode rootNode, DisplayInfo display, AdvancementWidget rootWidget,
@@ -91,6 +98,8 @@ public final class BetterAdvancementTab extends AdvancementTab {
 			this.centered = tab.centered;
 			this.lastViewWidth = tab.lastViewWidth;
 			this.lastViewHeight = tab.lastViewHeight;
+			// 复制位置后动画器立即对齐到新原点，不从旧标签滑过来。
+			this.smoothInitialized = false;
 		}
 	}
 
@@ -154,6 +163,7 @@ public final class BetterAdvancementTab extends AdvancementTab {
 	// 进度树绘制在窗口内部区域；调用方已完成裁剪与坐标平移。
 	public void render(GuiGraphicsExtractor graphics, int viewWidth, int viewHeight) {
 		clampToView(viewWidth, viewHeight);
+		advanceSmoothScroll(viewWidth, viewHeight);
 		int treeX = Mth.floor(this.originX);
 		int treeY = Mth.floor(this.originY);
 		int tile = BetterAdvancements.backgroundTileSize(viewWidth, viewHeight);
@@ -222,12 +232,94 @@ public final class BetterAdvancementTab extends AdvancementTab {
 	}
 
 	public void scroll(double deltaX, double deltaY) {
-		scrollTo(this.originX + deltaX, this.originY + deltaY, this.lastViewWidth, this.lastViewHeight);
+		if (!SmoothScrolling.advancementsEnabled() || this.lastViewWidth <= 0 || this.lastViewHeight <= 0) {
+			scrollTo(this.originX + deltaX, this.originY + deltaY, this.lastViewWidth, this.lastViewHeight);
+			return;
+		}
+		// 滚轮只累加目标，真正的位移在 render 里逐帧缓动。
+		if (!syncSmoothState(this.lastViewWidth, this.lastViewHeight)) {
+			this.smoothX.setTimeConstant(SmoothScrolling.timeConstantSeconds());
+			this.smoothY.setTimeConstant(SmoothScrolling.timeConstantSeconds());
+		}
+		this.smoothX.addDelta(deltaX, maxSmoothX(this.lastViewWidth));
+		this.smoothY.addDelta(deltaY, maxSmoothY(this.lastViewHeight));
 	}
 
-	// 拖动：与滚轮共用夹紧逻辑。
+	// 拖动：与滚轮共用夹紧逻辑；拖动立即生效，下一帧动画器直接对齐。
 	public void move(double deltaX, double deltaY, int viewWidth, int viewHeight) {
 		scrollTo(this.originX + deltaX, this.originY + deltaY, viewWidth, viewHeight);
+		this.smoothInitialized = false;
+	}
+
+	// 每帧推进平滑滚动：外部改过原点（拖动、居中、尺寸变化）时立即对齐。
+	private void advanceSmoothScroll(int viewWidth, int viewHeight) {
+		if (!SmoothScrolling.advancementsEnabled()) {
+			this.smoothInitialized = false;
+			this.smoothFrameMillis = 0L;
+			return;
+		}
+		if (syncSmoothState(viewWidth, viewHeight)) {
+			return;
+		}
+		long now = Util.getMillis();
+		double deltaSeconds = this.smoothFrameMillis == 0L
+			? 0.0
+			: Math.min(0.1, (now - this.smoothFrameMillis) / 1000.0);
+		this.smoothFrameMillis = now;
+		double maxX = maxSmoothX(viewWidth);
+		double maxY = maxSmoothY(viewHeight);
+		this.smoothX.setTimeConstant(SmoothScrolling.timeConstantSeconds());
+		this.smoothY.setTimeConstant(SmoothScrolling.timeConstantSeconds());
+		this.smoothX.update(deltaSeconds, maxX);
+		this.smoothY.update(deltaSeconds, maxY);
+		// 即使刚吸附（isSettled）也要写回：update 会把 position 直接对齐到 target，
+		// 提前返回会让 origin 停在旧值，下一帧 syncSmoothState 误判为外部改动后回跳。
+		this.originX = smoothLowerX(viewWidth) + this.smoothX.position();
+		this.originY = smoothLowerY(viewHeight) + this.smoothY.position();
+		// 安全夹紧：窗口尺寸变化后的首帧仍保持在可滚动范围内。
+		this.originX = canScrollHorizontally(viewWidth)
+			? Mth.clamp(this.originX, smoothLowerX(viewWidth), -this.minPanX)
+			: centeredX(viewWidth);
+		this.originY = canScrollVertically(viewHeight)
+			? Mth.clamp(this.originY, smoothLowerY(viewHeight), -this.minPanY)
+			: centeredY(viewHeight);
+	}
+
+	// 返回 true 表示刚对齐到外部值，本帧不再推进动画。
+	private boolean syncSmoothState(int viewWidth, int viewHeight) {
+		double lowerX = smoothLowerX(viewWidth);
+		double lowerY = smoothLowerY(viewHeight);
+		boolean mismatch = !this.smoothInitialized
+			|| Math.abs((this.originX - lowerX) - this.smoothX.position()) > 1.0e-3
+			|| Math.abs((this.originY - lowerY) - this.smoothY.position()) > 1.0e-3;
+		if (!mismatch) {
+			return false;
+		}
+		this.smoothX.jumpTo(Math.max(0.0, this.originX - lowerX), maxSmoothX(viewWidth));
+		this.smoothY.jumpTo(Math.max(0.0, this.originY - lowerY), maxSmoothY(viewHeight));
+		this.smoothInitialized = true;
+		this.smoothFrameMillis = Util.getMillis();
+		return true;
+	}
+
+	private double maxSmoothX(int viewWidth) {
+		return canScrollHorizontally(viewWidth)
+			? (double) (this.maxPanX - this.minPanX) - viewWidth
+			: 0.0;
+	}
+
+	private double maxSmoothY(int viewHeight) {
+		return canScrollVertically(viewHeight)
+			? (double) (this.maxPanY - this.minPanY) - viewHeight
+			: 0.0;
+	}
+
+	private double smoothLowerX(int viewWidth) {
+		return canScrollHorizontally(viewWidth) ? (double) viewWidth - this.maxPanX : centeredX(viewWidth);
+	}
+
+	private double smoothLowerY(int viewHeight) {
+		return canScrollVertically(viewHeight) ? (double) viewHeight - this.maxPanY : centeredY(viewHeight);
 	}
 
 	private void scrollTo(double targetX, double targetY, int viewWidth, int viewHeight) {

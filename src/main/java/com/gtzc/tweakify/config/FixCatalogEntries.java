@@ -77,5 +77,16 @@ final class FixCatalogEntries {
 		entries.add(fix("saplingGrowthFix", true));
 		// 床边落地伤害（MC-19830）
 		entries.add(fix("bedFallDamageFix", true));
+		// 长矛相关修复（MC-305835 / MC-308786 / MC-303451 / MC-310858 /
+		// MC-302732 / MC-304406 / MC-308270 / MC-308272）
+		entries.add(fix("spearFixes", true));
+		entries.add(child("spearFixes", "spearFixMc305835"));
+		entries.add(child("spearFixes", "spearFixMc308786"));
+		entries.add(child("spearFixes", "spearFixMc303451"));
+		entries.add(child("spearFixes", "spearFixMc310858"));
+		entries.add(child("spearFixes", "spearFixMc302732"));
+		entries.add(child("spearFixes", "spearFixMc304406"));
+		entries.add(child("spearFixes", "spearFixMc308270"));
+		entries.add(child("spearFixes", "spearFixMc308272"));
 	}
 }

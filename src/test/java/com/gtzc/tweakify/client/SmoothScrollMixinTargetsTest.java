@@ -10,6 +10,8 @@ import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.client.gui.screens.advancements.AdvancementTab;
+import net.minecraft.client.gui.screens.advancements.AdvancementsScreen;
 import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.inventory.Slot;
@@ -109,6 +111,21 @@ class SmoothScrollMixinTargetsTest {
 	void editBoxTextPositionTargetExists() throws Exception {
 		// 亚行平移数字输入框后要重算文字坐标，否则外框动了、数字留在原地。
 		assertTrue(hasMethod(EditBox.class, "updateTextPosition"), "EditBox.updateTextPosition()");
+	}
+
+	@Test
+	void advancementsScrollTargetsExist() throws Exception {
+		assertTrue(hasMethod(AdvancementsScreen.class, "mouseScrolled",
+			double.class, double.class, double.class, double.class), "AdvancementsScreen.mouseScrolled");
+		assertTrue(hasMethod(AdvancementsScreen.class, "extractRenderState",
+			GuiGraphicsExtractor.class, int.class, int.class, float.class), "AdvancementsScreen.extractRenderState");
+		assertTrue(hasField(AdvancementsScreen.class, "selectedTab"), "AdvancementsScreen.selectedTab");
+		// 逐帧缓动写回原版标签的滚动位置，尺寸字段用于计算可滚动范围。
+		for (String field : new String[]{"scrollX", "scrollY", "maxX", "maxY"}) {
+			assertTrue(hasField(AdvancementTab.class, field), "AdvancementTab." + field);
+		}
+		assertTrue(hasMethod(AdvancementTab.class, "canScrollHorizontally"), "AdvancementTab.canScrollHorizontally");
+		assertTrue(hasMethod(AdvancementTab.class, "canScrollVertically"), "AdvancementTab.canScrollVertically");
 	}
 
 	private static boolean hasMethod(Class<?> owner, String name, Class<?>... parameterTypes) {

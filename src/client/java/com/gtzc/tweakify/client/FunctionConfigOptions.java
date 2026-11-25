@@ -611,6 +611,10 @@ public final class FunctionConfigOptions {
 		TweakifyModConfig.MIN_CHAT_INPUT_MEMORY_LENGTH,
 		TweakifyModConfig.MAX_CHAT_INPUT_MEMORY_LENGTH).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 聊天框消失进度条：每条新消息底部显示白色倒计时进度条。
+	public static final ConfigBooleanHotkeyed CHAT_FADE_PROGRESS_BAR = new ConfigBooleanHotkeyed(
+		"chatFadeProgressBar", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	public static final ConfigBooleanHotkeyed ENTITY_HIGHLIGHT = new ConfigBooleanHotkeyed(
 		"entityHighlight", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.HIGHLIGHT_KEY);
 

@@ -151,6 +151,33 @@ public final class FixConfig extends ConfigSection {
 	// MC-8187：2×2 云杉/丛林树苗北/西侧有相邻方块时也能生长。
 	public volatile boolean saplingGrowthFix = false;
 
+	// 长矛相关修复：按 MC 问题号拆分，子项默认开启。
+	public volatile boolean spearFixes = false;
+
+	// MC-305835：生物用长矛刺击命中时也会造成击退。
+	public volatile boolean spearFixMc305835 = true;
+
+	// MC-308786：蓄力击退按水平速度判定，不再受视角俯仰影响。
+	public volatile boolean spearFixMc308786 = true;
+
+	// MC-303451：击退与伤害使用同一相对速度，不再只击退不伤害。
+	public volatile boolean spearFixMc303451 = true;
+
+	// MC-310858：未造成伤害的蓄力命中不进入接触冷却。
+	public volatile boolean spearFixMc310858 = true;
+
+	// MC-302732：副手长矛不再套用主手物品的附魔。
+	public volatile boolean spearFixMc302732 = true;
+
+	// MC-304406：副手长矛的附魔（击退等）正常生效。
+	public volatile boolean spearFixMc304406 = true;
+
+	// MC-308270：副手长矛的锋利/亡灵杀手/节肢杀手正常生效。
+	public volatile boolean spearFixMc308270 = true;
+
+	// MC-308272：副手长矛的火焰附加/抢夺正常生效。
+	public volatile boolean spearFixMc308272 = true;
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

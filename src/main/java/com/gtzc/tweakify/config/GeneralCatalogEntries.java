@@ -44,6 +44,7 @@ final class GeneralCatalogEntries {
 		entries.add(child("smoothScroll", "smoothScrollCreative"));
 		entries.add(child("smoothScroll", "smoothScrollChat"));
 		entries.add(child("smoothScroll", "smoothScrollModMenu"));
+		entries.add(child("smoothScroll", "smoothScrollAdvancements"));
 		entries.add(child("smoothScroll", "smoothScrollDuration"));
 	}
 }

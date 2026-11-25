@@ -37,6 +37,7 @@
 		"ArmorStandArmsMixin",
 		"ChatScreenMixin",
 		"ChatComponentAccessor",
+		"ChatComponentFadeBarMixin",
 		"ChatComponentSmoothScrollMixin",
 		"AbstractScrollAreaSmoothScrollMixin",
 		"MobAttackRangeAccessor",
@@ -176,7 +177,16 @@
 		"GuiGraphicsExtractorItemCountMixin",
 		"PlayerCreativeFlightNoclipMixin",
 		"PlayerBedFallDamageFixMixin",
-		"GuiBetterAdvancementsMixin"
+		"GuiBetterAdvancementsMixin",
+		"WorldOpenFlowsExperimentalWarningMixin",
+		"CreateWorldScreenExperimentalPackMixin",
+		"LivingEntityRendererSneakNameMixin",
+		"KineticWeaponSpearFixesMixin",
+		"PlayerSpearEnchantMixin",
+		"LivingEntitySpearEnchantMixin",
+		"MobSpearJabKnockbackMixin",
+		"AdvancementTabAccessor",
+		"AdvancementsScreenSmoothScrollMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"

@@ -209,6 +209,12 @@ final class ModifiedCatalogEntries {
 		entries.add(modified("hideItemFrames"));
 		entries.add(child("hideItemFrames", "hideItemFramesOnlyMaps"));
 		entries.add(child("hideItemFrames", "hideItemFramesHideEmpty"));
+		// 禁用实验性功能提示（修改标签，子项为创建世界/数据包确认）。
+		entries.add(modified("disableExperimentalWarning", true));
+		entries.add(child("disableExperimentalWarning", "experimentalWarningWorldCreate"));
+		entries.add(child("disableExperimentalWarning", "experimentalWarningDataPacks"));
+		// 禁用潜行隐藏名字（修改标签）。
+		entries.add(modified("disableSneakNameHide", true));
 		// 取消服务端 moved too quickly 速度上限。
 		entries.add(modified("removeSpeedLimit", true));
 		entries.add(child("removeSpeedLimit", "removeSpeedLimitOnlyVehicles"));

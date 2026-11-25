@@ -86,6 +86,9 @@ public final class GeneralConfigOptions {
 	public static final ConfigBoolean SMOOTH_SCROLL_MOD_MENU = new ConfigBoolean(
 		"smoothScrollModMenu", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	public static final ConfigBoolean SMOOTH_SCROLL_ADVANCEMENTS = new ConfigBoolean(
+		"smoothScrollAdvancements", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 平滑时长（毫秒）：越大越柔和、越小越跟手。
 	public static final ConfigInteger SMOOTH_SCROLL_DURATION = new ConfigInteger(
 		"smoothScrollDuration", TweakifyModConfig.DEFAULT_SMOOTH_SCROLL_DURATION,

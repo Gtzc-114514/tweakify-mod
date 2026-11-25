@@ -323,6 +323,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 草稿最大保留长度（字符，1 ~ 256）。
 	public volatile int chatInputMemoryMaxLength = TweakifyModConfig.DEFAULT_CHAT_INPUT_MEMORY_LENGTH;
 
+	// 聊天框消失进度条：每条新消息底部显示白色倒计时进度条。
+	public volatile boolean chatFadeProgressBar = false;
+
 	// 生物攻击范围显示：以生物为中心画半透明蓝色范围，列表为空时作用于全部生物与玩家。
 	public volatile boolean attackRangeDisplay = false;
 	public volatile List<String> attackRangeEntities = new ArrayList<>();
@@ -651,6 +654,7 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile String hotkeyBetterBoneMeal = "";
 	public volatile String hotkeyPiglinGoldArmorSwap = "";
 	public volatile String hotkeyChatInputMemory = "";
+	public volatile String hotkeyChatFadeProgressBar = "";
 	public volatile String hotkeyStatusEffectDurationDisplay = "";
 	public volatile String hotkeyEnchantingTableInfo = "";
 	public volatile String hotkeyHeldItemInfo = "";

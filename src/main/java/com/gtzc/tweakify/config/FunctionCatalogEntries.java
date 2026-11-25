@@ -201,6 +201,8 @@ final class FunctionCatalogEntries {
 		entries.add(function("savePlayTime", true));
 		entries.add(child("savePlayTime", "savePlayTimeFormat"));
 		entries.add(child("savePlayTime", "savePlayTimeDecimals"));
+		// 聊天框消失进度条（功能标签）
+		entries.add(function("chatFadeProgressBar", true));
 	}
 
 	// 原表中的第 10 段连续条目。

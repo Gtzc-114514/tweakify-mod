@@ -518,6 +518,22 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean HIDE_ITEM_FRAMES_HIDE_EMPTY = new ConfigBoolean(
 		"hideItemFramesHideEmpty", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 禁用实验性功能提示：创建世界与启用实验性数据包时不再弹确认。
+	public static final ConfigBoolean DISABLE_EXPERIMENTAL_WARNING = new ConfigBoolean(
+		"disableExperimentalWarning", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 子开关：创建世界时的实验性功能警告。
+	public static final ConfigBoolean EXPERIMENTAL_WARNING_WORLD_CREATE = new ConfigBoolean(
+		"experimentalWarningWorldCreate", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 子开关：实验性数据包的确认界面。
+	public static final ConfigBoolean EXPERIMENTAL_WARNING_DATA_PACKS = new ConfigBoolean(
+		"experimentalWarningDataPacks", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 禁用潜行隐藏名字：潜行时名字标签不再被隐藏。
+	public static final ConfigBoolean DISABLE_SNEAK_NAME_HIDE = new ConfigBoolean(
+		"disableSneakNameHide", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 取消速度上限：关闭服务端的 moved too quickly 速度检查。
 	public static final ConfigBoolean REMOVE_SPEED_LIMIT = new ConfigBoolean(
 		"removeSpeedLimit", false).apply(ConfigOptionKeys.GENERAL_KEY);

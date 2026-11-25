@@ -187,4 +187,40 @@ public final class FixConfigOptions {
 	// MC-8187：2×2 树苗生长修复。
 	public static final ConfigBoolean SAPLING_GROWTH_FIX = new ConfigBoolean(
 		"saplingGrowthFix", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 长矛相关修复总开关：按 MC 问题号拆分子项。
+	public static final ConfigBoolean SPEAR_FIXES = new ConfigBoolean(
+		"spearFixes", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// MC-305835：生物长矛刺击也会造成击退。
+	public static final ConfigBoolean SPEAR_FIX_MC305835 = new ConfigBoolean(
+		"spearFixMc305835", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// MC-308786：蓄力击退改按水平速度判定。
+	public static final ConfigBoolean SPEAR_FIX_MC308786 = new ConfigBoolean(
+		"spearFixMc308786", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// MC-303451：击退与伤害使用同一相对速度。
+	public static final ConfigBoolean SPEAR_FIX_MC303451 = new ConfigBoolean(
+		"spearFixMc303451", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// MC-310858：未造成伤害的蓄力命中不进入冷却。
+	public static final ConfigBoolean SPEAR_FIX_MC310858 = new ConfigBoolean(
+		"spearFixMc310858", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// MC-302732：副手长矛不再套用主手附魔。
+	public static final ConfigBoolean SPEAR_FIX_MC302732 = new ConfigBoolean(
+		"spearFixMc302732", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// MC-304406：副手长矛的附魔正常生效。
+	public static final ConfigBoolean SPEAR_FIX_MC304406 = new ConfigBoolean(
+		"spearFixMc304406", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// MC-308270：副手长矛的伤害附魔正常生效。
+	public static final ConfigBoolean SPEAR_FIX_MC308270 = new ConfigBoolean(
+		"spearFixMc308270", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// MC-308272：副手长矛的火焰附加/抢夺正常生效。
+	public static final ConfigBoolean SPEAR_FIX_MC308272 = new ConfigBoolean(
+		"spearFixMc308272", true).apply(ConfigOptionKeys.GENERAL_KEY);
 }

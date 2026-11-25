@@ -76,6 +76,12 @@ public final class SmoothScrolling {
 		return enabled() && (config == null || config.general.smoothScrollModMenu);
 	}
 
+	// 进度（成就）界面：原版与更好的进度界面共用。
+	public static boolean advancementsEnabled() {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return enabled() && (config == null || config.general.smoothScrollAdvancements);
+	}
+
 	// 平滑时长（秒）：配置项以毫秒暴露，夹到合法范围后作为动画器的时间常数。
 	public static double timeConstantSeconds() {
 		TweakifyModConfig config = TweakifyMod.CONFIG;

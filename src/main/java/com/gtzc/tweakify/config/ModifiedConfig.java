@@ -444,6 +444,18 @@ public final class ModifiedConfig extends ConfigSection {
 	// 连空展示框也隐藏外框。
 	public volatile boolean hideItemFramesHideEmpty = false;
 
+	// 禁用实验性功能提示：创建世界与启用实验性数据包时不再弹出确认提示。
+	public volatile boolean disableExperimentalWarning = false;
+
+	// 子开关：创建含实验性功能的世界时跳过警告确认。
+	public volatile boolean experimentalWarningWorldCreate = true;
+
+	// 子开关：应用实验性数据包时跳过确认界面。
+	public volatile boolean experimentalWarningDataPacks = true;
+
+	// 禁用潜行隐藏名字：潜行时名字标签保持可见（不再受 32 格距离限制）。
+	public volatile boolean disableSneakNameHide = false;
+
 	// 取消速度上限：关闭服务端的 moved too quickly 速度检查；仅在单人/局域网主机生效。
 	public volatile boolean removeSpeedLimit = false;
 
