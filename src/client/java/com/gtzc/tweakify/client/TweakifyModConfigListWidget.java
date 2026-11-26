@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
@@ -13,7 +14,10 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Util;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 配置列表控件：为配置条目使用双层标签布局（加高条目 + 第二行英文配置键），
@@ -424,6 +428,91 @@ public class TweakifyModConfigListWidget extends WidgetListConfigOptions {
 		return entry != null && entry.getType() == GuiConfigsBase.ConfigOptionWrapper.Type.CONFIG
 			? TweakifyModConfigOptionWidget.ENTRY_HEIGHT
 			: super.getBrowserEntryHeightFor(entry);
+	}
+
+	// 搜索时使用完整树（忽略分组折叠），否则折叠分组里的子项永远无法被搜到。
+	// 只对纯文本搜索生效：快捷键过滤（单独或与文本组合）完全交回 MaLiLib。
+	@Override
+	protected Collection<GuiConfigsBase.ConfigOptionWrapper> getAllEntries() {
+		TweakifyModConfigScreen screen = this.parent instanceof TweakifyModConfigScreen target ? target : null;
+		if (screen != null && treeSearchActive()) {
+			return GuiConfigsBase.ConfigOptionWrapper.createFor(
+				TweakifyModConfigScreen.searchConfigs(screen.currentTab()));
+		}
+		return super.getAllEntries();
+	}
+
+	// 树感知过滤：父项命中时把整组子项一起列出；子项命中时补上父级路径。
+	// 先交给 MaLiLib 完成文本/快捷键过滤，再按配置目录补全关系，保留上游的过滤语义；
+	// 收藏标签与快捷键过滤路径不参与扩展，结果与上游完全一致。
+	@Override
+	protected void addFilteredContents(Collection<GuiConfigsBase.ConfigOptionWrapper> entries) {
+		super.addFilteredContents(entries);
+		TweakifyModConfigScreen screen = this.parent instanceof TweakifyModConfigScreen target ? target : null;
+		if (screen == null || !shouldApplyTreeExpansion(screen.currentTab(), treeSearchActive())) {
+			return;
+		}
+		Set<String> matched = new LinkedHashSet<>();
+		for (GuiConfigsBase.ConfigOptionWrapper wrapper : this.listContents) {
+			IConfigBase config = wrapper.getConfig();
+			if (config != null) {
+				matched.add(config.getName());
+			}
+		}
+		if (matched.isEmpty()) {
+			return;
+		}
+		Set<String> included = expandMatchedNames(matched);
+		this.listContents.clear();
+		for (GuiConfigsBase.ConfigOptionWrapper wrapper : entries) {
+			IConfigBase config = wrapper.getConfig();
+			if (config != null && included.contains(config.getName())) {
+				this.listContents.add(wrapper);
+			}
+		}
+		TweakifyModConfigScreen.markSearchVisible(included);
+	}
+
+	// 纯文本搜索才启用树感知：快捷键过滤优先，避免给快捷键命中项额外补父子项。
+	private boolean treeSearchActive() {
+		return shouldUseTreeSearch(this.hasFilter(), hasKeybindFilter(), this.getFilterText());
+	}
+
+	private boolean hasKeybindFilter() {
+		return this.widgetSearchConfigs != null
+			&& !this.widgetSearchConfigs.getKeybind().getKeys().isEmpty();
+	}
+
+	// 包私有：供搜索回归测试直接校验快捷键与纯文本的开关条件。
+	static boolean shouldUseTreeSearch(boolean hasFilter, boolean hasKeybindFilter, String filterText) {
+		return hasFilter && !hasKeybindFilter && filterText != null && !filterText.isBlank();
+	}
+
+	// 包私有：收藏标签不参与树扩展，保持只显示收藏项的语义。
+	static boolean shouldApplyTreeExpansion(TweakifyModConfigScreen.ConfigTab tab, boolean treeSearch) {
+		return treeSearch && tab != TweakifyModConfigScreen.ConfigTab.FAVORITES;
+	}
+
+	// 匹配项连同祖先路径与全部后代；包私有：供搜索回归测试直接校验。
+	static Set<String> expandMatchedNames(Collection<String> matched) {
+		Set<String> included = new LinkedHashSet<>();
+		Set<String> expanded = new LinkedHashSet<>();
+		for (String name : matched) {
+			included.addAll(ConfigCatalog.ancestorsOf(name));
+			addDescendants(name, included, expanded);
+			included.add(name);
+		}
+		return included;
+	}
+
+	private static void addDescendants(String name, Set<String> included, Set<String> expanded) {
+		if (!expanded.add(name)) {
+			return;
+		}
+		for (ConfigCatalog.Entry child : ConfigCatalog.childrenOf(name)) {
+			included.add(child.name());
+			addDescendants(child.name(), included, expanded);
+		}
 	}
 
 	// 标签列宽度取本地化名称与英文配置键中较长者，并计入树形缩进，且不超过按钮列起点。

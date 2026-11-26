@@ -73,6 +73,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			}
 			// 药水效果计时：在玩家效果 tick 与配置同步之后重建缓存，渲染帧只查表。
 			StatusEffectTimerRenderer.tick(client);
+			// 自定义窗口图标：配置变化后重新加载，关闭时恢复原版。
+			CustomWindowIcon.tick(client);
 		});
 
 		// 退出前排空后台写盘队列并同步落盘：

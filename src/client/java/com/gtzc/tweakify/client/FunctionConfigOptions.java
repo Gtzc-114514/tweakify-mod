@@ -422,6 +422,11 @@ public final class FunctionConfigOptions {
 	public static final ConfigBoolean BETTER_BLOCK_PLACEMENT_SNEAK_BYPASS = new ConfigBoolean(
 		"betterBlockPlacementSneakBypass", true).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 辅助方块选区：手持同类方块时放宽栅栏、铁栏杆、锁链等细长方块的选取范围。
+	public static final ConfigBooleanHotkeyed HELPFUL_BLOCK_SELECTION = new ConfigBooleanHotkeyed(
+		"helpfulBlockSelection", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS)
+		.apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 耐久文字子项。
 	public static final ConfigBoolean DURABILITY_OVERLAY_HOTBAR_ONLY = new ConfigBoolean(
 		"durabilityOverlayHotbarOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);

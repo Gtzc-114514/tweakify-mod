@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -118,6 +119,11 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		super.onClose();
 	}
 
+	// 当前标签：搜索时据此构建完整树。
+	ConfigTab currentTab() {
+		return this.currentTab;
+	}
+
 	@Override
 	protected int getConfigWidth() {
 		return 210;
@@ -139,16 +145,24 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 
 	@Override
 	public List<ConfigOptionWrapper> getConfigs() {
-		List<IConfigBase> visible = new ArrayList<>(visibleConfigs(this.currentTab));
-		if (this.currentTab == ConfigTab.TESTING) {
-			visible.add(TestingConfigOptions.PROFILE_EDITOR);
-		} else if (this.currentTab == ConfigTab.FAVORITES
-			&& FavoriteStarRenderer.isEnabled()
+		return ConfigOptionWrapper.createFor(configsForTab(this.currentTab, true));
+	}
+
+	// 当前标签的条目：常规界面按折叠状态展开，搜索用完整树；档案编辑器作为界面操作项单独追加。
+	static List<IConfigBase> searchConfigs(ConfigTab tab) {
+		return configsForTab(tab, false);
+	}
+
+	private static List<IConfigBase> configsForTab(ConfigTab tab, boolean respectExpansion) {
+		List<IConfigBase> result = new ArrayList<>(visibleConfigs(tab, respectExpansion));
+		if (tab == ConfigTab.TESTING) {
+			result.add(TestingConfigOptions.PROFILE_EDITOR);
+		} else if (tab == ConfigTab.FAVORITES && FavoriteStarRenderer.isEnabled()
 			&& FavoritesStorage.isConfigFavorite(TestingConfigOptions.PROFILE_EDITOR.getName())) {
 			// 档案编辑器不在配置目录里，不能被树遍历到；收藏后单独追加到收藏标签。
-			visible.add(TestingConfigOptions.PROFILE_EDITOR);
+			result.add(TestingConfigOptions.PROFILE_EDITOR);
 		}
-		return ConfigOptionWrapper.createFor(visible);
+		return result;
 	}
 
 	// 在右下角绘制配置统计：总数 / 可用 / 已修改 / 已禁用。
@@ -360,9 +374,13 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		}
 	}
 
-	// 按当前标签把可见节点扁平化，同时刷新 NODE_INFO 供条目控件读取。
+	// 按标签扁平化；respectExpansion=false 时忽略折叠状态（搜索用），true 时按当前展开状态输出。
 	// 包私有：供收藏标签的回归测试直接校验可见集合。
 	static List<IConfigBase> visibleConfigs(ConfigTab tab) {
+		return visibleConfigs(tab, true);
+	}
+
+	private static List<IConfigBase> visibleConfigs(ConfigTab tab, boolean respectExpansion) {
 		List<IConfigBase> result = new ArrayList<>();
 		NODE_INFO.clear();
 		if (tab == ConfigTab.FAVORITES) {
@@ -383,7 +401,7 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 			return result;
 		}
 		for (ConfigGroupNode root : ROOTS) {
-			appendVisible(root, 0, result, tab);
+			appendVisible(root, 0, result, tab, respectExpansion);
 		}
 		return result;
 	}
@@ -405,17 +423,25 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 	}
 
 	private static void appendVisible(ConfigGroupNode node, int depth, List<IConfigBase> result,
-									  ConfigTab tab) {
+									  ConfigTab tab, boolean respectExpansion) {
 		if (!shouldShow(node, tab)) {
 			return;
 		}
 		result.add(node.config());
 		NODE_INFO.put(node.config().getName(),
-			new NodeInfo(depth, node.hasChildren(), node.isExpanded()));
-		if (node.isExpanded()) {
+			new NodeInfo(depth, node.hasChildren(), respectExpansion ? node.isExpanded() : true));
+		if (!respectExpansion || node.isExpanded()) {
 			for (ConfigGroupNode child : node.children()) {
-				appendVisible(child, depth + 1, result, tab);
+				appendVisible(child, depth + 1, result, tab, respectExpansion);
 			}
+		}
+	}
+
+	// 搜索结果显示的节点统一按“已展开、无折叠按钮”排版：匹配项的全部后代已经一并列出，
+	// 再显示 [+] 只会让用户以为还要手动打开。
+	static void markSearchVisible(Collection<String> names) {
+		for (String name : names) {
+			NODE_INFO.put(name, new NodeInfo(ConfigCatalog.depthOf(name), false, true));
 		}
 	}
 

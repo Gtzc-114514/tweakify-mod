@@ -257,6 +257,111 @@ class TweakifyModConfigScreenTest {
 		}
 	}
 
+	// 搜索必须能看到折叠分组里的子项，否则搜索父项后子项永远打不开。
+	@Test
+	void searchConfigsIgnoreGroupExpansion() {
+		try {
+			List<String> names = TweakifyModConfigScreen.searchConfigs(
+				TweakifyModConfigScreen.ConfigTab.FUNCTIONS).stream().map(IConfigBase::getName).toList();
+			assertTrue(names.contains("betterBlockPlacement"));
+			assertTrue(names.contains("betterBlockPlacementMode"));
+			assertTrue(names.contains("helpfulBlockSelection"));
+			assertTrue(names.indexOf("betterBlockPlacement") < names.indexOf("betterBlockPlacementMode"),
+				"搜索列表必须保持父项在子项之前的树顺序");
+		} finally {
+			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
+		}
+	}
+
+	// 父项命中时带上整组子项；子项命中时只补父级路径，不拉入无关兄弟项。
+	@Test
+	void searchResultsFollowGroupStructure() {
+		Set<String> parentMatch = TweakifyModConfigListWidget.expandMatchedNames(
+			Set.of("betterBlockPlacement"));
+		assertTrue(parentMatch.contains("betterBlockPlacementSneakBypass"));
+		assertTrue(parentMatch.contains("betterBlockPlacementMode"));
+		assertFalse(parentMatch.contains("helpfulBlockSelection"),
+			"辅助方块选区已成为独立根开关，不属于该分组");
+
+		Set<String> childMatch = TweakifyModConfigListWidget.expandMatchedNames(
+			Set.of("betterBlockPlacementMode"));
+		assertTrue(childMatch.contains("betterBlockPlacement"), "子项命中时应补父级路径");
+		assertFalse(childMatch.contains("betterBlockPlacementSneakBypass"),
+			"不应拉入未命中的兄弟项");
+	}
+
+	// 搜索结果显示为已展开、无折叠按钮，避免出现点了没反应的 [+]。
+	@Test
+	void searchResultsHideExpandButtons() {
+		try {
+			Set<String> included = TweakifyModConfigListWidget.expandMatchedNames(
+				Set.of("betterBlockPlacement"));
+			TweakifyModConfigScreen.markSearchVisible(included);
+			TweakifyModConfigScreen.NodeInfo info = TweakifyModConfigScreen.getNodeInfo(
+				TweakifyModConfigOptions.optionOf("betterBlockPlacement"));
+			assertNotNull(info);
+			assertFalse(info.hasChildren(), "搜索结果的父项不应再显示展开按钮");
+			assertTrue(info.expanded(), "搜索结果按已展开排版");
+			assertEquals(0, ConfigCatalog.depthOf("betterBlockPlacement"));
+			assertEquals(1, ConfigCatalog.depthOf("betterBlockPlacementMode"));
+		} finally {
+			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
+		}
+	}
+
+	// 只对纯文本搜索启用树感知；快捷键过滤（单独或与文本组合）完全交回 MaLiLib。
+	@Test
+	void treeSearchOnlyAppliesToPlainText() {
+		assertTrue(TweakifyModConfigListWidget.shouldUseTreeSearch(true, false, "better"));
+		assertFalse(TweakifyModConfigListWidget.shouldUseTreeSearch(true, true, "better"),
+			"文本与快捷键组合时不能补父子项");
+		assertFalse(TweakifyModConfigListWidget.shouldUseTreeSearch(true, true, ""),
+			"快捷键过滤不能被树感知扩展影响");
+		assertFalse(TweakifyModConfigListWidget.shouldUseTreeSearch(true, true, "   "));
+		assertFalse(TweakifyModConfigListWidget.shouldUseTreeSearch(false, false, ""));
+		assertFalse(TweakifyModConfigListWidget.shouldUseTreeSearch(true, false, "   "));
+	}
+
+	// 收藏标签不参与树扩展，否则会把未收藏的父子项带进结果。
+	@Test
+	void treeExpansionSkipsFavoritesTab() {
+		assertTrue(TweakifyModConfigListWidget.shouldApplyTreeExpansion(
+			TweakifyModConfigScreen.ConfigTab.ALL, true));
+		assertFalse(TweakifyModConfigListWidget.shouldApplyTreeExpansion(
+			TweakifyModConfigScreen.ConfigTab.FAVORITES, true));
+		assertFalse(TweakifyModConfigListWidget.shouldApplyTreeExpansion(
+			TweakifyModConfigScreen.ConfigTab.ALL, false));
+	}
+
+	// 收藏标签搜索仍只列收藏项：父项命中不带未收藏子项，子项命中也不补父级路径。
+	@Test
+	void favoritesSearchKeepsOnlyFavoritedOptions(@TempDir Path tempDir) {
+		TweakifyModConfig previousConfig = TweakifyMod.CONFIG;
+		TweakifyModConfig config = new TweakifyModConfig();
+		config.general.favoriteIncludeChildren = false;
+		TweakifyMod.CONFIG = config;
+		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
+		try {
+			assertTrue(FavoritesStorage.toggleConfigFavorite("betterBlockPlacement"));
+			List<String> names = TweakifyModConfigScreen.searchConfigs(
+				TweakifyModConfigScreen.ConfigTab.FAVORITES).stream().map(IConfigBase::getName).toList();
+			assertEquals(List.of("betterBlockPlacement"), names,
+				"收藏标签搜索不能把未收藏的子项带进来");
+
+			assertFalse(FavoritesStorage.toggleConfigFavorite("betterBlockPlacement"));
+			assertTrue(FavoritesStorage.toggleConfigFavorite("betterBlockPlacementMode"));
+			names = TweakifyModConfigScreen.searchConfigs(
+				TweakifyModConfigScreen.ConfigTab.FAVORITES).stream().map(IConfigBase::getName).toList();
+			assertEquals(List.of("betterBlockPlacementMode"), names,
+				"收藏标签搜索不能给命中的子项补父级路径");
+		} finally {
+			AsyncFileWriter.drain(15_000L);
+			FavoritesStorage.clearForTest();
+			TweakifyMod.CONFIG = previousConfig;
+			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
+		}
+	}
+
 	@Test
 	void newFeaturesAreClassifiedInRequestedTabs() {
 		assertTab("betterBoneMeal", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
@@ -305,6 +410,12 @@ class TweakifyModConfigScreenTest {
 		assertTab("betterAdvancementsCopyId", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("betterAdvancementsTabSpacing", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("betterAdvancementsPinnedTabSpacing", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		// 辅助方块选区是功能标签下的独立根开关（与更好的方块放置分开放置）。
+		assertTab("helpfulBlockSelection", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		// 聊天签名隐藏与自定义游戏图标归入修改标签。
+		assertTab("hideChatSigning", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("customWindowIcon", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		assertTab("customWindowIconPath", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("bedFallDamageFix", TweakifyModConfigScreen.ConfigTab.FIXING);
 		// 物品分组的子设置同样归入功能标签。
 		assertTab("itemGroupsShowItems", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);

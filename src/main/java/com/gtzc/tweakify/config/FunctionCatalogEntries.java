@@ -210,6 +210,8 @@ final class FunctionCatalogEntries {
 		entries.add(function("betterBlockPlacement", true));
 		entries.add(child("betterBlockPlacement", "betterBlockPlacementSneakBypass"));
 		entries.add(child("betterBlockPlacement", "betterBlockPlacementMode"));
+		// 辅助方块选区（功能标签）：独立的选取范围开关，与放置覆盖分开放置。
+		entries.add(function("helpfulBlockSelection", true));
 		// 更好的骨粉催熟（功能标签）
 		entries.add(function("betterBoneMeal", true));
 		entries.add(child("betterBoneMeal", "boneMealSugarCane"));

@@ -413,6 +413,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 可覆盖的植物范围：flowers（仅花草）/ crops（含作物）/ all（全部植物）。
 	public volatile String betterBlockPlacementMode = TweakifyModConfig.BLOCK_PLACEMENT_FLOWERS;
 
+	// 辅助方块选区：手持同类方块时放宽栅栏、铁栏杆、锁链等细长方块的选取范围。
+	public volatile boolean helpfulBlockSelection = false;
+
 	// 更好的骨粉催熟：让骨粉像基岩版一样作用于甘蔗与一格高的花。
 	public volatile boolean betterBoneMeal = false;
 
@@ -646,6 +649,7 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile String hotkeyQuickBurnItem = "";
 	public volatile String hotkeyCustomBlockOutline = "";
 	public volatile String hotkeyBetterBlockPlacement = "";
+	public volatile String hotkeyHelpfulBlockSelection = "";
 	public volatile String hotkeyAutoStepUp = "";
 	public volatile String hotkeyBetterClimbing = "";
 	public volatile String hotkeyForceCrawl = "";

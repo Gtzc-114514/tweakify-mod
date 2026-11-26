@@ -186,7 +186,10 @@
 		"LivingEntitySpearEnchantMixin",
 		"MobSpearJabKnockbackMixin",
 		"AdvancementTabAccessor",
-		"AdvancementsScreenSmoothScrollMixin"
+		"AdvancementsScreenSmoothScrollMixin",
+		"BlockStateHelpfulSelectionMixin",
+		"ChatComponentHideSigningMixin",
+		"ToastManagerHideSigningMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"

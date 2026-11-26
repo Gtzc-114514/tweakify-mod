@@ -8,6 +8,7 @@ import fi.dy.masa.malilib.config.IConfigBoolean;
 import fi.dy.masa.malilib.config.IConfigDouble;
 import fi.dy.masa.malilib.config.IConfigInteger;
 import fi.dy.masa.malilib.config.IConfigOptionList;
+import fi.dy.masa.malilib.config.IConfigString;
 import fi.dy.masa.malilib.config.IConfigStringList;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import net.minecraft.SharedConstants;
@@ -97,10 +98,22 @@ class TweakifyModConfigOptionsTest {
 	}
 
 	@Test
+	void stringOptionDefaultsMatchConfigDefaults() {
+		TweakifyModConfig defaults = new TweakifyModConfig();
+		for (IConfigBase option : TweakifyModConfigOptions.ALL_OPTIONS) {
+			if (option instanceof IConfigString stringOption) {
+				assertEquals(defaults.getString(option.getName()), stringOption.getDefaultStringValue(),
+					"default string value mismatch for " + option.getName());
+			}
+		}
+	}
+
+	@Test
 	void everyOptionMapsToConfigField() {
 		for (IConfigBase option : TweakifyModConfigOptions.ALL_OPTIONS) {
 			// 纯快捷键项（如 openConfigGui）没有同名的值字段。
 			if (option instanceof IConfigBoolean || option instanceof IConfigStringList
+				|| option instanceof IConfigString
 				|| option instanceof IConfigOptionList || option instanceof IConfigInteger
 				|| option instanceof IConfigDouble) {
 				assertTrue(TweakifyModConfig.hasField(option.getName()),

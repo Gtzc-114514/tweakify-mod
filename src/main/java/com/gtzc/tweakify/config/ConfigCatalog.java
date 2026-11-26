@@ -201,6 +201,22 @@ public final class ConfigCatalog {
 		return CHILDREN.getOrDefault(parent, List.of());
 	}
 
+	// 配置项到根的父链（不含自身），顺序为直接父项到根；不在目录中的项返回空列表。
+	public static List<String> ancestorsOf(String name) {
+		List<String> ancestors = new ArrayList<>();
+		Entry entry = BY_NAME.get(name);
+		while (entry != null && entry.parent() != null) {
+			ancestors.add(entry.parent());
+			entry = BY_NAME.get(entry.parent());
+		}
+		return ancestors;
+	}
+
+	// 配置项在树中的缩进层级：父链长度。
+	public static int depthOf(String name) {
+		return ancestorsOf(name).size();
+	}
+
 	// 界面分类：自身及祖先中第一个登记的分类，未登记时为“通用”（返回 null）。
 	public static Tab tabOf(String name) {
 		Entry entry = BY_NAME.get(name);

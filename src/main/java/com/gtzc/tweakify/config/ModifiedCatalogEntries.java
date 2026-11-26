@@ -228,5 +228,10 @@ final class ModifiedCatalogEntries {
 		entries.add(child("betterAdvancements", "betterAdvancementsCopyId"));
 		entries.add(child("betterAdvancements", "betterAdvancementsTabSpacing"));
 		entries.add(child("betterAdvancements", "betterAdvancementsPinnedTabSpacing"));
+		// 隐藏聊天签名（修改标签）：隐藏签名颜色条/标记与未验证聊天提示。
+		entries.add(modified("hideChatSigning", true));
+		// 自定义游戏图标（修改标签）：使用指定路径的 PNG 作为窗口与任务栏图标。
+		entries.add(modified("customWindowIcon", true));
+		entries.add(child("customWindowIcon", "customWindowIconPath"));
 	}
 }

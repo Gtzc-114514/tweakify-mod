@@ -6,6 +6,7 @@ import fi.dy.masa.malilib.config.options.ConfigBoolean;
 import fi.dy.masa.malilib.config.options.ConfigBooleanHotkeyed;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
 import fi.dy.masa.malilib.config.options.ConfigOptionList;
+import fi.dy.masa.malilib.config.options.ConfigString;
 import fi.dy.masa.malilib.config.options.ConfigStringList;
 
 /**
@@ -581,4 +582,16 @@ public final class ModifiedConfigOptions {
 		"betterAdvancementsPinnedTabSpacing", TweakifyModConfig.DEFAULT_ADVANCEMENT_PINNED_TAB_SPACING,
 		TweakifyModConfig.MIN_ADVANCEMENT_TAB_SPACING,
 		TweakifyModConfig.MAX_ADVANCEMENT_TAB_SPACING).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 隐藏聊天签名：仅客户端视觉隐藏签名提示，不移除签名本身。
+	public static final ConfigBoolean HIDE_CHAT_SIGNING = new ConfigBoolean(
+		"hideChatSigning", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 自定义游戏图标：使用指定路径的 PNG 作为窗口与任务栏图标。
+	public static final ConfigBoolean CUSTOM_WINDOW_ICON = new ConfigBoolean(
+		"customWindowIcon", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 图标文件路径：空路径表示不加载；支持绝对路径与相对游戏目录的路径。
+	public static final ConfigString CUSTOM_WINDOW_ICON_PATH = new ConfigString(
+		"customWindowIconPath", "").apply(ConfigOptionKeys.GENERAL_KEY);
 }

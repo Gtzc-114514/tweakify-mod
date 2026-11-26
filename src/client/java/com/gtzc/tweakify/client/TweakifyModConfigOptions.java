@@ -12,6 +12,7 @@ import fi.dy.masa.malilib.config.IConfigDouble;
 import fi.dy.masa.malilib.config.IConfigHandler;
 import fi.dy.masa.malilib.config.IConfigInteger;
 import fi.dy.masa.malilib.config.IConfigOptionList;
+import fi.dy.masa.malilib.config.IConfigString;
 import fi.dy.masa.malilib.config.IConfigStringList;
 import fi.dy.masa.malilib.config.options.ConfigBase;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
@@ -200,6 +201,7 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	static {
 		for (IConfigBase option : ALL_OPTIONS) {
 			if (option instanceof IConfigBoolean || option instanceof IConfigStringList
+				|| option instanceof IConfigString
 				|| option instanceof IConfigOptionList || option instanceof IConfigInteger
 				|| option instanceof IConfigDouble) {
 				requireField(option.getName());
@@ -257,6 +259,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 				optionList.getDefaultOptionListValue().fromString(config.getString(name)));
 		} else if (option instanceof IConfigStringList list) {
 			list.setStrings(config.getStringList(name));
+		} else if (option instanceof IConfigString stringOption) {
+			String value = config.getString(name);
+			stringOption.setStringValue(value == null ? "" : value);
 		} else if (option instanceof IConfigInteger integer) {
 			integer.setIntegerValue(config.getInteger(name));
 		} else if (option instanceof IConfigDouble doubleOption) {
@@ -278,6 +283,8 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 			config.setString(name, optionList.getOptionListValue().getStringValue());
 		} else if (option instanceof IConfigStringList list) {
 			config.setStringList(name, list.getStrings());
+		} else if (option instanceof IConfigString stringOption) {
+			config.setString(name, stringOption.getStringValue());
 		} else if (option instanceof IConfigInteger integer) {
 			config.setInteger(name, integer.getIntegerValue());
 		} else if (option instanceof IConfigDouble doubleOption) {

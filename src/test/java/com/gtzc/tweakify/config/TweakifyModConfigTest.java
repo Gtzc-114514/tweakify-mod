@@ -515,6 +515,10 @@ class TweakifyModConfigTest {
 		assertTrue(config.functions.disabledSpawnAllowPlayerSpawn, "player spawning should be allowed by default");
 		assertEquals("", config.functions.hotkeyPiglinGoldArmorSwap);
 		assertEquals("", config.functions.hotkeyChatInputMemory);
+		assertFalse(config.functions.helpfulBlockSelection, "helpful block selection should be off by default");
+		assertFalse(config.modified.hideChatSigning, "chat signing hiding should be off by default");
+		assertFalse(config.modified.customWindowIcon, "custom window icon should be off by default");
+		assertEquals("", config.modified.customWindowIconPath, "icon path should be empty by default");
 	}
 
 	// 新功能的枚举字段同样需要清洗：非法模式回退。
@@ -531,6 +535,17 @@ class TweakifyModConfigTest {
 
 		assertEquals(TweakifyModConfig.PIGLIN_ARMOR_SWAP_AUTO, config.functions.piglinGoldArmorSwapMode,
 			"unsupported mode should fall back to auto");
+	}
+
+	// 图标路径只做首尾空白清洗；JSON null 回写为空字符串（空路径表示不加载图标）。
+	@Test
+	void loadSanitizesWindowIconPath() throws IOException {
+		Path path = configPath();
+		Files.writeString(path, "{\"customWindowIconPath\":\"  icons/icon.png  \"}");
+		assertEquals("icons/icon.png", TweakifyModConfig.load(path).modified.customWindowIconPath);
+
+		Files.writeString(path, "{\"customWindowIconPath\":null}");
+		assertEquals("", TweakifyModConfig.load(path).modified.customWindowIconPath);
 	}
 
 	// 新增的药水显示缩放百分比必须夹回 50 ~ 200。

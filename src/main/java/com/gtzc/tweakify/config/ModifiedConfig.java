@@ -44,7 +44,8 @@ public final class ModifiedConfig extends ConfigSection {
 			FieldSanitizer.of("visibleTradersFutureLevels", this::sanitizeVisibleTradersFutureLevels),
 			FieldSanitizer.of("visibleTradersMaxLockedOffers", this::sanitizeVisibleTradersMaxLockedOffers),
 			FieldSanitizer.of("enchantmentLevelArabicMinLevel", this::sanitizeEnchantmentArabicLevel),
-			FieldSanitizer.of("flatWorldSlimeSpawnBelowY", this::sanitizeFlatSlimeY));
+			FieldSanitizer.of("flatWorldSlimeSpawnBelowY", this::sanitizeFlatSlimeY),
+			FieldSanitizer.of("customWindowIconPath", this::sanitizeWindowIconPath));
 		// 启动期校验：新增数值/枚举字段忘记登记校验器时直接失败。
 		assertSanitizerCoverage(fieldNamesOf(this.sanitizers));
 	}
@@ -465,6 +466,16 @@ public final class ModifiedConfig extends ConfigSection {
 	// 只对正在飞行/滑翔的玩家取消速度上限。
 	public volatile boolean removeSpeedLimitOnlyFlying = false;
 
+	// 隐藏聊天签名：隐藏消息旁的签名颜色条/标记与进入服务器时的未验证聊天提示。
+	// 仅客户端视觉隐藏，不移除签名，也不阻止他人举报。
+	public volatile boolean hideChatSigning = false;
+
+	// 自定义游戏图标：使用指定路径的 PNG 作为窗口与任务栏图标。
+	public volatile boolean customWindowIcon = false;
+
+	// 图标文件路径：16 ~ 64 像素的 PNG，支持绝对路径或相对游戏目录的路径。
+	public volatile String customWindowIconPath = "";
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);
@@ -768,6 +779,21 @@ public final class ModifiedConfig extends ConfigSection {
 		LOGGER.warn("Clamping ironGolemRideMinecartMaxDistance from {} to {}",
 			ironGolemRideMinecartMaxDistance, clamped);
 		ironGolemRideMinecartMaxDistance = clamped;
+		return true;
+	}
+
+	// 修正图标路径：去掉首尾空白，JSON null 回写为空字符串（空路径表示不加载图标）。
+	private boolean sanitizeWindowIconPath() {
+		if (customWindowIconPath == null) {
+			LOGGER.warn("Replacing null customWindowIconPath with an empty path");
+			customWindowIconPath = "";
+			return true;
+		}
+		String trimmed = customWindowIconPath.trim();
+		if (trimmed.equals(customWindowIconPath)) {
+			return false;
+		}
+		customWindowIconPath = trimmed;
 		return true;
 	}
 }
