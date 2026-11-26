@@ -735,6 +735,35 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 > 备注：本次 main 与标签均直连推送首次成功，无需代理；本地构建的 jar 体积（1,126,661 字节）与 CI 产物略有差异，属打包时间戳差异，不影响版本校验。
 > Release 正文已通过固定 IP 的 GitHub API 以 UTF-8 复核，与仓库 notes 完全一致；PowerShell 控制台直接显示中文乱码属终端解码问题。
 
+## 验证记录：v1.2.4 发布
+
+本次为功能版本（辅助方块选区、聊天签名隐藏、自定义游戏图标，以及配置搜索父子项修复与「更好的方块放置」分组整理）；`release.yml` 无改动：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `45857105733` |
+| 对应提交 | `221e9ba`（`v1.2.4` 标签提交；含 1.2.4 版本号、notes、README、版本索引与全部功能改动） |
+| 触发 | push tag `v1.2.4` |
+| 结论 | **success**，job 耗时 1 分 22 秒（run 1 分 26 秒） |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面 16 行均通过） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.2.4` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.2.4` 去前缀后与版本 `1.2.4` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.2.4` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.2.4.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | 正文以手写标题 `## Tweakify Mod 1.2.4` 开头，与仓库内 notes 逐字一致（953 字符），含 compare 链接 | ✅ |
+
+产物：`tweakify-mod-1.2.4.jar`（1,136,508 字节）、`tweakify-mod-1.2.4-sources.jar`（863,991 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `45857058805`，1 分 10 秒）同为 success。
+
+> 备注：本次 main 与标签均直连推送首次成功，无需代理；本地构建的 jar 体积（1,141,591 字节）与 CI 产物略有差异，属打包时间戳差异，不影响版本校验。
+> Release 正文已通过 GitHub CLI 以 UTF-8 复核，与仓库 notes 完全一致；PowerShell 控制台直接显示中文乱码属终端解码问题。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
