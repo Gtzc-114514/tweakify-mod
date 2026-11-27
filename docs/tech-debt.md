@@ -281,7 +281,8 @@
     `TweakifyModConfigOptions.flushPendingSaveNow` 自 2026-11-21 起只在配置锁内构建不可变 JSON 树
     （`ConfigStorage.toJsonTree(Map)`），提交时仍分配落盘序号；pretty printing（`GSON.toJson`）与
     磁盘 IO 都在写盘任务内执行，写盘线程不再读取配置字段值（只读 `TweakifyMod.config()` 返回的引用与路径）；
-    `writeSynchronously()` 保留主线程序列化作为退出兜底（见「实施记录」）。
+    `writeSynchronously()` 不再在主线程执行：2026-11-27 起退出保存改为异步（见下方实施记录
+    第 3 条），主线程只提交最终快照，同步兜底移到收尾线程超时分支。
   已有基础设施：单线程 `AsyncFileWriter`、提交序号与 `Snapshot` 回滚；T2 的摘要去重已闭环，
   T3 的扫描快照方案与本条独立，不在此重复。
 - **影响**：几何重建默认在内容变化时以 6/12 Hz 触发，高上限（256/256）时单次可达十万级顶点计算
@@ -309,8 +310,10 @@
      `AtomicReference` + generation 发布，渲染线程只读当前快照；旧任务在开始与发布两侧丢弃；
      缓存失效仍按引用相等，保留 T2 摘要去重；
   2. 配置（已完成，2026-11-21）：写盘任务内基于不可变 JSON 树执行 pretty printing，提交序号仍在
-     提交时分配；退出兜底的 `writeSynchronously()` 保留主线程序列化；
-  3. 两项分开提交，不合并为一个改动。
+     提交时分配；退出兜底的 `writeSynchronously()` 保留序列化；
+  3. 退出保存异步化（2026-11-27）：`CLIENT_STOPPING` 只提交最终快照并调用 `shutdownAsync(30s)`，
+     非 daemon 收尾线程在后台排空；超时后先执行同步兜底再放弃，主线程不等待磁盘 IO；
+  4. 两项分开提交，不合并为一个改动。
 - **缓解措施**：几何继续用摘要去重 + LOD + 上限，用户侧可降低上限或关闭对应渲染功能。
 - **实施记录（2026-11-21，待提交）**：
   - 配置序列化：`ConfigStorage` 新增基于快照值表的 `toJsonTree(Map)` 与写盘重载

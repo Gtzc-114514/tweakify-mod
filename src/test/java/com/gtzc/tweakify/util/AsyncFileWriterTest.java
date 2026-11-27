@@ -186,4 +186,56 @@ class AsyncFileWriterTest {
 			executor.shutdownNow();
 		}
 	}
+
+	// 退出关闭必须不阻塞调用方：排队写盘还在执行时，shutdownAsync 应立即返回，
+	// 由非 daemon 收尾线程在后台等待队列排空。
+	@Test
+	void shutdownAsyncDoesNotBlockTheCaller() throws InterruptedException {
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		CountDownLatch started = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		try {
+			executor.execute(() -> {
+				started.countDown();
+				awaitQuietly(release, START_TIMEOUT_SECONDS);
+			});
+			assertTrue(started.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+				"the blocking task should start");
+
+			long begin = System.nanoTime();
+			AsyncFileWriter.shutdownAsync(executor, DRAIN_TIMEOUT_MILLIS);
+			long elapsedMillis = (System.nanoTime() - begin) / 1_000_000L;
+
+			assertTrue(elapsedMillis < 500L,
+				"shutdownAsync must return without waiting for the queued task, took " + elapsedMillis + " ms");
+		} finally {
+			release.countDown();
+			executor.shutdownNow();
+		}
+	}
+
+	// 排空超时后必须执行同步兜底，否则队尾的最新快照会被 shutdownNow 丢弃。
+	@Test
+	void shutdownAsyncRunsFallbackAfterTimeout() throws InterruptedException {
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		CountDownLatch started = new CountDownLatch(1);
+		CountDownLatch release = new CountDownLatch(1);
+		CountDownLatch fallbackRan = new CountDownLatch(1);
+		try {
+			executor.execute(() -> {
+				started.countDown();
+				awaitQuietly(release, START_TIMEOUT_SECONDS);
+			});
+			assertTrue(started.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+				"the blocking task should start");
+
+			AsyncFileWriter.shutdownAsync(executor, 100L, fallbackRan::countDown);
+
+			assertTrue(fallbackRan.await(START_TIMEOUT_SECONDS, TimeUnit.SECONDS),
+				"the synchronous fallback should run after the drain timeout");
+		} finally {
+			release.countDown();
+			executor.shutdownNow();
+		}
+	}
 }

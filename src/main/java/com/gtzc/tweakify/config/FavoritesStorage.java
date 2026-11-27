@@ -220,6 +220,22 @@ public final class FavoritesStorage {
 		}
 	}
 
+	// 客户端退出（非阻塞）：把当前快照提交到共享写盘队列后立即返回。
+	// 由 AsyncFileWriter.shutdownAsync 的非 daemon 收尾线程在后台排空队列。
+	public static synchronized void flushOnShutdownAsync() {
+		ensureLoaded();
+		Path path = path();
+		String json = toJson();
+		long sequence = ConfigStorage.nextWriteSequence();
+		if (!AsyncFileWriter.execute(() -> {
+			if (!ConfigStorage.writeAtomically(json, path, sequence)) {
+				LOGGER.warn("Failed to save favorites on shutdown: {}", path);
+			}
+		})) {
+			LOGGER.warn("File writer already shut down; favorites may not be saved on shutdown: {}", path);
+		}
+	}
+
 	// 测试钩子（生产代码不得调用）：清空内存并指向临时文件；首次查询时从该文件加载。
 	public static synchronized void resetForTest(Path path) {
 		CONFIG_FAVORITES.clear();

@@ -176,6 +176,8 @@
 | `quickRightClickShulkerBoxes` 打开潜影盒 | 潜影盒内容随物品读写；关闭界面时把内容写回原物品 | 布尔值 | 开 |
 | `quickRightClickEnderChest` 打开末影箱 | 使用玩家自己的末影箱空间 | 布尔值 | 开 |
 | `quickRightClickRequireSneak` 需要潜行 | 需要按住潜行键才触发，避免整理背包时误触 | 布尔值 | 关 |
+| `dropConfirm` 丢弃确认 | 按一次丢弃键只显示确认提示，3 秒内再按一次才真正丢弃；覆盖 Q 与 Ctrl+Q | 布尔值 | 关 |
+| `dropConfirmItems` 确认物品列表 | 只对列表内的物品启用确认；留空表示所有物品 | 字符串列表 | 空 |
 
 #### 实用工具
 
@@ -460,7 +462,7 @@
 </details>
 
 <details>
-<summary><b>通用 — 语言、快捷键与列表行为（20 项）</b></summary>
+<summary><b>通用 — 语言、快捷键与列表行为（26 项）</b></summary>
 
 | 功能 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
@@ -477,6 +479,7 @@
 | `malilibScrollMemory` MaLiLib 界面 | 记忆 MaLiLib 配置界面（含本模组配置界面）的滚动位置 | 布尔值 | 开 |
 | `modMenuScrollMemory` Mod Menu 列表 | 记忆 Mod Menu 模组列表的滚动位置；未安装 Mod Menu 时不生效 | 布尔值 | 开 |
 | `searchHighlight` 搜索关键词高亮 | 搜索命中的部分改用金色显示（本地化名称与英文配置键都高亮）；多个关键词用 `\|` 分隔 | 布尔值 | 开 |
+| `searchHighlightColor` 搜索高亮颜色 | 搜索命中片段的颜色：`gold` / `yellow` / `green` / `aqua` / `red` / `white` | 选项 | `gold` |
 | `smoothScroll` 平滑滚动与拖动 | 为配置界面列表、创造物品栏、聊天栏、Mod Menu 列表与原版进度界面启用平滑滚动；配置界面还支持按住左键拖动列表（从名称/空白处起拖、移动几像素生效，不影响按钮与滑块）；创造栏与物品分组兼容 | 布尔值 | 开 |
 | `smoothScrollConfigList` 配置界面列表 | 平滑滚动 + 左键拖动只作用于 MaLiLib 配置界面 | 布尔值 | 开 |
 | `smoothScrollCreative` 创造物品栏 | 创造栏滚动使用缓动过渡，并按像素平滑（自绘槽位底纹随内容上移，不再按整行跳） | 布尔值 | 开 |
@@ -484,6 +487,11 @@
 | `smoothScrollModMenu` Mod Menu 列表 | Mod Menu 模组列表平滑滚动；未安装 Mod Menu 时不生效 | 布尔值 | 开 |
 | `smoothScrollAdvancements` 进度界面 | 进度（成就）界面的进度树滚动使用平滑动画；原版进度界面与「更好的进度」界面都生效 | 布尔值 | 开 |
 | `smoothScrollDuration` 平滑时长 | 滚动动画收敛时长（30 ~ 400 毫秒）：越大越柔和、越小越跟手 | 整数 | 60 |
+| `logCleanup` 日志清理 | 启动时把 logs 目录里的日期编号归档清理到保留数量；latest.log 与未知文件永不删除 | 布尔值 | 关 |
+| `logCleanupKeepCount` 保留日志数量 | 保留最新的日志归档数量（0 ~ 100）；0 表示删除全部归档 | 整数 | 10 |
+| `logCleanupOnStartup` 启动时清理 | 在游戏启动时自动执行一次清理；下方「立刻清理」按钮始终可手动触发 | 布尔值 | 开 |
+| `startupTime` 启动时间 | 加载完成后在快捷栏上方显示本次游戏启动耗时（JVM uptime），每次启动只显示一次 | 布尔值 | 开 |
+| `startupTimeLog` 记录到日志 | 同时把启动耗时写入模组日志，便于排查启动变慢 | 布尔值 | 开 |
 
 </details>
 

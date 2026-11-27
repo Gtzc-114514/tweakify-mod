@@ -188,6 +188,22 @@ public final class AdvancementsStateStorage {
 		}
 	}
 
+	// 客户端退出（非阻塞）：把当前快照提交到共享写盘队列后立即返回。
+	// 由 AsyncFileWriter.shutdownAsync 的非 daemon 收尾线程在后台排空队列。
+	public static synchronized void flushOnShutdownAsync() {
+		ensureLoaded();
+		Path path = path();
+		String json = toJson();
+		long sequence = ConfigStorage.nextWriteSequence();
+		if (!AsyncFileWriter.execute(() -> {
+			if (!ConfigStorage.writeAtomically(json, path, sequence)) {
+				LOGGER.warn("Failed to save advancement state on shutdown: {}", path);
+			}
+		})) {
+			LOGGER.warn("File writer already shut down; advancement state may not be saved on shutdown: {}", path);
+		}
+	}
+
 	// 包私有：测试之间重置内存状态与路径。
 	static synchronized void resetForTest(Path override) {
 		PINNED_TABS.clear();

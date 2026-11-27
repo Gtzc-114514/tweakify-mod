@@ -127,12 +127,22 @@ public final class ScrollMemory {
 		Map<String, Integer> snapshot = Map.copyOf(POSITIONS);
 		long sequence = WRITE_SEQUENCE.incrementAndGet();
 		dirty = false;
-		AsyncFileWriter.execute(() -> {
+		if (AsyncFileWriter.execute(() -> {
 			if (!saveSnapshotTo(path, snapshot, sequence)) {
 				// 失败保留待写标记：客户端 tick 或下一次界面关闭时重试。
 				dirty = true;
 			}
-		});
+		})) {
+			return;
+		}
+		// 队列已关闭（退出收尾已开始）：同步写这份快照，避免最后的滚动位置静默丢失。
+		long fallbackSequence = WRITE_SEQUENCE.incrementAndGet();
+		if (saveSnapshotTo(path, snapshot, fallbackSequence)) {
+			dirty = false;
+		} else {
+			dirty = true;
+			TweakifyMod.LOGGER.warn("Failed to save scroll memory after the writer was shut down");
+		}
 	}
 
 	// 包私有：同步写盘，供测试使用；写盘成功才清 dirty。
@@ -144,7 +154,7 @@ public final class ScrollMemory {
 		return true;
 	}
 
-	// 客户端退出：把最终位置提交到与异步写相同的串行队列并等待。
+	// 客户端退出（同步版）：仅供测试与诊断使用；生产退出路径改用 flushOnShutdownAsync。
 	// 提交序号保证：若等待超时、改为同步兜底写（更大序号），排队中的旧快照之后执行时会被跳过。
 	public static void flushOnShutdown() {
 		if (!dirty || !persistEnabled()) {
@@ -154,8 +164,8 @@ public final class ScrollMemory {
 		Path path = storagePath();
 		Map<String, Integer> snapshot = Map.copyOf(POSITIONS);
 		long sequence = WRITE_SEQUENCE.incrementAndGet();
-		// 退出路径不取消超时任务：由随后的 AsyncFileWriter.shutdown 等待队列排空，
-		// 避免慢磁盘下丢掉最后一次滚动位置。
+		// 同步兜底场景下执行器可能已经关闭：submitAndWait 直接返回 null，
+		// 随后用更大的序号同步写；排队中的旧快照会被落盘层 stale-skip 跳过。
 		Boolean written = AsyncFileWriter.submitAndWait(
 			() -> saveSnapshotTo(path, snapshot, sequence), 2000L, false);
 		if (Boolean.TRUE.equals(written)) {
@@ -168,6 +178,25 @@ public final class ScrollMemory {
 			} else {
 				TweakifyMod.LOGGER.warn("Failed to save scroll memory on shutdown");
 			}
+		}
+	}
+
+	// 客户端退出（非阻塞）：把最终位置提交到共享写盘队列后立即返回。
+	// 由 AsyncFileWriter.shutdownAsync 的非 daemon 收尾线程在后台排空队列。
+	public static void flushOnShutdownAsync() {
+		if (!dirty || !persistEnabled()) {
+			return;
+		}
+		ensureLoaded();
+		Path path = storagePath();
+		Map<String, Integer> snapshot = Map.copyOf(POSITIONS);
+		long sequence = WRITE_SEQUENCE.incrementAndGet();
+		if (!AsyncFileWriter.execute(() -> {
+			if (saveSnapshotTo(path, snapshot, sequence)) {
+				dirty = false;
+			}
+		})) {
+			TweakifyMod.LOGGER.warn("File writer already shut down; scroll memory may not be saved on shutdown");
 		}
 	}
 

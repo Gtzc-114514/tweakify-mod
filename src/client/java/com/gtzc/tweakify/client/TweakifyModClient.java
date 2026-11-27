@@ -111,19 +111,27 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			CustomWindowIcon.tick(client);
 		});
 
-		// 退出前排空后台写盘队列并同步落盘：
+		// 退出时提交最终状态（不阻塞关闭）：
 		// MaLiLib 只在世界加载完成时保存配置，客户端关闭时不会调用 IConfigHandler.save()。
-		// 顺序：先让滚动记忆在同一队列中写完，再让配置写最终快照；
-		// 配置超时兜底会关闭写盘线程并同步写，因此必须放在滚动记忆提交之后。
+		// 所有快照先提交到共享串行队列，再由 shutdownAsync 的非 daemon 收尾线程在后台排空；
+		// 关闭流程不再等待磁盘 IO，慢盘/杀软扫描不会卡住退出界面。
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+			long scheduleStartNanos = System.nanoTime();
 			BetterScreenshotManager.cancelHighResolution(client);
 			ScreenshotChatCards.clear();
-			ScrollMemory.flushOnShutdown();
-			// 收藏数据同样在写盘线程关闭前同步落盘一次。
-			FavoritesStorage.flushOnShutdown();
-			AdvancementsStateStorage.flushOnShutdown();
-			TweakifyModConfigOptions.flushOnShutdown();
-			AsyncFileWriter.shutdown(2000L);
+			try {
+				ScrollMemory.flushOnShutdownAsync();
+				FavoritesStorage.flushOnShutdownAsync();
+				AdvancementsStateStorage.flushOnShutdownAsync();
+				TweakifyModConfigOptions.flushOnShutdownAsync();
+			} finally {
+				// 30 秒预算：窗口已关闭，延长后台排空只推迟进程退出，不卡界面；
+				// 超时后用同步版本兜底，避免慢盘/杀软扫描下丢弃最后一份快照。
+				AsyncFileWriter.shutdownAsync(30_000L, TweakifyModClient::flushOnShutdownSynchronously);
+			}
+			// 这里只记录“提交”耗时；真正的写盘在后台继续，不再阻塞关闭。
+			TweakifyMod.LOGGER.info("Shutdown persistence scheduled in {} ms; writes continue in the background",
+				(System.nanoTime() - scheduleStartNanos) / 1_000_000L);
 		});
 
 		// 基岩高亮与攻击范围合并为一次世界叠加层提交，减少管线切换/draw call。
@@ -177,6 +185,15 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 					access.tweakify$setLockedOffers(payload.offers().orElse(null));
 				}
 			}));
+	}
+
+	// 收尾线程等待超时后的同步兜底：窗口已关闭，宁可多花一点时间也不能丢最后一份数据。
+	// 同步版使用更大的提交序号，后台被延迟执行的旧任务会被落盘层的 stale-skip 跳过。
+	private static void flushOnShutdownSynchronously() {
+		ScrollMemory.flushOnShutdown();
+		FavoritesStorage.flushOnShutdown();
+		AdvancementsStateStorage.flushOnShutdown();
+		TweakifyModConfigOptions.flushOnShutdown();
 	}
 
 	// 每 tick 按固定顺序驱动各状态机。

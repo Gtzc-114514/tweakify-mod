@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>同步保存（{@link #submitAndWait}）也提交到同一条队列：即使之前排队的旧写还没完成，
  * 本次保存也会排在它们之后，不会出现后台旧内容在同步写之后落盘、把新内容反向覆盖的情况。
- * 退出路径先写入最终状态，再用 {@link #shutdown(long)} 停止接受新任务并等待队列排空。
+ * 生产退出路径先提交最终快照，再用 {@link #shutdownAsync(long)} 停止接受新任务并在后台排空队列，
+ * 客户端关闭流程不等待磁盘 IO；{@link #shutdown(long)} 仅保留给测试与同步诊断路径。
  */
 public final class AsyncFileWriter {
 	// volatile：测试可临时替换执行器，验证“提交成功但回调无法入队”等关闭分支。
@@ -103,7 +104,8 @@ public final class AsyncFileWriter {
 	 * 提交一个带结果的写盘任务并等待完成。
 	 *
 	 * @param cancelOnTimeout 超时时是否取消尚未开始的任务。普通保存传 {@code true}；
-	 *     退出路径传 {@code false}，让任务留在队列里由 {@link #shutdown(long)} 等待完成。
+	 *     同步诊断/测试路径传 {@code false}，让任务留在队列里由调用方后续的 shutdown 等待完成。
+	 *     生产退出路径已不使用该方法，改用 {@link #shutdownAsync(long, Runnable)}。
 	 * @return 任务结果；{@code null} 表示执行器已关闭或等待超时
 	 */
 	public static Boolean submitAndWait(Callable<Boolean> task, long timeoutMillis, boolean cancelOnTimeout) {
@@ -176,7 +178,7 @@ public final class AsyncFileWriter {
 	}
 
 	// 等待此前提交的任务全部执行完；返回是否在超时前排空。
-	// 生产退出路径已改用 submitAndWait + shutdown；此方法主要供测试与诊断使用。
+	// 生产退出路径已改用 flushOnShutdownAsync + shutdownAsync；此方法主要供测试与诊断使用。
 	public static boolean drain(long timeoutMillis) {
 		try {
 			writer.submit(() -> {
@@ -204,6 +206,71 @@ public final class AsyncFileWriter {
 	// 返回 false 表示已执行 shutdownNow：排队任务可能被丢弃，调用方需要做同步兜底。
 	public static boolean shutdown(long timeoutMillis) {
 		return shutdown(writer, timeoutMillis);
+	}
+
+	/**
+	 * 退出时调用（不阻塞调用方）：停止接受新任务后立即返回，由非 daemon 收尾线程在后台等待队列排空。
+	 *
+	 * <p>写盘线程本身是 daemon：直接返回会被 JVM 退出杀掉，最后一份配置可能丢失；
+	 * 收尾线程是非 daemon，JVM 会等它（最多 {@code timeoutMillis}）结束后再退出。
+	 * 因此客户端关闭流程不等待磁盘 IO，同时尽量保证最后一次写盘完成。
+	 */
+	public static void shutdownAsync(long timeoutMillis) {
+		shutdownAsync(timeoutMillis, null);
+	}
+
+	/**
+	 * 退出时调用（不阻塞调用方）：超时后先执行 {@code timeoutFallback}（各存储的同步兜底写），
+	 * 再丢弃仍未开始的任务。正常磁盘下队列几毫秒就会排空，兜底不会执行。
+	 */
+	public static void shutdownAsync(long timeoutMillis, Runnable timeoutFallback) {
+		shutdownAsync(writer, timeoutMillis, timeoutFallback);
+	}
+
+	// 包私有：测试可注入独立执行器，避免关闭全局写盘器影响其它用例。
+	static void shutdownAsync(ExecutorService executor, long timeoutMillis) {
+		shutdownAsync(executor, timeoutMillis, null);
+	}
+
+	static void shutdownAsync(ExecutorService executor, long timeoutMillis, Runnable timeoutFallback) {
+		executor.shutdown();
+		try {
+			Thread finisher = new Thread(
+				() -> awaitDrain(executor, timeoutMillis, timeoutFallback), "tweakify-file-writer-finisher");
+			finisher.setDaemon(false);
+			finisher.start();
+		} catch (RuntimeException e) {
+			// 线程创建/启动失败（OOM、线程数上限）：队列已关闭，调用线程限时等待作为最后保底。
+			TweakifyMod.LOGGER.error("Failed to start the file-writer finisher; draining on the calling thread", e);
+			awaitDrain(executor, timeoutMillis, timeoutFallback);
+		}
+	}
+
+	private static void awaitDrain(ExecutorService executor, long timeoutMillis, Runnable timeoutFallback) {
+		try {
+			if (executor.awaitTermination(timeoutMillis, TimeUnit.MILLISECONDS)) {
+				return;
+			}
+			TweakifyMod.LOGGER.error(
+				"File writer did not drain within {} ms; falling back to synchronous writes", timeoutMillis);
+			runShutdownFallback(timeoutFallback);
+			executor.shutdownNow();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			runShutdownFallback(timeoutFallback);
+			executor.shutdownNow();
+		}
+	}
+
+	private static void runShutdownFallback(Runnable fallback) {
+		if (fallback == null) {
+			return;
+		}
+		try {
+			fallback.run();
+		} catch (RuntimeException e) {
+			TweakifyMod.LOGGER.error("Synchronous shutdown fallback failed", e);
+		}
 	}
 
 	// 包私有：测试可注入独立执行器；同样返回是否在超时前完全终止。
