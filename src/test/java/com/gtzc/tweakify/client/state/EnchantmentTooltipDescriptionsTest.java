@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -66,6 +67,46 @@ class EnchantmentTooltipDescriptionsTest {
 			registries, item, enchantments, type, true, language), "潜行门控变化失效");
 		assertNotEquals(base, EnchantmentTooltipDescriptions.cacheKey(
 			registries, item, enchantments, type, false, new Object()), "语言变化失效");
+	}
+
+	// 8 参重载：includeCurses 必须参与缓存键，切换后重建、切回命中。
+	@Test
+	void cacheKeyIncludesIncludeCursesAndInvalidatesOnToggle() {
+		Object registries = new Object();
+		Object item = new Object();
+		Object enchantments = new Object();
+		Object type = new Object();
+		Object language = new Object();
+		EnchantmentTooltipDescriptions.CacheKey withCurses = EnchantmentTooltipDescriptions.cacheKey(
+			registries, item, enchantments, type, false, true, language);
+		EnchantmentTooltipDescriptions.CacheKey withoutCurses = EnchantmentTooltipDescriptions.cacheKey(
+			registries, item, enchantments, type, false, false, language);
+
+		assertTrue(withCurses.includeCurses());
+		assertFalse(withoutCurses.includeCurses());
+		assertNotEquals(withCurses, withoutCurses, "包含诅咒开关变化必须失效");
+		assertEquals(withCurses, EnchantmentTooltipDescriptions.cacheKey(
+			registries, item, enchantments, type, false, true, language));
+	}
+
+	@Test
+	void appendCachedRebuildsWhenIncludeCursesChanges() {
+		List<Component> original = List.of(Component.literal("Sword"), Component.literal("Sharpness I"));
+		AtomicInteger builds = new AtomicInteger();
+		Supplier<List<EnchantmentTooltipDescriptions.DescriptionPlan>> builder = () -> {
+			builds.incrementAndGet();
+			return List.of(new EnchantmentTooltipDescriptions.DescriptionPlan(
+				"Sharpness I", Component.literal("  sharp")));
+		};
+		EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", false, true, "language", builder);
+		assertEquals(1, builds.get());
+		EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", false, false, "language", builder);
+		assertEquals(2, builds.get(), "包含诅咒开关变化后重新构建");
+		EnchantmentTooltipDescriptions.appendCached(original,
+			"registries", "item", "enchantments", "type", false, true, "language", builder);
+		assertEquals(2, builds.get(), "切回原键命中缓存，不重复构建");
 	}
 
 	@Test

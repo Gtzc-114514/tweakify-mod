@@ -314,4 +314,15 @@ class LocatorBarHeadsTest {
 		assertTrue(vanillaBottom > letterInkTop, "原版位置会与字母相交");
 	}
 
+	// 名字淡入/淡出状态属于跨帧缓存，reset 必须一并清理，避免测试间残留与同名玩家跳过淡入。
+	@Test
+	void resetCachesClearsNameFadeState() {
+		LocatorBarHeads.markNameFadeStateForTest("Alice", 123L, true);
+		assertEquals(2, LocatorBarHeads.nameFadeStateSizeForTest(),
+			"START 与 FADE_IN 各一条");
+		LocatorBarHeads.resetCachesForTest();
+		assertEquals(0, LocatorBarHeads.nameFadeStateSizeForTest(),
+			"reset 必须清理名字淡入状态");
+	}
+
 }

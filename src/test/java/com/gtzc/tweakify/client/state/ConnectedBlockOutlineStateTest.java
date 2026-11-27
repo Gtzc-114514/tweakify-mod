@@ -293,6 +293,67 @@ class ConnectedBlockOutlineStateTest {
 		assertSameShape(playerOne, playerTwo);
 	}
 
+	// 门全高开关切换：缓存键包含该配置，关闭时不得复用开启状态的形状，重新开启后回到原形状。
+	@Test
+	void mergedShapeCacheInvalidatesWhenDoorFullHeightToggles() {
+		BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
+			.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+		BlockState upper = lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER);
+		BlockGetter level = levelOf(Map.of(POS, lower, POS.above(), upper));
+		TweakifyModConfig previous = TweakifyMod.config();
+		TweakifyModConfig enabled = new TweakifyModConfig();
+		TweakifyModConfig disabled = new TweakifyModConfig();
+		disabled.modified.connectedBlockOutlineDoorFullHeight = false;
+		try {
+			TweakifyModTestSupport.installConfig(enabled);
+			VoxelShape fullHeight = ConnectedBlockOutlineState.mergedShape(lower, POS, level);
+			assertNotNull(fullHeight);
+
+			TweakifyModTestSupport.installConfig(disabled);
+			assertNull(ConnectedBlockOutlineState.mergedShape(lower, POS, level),
+				"关闭门全高后不能复用开启状态的形状");
+
+			TweakifyModTestSupport.installConfig(enabled);
+			VoxelShape again = ConnectedBlockOutlineState.mergedShape(lower, POS, level);
+			assertNotNull(again, "重新开启后应恢复合并形状");
+			assertSame(fullHeight, again, "重新开启命中开启状态自己的缓存条目");
+		} finally {
+			TweakifyModTestSupport.installConfig(previous);
+			ConnectedBlockOutlineState.resetCacheForTest();
+		}
+	}
+
+	// 类别开关关闭时 mergedShape 提前返回，不应把 null 写进缓存；重新开启必须恢复原形状。
+	@Test
+	void categorySwitchDoesNotPoisonCache() {
+		BlockState left = Blocks.CHEST.defaultBlockState()
+			.setValue(ChestBlock.TYPE, ChestType.LEFT)
+			.setValue(ChestBlock.FACING, Direction.NORTH);
+		BlockPos partner = ChestBlock.getConnectedBlockPos(POS, left);
+		BlockState right = left.setValue(ChestBlock.TYPE, ChestType.RIGHT);
+		BlockGetter level = levelOf(Map.of(POS, left, partner, right));
+		TweakifyModConfig previous = TweakifyMod.config();
+		TweakifyModConfig enabled = new TweakifyModConfig();
+		TweakifyModConfig disabled = new TweakifyModConfig();
+		disabled.modified.connectedBlockOutlineChests = false;
+		try {
+			TweakifyModTestSupport.installConfig(enabled);
+			VoxelShape merged = ConnectedBlockOutlineState.mergedShape(left, POS, level);
+			assertNotNull(merged);
+
+			TweakifyModTestSupport.installConfig(disabled);
+			assertNull(ConnectedBlockOutlineState.mergedShape(left, POS, level),
+				"关闭箱子类别后不再返回合并形状");
+
+			TweakifyModTestSupport.installConfig(enabled);
+			assertSame(merged, ConnectedBlockOutlineState.mergedShape(left, POS, level),
+				"重新开启命中原缓存，且缓存未被关闭状态的 null 污染");
+		} finally {
+			TweakifyModTestSupport.installConfig(previous);
+			ConnectedBlockOutlineState.resetCacheForTest();
+		}
+	}
+
 	// 无缓存等价性：reset 后的重建结果与缓存命中结果完全一致。
 	@Test
 	void mergedShapeCacheMatchesUncachedRebuild() {

@@ -370,6 +370,18 @@ public final class LocatorBarHeads {
 		INCLUDED_NAMES.reset();
 		EXCLUDED_NAMES.reset();
 		NAME_WIDTHS.reset();
+		NAME_FADE_START.clear();
+		NAME_FADE_IN.clear();
+	}
+
+	// 包私有：模拟名字淡入/淡出状态，验证 reset 不会残留（渲染路径依赖 GuiGraphics，单测不进入）。
+	static void markNameFadeStateForTest(String name, long start, boolean fadeIn) {
+		NAME_FADE_START.put(name, start);
+		NAME_FADE_IN.put(name, fadeIn);
+	}
+
+	static int nameFadeStateSizeForTest() {
+		return NAME_FADE_START.size() + NAME_FADE_IN.size();
 	}
 
 	// 名单解析结果缓存：内容未变时复用已解析列表，配置变化时重新解析。
