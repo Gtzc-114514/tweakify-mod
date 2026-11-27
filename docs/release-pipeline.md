@@ -792,6 +792,38 @@ v1.0.2 之后累积的 CI 改动在本次发布首次真实生效，版本一致
 
 > 备注：本地构建 jar 体积（1,166,938 字节）与 CI 产物略有差异，属打包时间戳差异，不影响版本校验。Release 正文由 `docs/release-notes/v1.2.6.md` 提供，与仓库内文件一致。
 
+## 验证记录：v1.2.7 发布
+
+本次为功能版本（消耗品优化、雕刻书架可视化、禁用玩家盔甲渲染、快速滚动、NBT 自动补全与
+更好的盔甲架，以及配置 v5 迁移、旁观者交互与跨维度快照修复）；`release.yml` 无改动：
+
+| 项 | 值 |
+| --- | --- |
+| Run ID | `46079866115` |
+| 对应提交 | `d96a91d`（`v1.2.7` 标签提交；含 1.2.7 版本号、notes、README、版本索引） |
+| 触发 | push tag `v1.2.7` |
+| 结论 | **success**，job 耗时 1 分 20 秒 |
+| 步骤结果 | `release.yml` 定义的 **11 个步骤全部通过**（CI 界面 17 行均通过） |
+
+关键验证点：
+
+| 步骤 | 验证内容 | 结果 |
+| --- | --- | --- |
+| `resolve mod version` | 从 `gradle.properties` 解析出 `1.2.7` | ✅ |
+| `verify tag matches mod version` | 标签 `v1.2.7` 去前缀后与版本 `1.2.7` 一致 | ✅ |
+| `verify jar mod version` | jar 内 `fabric.mod.json` 的 `1.2.7` 与版本一致 | ✅ |
+| `resolve release notes` | 找到非空的 `docs/release-notes/v1.2.7.md`，`body_path` 生效 | ✅ |
+| `create GitHub Release` | Release 已创建（非 draft / 非 prerelease），正文使用手写 notes | ✅ |
+
+产物：`tweakify-mod-1.2.7.jar`（1,212,300 字节）、`tweakify-mod-1.2.7-sources.jar`（923,629 字节）。
+
+同时 main 分支 push 触发的 `build.yml`（run `46079849787`，build 1 分 04 秒、Windows compile 49 秒）
+同为 success。
+
+> 备注：release 的 `build` 步骤包含服务端 GameTest，与单测一并通过；本地构建 jar 体积
+> （1,218,035 字节）与 CI 产物略有差异，属打包时间戳差异，不影响版本校验。
+> Release 正文由 `docs/release-notes/v1.2.7.md` 提供，与仓库内文件一致。
+
 ## 已知但决定不改的点
 
 | # | 位置 | 内容 | 不修理由 |
