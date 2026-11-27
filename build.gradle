@@ -55,7 +55,7 @@ loom {
 
 // T1：重建真实 LevelChunk 的 server GameTest；`check`/`build` 会自动执行。
 // 注意：runGameTest 不可缓存，每次 build 会启动真实服务端（本地约 20~30 秒）；
-// 仅改文档或网络受限时可用 `./gradlew build -x runGameTest` 跳过。
+// 仅改文档或网络受限时可用 `./gradlew build -PskipGameTest` 跳过（CI 不传该参数，仍执行）。
 // 这里只启用 server GameTest，不启用 client GameTest，因此不涉及 eula 配置。
 fabricApi {
 	configureTests {
@@ -63,6 +63,14 @@ fabricApi {
 		modId = "tweakify-mod-test"
 		enableGameTests = true
 		enableClientGameTests = false
+	}
+}
+
+// 快捷跳过：只禁用 runGameTest 的执行，保留任务注册与 check 依赖，
+// 避免 `-x runGameTest` 因任务名由插件生成而失效（任务不存在时 -x 也会报错）。
+if (project.hasProperty('skipGameTest')) {
+	tasks.matching { it.name == 'runGameTest' }.configureEach {
+		enabled = false
 	}
 }
 

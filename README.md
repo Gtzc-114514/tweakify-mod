@@ -153,7 +153,8 @@
 ## 🛠️ 构建与测试
 
 ```bash
-./gradlew build          # 编译 + 打包
+./gradlew build          # 编译 + 打包（含 GameTest）
+./gradlew build -PskipGameTest  # 同上，但跳过 GameTest（仅改文档或离线时）
 ./gradlew test           # 单元测试
 ./gradlew runClient      # 启动开发客户端
 ```
