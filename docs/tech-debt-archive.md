@@ -294,3 +294,34 @@
 - **回归条件**：Windows runner 编译失败、`LockedTradesPayload` 协议变更无回归、
   新增配置版本迁移未在 `ConfigMigration` 接线、功能表与 `ConfigCatalog` 不一致、
   CI 误传 `-PskipGameTest`、纯规则类重新引入静态字段时，重开本条。
+
+<a id="t12"></a>
+## T12 详情（已修复）：类初始化访问注册表导致的第三方 mixin 循环崩溃
+
+- **修复前现状**：`TweakifyMod` 的静态字段 `DEFAULTS` 在类初始化阶段调用
+  `TweakifyModConfig.createDefaultInstance()`，后者填充默认物品列表：扫描
+  `BuiltInRegistries.BLOCK/ITEM` 并用 `Identifier.tryParse` 规范化物品 ID。
+  与 ETF（Entity Texture Features）同装时，`Identifier` 校验会被其 mixin 回调：
+  ETF 配置的 Gson 枚举序列化调用 `Component.getString()` → `Language.getOrDefault`
+  → Tweakify 的 `Language.overrideLanguage` mixin → `LanguageOverrideState.translate`
+  → `TweakifyMod.config()`，在 `TweakifyMod` 类初始化未完成时重入，形成初始化循环，
+  启动崩溃（日志栈：`TweakifyMod.<clinit>` → `DefaultItemLists.lightSourceItemIds`
+  → `BuiltInRegistries.<clinit>` → ETF → `Language` → `TweakifyMod.<clinit>`）。
+- **原影响**：与 ETF 等会在注册表初始化期间回调语言系统的模组同装时，游戏无法启动；
+  单独安装或注册表先完成初始化时不复现，属于跨模组初始化顺序问题。
+- **约束（长期）**：生产代码的静态字段/静态初始化块**不得访问 `BuiltInRegistries`**，
+  也不得调用会间接触发注册表或语言系统的 API（`Identifier.tryParse`/
+  `withDefaultNamespace`、`Component.getString` 等）。类初始化只允许纯字段初始化与
+  不依赖游戏状态的计算；需要注册表的扫描、ID 规范化与默认值填充，必须放到
+  `load()`、`onInitialize` 或首次业务调用（并用缓存/懒加载控制成本）。
+- **采用方案**：新增 `TweakifyModConfig.createPlaceholderInstance()`，只做字段初始化与
+  `rebuildCache()`（不填充默认列表、不扫描注册表、不解析 ID），`TweakifyMod.DEFAULTS`
+  改用它；真实默认列表仍由 `load()` 在模组初始化完成后填充；新增
+  `TweakifyModPlaceholderConfigTest` 断言占位实例的三个默认列表为空。
+- **修复记录**：`af0862c`（v1.2.5.1），发布说明见
+  [`docs/release-notes/v1.2.5.1.md`](release-notes/v1.2.5.1.md)。
+- **验证**：`gradlew test` 886 例、`gradlew loaderTest` 2 例、`gradlew build`（6 GameTest）
+  全部通过；GitHub Actions `build` 与 `Windows compile` 均 success；v1.2.5.1 的
+  Release 工作流通过并产出 jar。
+- **回归条件**：新增静态初始化/静态字段访问注册表或 Identifier、默认列表填充重新
+  进入类初始化路径、或再次出现第三方模组语言回调导致的启动崩溃时，重开本条。
