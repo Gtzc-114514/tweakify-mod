@@ -218,7 +218,8 @@ public final class ChatSelectionState {
 	}
 
 	// 鼠标 x 对应的字符插入位置：按前缀宽度缓存查表，落在字符左半时取前一个位置。
-	private static int charIndexAt(int[] widths, String text, double localX) {
+	// 包私有供单测：输入只依赖宽度表与文本，不触碰 Minecraft 实例。
+	static int charIndexAt(int[] widths, String text, double localX) {
 		if (localX <= 0) {
 			return 0;
 		}
