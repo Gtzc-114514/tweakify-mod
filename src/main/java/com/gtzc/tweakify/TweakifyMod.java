@@ -14,10 +14,12 @@ public class TweakifyMod implements ModInitializer {
 	// 与模组 ID 同名，日志会带上模组名便于排查。
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-	// 默认实例：配置加载完成前（以及加载失败时）的安全兜底，保证 config() 恒非 null。
+	// 占位默认实例：配置加载完成前（以及加载失败时）的安全兜底，保证 config() 恒非 null。
+	// 只做字段初始化与缓存重建，不填充默认物品列表：本类初始化可能被语言 mixin 在
+	// 注册表初始化期间回调，扫描注册表会与第三方 mixin（如 ETF）形成初始化循环。
 	// 加载完成前按默认值生效（不再依赖 null 回退）；isConfigLoaded() 只用于阻止默认值
 	// 在 onInitialize 之前回写磁盘或同步界面，不参与功能判定。
-	private static final TweakifyModConfig DEFAULTS = TweakifyModConfig.createDefaultInstance();
+	private static final TweakifyModConfig DEFAULTS = TweakifyModConfig.createPlaceholderInstance();
 
 	// volatile：/tweakify 命令在集成服务端线程执行，客户端线程同时在读配置。
 	// 字段私有：读取统一走 config()，写入只发生在 onInitialize 与测试接缝。

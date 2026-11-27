@@ -821,10 +821,19 @@ public class TweakifyModConfig {
 	private transient boolean cachedHighlightPreset3;
 
 	// 默认实例：不读盘，列表与缓存按 load() 的默认分支初始化。
-	// 供 TweakifyMod 在配置加载完成前充当安全兜底；调用方不得修改这个共享实例。
+	// 供测试或注册表就绪后的调用方使用；调用方不得修改这个共享实例。
 	public static TweakifyModConfig createDefaultInstance() {
 		TweakifyModConfig config = new TweakifyModConfig();
 		config.applyDefaultItemLists();
+		config.rebuildCache();
+		return config;
+	}
+
+	// 轻量占位实例：只做字段初始化与缓存重建，不填充默认物品列表（不扫描注册表、
+	// 不解析物品 ID）。供 TweakifyMod 类初始化阶段兜底：类初始化可能被语言 mixin
+	// 在注册表初始化期间回调，重活会与第三方 mixin 形成初始化循环。
+	public static TweakifyModConfig createPlaceholderInstance() {
+		TweakifyModConfig config = new TweakifyModConfig();
 		config.rebuildCache();
 		return config;
 	}
