@@ -24,5 +24,10 @@ final class OptimizationCatalogEntries {
 		entries.add(child("signTextOptimization", "signTextOptimizationCachedText"));
 		entries.add(child("signTextOptimization", "signTextOptimizationSkipTicking"));
 		entries.add(child("signTextOptimization", "signTextOptimizationSkipFiltering"));
+		// 消耗品优化（优化标签）：客户端本地完成进食/饮用，取消等待服务器往返的空档。
+		entries.add(optimization("consumableOptimization", true));
+		entries.add(child("consumableOptimization", "consumableOptimizationInstantFeedback"));
+		entries.add(child("consumableOptimization", "consumableOptimizationSuppressServerFeedback"));
+		entries.add(child("consumableOptimization", "consumableOptimizationSkipHandSwapAnimation"));
 	}
 }

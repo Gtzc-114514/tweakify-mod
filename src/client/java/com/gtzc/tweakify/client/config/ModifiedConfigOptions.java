@@ -507,6 +507,14 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean ARMOR_STAND_ARMS_ONLY_SMALL = new ConfigBoolean(
 		"armorStandArmsOnlySmall", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 禁用玩家盔甲渲染：玩家身上的盔甲层不再渲染。
+	public static final ConfigBoolean DISABLE_PLAYER_ARMOR_RENDERING = new ConfigBoolean(
+		"disablePlayerArmorRendering", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 子开关：只隐藏其他玩家的盔甲，保留自己第三人称的装备。
+	public static final ConfigBoolean PLAYER_ARMOR_RENDERING_OTHER_PLAYERS_ONLY = new ConfigBoolean(
+		"playerArmorRenderingOtherPlayersOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 隐藏物品展示框：装有物品时只渲染物品，不渲染外框。
 	public static final ConfigBoolean HIDE_ITEM_FRAMES = new ConfigBoolean(
 		"hideItemFrames", false).apply(ConfigOptionKeys.GENERAL_KEY);

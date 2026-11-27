@@ -230,6 +230,11 @@
 | `betterScreenshotF9` F9 高清截图 | 按 F9 临时把窗口与主渲染目标切到 3840×2160，按 4K 重新渲染后截图；1K 屏幕也能输出真实 4K 细节，截图后恢复原窗口 | 布尔值 | 关 |
 | `betterScreenshotFormat` 截图输出格式 | F2 与 F9 统一使用 `png` / `jpg` / `tga` / `bmp` | 选项 | `png` |
 | `chunkCenterIndicator` 区块中心指示 | 原版区块边界显示（F3+G）开启时，在所在区块中心补一条白色竖线；关闭区块边界时本项不生效 | 布尔值 | 关 |
+| `chiseledBookshelfVisualizer` 雕刻书架可视化 | 准星指向雕刻书架时，在准星下方按槽位显示书本名称与附魔；单人/局域网主机读取服务端最新内容，远程服务器只显示客户端已知的书本，未知格显示「内容未知」 | 布尔值 | 关 |
+| `chiseledBookshelfVisualizerScale` 面板缩放 | 书籍面板的缩放百分比（50 ~ 200，100 = 原始大小） | 整数 | 100 |
+| `chiseledBookshelfVisualizerMaxDistance` 检测距离 | 准星识别雕刻书架的最大距离（2 ~ 10 格） | 整数 | 5 |
+| `chiseledBookshelfVisualizerShowAllSlots` 显示全部格子 | 显示全部 6 格；关闭后只显示准星所指的一格 | 布尔值 | 开 |
+| `chiseledBookshelfVisualizerShowEnchantments` 显示附魔名称 | 附魔书在名称下方追加附魔名称与等级 | 布尔值 | 开 |
 
 #### 方块与实体渲染
 
@@ -331,6 +336,8 @@
 | 功能 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | `armorStandArms` 盔甲架手臂 | 所有盔甲架默认显示手臂；单人/局域网下可直接把物品放上双手；远程服务器只影响本地渲染 | 布尔值 | 关 |
+| `disablePlayerArmorRendering` 禁用玩家盔甲渲染 | 不再渲染玩家身上的盔甲层（含自己第三人称）；手持物品、披风、生物与盔甲架保持原版 | 布尔值 | 关 |
+| `playerArmorRenderingOtherPlayersOnly` 只隐藏其他玩家 | 开启后保留自己第三人称的盔甲显示，只隐藏其他玩家的盔甲 | 布尔值 | 关 |
 | `hideItemFrames` 隐藏物品展示框 | 展示框里装有物品时只渲染物品、不渲染外框；空展示框保持原样；只影响本地渲染 | 布尔值 | 关 |
 
 #### 世界创建提示
@@ -451,13 +458,17 @@
 </details>
 
 <details>
-<summary><b>优化 — MiniHUD 掉帧与告示牌文本优化（3 项）</b></summary>
+<summary><b>优化 — MiniHUD 掉帧、告示牌文本与消耗品优化（7 项）</b></summary>
 
 | 功能 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | `miniHudFpsOptimization` MiniHUD 掉帧优化 | 把 MiniHUD 的 HUD 行刷新间隔放宽到 150ms，减少重复重算造成的掉帧；仍保持在渲染线程执行，避免并发访问；需要安装 MiniHUD | 布尔值 | 关 |
 | `miniHudRefreshIntervalMs` 刷新间隔 | HUD 行刷新间隔（50 ~ 1000 毫秒）；越大越省性能、数字刷新越慢 | 整数 | 150 |
 | `signTextOptimization` 告示牌文本优化 | 缓存原始/过滤文本状态并跳过客户端告示牌空 tick；开启后告示牌渲染不显示过滤文本 | 布尔值 | 关 |
+| `consumableOptimization` 消耗品优化 | 客户端本地完成进食与饮用，不再等待服务器往返确认；高延迟下不再卡在进食动画里；只在远程服务器生效，单人/局域网主机保持原版 | 布尔值 | 关 |
+| `consumableOptimizationInstantFeedback` 本地立即反馈 | 进食音效、粒子与打嗝在本地立即播放，不等服务端确认 | 布尔值 | 开 |
+| `consumableOptimizationSuppressServerFeedback` 抑制服务端重复反馈 | 吃掉服务器随后回放的完成事件与重复音效，避免同一口食物出现两次音效与粒子 | 布尔值 | 开 |
+| `consumableOptimizationSkipHandSwapAnimation` 跳过切换手动画 | 吃完同一堆叠里的一件后，手部物品直接替换，不播放过渡动画 | 布尔值 | 开 |
 
 </details>
 

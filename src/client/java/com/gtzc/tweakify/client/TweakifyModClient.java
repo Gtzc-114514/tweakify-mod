@@ -7,6 +7,7 @@ import com.gtzc.tweakify.client.config.TestingConfigOptions;
 import com.gtzc.tweakify.client.config.TweakifyModConfigOptions;
 import com.gtzc.tweakify.client.render.AttackRangeState;
 import com.gtzc.tweakify.client.render.BetterScreenshotManager;
+import com.gtzc.tweakify.client.render.ChiseledBookshelfVisualizer;
 import com.gtzc.tweakify.client.render.CustomWindowIcon;
 import com.gtzc.tweakify.client.render.ExplosionRangeState;
 import com.gtzc.tweakify.client.render.LocatorCompass;
@@ -15,6 +16,7 @@ import com.gtzc.tweakify.client.render.StatusEffectTimerRenderer;
 import com.gtzc.tweakify.client.render.WorldOverlayRenderer;
 import com.gtzc.tweakify.client.render.BlockMarkerScanner;
 import com.gtzc.tweakify.client.state.ChatInputMemoryState;
+import com.gtzc.tweakify.client.state.ConsumableOptimization;
 import com.gtzc.tweakify.client.state.CopyIdFeature;
 import com.gtzc.tweakify.client.state.ElytraFireworkState;
 import com.gtzc.tweakify.client.state.EnchantmentTooltipDescriptions;
@@ -93,6 +95,9 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			ScreenshotChatCards.clear();
 			// 附魔描述计划缓存键含 RegistryAccess/Component：断线时主动释放。
 			EnchantmentTooltipDescriptions.clearCache();
+			// 消耗品优化与书架可视化的会话内状态：断线后不能带入下一个服务器。
+			ConsumableOptimization.reset();
+			ChiseledBookshelfVisualizer.clear();
 		});
 		// 配置写盘节流后的兜底：tick 结束时提交尚未写盘的修改，并把后台写盘结果取回客户端线程；
 		// 命令改值后也在这里把 MaLiLib 选项同步一次（服务端线程 → 客户端线程）。
@@ -143,6 +148,11 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			Identifier.fromNamespaceAndPath(TweakifyMod.MOD_ID, "locator_compass"),
 			LocatorCompass::renderElement);
 		TweakifyMod.LOGGER.info("Locator compass registered via HudElementRegistry.addLast");
+
+		// 雕刻书架可视化：准星指向雕刻书架时，在准星下方按槽位显示书本内容。
+		HudElementRegistry.addLast(
+			Identifier.fromNamespaceAndPath(TweakifyMod.MOD_ID, "chiseled_bookshelf_visualizer"),
+			ChiseledBookshelfVisualizer::renderElement);
 
 		// 不依赖 Mod Menu 也能打开配置界面（Mod Menu 是可选依赖）。
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
@@ -212,6 +222,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		PiglinArmorSwapState.tick(client);
 		AttackRangeState.tick(client);
 		ExplosionRangeState.tick(client);
+		// 雕刻书架可视化：解析准星目标，必要时向集成服务端请求最新内容。
+		ChiseledBookshelfVisualizer.tick(client);
 		// 设备就绪后记录一次渲染后端，便于排查 Vulkan/OpenGL 差异。
 		logRenderBackendOnce();
 		// 远程服务器下服务端类功能不会生效，提示一次避免以为是开关失效。

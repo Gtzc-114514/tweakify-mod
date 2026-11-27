@@ -37,6 +37,18 @@ public final class OptimizationConfig extends ConfigSection {
 	// 子开关：告示牌渲染跳过文本过滤（会忽略服务器过滤后的文本）。
 	public volatile boolean signTextOptimizationSkipFiltering = true;
 
+	// 消耗品优化：客户端本地完成进食/饮用，不再等服务器往返确认（仅远程服务器生效）。
+	public volatile boolean consumableOptimization = false;
+
+	// 子开关：本地立即播放进食音效与粒子，不等服务器反馈。
+	public volatile boolean consumableOptimizationInstantFeedback = true;
+
+	// 子开关：吃掉服务器延迟到达的完成事件与重复音效。
+	public volatile boolean consumableOptimizationSuppressServerFeedback = true;
+
+	// 子开关：吃完最后一个物品并自动切换时跳过快照式手部动画。
+	public volatile boolean consumableOptimizationSkipHandSwapAnimation = true;
+
 	// HUD 行刷新间隔（毫秒，50 ~ 1000，默认 150）。
 	public volatile int miniHudRefreshIntervalMs = TweakifyModConfig.DEFAULT_MINIHUD_REFRESH_INTERVAL_MS;
 

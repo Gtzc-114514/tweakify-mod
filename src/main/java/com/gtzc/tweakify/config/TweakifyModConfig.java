@@ -724,6 +724,14 @@ public class TweakifyModConfig {
 	public static final int MAX_MINIHUD_REFRESH_INTERVAL_MS = 1000;
 	public static final int DEFAULT_MINIHUD_REFRESH_INTERVAL_MS = 150;
 
+	// 雕刻书架可视化：HUD 面板缩放百分比（50 ~ 200，100 = 原始大小）与检测距离（2 ~ 10 格）。
+	public static final int MIN_CHISELED_BOOKSHELF_HUD_SCALE = 50;
+	public static final int MAX_CHISELED_BOOKSHELF_HUD_SCALE = 200;
+	public static final int DEFAULT_CHISELED_BOOKSHELF_HUD_SCALE = 100;
+	public static final int MIN_CHISELED_BOOKSHELF_MAX_DISTANCE = 2;
+	public static final int MAX_CHISELED_BOOKSHELF_MAX_DISTANCE = 10;
+	public static final int DEFAULT_CHISELED_BOOKSHELF_MAX_DISTANCE = 5;
+
 	// 使用物品时的移动减速保留百分比（0 ~ 100，默认 0 = 完全取消）。
 	public static final int MIN_USE_ITEM_SLOWDOWN_KEEP_PERCENT = 0;
 	public static final int MAX_USE_ITEM_SLOWDOWN_KEEP_PERCENT = 100;

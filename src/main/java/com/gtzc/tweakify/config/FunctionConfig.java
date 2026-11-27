@@ -44,6 +44,8 @@ public final class FunctionConfig extends ConfigSection {
 			FieldSanitizer.of("barrierVisibilityMaxMarkers", this::sanitizeBarrierMarkerLimit),
 			new FieldSanitizer(List.of("barrierVisibilityScanRadius", "barrierVisibilityParticleInterval"),
 				this::sanitizeBarrierScanAndInterval),
+			FieldSanitizer.of("chiseledBookshelfVisualizerScale", this::sanitizeChiseledBookshelfScale),
+			FieldSanitizer.of("chiseledBookshelfVisualizerMaxDistance", this::sanitizeChiseledBookshelfDistance),
 			FieldSanitizer.of("autoStepUpHeight", this::sanitizeAutoStepUpHeight),
 			FieldSanitizer.of("netherPortalTeleportDelayTicks", this::sanitizeNetherPortalDelayTicks),
 			FieldSanitizer.of("piglinGoldArmorSwapRange", this::sanitizePiglinSwapRange),
@@ -403,6 +405,24 @@ public final class FunctionConfig extends ConfigSection {
 	// 区块中心指示：原版区块边界显示（F3+G）开启时，在所在区块中心补一条竖线。
 	public volatile boolean chunkCenterIndicator = false;
 	public volatile String hotkeyChunkCenterIndicator = "";
+
+	// 雕刻书架可视化：准星指向雕刻书架时，在准星下方显示 6 格书本内容。
+	public volatile boolean chiseledBookshelfVisualizer = false;
+	public volatile String hotkeyChiseledBookshelfVisualizer = "";
+
+	// 面板缩放百分比（50 ~ 200，100 = 原始大小）。
+	public volatile int chiseledBookshelfVisualizerScale =
+		TweakifyModConfig.DEFAULT_CHISELED_BOOKSHELF_HUD_SCALE;
+
+	// 检测距离（2 ~ 10 格）。
+	public volatile int chiseledBookshelfVisualizerMaxDistance =
+		TweakifyModConfig.DEFAULT_CHISELED_BOOKSHELF_MAX_DISTANCE;
+
+	// 显示全部 6 格；关闭时只显示准星所指的一格。
+	public volatile boolean chiseledBookshelfVisualizerShowAllSlots = true;
+
+	// 附魔书在名称下方列出附魔名称。
+	public volatile boolean chiseledBookshelfVisualizerShowEnchantments = true;
 
 	// 更好的放置覆盖：手持方块右键时可直接替换花、高草等植物（仅单人/局域网生效）。
 	public volatile boolean betterBlockPlacement = false;
@@ -1442,6 +1462,34 @@ public final class FunctionConfig extends ConfigSection {
 		}
 		LOGGER.warn("Ignoring unsupported held item info background: {}", heldItemInfoBackground);
 		heldItemInfoBackground = TweakifyModConfig.HELD_ITEM_INFO_BACKGROUND_VANILLA;
+		return true;
+	}
+
+	// 修正雕刻书架可视化的面板缩放百分比。
+	private boolean sanitizeChiseledBookshelfScale() {
+		int clamped = clampInt(chiseledBookshelfVisualizerScale,
+			TweakifyModConfig.MIN_CHISELED_BOOKSHELF_HUD_SCALE,
+			TweakifyModConfig.MAX_CHISELED_BOOKSHELF_HUD_SCALE);
+		if (clamped == chiseledBookshelfVisualizerScale) {
+			return false;
+		}
+		LOGGER.warn("Clamping chiseledBookshelfVisualizerScale from {} to {}",
+			chiseledBookshelfVisualizerScale, clamped);
+		chiseledBookshelfVisualizerScale = clamped;
+		return true;
+	}
+
+	// 修正雕刻书架可视化的检测距离。
+	private boolean sanitizeChiseledBookshelfDistance() {
+		int clamped = clampInt(chiseledBookshelfVisualizerMaxDistance,
+			TweakifyModConfig.MIN_CHISELED_BOOKSHELF_MAX_DISTANCE,
+			TweakifyModConfig.MAX_CHISELED_BOOKSHELF_MAX_DISTANCE);
+		if (clamped == chiseledBookshelfVisualizerMaxDistance) {
+			return false;
+		}
+		LOGGER.warn("Clamping chiseledBookshelfVisualizerMaxDistance from {} to {}",
+			chiseledBookshelfVisualizerMaxDistance, clamped);
+		chiseledBookshelfVisualizerMaxDistance = clamped;
 		return true;
 	}
 

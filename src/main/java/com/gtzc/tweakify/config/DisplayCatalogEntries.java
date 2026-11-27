@@ -75,5 +75,11 @@ final class DisplayCatalogEntries {
 		entries.add(child("betterScreenshot", "betterScreenshotChatCard"));
 		// 区块中心指示：原版区块边界（F3+G）开启时，在所在区块中心补一条竖线。
 		entries.add(display("chunkCenterIndicator", true));
+		// 雕刻书架可视化：准星指向雕刻书架时，在准星下方显示 6 格书本内容。
+		entries.add(display("chiseledBookshelfVisualizer", true));
+		entries.add(child("chiseledBookshelfVisualizer", "chiseledBookshelfVisualizerScale"));
+		entries.add(child("chiseledBookshelfVisualizer", "chiseledBookshelfVisualizerMaxDistance"));
+		entries.add(child("chiseledBookshelfVisualizer", "chiseledBookshelfVisualizerShowAllSlots"));
+		entries.add(child("chiseledBookshelfVisualizer", "chiseledBookshelfVisualizerShowEnchantments"));
 	}
 }

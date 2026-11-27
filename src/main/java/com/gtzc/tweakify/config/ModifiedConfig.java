@@ -436,6 +436,12 @@ public final class ModifiedConfig extends ConfigSection {
 	// 只对小型盔甲架强制显示手臂。
 	public volatile boolean armorStandArmsOnlySmall = false;
 
+	// 禁用玩家盔甲渲染：不再渲染玩家身上的盔甲层，手持物品与披风保持原版。
+	public volatile boolean disablePlayerArmorRendering = false;
+
+	// 子开关：只隐藏其他玩家的盔甲，保留自己第三人称的装备。
+	public volatile boolean playerArmorRenderingOtherPlayersOnly = false;
+
 	// 隐藏物品展示框：展示框内装有物品时只渲染物品，不再渲染外框；空展示框保持原样。
 	public volatile boolean hideItemFrames = false;
 

@@ -390,6 +390,32 @@ public final class FunctionConfigOptions {
 	public static final ConfigBooleanHotkeyed CHUNK_CENTER_INDICATOR = new ConfigBooleanHotkeyed(
 		"chunkCenterIndicator", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 雕刻书架可视化：准星指向雕刻书架时，在准星下方显示 6 格书本内容。
+	public static final ConfigBooleanHotkeyed CHISELED_BOOKSHELF_VISUALIZER = new ConfigBooleanHotkeyed(
+		"chiseledBookshelfVisualizer", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS)
+		.apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 面板缩放百分比（50 ~ 200，100 = 原始大小），使用滑条调节。
+	public static final ConfigInteger CHISELED_BOOKSHELF_VISUALIZER_SCALE = new ConfigInteger(
+		"chiseledBookshelfVisualizerScale", TweakifyModConfig.DEFAULT_CHISELED_BOOKSHELF_HUD_SCALE,
+		TweakifyModConfig.MIN_CHISELED_BOOKSHELF_HUD_SCALE,
+		TweakifyModConfig.MAX_CHISELED_BOOKSHELF_HUD_SCALE, true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 检测距离（2 ~ 10 格）。
+	public static final ConfigInteger CHISELED_BOOKSHELF_VISUALIZER_MAX_DISTANCE = new ConfigInteger(
+		"chiseledBookshelfVisualizerMaxDistance",
+		TweakifyModConfig.DEFAULT_CHISELED_BOOKSHELF_MAX_DISTANCE,
+		TweakifyModConfig.MIN_CHISELED_BOOKSHELF_MAX_DISTANCE,
+		TweakifyModConfig.MAX_CHISELED_BOOKSHELF_MAX_DISTANCE).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 显示全部 6 格；关闭时只显示准星所指的一格。
+	public static final ConfigBoolean CHISELED_BOOKSHELF_VISUALIZER_SHOW_ALL_SLOTS = new ConfigBoolean(
+		"chiseledBookshelfVisualizerShowAllSlots", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 附魔书在名称下方列出附魔名称。
+	public static final ConfigBoolean CHISELED_BOOKSHELF_VISUALIZER_SHOW_ENCHANTMENTS = new ConfigBoolean(
+		"chiseledBookshelfVisualizerShowEnchantments", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
 	// 更好的放置覆盖：可直接替换花、高草等植物。
 	public static final ConfigBooleanHotkeyed BETTER_BLOCK_PLACEMENT = new ConfigBooleanHotkeyed(
 		"betterBlockPlacement", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);

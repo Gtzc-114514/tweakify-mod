@@ -233,5 +233,8 @@ final class ModifiedCatalogEntries {
 		// 自定义游戏图标（修改标签）：使用指定路径的 PNG 作为窗口与任务栏图标。
 		entries.add(modified("customWindowIcon", true));
 		entries.add(child("customWindowIcon", "customWindowIconPath"));
+		// 禁用玩家盔甲渲染（修改标签）：玩家身上的盔甲层不再渲染。
+		entries.add(modified("disablePlayerArmorRendering"));
+		entries.add(child("disablePlayerArmorRendering", "playerArmorRenderingOtherPlayersOnly"));
 	}
 }

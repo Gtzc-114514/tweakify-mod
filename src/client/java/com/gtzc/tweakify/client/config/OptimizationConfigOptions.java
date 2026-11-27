@@ -38,4 +38,20 @@ public final class OptimizationConfigOptions {
 		"miniHudRefreshIntervalMs", TweakifyModConfig.DEFAULT_MINIHUD_REFRESH_INTERVAL_MS,
 		TweakifyModConfig.MIN_MINIHUD_REFRESH_INTERVAL_MS,
 		TweakifyModConfig.MAX_MINIHUD_REFRESH_INTERVAL_MS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 消耗品优化：客户端本地完成进食/饮用，不再等待服务器往返确认。
+	public static final ConfigBoolean CONSUMABLE_OPTIMIZATION = new ConfigBoolean(
+		"consumableOptimization", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 子开关：本地立即播放进食音效与粒子。
+	public static final ConfigBoolean CONSUMABLE_OPTIMIZATION_INSTANT_FEEDBACK = new ConfigBoolean(
+		"consumableOptimizationInstantFeedback", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 子开关：吃掉服务器延迟到达的完成事件与重复音效。
+	public static final ConfigBoolean CONSUMABLE_OPTIMIZATION_SUPPRESS_SERVER_FEEDBACK = new ConfigBoolean(
+		"consumableOptimizationSuppressServerFeedback", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 子开关：吃完最后一个物品时跳过手部切换动画。
+	public static final ConfigBoolean CONSUMABLE_OPTIMIZATION_SKIP_HAND_SWAP_ANIMATION = new ConfigBoolean(
+		"consumableOptimizationSkipHandSwapAnimation", true).apply(ConfigOptionKeys.GENERAL_KEY);
 }
