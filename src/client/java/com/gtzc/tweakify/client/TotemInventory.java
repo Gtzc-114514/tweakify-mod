@@ -27,7 +27,7 @@ public final class TotemInventory {
 	// 从背包取图腾并触发不死保护；返回是否触发（触发后由 mixin 取消原方法）。
 	public static boolean tryUseInventoryTotem(Player player) {
 		Inventory inventory = player.getInventory();
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean includeHotbar = config == null || config.modified.totemInventoryIncludeHotbar;
 		boolean hotbarFirst = config == null || config.modified.totemInventoryHotbarFirst;
 		int slot = findTotemSlot(inventory, Inventory.INVENTORY_SIZE, includeHotbar, hotbarFirst);

@@ -26,7 +26,7 @@ public class SpawnPlacementsMixin {
 	@ModifyReturnValue(method = "checkSpawnRules", at = @At("RETURN"))
 	private static boolean tweakify$blockDisabledSpawn(boolean original, EntityType<?> type,
 			ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos, RandomSource random) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && SpawnFeatureState.shouldBlockSpawn(
 			config.functions.disableSpecifiedMobSpawn, config.functions.disabledSpawnAllowPlayerSpawn,
 			config.isSpawnDisabled(type), reason, type)) {

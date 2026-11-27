@@ -30,7 +30,7 @@ public class ResourcePackWarnOnlyMixin {
 
 	@Inject(method = "handlePackSelection", at = @At("HEAD"), cancellable = true, require = 0)
 	private void tweakify$skipIncompatibleConfirm(CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableResourcePackCompatibilityCheck
 			|| !config.modified.resourcePackCompatibilityWarnOnly) {
 			return;

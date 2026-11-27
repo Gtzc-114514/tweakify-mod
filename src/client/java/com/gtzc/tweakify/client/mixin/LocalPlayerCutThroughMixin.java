@@ -39,7 +39,7 @@ public class LocalPlayerCutThroughMixin {
 	// 命中结果可能被其他模组包装；用返回值替换而不是取消回调，避免 CancellationException。
 	@ModifyReturnValue(method = "raycastHitResult", at = @At("RETURN"), require = 0)
 	private HitResult tweakify$cutThroughPlants(HitResult original, float partialTick, Entity camera) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		LocalPlayer self = (LocalPlayer) (Object) this;
 		if (config == null || !config.functions.swordCutThroughPlants || self.level() == null) {
 			return original;

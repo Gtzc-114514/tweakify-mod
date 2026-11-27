@@ -40,7 +40,7 @@ public final class LanguageOverrideState {
 
 	// 返回覆盖文本；null 表示不覆盖，调用方继续使用原版翻译。
 	public static String translate(String key) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || config.general.followSystemLanguage || key == null || !key.startsWith(KEY_PREFIX)) {
 			return null;
 		}

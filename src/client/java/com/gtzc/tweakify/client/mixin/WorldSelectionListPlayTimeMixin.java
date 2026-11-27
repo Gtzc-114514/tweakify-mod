@@ -25,7 +25,7 @@ public abstract class WorldSelectionListPlayTimeMixin {
 	@Inject(method = "fillLevels", at = @At("TAIL"))
 	private void tweakify$refreshPlayTime(String filter, List<LevelSummary> levels, CallbackInfo ci) {
 		WorldSelectionList list = (WorldSelectionList) (Object) this;
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (((WorldSelectionListAccessor) list).tweakify$entryType()
 			!= WorldSelectionList.EntryType.SINGLEPLAYER
 			|| config == null || !config.functions.savePlayTime) {

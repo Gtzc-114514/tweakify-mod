@@ -28,7 +28,7 @@ public abstract class AutoStepUpMixin {
 	@ModifyReturnValue(method = "maxUpStep", at = @At("RETURN"), require = 0)
 	private float tweakify$autoStepUp(float original) {
 		HookProbe.markOnce(TWEAKIFY$STEP_UP_PROBE, "autoStepUp");
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.autoStepUp
 			|| !((Object) this instanceof LocalPlayer player)) {
 			return original;

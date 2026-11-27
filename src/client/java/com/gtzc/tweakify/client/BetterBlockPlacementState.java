@@ -20,7 +20,7 @@ public final class BetterBlockPlacementState {
 	}
 
 	public static boolean canReplacePlant(BlockState state, BlockPlaceContext context) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.betterBlockPlacement || state == null || context == null) {
 			return false;
 		}

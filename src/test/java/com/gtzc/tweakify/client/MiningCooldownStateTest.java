@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,12 +92,12 @@ class MiningCooldownStateTest {
 
 	// 保存并恢复全局配置：范围限定在单个测试内，不受测试执行顺序影响。
 	private static void withConfig(TweakifyModConfig config, Runnable body) {
-		TweakifyModConfig previous = TweakifyMod.CONFIG;
-		TweakifyMod.CONFIG = config;
+		TweakifyModConfig previous = TweakifyMod.config();
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			body.run();
 		} finally {
-			TweakifyMod.CONFIG = previous;
+			TweakifyModTestSupport.installConfig(previous);
 		}
 	}
 }

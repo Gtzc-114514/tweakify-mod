@@ -31,7 +31,7 @@ public class CreativeModeInventoryScreenQuickBurnMixin {
 	private void tweakify$burnOnRightClick(Slot slot, int slotId, int mouseButton, ContainerInput type,
 											CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$CREATIVE_BURN_PROBE, "creativeQuickBurn");
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.quickBurnItem || mouseButton != 1 || type != ContainerInput.PICKUP) {
 			return;
 		}

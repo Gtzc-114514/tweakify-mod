@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ExplosionShakeMixin {
 	@Inject(method = "handleExplosion", at = @At("RETURN"))
 	private void tweakify$addExplosionShake(ClientboundExplodePacket packet, CallbackInfo callback) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.cameraMotion || !config.functions.cameraMotionScreenShake) {
 			return;
 		}

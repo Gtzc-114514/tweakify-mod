@@ -28,7 +28,7 @@ public final class ElytraFireworkState {
 	}
 
 	public static void tick(Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.elytraFireworkCooldown
 			|| client.player == null || client.level == null || !client.player.isFallFlying()) {
 			reset();

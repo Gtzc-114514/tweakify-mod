@@ -66,7 +66,7 @@ public final class HeldItemInfoRenderer {
 
 	// 当前功能是否可用（关闭或构建失败时 Mixin 回退到原版渲染）。
 	public static boolean isActive() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && config.functions.heldItemInfo && !failed;
 	}
 
@@ -114,7 +114,7 @@ public final class HeldItemInfoRenderer {
 
 	// 语言或字体切换后重新测量行宽：文本在绘制时按当前语言解析，缓存宽度必须同步更新。
 	public static void refreshFontMetrics(Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return;
 		}
@@ -188,7 +188,7 @@ public final class HeldItemInfoRenderer {
 	 * 重新构建提示行。返回是否与当前缓存不同（不同时调用方应重置淡出倒计时）。
 	 */
 	public static boolean update(Minecraft client, ItemStack stack) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.heldItemInfo || client.level == null) {
 			clear();
 			return false;
@@ -248,7 +248,7 @@ public final class HeldItemInfoRenderer {
 	 */
 	public static void render(GuiGraphicsExtractor graphics, Font font, int textY, int textColor,
 			Minecraft client, @Nullable Player cameraPlayer, int lastHealth, int displayHealth) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || lines.isEmpty()) {
 			return;
 		}
@@ -285,7 +285,7 @@ public final class HeldItemInfoRenderer {
 
 	// 动作栏消息与加高后的提示重叠时整体上移，行为与参考实现一致。
 	public static void shiftOverlayMessage(GuiGraphicsExtractor graphics) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.heldItemInfoPreventOverlap || lastTooltipY < 0) {
 			return;
 		}

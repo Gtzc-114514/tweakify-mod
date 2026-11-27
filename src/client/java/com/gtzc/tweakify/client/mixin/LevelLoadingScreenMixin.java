@@ -30,7 +30,7 @@ public class LevelLoadingScreenMixin {
 
 	@Inject(method = "tick", at = @At("HEAD"), require = 0)
 	private void tweakify$instantClose(CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.forceCloseLoadingScreen || !config.modified.forceCloseLoadingScreenInstant) {
 			return;
 		}

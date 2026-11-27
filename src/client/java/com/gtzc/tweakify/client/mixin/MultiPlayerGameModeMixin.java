@@ -62,7 +62,7 @@ public class MultiPlayerGameModeMixin {
 	@Inject(method = "startDestroyBlock", at = @At("HEAD"), require = 0)
 	private void tweakify$recordMiningTool(BlockPos pos, Direction direction, CallbackInfoReturnable<Boolean> cir) {
 		HookProbe.markOnce(TWEAKIFY$RECORD_MINING_TOOL_PROBE, "keepMiningProgressRecordTool");
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		Minecraft client = Minecraft.getInstance();
 		if (config != null && config.modified.keepMiningProgressOnItemSwitch
 			&& config.modified.keepMiningProgressSameToolOnly && client.player != null) {
@@ -76,7 +76,7 @@ public class MultiPlayerGameModeMixin {
 	@ModifyReturnValue(method = "sameDestroyTarget", at = @At("RETURN"), require = 0)
 	private boolean tweakify$keepMiningProgress(boolean original, BlockPos pos) {
 		HookProbe.markOnce(TWEAKIFY$SAME_TARGET_PROBE, "keepMiningProgressOnItemSwitch");
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.modified.keepMiningProgressOnItemSwitch) {
 			Minecraft client = Minecraft.getInstance();
 			double distanceSq = client.player == null ? 0.0

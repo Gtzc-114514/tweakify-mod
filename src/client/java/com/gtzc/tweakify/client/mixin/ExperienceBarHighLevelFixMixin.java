@@ -30,7 +30,7 @@ public abstract class ExperienceBarHighLevelFixMixin {
 			target = "Lnet/minecraft/client/player/LocalPlayer;getXpNeededForNextLevel()I"),
 		require = 0)
 	private int tweakify$keepExperienceBarVisible(int original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean enabled = config != null && config.fix.experienceBarHighLevelFix;
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$EXPERIENCE_BAR_HIGH_LEVEL_PROBE, "experienceBarHighLevelFix");

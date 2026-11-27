@@ -31,7 +31,7 @@ public final class CopyIdFeature {
 
 	public static void copyTargetId() {
 		Minecraft client = Minecraft.getInstance();
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		Target target = resolveTarget(client);
 		if (target == null) {
 			if (config == null || config.functions.copyItemIdChatMessage) {

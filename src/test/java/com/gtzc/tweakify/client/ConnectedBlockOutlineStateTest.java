@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
@@ -109,10 +110,10 @@ class ConnectedBlockOutlineStateTest {
 	// 关闭“门 2 格视觉高度”后，门不再合并，保持原版轮廓。
 	@Test
 	void doorFullHeightCanBeDisabled() {
-		TweakifyModConfig previous = TweakifyMod.CONFIG;
+		TweakifyModConfig previous = TweakifyMod.config();
 		TweakifyModConfig config = new TweakifyModConfig();
 		config.modified.connectedBlockOutlineDoorFullHeight = false;
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			BlockState lower = Blocks.OAK_DOOR.defaultBlockState()
 				.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
@@ -122,7 +123,7 @@ class ConnectedBlockOutlineStateTest {
 			assertNull(ConnectedBlockOutlineState.mergedShape(lower, POS, level),
 				"关闭 2 格视觉高度后门保持原版轮廓");
 		} finally {
-			TweakifyMod.CONFIG = previous;
+			TweakifyModTestSupport.installConfig(previous);
 		}
 	}
 

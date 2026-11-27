@@ -26,7 +26,7 @@ public class EntityTypeSpawnBlockMixin {
 	@WrapMethod(method = "create(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/EntitySpawnRequest;)Lnet/minecraft/world/entity/Entity;")
 	private Entity tweakify$blockDisabledSpawn(Level level, EntitySpawnRequest request,
 			Operation<Entity> original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || request == null) {
 			return original.call(level, request);
 		}

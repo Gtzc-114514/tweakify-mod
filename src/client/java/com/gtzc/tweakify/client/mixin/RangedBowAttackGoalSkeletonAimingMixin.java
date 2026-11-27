@@ -42,7 +42,7 @@ public abstract class RangedBowAttackGoalSkeletonAimingMixin {
 			shift = At.Shift.AFTER))
 	private void tweakify$lookAtTargetPitch(CallbackInfo ci,
 			@Local(ordinal = 0) LivingEntity target) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean enabled = config != null && config.fix.skeletonAimingFix;
 		if (enabled && config.fix.skeletonAimingOnlySkeletons
 			&& !(this.mob instanceof AbstractSkeleton)) {

@@ -147,7 +147,7 @@ public final class SpawnFeatureState {
 	// 接线重载：按当前全局配置与实体类型给出注入点应返回的难度。
 	// 纯函数版本保留在上方，单测与调用方仍可显式传参，不依赖全局配置。
 	public static Difficulty peacefulSpawnDifficulty(LevelAccessor level, EntityType<?> type) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return level.getDifficulty();
 		}
@@ -159,7 +159,7 @@ public final class SpawnFeatureState {
 	// 接线重载：实体类型是否被和平模式功能与列表放行。
 	// 只回答“是否放行”，原版返回值仍由调用方兜底（配置未加载时不放行）。
 	public static boolean shouldAllowPeacefulSpawn(EntityType<?> type) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && shouldAllowPeacefulSpawn(
 			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(type));

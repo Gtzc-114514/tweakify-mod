@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public interface GlyphInfoBoldMixin {
 	@ModifyReturnValue(method = "getBoldOffset", at = @At("RETURN"))
 	default float tweakify$betterBold(float original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.fix.betterBold) {
 			return original;
 		}

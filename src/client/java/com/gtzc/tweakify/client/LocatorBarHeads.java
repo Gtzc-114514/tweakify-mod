@@ -96,7 +96,7 @@ public final class LocatorBarHeads {
 	 */
 	public static DotResult renderDot(GuiGraphicsExtractor graphics, Minecraft client, Entity camera, Level level,
 									  TrackedWaypoint waypoint, int x, int y, int width, int height) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.locatorBarHeads) {
 			return DotResult.VANILLA;
 		}

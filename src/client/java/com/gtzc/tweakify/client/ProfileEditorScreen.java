@@ -126,7 +126,7 @@ public final class ProfileEditorScreen extends Screen {
 
 	private void saveCurrent() {
 		this.pendingDelete = null;
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		String name = this.nameField == null ? "" : this.nameField.getValue().trim();
 		if (config == null) {
 			this.setStatus(Component.translatable("tweakify-mod.command.profile.save_failed", name), ERROR_COLOR);
@@ -166,7 +166,7 @@ public final class ProfileEditorScreen extends Screen {
 			return;
 		}
 
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			this.setStatus(Component.translatable("tweakify-mod.command.profile.load_failed", name), ERROR_COLOR);
 			return;

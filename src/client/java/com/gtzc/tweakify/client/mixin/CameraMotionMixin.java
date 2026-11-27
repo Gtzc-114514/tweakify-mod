@@ -38,7 +38,7 @@ public class CameraMotionMixin {
 			CallbackInfo callback) {
 		Minecraft minecraft = Minecraft.getInstance();
 		LocalPlayer player = minecraft.player;
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.cameraMotion || player == null
 				|| state.isPanoramicMode) {
 			tweakify$cameraMotion.reset();

@@ -50,7 +50,7 @@ public final class BetterScreenshotManager {
 	}
 
 	public static void capture(Minecraft client, boolean fourK) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.betterScreenshot) {
 			return;
 		}

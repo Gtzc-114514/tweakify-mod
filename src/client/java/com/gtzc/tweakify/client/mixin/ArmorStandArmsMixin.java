@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public class ArmorStandArmsMixin {
 	@ModifyReturnValue(method = "showArms", at = @At("RETURN"))
 	private boolean tweakify$forceShowArms(boolean original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.armorStandArms) {
 			return original;
 		}

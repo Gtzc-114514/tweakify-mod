@@ -47,10 +47,10 @@ public final class WorldOverlayRenderer {
 		if (!bedrockVisible && !rangesVisible && !explosionsVisible && !sweepVisible) {
 			return;
 		}
-		boolean sphere = TweakifyMod.CONFIG != null
-			&& TweakifyModConfig.ATTACK_RANGE_DISPLAY_SPHERE.equals(TweakifyMod.CONFIG.functions.attackRangeDisplayMode);
-		boolean filled = TweakifyMod.CONFIG != null
-			&& TweakifyModConfig.ATTACK_RANGE_RENDER_FILLED.equals(TweakifyMod.CONFIG.functions.attackRangeRenderMode);
+		boolean sphere = TweakifyMod.config() != null
+			&& TweakifyModConfig.ATTACK_RANGE_DISPLAY_SPHERE.equals(TweakifyMod.config().functions.attackRangeDisplayMode);
+		boolean filled = TweakifyMod.config() != null
+			&& TweakifyModConfig.ATTACK_RANGE_RENDER_FILLED.equals(TweakifyMod.config().functions.attackRangeRenderMode);
 		if (filled) {
 			// 半透明实心模式：基岩、攻击/爆炸范围与横扫球体共用 debugFilledBox；
 			// 面框默认走线条网格，只有显式开启实心面框时才走 debugFilledBox。

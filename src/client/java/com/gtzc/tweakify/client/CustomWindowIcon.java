@@ -43,7 +43,7 @@ public final class CustomWindowIcon {
 
 	// 客户端 tick 入口：配置变化在下一 tick 生效。
 	static void tick(Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || client == null) {
 			return;
 		}

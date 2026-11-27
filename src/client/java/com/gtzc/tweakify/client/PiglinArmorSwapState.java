@@ -73,7 +73,7 @@ public final class PiglinArmorSwapState {
 	}
 
 	static void tick(Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		LocalPlayer player = client.player;
 		if (player == null || client.level == null) {
 			resetTracking();

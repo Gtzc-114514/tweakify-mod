@@ -37,7 +37,7 @@ public abstract class ClientPacketListenerRespawnHotbarMixin {
 	private void tweakify$restoreHotbarSlot(ClientboundRespawnPacket packet, CallbackInfo ci,
 			@Local(ordinal = 0) LocalPlayer oldPlayer,
 			@Local(ordinal = 1) LocalPlayer newPlayer) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (oldPlayer == null || newPlayer == null) {
 			return;
 		}

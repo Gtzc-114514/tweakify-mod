@@ -27,7 +27,7 @@ public abstract class WorldOpenFlowsExperimentalWarningMixin {
 		if (skipWarning || lifecycle != Lifecycle.experimental()) {
 			return;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableExperimentalWarning
 			|| !config.modified.experimentalWarningWorldCreate) {
 			return;

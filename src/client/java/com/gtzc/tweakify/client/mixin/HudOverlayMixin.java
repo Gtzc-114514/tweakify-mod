@@ -26,7 +26,7 @@ public class HudOverlayMixin {
 	// 紫色传送门覆盖层。
 	@Inject(method = "extractPortalOverlay", at = @At("HEAD"), cancellable = true)
 	private void tweakify$disablePortalOverlay(GuiGraphicsExtractor gui, float intensity, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.modified.disableNetherPortalEffect && config.modified.disableNetherPortalOverlay) {
 			ci.cancel();
 		}
@@ -36,7 +36,7 @@ public class HudOverlayMixin {
 	@Inject(method = "extractTextureOverlay", at = @At("HEAD"), cancellable = true)
 	private void tweakify$disablePowderSnowOverlay(GuiGraphicsExtractor gui, Identifier texture, float alpha,
 												   CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableOverlayEffects || !config.modified.disablePowderSnowOverlay) {
 			return;
 		}

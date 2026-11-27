@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class TotemInventoryMixin {
 	@Inject(method = "checkTotemDeathProtection", at = @At("HEAD"), cancellable = true)
 	private void tweakify$useInventoryTotem(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.totemFromInventory
 			|| source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 			return;

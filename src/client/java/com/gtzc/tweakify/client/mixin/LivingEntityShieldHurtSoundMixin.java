@@ -35,7 +35,7 @@ public abstract class LivingEntityShieldHurtSoundMixin {
 	private void tweakify$suppressFullyBlockedHurtSound(LivingEntity instance, DamageSource source,
 			Operation<Void> original, @Local(argsOnly = true) float damage,
 			@Local(index = 7) boolean blocked) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean enabled = config != null && config.fix.shieldBlockHurtSoundFix;
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$SHIELD_HURT_SOUND_PROBE, "shieldBlockHurtSoundFix");

@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.NonNullList;
@@ -52,14 +53,14 @@ class CreativeItemGroupsTest {
 	// 分组状态是进程级静态：逐用例准备/清理，避免顺序依赖。
 	@BeforeEach
 	void enableGrouping() {
-		TweakifyMod.CONFIG = new TweakifyModConfig();
-		TweakifyMod.CONFIG.functions.itemGroups = true;
+		TweakifyModTestSupport.installConfig(new TweakifyModConfig());
+		TweakifyMod.config().functions.itemGroups = true;
 	}
 
 	@AfterEach
 	void resetGroupState() {
 		CreativeItemGroups.clear();
-		TweakifyMod.CONFIG = null;
+		TweakifyModTestSupport.installConfig(null);
 	}
 
 	@Test
@@ -189,8 +190,8 @@ class CreativeItemGroupsTest {
 		ItemStack gold = stack(Items.GOLDEN_SWORD);
 		ItemStack diamond = stack(Items.DIAMOND_SWORD);
 
-		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+		TweakifyMod.config().functions.itemGroupsAddAll = false;
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
 			"minecraft:building_blocks|楼梯|stair",
 			"minecraft:combat|剑|sword"));
 
@@ -243,8 +244,8 @@ class CreativeItemGroupsTest {
 		assertEquals("minecraft:stone", CreativeItemGroups.normalizeTabId(":stone"));
 		assertEquals("minecraft:", CreativeItemGroups.normalizeTabId(":"));
 
-		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+		TweakifyMod.config().functions.itemGroupsAddAll = false;
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
 			"building_blocks|原木|_log",
 			"Building_Blocks|石制|stone"));
 
@@ -272,8 +273,8 @@ class CreativeItemGroupsTest {
 		ItemStack gold = stack(Items.GOLDEN_SWORD);
 		ItemStack diamond = stack(Items.DIAMOND_SWORD);
 
-		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+		TweakifyMod.config().functions.itemGroupsAddAll = false;
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
 			":combat|剑|sword"));
 		CreativeModeTab combat = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeModeTabs.COMBAT);
 		assertNotNull(combat, "COMBAT 标签页必须在注册表中");
@@ -290,8 +291,8 @@ class CreativeItemGroupsTest {
 	// 空命名空间/未注册 tabId 的告警端到端：配置行写错时切页后必须留下告警记录。
 	@Test
 	void colonPrefixedInvalidTabsWarnEndToEnd() {
-		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+		TweakifyMod.config().functions.itemGroupsAddAll = false;
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
 			":search|搜索|stone",
 			":hotbar|快捷栏|stone",
 			":inventory|背包|stone",
@@ -318,9 +319,9 @@ class CreativeItemGroupsTest {
 	// ":" / "minecraft:"（空 path）端到端：两行归一化到同一键后只登记一次。
 	@Test
 	void emptyPathTabsWarnEndToEnd() {
-		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
+		TweakifyMod.config().functions.itemGroupsAddAll = false;
 		// 先只放第一行，确认登记一次。
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
 			List.of(":|空路径|stone"));
 		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
 			CreativeModeTabs.BUILDING_BLOCKS));
@@ -331,7 +332,7 @@ class CreativeItemGroupsTest {
 		assertEquals(1, warnedAfterFirstRow, "第一行应登记一次");
 
 		// 追加归一化到同一键的第二行：去重集合不应增加。
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
 			":|空路径|stone",
 			"minecraft:|空路径2|stone"));
 		CreativeItemGroups.warnUnsupportedCustomGroups();
@@ -354,7 +355,7 @@ class CreativeItemGroupsTest {
 		ItemStack coarse = stack(Items.COARSE_DIRT);
 		ItemStack rooted = stack(Items.ROOTED_DIRT);
 
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of(
 			"minecraft:building_blocks|泥土|dirt"));
 
 		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
@@ -390,11 +391,11 @@ class CreativeItemGroupsTest {
 
 	// 每个非分类页都用它自己的 tabId 配置自定义组：门禁只排除某一类时其余页会成组。
 	private static void assertNonCategoryTabIgnored(ResourceKey<CreativeModeTab> key) {
-		TweakifyMod.CONFIG.functions.itemGroupsAddAll = false;
+		TweakifyMod.config().functions.itemGroupsAddAll = false;
 		CreativeModeTab tab = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(key);
 		assertNotNull(tab, "标签页必须已注册: " + key.identifier());
 		String tabId = BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab).toString();
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
 			List.of(tabId + "|测试|stone"));
 		CreativeItemGroups.clear();
 		CreativeItemGroups.beginTab(tab);
@@ -747,7 +748,7 @@ class CreativeItemGroupsTest {
 	// 告警副作用：beginTab 与 rebuildGroups 都会检查，功能关闭时跳过。
 	@Test
 	void warningsFireFromBeginTabAndRebuildGroupsOnlyWhenEnabled() {
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
 			List.of("minecraft:search|搜索|stone"));
 
 		// beginTab：切页时检查（与当前页类型无关）。
@@ -758,13 +759,13 @@ class CreativeItemGroupsTest {
 
 		// rebuildGroups：关闭功能时 beginTab 不检查，恢复后列表重建必须检查。
 		CreativeItemGroups.clear();
-		TweakifyMod.CONFIG.functions.itemGroups = false;
+		TweakifyMod.config().functions.itemGroups = false;
 		CreativeItemGroups.beginTab(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
 			CreativeModeTabs.SEARCH));
 		assertFalse(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:search"),
 			"功能关闭时不应检查");
 
-		TweakifyMod.CONFIG.functions.itemGroups = true;
+		TweakifyMod.config().functions.itemGroups = true;
 		CreativeItemGroups.stripMembers(
 			List.of(stack(Items.STONE), stack(Items.STONE_BRICKS), stack(Items.SMOOTH_STONE)));
 		assertTrue(CreativeItemGroups.isCustomTabWarnedForTest("minecraft:search"),
@@ -795,7 +796,7 @@ class CreativeItemGroupsTest {
 	void blankAndInvisibleRowsAreNotWarned() {
 		List<String> blankRows = List.of(
 			"", "   ", "\t", "\u3000", "\u00A0", "\u2007", "\u202F", "\u200B", "\uFEFF");
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, blankRows);
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, blankRows);
 		CreativeItemGroups.warnUnsupportedCustomGroups();
 		for (String row : blankRows) {
 			assertFalse(CreativeItemGroups.isInvalidRowWarnedForTest(row),
@@ -811,7 +812,7 @@ class CreativeItemGroupsTest {
 		String emptyContained = "minecraft:building_blocks|名|,,";
 		String validRow = "minecraft:building_blocks|名|stone";
 		String blankRow = "   ";
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
 			List.of(shortRow, emptyTab, emptyContained, validRow, blankRow));
 
 		CreativeItemGroups.warnUnsupportedCustomGroups();
@@ -833,7 +834,7 @@ class CreativeItemGroupsTest {
 		ItemStack oakStairs = stack(Items.OAK_STAIRS);
 		ItemStack stoneStairs = stack(Items.STONE_STAIRS);
 		ItemStack spruceStairs = stack(Items.SPRUCE_STAIRS);
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD,
 			List.of("minecraft:search|搜索|stone"));
 
 		CreativeModeTab search = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeModeTabs.SEARCH);
@@ -864,7 +865,7 @@ class CreativeItemGroupsTest {
 	// 转发接缝：与 onConfigChanged 的返回值完全一致（null/非分类页 false，分类页 true）。
 	@Test
 	void shouldRefreshAfterConfigChangeMatchesOnConfigChanged() {
-		TweakifyMod.CONFIG.setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of());
+		TweakifyMod.config().setStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD, List.of());
 		CreativeModeTab search = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeModeTabs.SEARCH);
 		CreativeModeTab building = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(
 			CreativeModeTabs.BUILDING_BLOCKS);
@@ -888,7 +889,7 @@ class CreativeItemGroupsTest {
 		ItemStack spruce = stack(Items.SPRUCE_STAIRS);
 		CreativeItemGroups.Group group = new CreativeItemGroups.Group(
 			Component.literal("Stairs"), List.of(oak, stone, spruce));
-		TweakifyMod.CONFIG.functions.itemGroupsShowItems = true;
+		TweakifyMod.config().functions.itemGroupsShowItems = true;
 
 		assertNull(CreativeItemGroups.rotatingIcon(null, 0L), "空组不轮播");
 		assertNull(CreativeItemGroups.rotatingIcon(group, 0L), "收起的组不轮播");
@@ -903,7 +904,7 @@ class CreativeItemGroupsTest {
 		empty.setVisible(true);
 		assertNull(CreativeItemGroups.rotatingIcon(empty, 0L), "空成员的组不轮播");
 
-		TweakifyMod.CONFIG.functions.itemGroupsShowItems = false;
+		TweakifyMod.config().functions.itemGroupsShowItems = false;
 		assertNull(CreativeItemGroups.rotatingIcon(group, 0L), "关闭显示组内物品后不轮播");
 	}
 

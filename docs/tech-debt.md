@@ -351,7 +351,7 @@
   - `TweakifyModConfig.prepareSaveHandle` / `submitSaveAsyncHandle` 与
     `TweakifyModConfigOptions.flushPendingSaveNow` 自 2026-11-21 起只在配置锁内构建不可变 JSON 树
     （`ConfigStorage.toJsonTree(Map)`），提交时仍分配落盘序号；pretty printing（`GSON.toJson`）与
-    磁盘 IO 都在写盘任务内执行，写盘线程不再读取配置字段值（只读 `TweakifyMod.CONFIG` 引用与路径）；
+    磁盘 IO 都在写盘任务内执行，写盘线程不再读取配置字段值（只读 `TweakifyMod.config()` 返回的引用与路径）；
     `writeSynchronously()` 保留主线程序列化作为退出兜底（见「实施记录」）。
   已有基础设施：单线程 `AsyncFileWriter`、提交序号与 `Snapshot` 回滚；T2 的摘要去重已闭环，
   T3 的扫描快照方案与本条独立，不在此重复。

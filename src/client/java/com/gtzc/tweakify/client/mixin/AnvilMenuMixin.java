@@ -36,7 +36,7 @@ public class AnvilMenuMixin {
 	@WrapOperation(method = "createResult", require = 0, at = @At(value = "INVOKE", ordinal = 1,
 		target = "Lnet/minecraft/world/entity/player/Player;hasInfiniteMaterials()Z"))
 	private boolean tweakify$ignoreTooExpensive(Player player, Operation<Boolean> original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.modified.disableTooExpensive
 			&& AnvilPickupState.shouldAllowResult(true, this.cost.get(),
 				config.modified.tooExpensiveMaxLevelCost, config.modified.tooExpensiveWarnOnly)) {
@@ -52,7 +52,7 @@ public class AnvilMenuMixin {
 	@ModifyReturnValue(method = "mayPickup(Lnet/minecraft/world/entity/player/Player;Z)Z",
 		at = @At("RETURN"), require = 0)
 	private boolean tweakify$allowPickup(boolean original, Player player, boolean hasStack) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableTooExpensive) {
 			return original;
 		}
@@ -75,7 +75,7 @@ public class AnvilMenuMixin {
 		target = "Lnet/minecraft/world/item/enchantment/Enchantment;areCompatible(Lnet/minecraft/core/Holder;Lnet/minecraft/core/Holder;)Z"))
 	private boolean tweakify$ignoreEnchantmentConflicts(Holder<Enchantment> first, Holder<Enchantment> second,
 			Operation<Boolean> original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.removeEnchantmentConflicts) {
 			return original.call(first, second);
 		}

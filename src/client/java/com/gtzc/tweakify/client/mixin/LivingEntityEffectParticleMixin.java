@@ -20,7 +20,7 @@ public class LivingEntityEffectParticleMixin {
 	private void tweakify$hideInvisibleEffectParticles(Level level, ParticleOptions particle,
 													   double x, double y, double z,
 													   double dx, double dy, double dz) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		LivingEntity self = (LivingEntity) (Object) this;
 		if (config != null && config.modified.betterInvisibility
 			&& config.modified.betterInvisibilityEffectParticles && self.isInvisible()) {

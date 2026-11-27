@@ -22,7 +22,7 @@ public class GrindstoneMenuMixin {
 	// 原版先清理非诅咒附魔；这里在最终结果上再清空剩余诅咒附魔，返回值替换不会取消回调。
 	@ModifyReturnValue(method = "removeNonCursesFrom", at = @At("RETURN"))
 	private ItemStack tweakify$removeAllEnchantments(ItemStack original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableCurseEnchantmentRestriction) {
 			return original;
 		}

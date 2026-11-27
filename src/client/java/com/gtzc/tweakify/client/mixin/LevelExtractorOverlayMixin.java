@@ -22,7 +22,7 @@ public class LevelExtractorOverlayMixin {
 	@Inject(method = "extractPlayerState", at = @At("TAIL"))
 	private void tweakify$adjustPlayerOverlays(Camera camera, DeltaTracker deltaTracker, float partialTick,
 											   PlayerRenderState state, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return;
 		}

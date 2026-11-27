@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.component.DataComponentMap;
@@ -39,13 +40,13 @@ class QuickRightClickServiceTest {
 
 	@AfterEach
 	void clearConfig() {
-		TweakifyMod.CONFIG = null;
+		TweakifyModTestSupport.installConfig(null);
 	}
 
 	private static TweakifyModConfig enableAll() {
 		TweakifyModConfig config = new TweakifyModConfig();
 		config.functions.inventoryQuickRightClick = true;
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		return config;
 	}
 

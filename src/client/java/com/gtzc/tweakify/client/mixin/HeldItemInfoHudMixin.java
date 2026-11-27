@@ -74,7 +74,7 @@ public abstract class HeldItemInfoHudMixin {
 		if (client.player == null) {
 			return;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		FunctionConfig functions = config == null ? null : config.functions;
 		boolean enabled = functions != null && functions.heldItemInfo;
 		boolean enabledChanged = HeldItemInfoRenderer.noteEnabled(enabled);

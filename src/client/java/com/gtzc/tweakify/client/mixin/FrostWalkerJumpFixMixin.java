@@ -36,7 +36,7 @@ public class FrostWalkerJumpFixMixin {
 		if (original.call(effect, context)) {
 			return true;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.fix.frostWalkerJumpFix) {
 			return false;
 		}

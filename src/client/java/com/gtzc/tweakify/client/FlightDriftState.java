@@ -16,7 +16,7 @@ public final class FlightDriftState {
 	}
 
 	public static void tick(Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.disableFlightDrift || client.player == null) {
 			return;
 		}

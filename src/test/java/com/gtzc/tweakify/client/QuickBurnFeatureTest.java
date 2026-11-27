@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
@@ -31,28 +32,28 @@ class QuickBurnFeatureTest {
 	// 配置列表替换默认点燃物；配置缺失时仍回退到岩浆桶/打火石。
 	@Test
 	void configuredIgnitersReplaceDefaultTools() {
-		TweakifyModConfig previous = TweakifyMod.CONFIG;
+		TweakifyModConfig previous = TweakifyMod.config();
 		TweakifyModConfig config = new TweakifyModConfig();
 		config.setStringList("quickBurnItemIgniters", List.of("minecraft:torch"));
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			assertTrue(QuickBurnFeature.isConfiguredBurnTool(Items.TORCH));
 			assertFalse(QuickBurnFeature.isConfiguredBurnTool(Items.LAVA_BUCKET));
 		} finally {
-			TweakifyMod.CONFIG = previous;
+			TweakifyModTestSupport.installConfig(previous);
 		}
 	}
 
 	@Test
 	void missingConfigFallsBackToDefaultTools() {
-		TweakifyModConfig previous = TweakifyMod.CONFIG;
-		TweakifyMod.CONFIG = null;
+		TweakifyModConfig previous = TweakifyMod.config();
+		TweakifyModTestSupport.installConfig(null);
 		try {
 			assertTrue(QuickBurnFeature.isConfiguredBurnTool(Items.LAVA_BUCKET));
 			assertTrue(QuickBurnFeature.isConfiguredBurnTool(Items.FLINT_AND_STEEL));
 			assertFalse(QuickBurnFeature.isConfiguredBurnTool(Items.TORCH));
 		} finally {
-			TweakifyMod.CONFIG = previous;
+			TweakifyModTestSupport.installConfig(previous);
 		}
 	}
 

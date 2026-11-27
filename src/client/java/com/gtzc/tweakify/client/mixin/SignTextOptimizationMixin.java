@@ -48,8 +48,8 @@ public class SignTextOptimizationMixin {
 
 	@Inject(method = "hasMessage", at = @At("HEAD"), cancellable = true)
 	private void tweakify$useCachedHasText(boolean filtered, CallbackInfoReturnable<Boolean> cir) {
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.optimization.signTextOptimization
-			&& TweakifyMod.CONFIG.optimization.signTextOptimizationCachedText) {
+		if (TweakifyMod.config() != null && TweakifyMod.config().optimization.signTextOptimization
+			&& TweakifyMod.config().optimization.signTextOptimizationCachedText) {
 			cir.setReturnValue(filtered ? tweakify$hasFilteredText : tweakify$hasText);
 		}
 	}

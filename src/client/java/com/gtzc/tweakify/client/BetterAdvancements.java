@@ -27,12 +27,12 @@ public final class BetterAdvancements {
 	}
 
 	public static boolean enabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && config.modified.betterAdvancements;
 	}
 
 	static TweakifyModConfig config() {
-		return TweakifyMod.CONFIG;
+		return TweakifyMod.config();
 	}
 
 	public static int tabSpacing() {

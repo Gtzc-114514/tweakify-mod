@@ -28,7 +28,7 @@ public class MiniHudRenderHandlerMixin {
 	@Redirect(method = "onExtractGuiOverlayPost", at = @At(value = "INVOKE",
 		target = "Lfi/dy/masa/minihud/event/RenderHandler;updateLines()V"))
 	private void tweakify$throttleLineUpdate(RenderHandler handler) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.optimization.miniHudFpsOptimization) {
 			this.updateLines();
 			return;

@@ -49,7 +49,7 @@ public class MobPeacefulMixin {
 	@Redirect(method = "checkDespawn", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/entity/EntityType;isAllowedInPeaceful()Z"))
 	private boolean tweakify$keepPeacefulMonster(EntityType<?> type) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && SpawnFeatureState.shouldStayInPeaceful(
 			config.functions.peacefulModeMonsters, config.isPeacefulModeMonster(type))) {
 			return true;
@@ -58,7 +58,7 @@ public class MobPeacefulMixin {
 	}
 
 	private static boolean shouldPreventPlayerTarget(Mob mob, LivingEntity target) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || target == null) {
 			return false;
 		}

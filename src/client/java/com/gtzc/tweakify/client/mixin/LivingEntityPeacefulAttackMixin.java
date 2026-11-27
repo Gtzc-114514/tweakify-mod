@@ -23,7 +23,7 @@ public class LivingEntityPeacefulAttackMixin {
 		target = "Lnet/minecraft/world/level/Level;getDifficulty()Lnet/minecraft/world/Difficulty;"))
 	private Difficulty tweakify$allowConfiguredPeacefulAttack(Level level) {
 		if ((Object) this instanceof Mob mob) {
-			TweakifyModConfig config = TweakifyMod.CONFIG;
+			TweakifyModConfig config = TweakifyMod.config();
 			if (config != null && SpawnFeatureState.shouldAllowPeacefulAggression(
 				config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterNoAttack,
 				level.getDifficulty() == Difficulty.PEACEFUL, config.isPeacefulModeMonster(mob.getType()))) {

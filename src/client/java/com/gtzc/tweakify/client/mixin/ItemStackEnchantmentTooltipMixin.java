@@ -40,7 +40,7 @@ public class ItemStackEnchantmentTooltipMixin {
 	@ModifyReturnValue(method = "getTooltipLines", at = @At("RETURN"), require = 0)
 	private List<Component> tweakify$appendEnchantmentDescriptions(List<Component> original,
 			Item.TooltipContext context, Player player, TooltipFlag flag) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.enchantmentDescriptions) {
 			return original;
 		}

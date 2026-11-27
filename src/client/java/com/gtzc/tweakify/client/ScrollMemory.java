@@ -60,7 +60,7 @@ public final class ScrollMemory {
 	}
 
 	private static TweakifyModConfig config() {
-		return TweakifyMod.CONFIG;
+		return TweakifyMod.config();
 	}
 
 	private static boolean persistEnabled() {

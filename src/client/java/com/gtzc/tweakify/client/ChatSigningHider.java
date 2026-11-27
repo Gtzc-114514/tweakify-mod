@@ -18,7 +18,7 @@ public final class ChatSigningHider {
 
 	// 配置缺失或关闭时保持原版显示。
 	static boolean isEnabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && config.modified.hideChatSigning;
 	}
 

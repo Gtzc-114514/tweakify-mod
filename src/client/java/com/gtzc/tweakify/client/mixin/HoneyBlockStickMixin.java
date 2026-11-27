@@ -25,7 +25,7 @@ public class HoneyBlockStickMixin {
 	@Inject(method = "entityInside", at = @At("HEAD"), cancellable = true)
 	private void tweakify$disableStick(BlockState state, Level level, BlockPos pos, Entity entity,
 									   InsideBlockEffectApplier applier, boolean bl, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.modified.disableHoneyBlockSlowdown
 			&& config.modified.disableHoneyBlockStick) {
 			ci.cancel();

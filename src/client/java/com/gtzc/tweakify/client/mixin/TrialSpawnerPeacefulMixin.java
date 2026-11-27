@@ -20,7 +20,7 @@ public class TrialSpawnerPeacefulMixin {
 	@Redirect(method = "canSpawnInLevel", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/server/level/ServerLevel;getDifficulty()Lnet/minecraft/world/Difficulty;"))
 	private Difficulty tweakify$allowPeacefulTrialSpawner(ServerLevel level) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return level.getDifficulty();
 		}

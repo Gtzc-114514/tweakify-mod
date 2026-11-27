@@ -50,7 +50,7 @@ public abstract class ChatComponentFadeBarMixin {
 									   int mouseY, ChatComponent.DisplayMode mode,
 									   boolean changeCursorOnInsertions, Operation<Void> original) {
 		original.call(graphics, font, ticks, mouseX, mouseY, mode, changeCursorOnInsertions);
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.chatFadeProgressBar) {
 			return;
 		}

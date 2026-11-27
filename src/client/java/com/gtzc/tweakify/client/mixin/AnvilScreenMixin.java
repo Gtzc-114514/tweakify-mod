@@ -21,7 +21,7 @@ public class AnvilScreenMixin {
 	@WrapOperation(method = "extractLabels", require = 0,
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;hasInfiniteMaterials()Z"))
 	private boolean tweakify$hideTooExpensiveText(LocalPlayer player, Operation<Boolean> original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableTooExpensive) {
 			return original.call(player);
 		}

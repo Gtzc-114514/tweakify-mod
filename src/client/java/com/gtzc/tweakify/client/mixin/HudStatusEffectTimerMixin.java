@@ -30,7 +30,7 @@ public class HudStatusEffectTimerMixin {
 	// 又保留原版“未显示效果时提前返回”的语义。
 	@WrapMethod(method = "extractEffects")
 	private void tweakify$scaledEffectDisplay(GuiGraphicsExtractor gui, DeltaTracker delta, Operation<Void> original) {
-		float scale = StatusEffectTimerRenderer.effectScale(TweakifyMod.CONFIG);
+		float scale = StatusEffectTimerRenderer.effectScale(TweakifyMod.config());
 		if (scale == 1.0f) {
 			original.call(gui, delta);
 			return;

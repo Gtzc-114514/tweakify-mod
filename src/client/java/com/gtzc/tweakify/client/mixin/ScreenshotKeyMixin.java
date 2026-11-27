@@ -24,7 +24,7 @@ public class ScreenshotKeyMixin {
 			return;
 		}
 		Minecraft client = (Minecraft) (Object) this;
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.betterScreenshot
 			|| client.gui.screen() != null || client.options.keyDebugModifier.isDown()) {
 			return;

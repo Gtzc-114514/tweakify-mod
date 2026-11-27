@@ -22,12 +22,12 @@ public class LocalPlayerMixin {
 	// 在返回处改为 1.0 即完全取消减速，不影响潜行等其他速度修正。
 	@ModifyReturnValue(method = "itemUseSpeedMultiplier", at = @At("RETURN"))
 	private float tweakify$disableUseItemSlowdown(float original) {
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.modified.disableUseItemSlowdown) {
+		if (TweakifyMod.config() != null && TweakifyMod.config().modified.disableUseItemSlowdown) {
 			// 例外列表里的物品保持原版减速。
 			LocalPlayer self = (LocalPlayer) (Object) this;
-			if (!TweakifyMod.CONFIG.isUseItemSlowdownException(self.getUseItem().getItem())) {
+			if (!TweakifyMod.config().isUseItemSlowdownException(self.getUseItem().getItem())) {
 				return UseItemSlowdownState.multiplier(true,
-					TweakifyMod.CONFIG.modified.useItemSlowdownKeepPercent, original);
+					TweakifyMod.config().modified.useItemSlowdownKeepPercent, original);
 			}
 		}
 		return original;

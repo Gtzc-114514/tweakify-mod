@@ -24,7 +24,7 @@ public class FluidPushMixin {
 	@Inject(method = "applyCurrentTo", at = @At("HEAD"), cancellable = true)
 	private void tweakify$disableFluidPush(TagKey<Fluid> fluidTag, Entity entity, double strength,
 										   CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableFluidPush) {
 			return;
 		}

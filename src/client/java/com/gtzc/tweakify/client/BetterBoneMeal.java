@@ -36,7 +36,7 @@ public final class BetterBoneMeal {
 
 	// 返回 null = 不归本功能处理；true/false = 已处理并给出最终结果。
 	public static Boolean tryGrow(ItemStack stack, Level level, BlockPos pos) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.betterBoneMeal) {
 			return null;
 		}

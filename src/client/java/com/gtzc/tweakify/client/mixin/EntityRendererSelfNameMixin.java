@@ -28,7 +28,7 @@ public class EntityRendererSelfNameMixin {
 	private void tweakify$showOwnNameInThirdPerson(Entity entity, EntityRenderState state,
 													float partialTick, double nameTagDistance,
 													double belowNameDistance, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.thirdPersonPlayerName) {
 			return;
 		}

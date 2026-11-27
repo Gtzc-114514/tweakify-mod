@@ -51,40 +51,40 @@ public final class SmoothScrolling {
 
 	// 配置尚未加载时按默认（开启）处理；各界面子开关都基于它。
 	private static boolean enabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config == null || config.general.smoothScroll;
 	}
 
 	// 各界面子开关：总开关关闭时全部失效。
 	public static boolean configListEnabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return enabled() && (config == null || config.general.smoothScrollConfigList);
 	}
 
 	public static boolean creativeEnabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return enabled() && (config == null || config.general.smoothScrollCreative);
 	}
 
 	public static boolean chatEnabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return enabled() && (config == null || config.general.smoothScrollChat);
 	}
 
 	public static boolean modMenuEnabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return enabled() && (config == null || config.general.smoothScrollModMenu);
 	}
 
 	// 进度（成就）界面：原版与更好的进度界面共用。
 	public static boolean advancementsEnabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return enabled() && (config == null || config.general.smoothScrollAdvancements);
 	}
 
 	// 平滑时长（秒）：配置项以毫秒暴露，夹到合法范围后作为动画器的时间常数。
 	public static double timeConstantSeconds() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		int millis = config == null
 			? TweakifyModConfig.DEFAULT_SMOOTH_SCROLL_DURATION
 			: config.general.smoothScrollDuration;

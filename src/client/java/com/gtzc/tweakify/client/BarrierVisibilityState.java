@@ -126,7 +126,7 @@ public final class BarrierVisibilityState {
 
 	// 逐方块粒子冷却：由 barrierVisibilityParticleInterval 控制，配置缺失时用默认值。
 	private static int particleCooldownTicks() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return DEFAULT_PARTICLE_COOLDOWN_TICKS;
 		}

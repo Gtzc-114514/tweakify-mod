@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public class NetherPortalBlockDelayMixin {
 	@ModifyReturnValue(method = "getPortalTransitionTime", at = @At("RETURN"))
 	private int tweakify$overridePortalDelay(int original, ServerLevel level, Entity entity) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !(entity instanceof Player player)) {
 			return original;
 		}

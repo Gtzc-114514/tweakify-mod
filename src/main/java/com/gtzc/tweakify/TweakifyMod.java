@@ -15,7 +15,20 @@ public class TweakifyMod implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	// volatile：/tweakify 命令在集成服务端线程执行，客户端线程同时在读配置。
-	public static volatile TweakifyModConfig CONFIG;
+	// 字段私有：读取统一走 config()，写入只发生在 onInitialize 与测试接缝。
+	private static volatile TweakifyModConfig CONFIG;
+
+	/**
+	 * 当前配置。模组初始化完成前可能为 {@code null}，调用方需按原逻辑兜底。
+	 */
+	public static TweakifyModConfig config() {
+		return CONFIG;
+	}
+
+	// 包私有测试接缝：仅 test 源集的 TweakifyModTestSupport 访问。
+	static void setConfigForTest(TweakifyModConfig config) {
+		CONFIG = config;
+	}
 
 	@Override
 	public void onInitialize() {

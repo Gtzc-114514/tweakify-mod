@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.AsyncFileWriter;
 import com.gtzc.tweakify.util.AsyncFileWriterTestSupport;
@@ -181,7 +182,7 @@ class TweakifyModConfigOptionsTest {
 		Files.writeString(blocked.resolve("occupied"), "x");
 
 		TweakifyModConfig config = new TweakifyModConfig(blocked);
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			config.functions.blockOffhandFallback = false;
 			TweakifyModConfig.Snapshot before = config.snapshot();
@@ -209,7 +210,7 @@ class TweakifyModConfigOptionsTest {
 			// 等待兜底异步写盘完成，避免后台任务在 @TempDir 清理时还持有临时目录。
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
-			TweakifyMod.CONFIG = null;
+			TweakifyModTestSupport.installConfig(null);
 		}
 	}
 
@@ -219,7 +220,7 @@ class TweakifyModConfigOptionsTest {
 	void flushPendingSaveNowAssignsWriteSequenceAtSubmitTime() throws Exception {
 		Path path = tempDir.resolve("flush-order.json");
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 
 		CountDownLatch blocked = new CountDownLatch(1);
 		CountDownLatch release = new CountDownLatch(1);
@@ -254,7 +255,7 @@ class TweakifyModConfigOptionsTest {
 			release.countDown();
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
-			TweakifyMod.CONFIG = null;
+			TweakifyModTestSupport.installConfig(null);
 		}
 	}
 
@@ -264,7 +265,7 @@ class TweakifyModConfigOptionsTest {
 	void flushPendingSaveNowWritesSnapshotTakenAtSubmitTime() throws Exception {
 		Path path = tempDir.resolve("flush-snapshot.json");
 		TweakifyModConfig config = new TweakifyModConfig(path);
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 
 		CountDownLatch blocked = new CountDownLatch(1);
 		CountDownLatch release = new CountDownLatch(1);
@@ -295,7 +296,7 @@ class TweakifyModConfigOptionsTest {
 			release.countDown();
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
-			TweakifyMod.CONFIG = null;
+			TweakifyModTestSupport.installConfig(null);
 		}
 	}
 
@@ -336,7 +337,7 @@ class TweakifyModConfigOptionsTest {
 	@Test
 	void skippedFailureDoesNotRollBackCoveredMemory() {
 		TweakifyModConfig config = new TweakifyModConfig(tempDir.resolve("covered.json"));
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			config.functions.blockOffhandFallback = false;
 			TweakifyModConfig.Snapshot before = config.snapshot();
@@ -352,7 +353,7 @@ class TweakifyModConfigOptionsTest {
 				"已被整份保存覆盖的失败结果不能回滚内存");
 		} finally {
 			TweakifyModConfigOptions.resetForTest();
-			TweakifyMod.CONFIG = null;
+			TweakifyModTestSupport.installConfig(null);
 		}
 	}
 
@@ -360,7 +361,7 @@ class TweakifyModConfigOptionsTest {
 	@Test
 	void rolledBackSequenceLetsFailedResultRollBackMemory() {
 		TweakifyModConfig config = new TweakifyModConfig(tempDir.resolve("sequence-rollback.json"));
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			config.functions.blockOffhandFallback = false;
 			TweakifyModConfig.Snapshot before = config.snapshot();
@@ -380,7 +381,7 @@ class TweakifyModConfigOptionsTest {
 		} finally {
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
-			TweakifyMod.CONFIG = null;
+			TweakifyModTestSupport.installConfig(null);
 		}
 	}
 
@@ -391,7 +392,7 @@ class TweakifyModConfigOptionsTest {
 		Files.createDirectories(blocked);
 		Files.writeString(blocked.resolve("occupied"), "x");
 		TweakifyModConfig config = new TweakifyModConfig(blocked);
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			TweakifyModConfigOptions.setSyncedSequenceForTest(10L);
 			TweakifyModConfigOptions.handleSaveFailure(config, 10L, 5L);
@@ -401,7 +402,7 @@ class TweakifyModConfigOptionsTest {
 		} finally {
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
-			TweakifyMod.CONFIG = null;
+			TweakifyModTestSupport.installConfig(null);
 		}
 	}
 
@@ -409,7 +410,7 @@ class TweakifyModConfigOptionsTest {
 	@Test
 	void fallbackWriteSuccessKeepsSequence() throws Exception {
 		TweakifyModConfig config = new TweakifyModConfig(tempDir.resolve("fallback-ok.json"));
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			TweakifyModConfigOptions.setSyncedSequenceForTest(10L);
 			TweakifyModConfigOptions.handleSaveFailure(config, 10L, 5L);
@@ -419,7 +420,7 @@ class TweakifyModConfigOptionsTest {
 		} finally {
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
-			TweakifyMod.CONFIG = null;
+			TweakifyModTestSupport.installConfig(null);
 		}
 	}
 
@@ -447,7 +448,7 @@ class TweakifyModConfigOptionsTest {
 			Files.createDirectories(blocked);
 			Files.writeString(blocked.resolve("occupied"), "x");
 			TweakifyModConfig config = new TweakifyModConfig(blocked);
-			TweakifyMod.CONFIG = config;
+			TweakifyModTestSupport.installConfig(config);
 
 			// 产生一个早于整份保存的写批次，让 save 的 covered/advanced 非零。
 			TweakifyModConfigOptions.setPendingForTest(config.snapshot());
@@ -463,7 +464,7 @@ class TweakifyModConfigOptionsTest {
 			submitOnly.shutdownNow();
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();
-			TweakifyMod.CONFIG = null;
+			TweakifyModTestSupport.installConfig(null);
 		}
 	}
 

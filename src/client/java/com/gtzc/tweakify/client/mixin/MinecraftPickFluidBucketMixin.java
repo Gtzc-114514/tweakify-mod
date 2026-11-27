@@ -31,7 +31,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MinecraftPickFluidBucketMixin {
 	@Inject(method = "pickBlockOrEntity", at = @At("HEAD"), cancellable = true, require = 0)
 	private void tweakify$pickFluidBucket(CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		Minecraft client = (Minecraft) (Object) this;
 		if (config == null || client.player == null || client.level == null || client.gameMode == null) {
 			return;

@@ -43,7 +43,7 @@ public class AbstractContainerScreenQuickBurnMixin {
 	private void tweakify$burnOnRightClick(Slot slot, int slotId, int mouseButton, ContainerInput type,
 											CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$QUICK_BURN_PROBE, "slotClicked");
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.quickBurnItem) {
 			return;
 		}
@@ -70,7 +70,7 @@ public class AbstractContainerScreenQuickBurnMixin {
 	private void tweakify$renderBurnHint(GuiGraphicsExtractor gui, int mouseX, int mouseY,
 										  float partialTick, CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$QUICK_BURN_HINT_PROBE, "quickBurnHint");
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.quickBurnItem
 			|| !config.functions.quickBurnItemShowHint) {
 			return;

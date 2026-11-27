@@ -51,7 +51,7 @@ public final class LocatorCompass {
 	}
 
 	private static void render(GuiGraphicsExtractor graphics, Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.locatorBarCompass) {
 			return;
 		}

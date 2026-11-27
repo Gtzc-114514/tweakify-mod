@@ -31,7 +31,7 @@ public class EnchantmentScreenInfoMixin {
 	)
 	private void tweakify$showEnchantingInfo(GuiGraphicsExtractor gui, int mouseX, int mouseY,
 											float partialTick, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		AbstractContainerMenu containerMenu = ((MenuAccess<?>) (Object) this).getMenu();
 		if (config == null || !config.functions.enchantingTableInfo
 			|| !(containerMenu instanceof EnchantmentMenu menu)) {

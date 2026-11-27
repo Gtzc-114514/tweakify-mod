@@ -29,7 +29,7 @@ public class CobwebSlowdownMixin {
 	@Inject(method = "entityInside", at = @At("HEAD"), cancellable = true)
 	private void tweakify$disableCobwebSlowdown(BlockState state, Level level, BlockPos pos, Entity entity,
 												InsideBlockEffectApplier applier, boolean bl, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableCobwebSlowdown) {
 			return;
 		}
@@ -44,7 +44,7 @@ public class CobwebSlowdownMixin {
 	@Redirect(method = "entityInside", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/entity/Entity;makeStuckInBlock(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/phys/Vec3;)V"))
 	private void tweakify$keepJumpPenalty(Entity entity, BlockState state, Vec3 multiplier) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.modified.disableCobwebSlowdown
 			&& config.modified.cobwebSlowdownKeepJumpPenalty
 			&& (entity instanceof Player || config.modified.cobwebSlowdownAllEntities)) {

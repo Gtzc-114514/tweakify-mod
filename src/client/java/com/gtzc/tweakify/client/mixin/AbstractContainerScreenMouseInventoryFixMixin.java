@@ -35,7 +35,7 @@ public abstract class AbstractContainerScreenMouseInventoryFixMixin {
 		at = @At("HEAD"), cancellable = true, require = 0)
 	private void tweakify$handleMouseBoundInventoryKeys(MouseButtonEvent event, boolean isRealMouse,
 			CallbackInfoReturnable<Boolean> cir) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.fix.fixMouseButtonInventory) {
 			return;
 		}

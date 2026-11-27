@@ -26,7 +26,7 @@ public class HudExperienceLevelMixin {
 				+ "(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/gui/Font;I)V"))
 	private void tweakify$liftExperienceLevel(GuiGraphicsExtractor graphics, Font font, int level,
 											  Operation<Void> original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.locatorBarCompass) {
 			original.call(graphics, font, level);
 			return;

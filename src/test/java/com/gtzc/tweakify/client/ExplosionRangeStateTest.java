@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.phys.AABB;
 import org.junit.jupiter.api.AfterEach;
@@ -41,17 +42,17 @@ class ExplosionRangeStateTest {
 		ExplosionRangeState.publishEntries(new ArrayList<>(List.of(entry(1.0, 1.0))), 8);
 		assertFalse(ExplosionRangeState.entries().isEmpty());
 
-		TweakifyModConfig previous = TweakifyMod.CONFIG;
+		TweakifyModConfig previous = TweakifyMod.config();
 		TweakifyModConfig config = new TweakifyModConfig();
 		config.functions.explosionRangeDisplay = false;
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			// 关闭功能后不触碰客户端世界，直接清理上一次发布的条目。
 			ExplosionRangeState.tick(null);
 			assertTrue(ExplosionRangeState.entries().isEmpty(),
 				"disabling the feature must clear published entries");
 		} finally {
-			TweakifyMod.CONFIG = previous;
+			TweakifyModTestSupport.installConfig(previous);
 		}
 	}
 

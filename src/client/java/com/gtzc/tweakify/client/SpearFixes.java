@@ -36,7 +36,7 @@ public final class SpearFixes {
 	}
 
 	private static TweakifyModConfig config() {
-		return TweakifyMod.CONFIG;
+		return TweakifyMod.config();
 	}
 
 	private static boolean root() {

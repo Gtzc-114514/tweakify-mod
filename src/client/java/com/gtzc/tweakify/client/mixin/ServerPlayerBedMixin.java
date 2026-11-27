@@ -19,7 +19,7 @@ public class ServerPlayerBedMixin {
 	@Redirect(method = "startSleepInBed", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/server/level/ServerPlayer;bedInRange(Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;)Z"))
 	private boolean tweakify$ignoreBedDistance(ServerPlayer self, BlockPos pos, Direction direction) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean vanillaInRange = ((ServerPlayerAccessor) (Object) self).tweakify$bedInRange(pos, direction);
 		if (config != null && config.modified.disableBedTooFar) {
 			double distanceSq = self.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);

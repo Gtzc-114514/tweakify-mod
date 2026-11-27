@@ -35,7 +35,7 @@ public abstract class ClientPacketListenerSneakAnimationMixin {
 			target = "Lnet/minecraft/network/syncher/SynchedEntityData;assignValues(Ljava/util/List;)V"))
 	private void tweakify$stripLocalPlayerPose(ClientboundSetEntityDataPacket packet, CallbackInfo ci,
 			@Local(ordinal = 0) Entity entity) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean enabled = config != null && config.fix.sneakAnimationFix;
 		Minecraft client = Minecraft.getInstance();
 		boolean onlyOnGround = config != null && config.fix.sneakAnimationFixOnlyOnGround;

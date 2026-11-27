@@ -56,7 +56,7 @@ public class ChatScreenMixin {
 		this.tweakify$prefill = this.isDraft ? null : this.initial;
 		this.tweakify$memoryApplied = true;
 
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.chatInputMemory
 			|| (this.initial != null && !this.initial.isEmpty())) {
 			return;
@@ -81,7 +81,7 @@ public class ChatScreenMixin {
 	// 这样其它模组发送后不关闭聊天界面时也能在关闭时丢弃已发送内容。
 	@WrapMethod(method = "keyPressed")
 	private boolean tweakify$handleKeyPressed(KeyEvent event, Operation<Boolean> original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.functions.chatTextSelection && event.isCopy()
 			&& ChatSelectionState.hasSelection()) {
 			Minecraft client = Minecraft.getInstance();
@@ -98,7 +98,7 @@ public class ChatScreenMixin {
 	// 聊天/命令被服务器禁用时 keyPressed 直接返回，不会走到这里；实际出站内容都在此记录。
 	@WrapMethod(method = "handleChatInput")
 	private void tweakify$markSubmitted(String message, boolean addToHistory, Operation<Void> original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.functions.chatInputMemory && ChatInputMemoryState.isSessionActive()
 			&& tweakify$matchesInput(message)) {
 			// 标记输入框原文，确保 removed() 用原始内容比较时能精确命中。
@@ -129,7 +129,7 @@ public class ChatScreenMixin {
 			return;
 		}
 
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.chatInputMemory || this.input == null) {
 			return;
 		}
@@ -167,7 +167,7 @@ public class ChatScreenMixin {
 	@Inject(method = "extractRenderState", at = @At("HEAD"))
 	private void tweakify$updateSelection(GuiGraphicsExtractor gui, int mouseX, int mouseY,
 										  float partialTick, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.functions.chatTextSelection) {
 			ChatSelectionState.updateFromMouse(Minecraft.getInstance(), mouseX, mouseY);
 		} else {
@@ -178,7 +178,7 @@ public class ChatScreenMixin {
 	@Inject(method = "extractRenderState", at = @At("TAIL"))
 	private void tweakify$renderSelection(GuiGraphicsExtractor gui, int mouseX, int mouseY,
 										  float partialTick, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.functions.chatTextSelection) {
 			ChatSelectionState.render(gui, Minecraft.getInstance());
 		}

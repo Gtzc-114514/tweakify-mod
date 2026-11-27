@@ -48,7 +48,7 @@ public final class OffhandFallbackState {
 	}
 
 	public static void tick(Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.blockOffhandFallback || client.player == null) {
 			reset();
 			return;
@@ -86,7 +86,7 @@ public final class OffhandFallbackState {
 
 	// 副手回退拦截：总开关关闭或标记不属于当前 tick 时不拦截。
 	public static boolean shouldBlockOffhandFallback() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && config.functions.blockOffhandFallback
 			&& blockThisTick && markedTick == TickClock.current();
 	}

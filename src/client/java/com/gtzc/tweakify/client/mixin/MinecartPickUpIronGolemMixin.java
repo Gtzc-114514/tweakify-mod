@@ -38,7 +38,7 @@ public class MinecartPickUpIronGolemMixin {
 	private void tweakify$pickUpIronGolem(CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$GOLEM_MINECART_PROBE, "ironGolemMinecart");
 		AbstractMinecart minecart = (AbstractMinecart) (Object) this;
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		int maxDistance = config == null ? 0 : config.modified.ironGolemRideMinecartMaxDistance;
 		boolean playerFound = maxDistance > 0
 			&& minecart.level().getNearestPlayer(minecart, maxDistance) != null;

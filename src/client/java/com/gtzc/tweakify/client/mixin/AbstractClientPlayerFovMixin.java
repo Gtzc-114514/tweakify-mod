@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public class AbstractClientPlayerFovMixin {
 	@ModifyReturnValue(method = "getFieldOfViewModifier", at = @At("RETURN"))
 	private float tweakify$disableSprintFov(float original, boolean firstPerson, float effectScale) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
 		if (config == null || !config.modified.disableSprintFov || !self.isSprinting() || self.isScoping()) {
 			return original;

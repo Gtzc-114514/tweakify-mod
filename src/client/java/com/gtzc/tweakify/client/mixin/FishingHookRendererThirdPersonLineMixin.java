@@ -28,7 +28,7 @@ public abstract class FishingHookRendererThirdPersonLineMixin {
 		at = @At(value = "CONSTANT", args = "floatValue=-0.1875"),
 		require = 0)
 	private float tweakify$attachFishingLineWhileCrouching(float original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean enabled = config != null && config.fix.fishingLineThirdPersonFix;
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$FISHING_LINE_PROBE, "fishingLineThirdPersonFix");

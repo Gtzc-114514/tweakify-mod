@@ -56,7 +56,7 @@ final class SweepRangeRenderer {
 
 	// 手持剑时始终返回状态（至少显示球体）；准星命中生物、船或矿车时再附带目标框。
 	static State current(Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.sweepingView
 			|| client.player == null || client.level == null) {
 			loggedActive = false;
@@ -309,7 +309,7 @@ final class SweepRangeRenderer {
 
 	// 开关与颜色：配置尚未加载时按默认（开启/红色）处理。
 	private static boolean toggle(String group) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return true;
 		}
@@ -322,7 +322,7 @@ final class SweepRangeRenderer {
 	}
 
 	private static int color(String group) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return DEFAULT_RED_RGB;
 		}

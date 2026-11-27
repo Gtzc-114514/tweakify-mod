@@ -53,7 +53,7 @@ public class CreativeModeInventoryGroupingMixin {
 	@Inject(method = "selectTab", at = @At("HEAD"))
 	private void tweakify$beginTab(CreativeModeTab tab, CallbackInfo ci) {
 		CreativeItemGroups.beginTab(tab);
-		this.tweakify$lastConfigSignature = CreativeItemGroups.configSignature(TweakifyMod.CONFIG);
+		this.tweakify$lastConfigSignature = CreativeItemGroups.configSignature(TweakifyMod.config());
 	}
 
 	@Redirect(
@@ -138,7 +138,7 @@ public class CreativeModeInventoryGroupingMixin {
 	// CreativeItemGroups.shouldRefreshAfterConfigChange，mixin 只负责签名比对、转发与按返回值刷新。
 	@Inject(method = "containerTick", at = @At("TAIL"))
 	private void tweakify$refreshOnConfigChange(CallbackInfo ci) {
-		String signature = CreativeItemGroups.configSignature(TweakifyMod.CONFIG);
+		String signature = CreativeItemGroups.configSignature(TweakifyMod.config());
 		if (signature.equals(this.tweakify$lastConfigSignature)) {
 			return;
 		}

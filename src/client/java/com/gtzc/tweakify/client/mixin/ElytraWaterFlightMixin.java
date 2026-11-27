@@ -21,7 +21,7 @@ public class ElytraWaterFlightMixin {
 	@Redirect(method = "travel", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/entity/LivingEntity;shouldTravelInFluid(Lnet/minecraft/world/level/material/FluidState;)Z"))
 	private boolean tweakify$keepGlidingInWater(LivingEntity self, FluidState fluidState) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.modified.elytraWaterFlight && self.isFallFlying()
 			&& (!config.modified.elytraWaterFlightOnlyWater || fluidState.getType().isSame(Fluids.WATER))
 			&& (!config.modified.elytraWaterFlightOnlySubmerged || self.isEyeInFluid(FluidTags.WATER))) {

@@ -58,7 +58,7 @@ public final class HelpfulBlockSelection {
 
 	// 配置缺失或关闭时保持原版选区。
 	static boolean enabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && config.functions.helpfulBlockSelection;
 	}
 

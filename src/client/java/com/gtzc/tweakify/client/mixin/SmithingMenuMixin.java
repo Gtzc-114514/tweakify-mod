@@ -28,7 +28,7 @@ public class SmithingMenuMixin {
 		at = @At(value = "INVOKE",
 			target = "Lnet/minecraft/world/inventory/SmithingMenu;shrinkStackInSlot(I)V"))
 	private void tweakify$skipTemplateShrink(SmithingMenu menu, int slot) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.modified.disableSmithingTemplateConsumption
 			&& slot == SmithingMenu.TEMPLATE_SLOT) {
 			Player player = ((ItemCombinerMenuAccessor) (Object) this).tweakify$getPlayer();

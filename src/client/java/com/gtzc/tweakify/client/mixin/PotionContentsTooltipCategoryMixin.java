@@ -37,7 +37,7 @@ public abstract class PotionContentsTooltipCategoryMixin {
 		require = 0)
 	private static MobEffectCategory tweakify$fixTooltipCategory(
 			MobEffectCategory original, @Local MobEffectInstance effect) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean enabled = config != null && config.fix.potionTooltipCategoryFix;
 		boolean glowing = effect.is(MobEffects.GLOWING);
 		boolean badOmen = effect.is(MobEffects.BAD_OMEN);

@@ -27,7 +27,7 @@ public class PlayerBedFallDamageFixMixin {
 	private void tweakify$applyPendingFallDamage(AbstractBedBlock bedBlock, BlockState bedBlockState,
 												 BedRule rule, BlockPos pos,
 												 CallbackInfoReturnable<Either<Player.BedSleepingProblem, Unit>> cir) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.fix.bedFallDamageFix) {
 			return;
 		}

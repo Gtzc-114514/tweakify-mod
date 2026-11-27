@@ -37,7 +37,7 @@ public abstract class ResourcePackCompatibilityMixin {
 		if (original == null || original == PackCompatibility.COMPATIBLE) {
 			return original;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return original;
 		}

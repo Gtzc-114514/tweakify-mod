@@ -27,7 +27,7 @@ public final class ShoulderParrotDanceState {
 	}
 
 	public static boolean shouldDance(AvatarRenderState playerState) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.fix.parrotDanceOnShoulder || playerState == null) {
 			return false;
 		}

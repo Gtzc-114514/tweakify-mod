@@ -46,7 +46,7 @@ public final class QuickBurnFeature {
 		if (item == null || item == Items.AIR) {
 			return false;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return isBurnTool(item);
 		}

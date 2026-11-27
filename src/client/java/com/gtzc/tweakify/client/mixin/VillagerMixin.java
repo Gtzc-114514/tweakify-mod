@@ -56,7 +56,7 @@ public class VillagerMixin {
 	private void tweakify$useLockedGroup(Villager villager, ServerLevel level, MerchantOffers offers,
 										 ResourceKey<TradeSet> tradeSet, Operation<Void> original) {
 		HookProbe.markOnce("visibleTradersUpdateTrades");
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.visibleTraders) {
 			original.call(villager, level, offers, tradeSet);
 			return;

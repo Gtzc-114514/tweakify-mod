@@ -60,7 +60,7 @@ public final class BedrockHighlightRenderer {
 
 	// 标记颜色由配置决定，配置缺失时用旧版固定金色。
 	private static int markerColor() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return BedrockMarkerColor.argbOf(config == null ? TweakifyModConfig.BEDROCK_COLOR_GOLD
 			: config.functions.highlightSingleLayerBedrockColor);
 	}

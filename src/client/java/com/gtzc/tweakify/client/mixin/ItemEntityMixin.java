@@ -61,7 +61,7 @@ public class ItemEntityMixin {
 	}
 
 	private static int tweakify$configuredLifetime(ItemEntity self) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return VANILLA_LIFETIME;
 		}

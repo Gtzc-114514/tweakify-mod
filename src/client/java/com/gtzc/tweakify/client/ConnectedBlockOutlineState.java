@@ -42,7 +42,7 @@ public final class ConnectedBlockOutlineState {
 		if (state == null) {
 			return false;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (state.getBlock() instanceof DoorBlock) {
 			return config == null || config.modified.connectedBlockOutlineDoors;
 		}
@@ -150,7 +150,7 @@ public final class ConnectedBlockOutlineState {
 
 	// 配置缺失时保持 2 格视觉高度（旧行为）。
 	private static boolean doorFullHeightEnabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config == null || config.modified.connectedBlockOutlineDoorFullHeight;
 	}
 

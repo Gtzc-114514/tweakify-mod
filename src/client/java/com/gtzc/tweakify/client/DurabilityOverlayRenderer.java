@@ -47,7 +47,7 @@ public final class DurabilityOverlayRenderer {
 
 	// 由物品装饰绘制完成后调用：x/y 为物品槽左上角。
 	public static void render(GuiGraphicsExtractor gui, Font font, ItemStack stack, int x, int y) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.durabilityOverlay || stack == null) {
 			return;
 		}

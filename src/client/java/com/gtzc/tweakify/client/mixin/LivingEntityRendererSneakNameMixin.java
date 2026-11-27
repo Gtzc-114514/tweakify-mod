@@ -20,7 +20,7 @@ public abstract class LivingEntityRendererSneakNameMixin {
 		at = @At(value = "INVOKE",
 			target = "Lnet/minecraft/world/entity/LivingEntity;isDiscrete()Z"))
 	private boolean tweakify$keepSneakName(LivingEntity entity) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && config.modified.disableSneakNameHide) {
 			return false;
 		}

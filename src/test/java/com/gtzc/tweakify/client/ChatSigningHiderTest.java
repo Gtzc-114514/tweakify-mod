@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import org.junit.jupiter.api.Test;
 
@@ -14,22 +15,22 @@ class ChatSigningHiderTest {
 
 	@Test
 	void enabledFollowsConfigAndSurvivesMissingConfig() {
-		TweakifyModConfig previous = TweakifyMod.CONFIG;
-		TweakifyMod.CONFIG = null;
+		TweakifyModConfig previous = TweakifyMod.config();
+		TweakifyModTestSupport.installConfig(null);
 		try {
 			assertFalse(ChatSigningHider.isEnabled(), "配置未加载时应保持原版显示");
 		} finally {
-			TweakifyMod.CONFIG = previous;
+			TweakifyModTestSupport.installConfig(previous);
 		}
 
 		TweakifyModConfig config = new TweakifyModConfig();
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		try {
 			assertFalse(ChatSigningHider.isEnabled(), "默认关闭，保持原版权行为");
 			config.modified.hideChatSigning = true;
 			assertTrue(ChatSigningHider.isEnabled(), "开启后渲染层应立即隐藏签名标记");
 		} finally {
-			TweakifyMod.CONFIG = previous;
+			TweakifyModTestSupport.installConfig(previous);
 		}
 	}
 }

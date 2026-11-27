@@ -33,7 +33,7 @@ public class CraftingMenuWartDecompositionMixin {
 	private static void tweakify$decomposeWartBlock(AbstractContainerMenu menu, ServerLevel level, Player player,
 												   CraftingContainer container, ResultContainer result,
 												   RecipeHolder<CraftingRecipe> recipe, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.wartBlockDecomposition) {
 			return;
 		}

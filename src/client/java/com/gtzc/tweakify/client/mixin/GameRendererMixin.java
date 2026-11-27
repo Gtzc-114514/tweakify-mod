@@ -25,7 +25,7 @@ public class GameRendererMixin {
 	// 子设置开启时只取消受伤部分：先按原版公式补上死亡镜头倾斜，再取消整个方法。
 	@Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
 	private void tweakify$disableHurtShake(CameraRenderState camera, PoseStack pose, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableHurtShake) {
 			return;
 		}
@@ -45,20 +45,20 @@ public class GameRendererMixin {
 	// 夜视淡出：原版在剩余时间内用正弦值闪烁，改为按剩余时间平滑淡出。
 	@ModifyReturnValue(method = "nightVisionScale", at = @At("RETURN"))
 	private static float tweakify$fadeOutNightVision(float original, LivingEntity entity, float partialTick) {
-		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.modified.nightVisionFadeOut) {
+		if (TweakifyMod.config() == null || !TweakifyMod.config().modified.nightVisionFadeOut) {
 			return original;
 		}
 		MobEffectInstance effect = entity.getEffect(MobEffects.NIGHT_VISION);
 		if (effect == null) {
 			return original;
 		}
-		int duration = TweakifyMod.CONFIG.modified.nightVisionFadeOutDuration;
+		int duration = TweakifyMod.config().modified.nightVisionFadeOutDuration;
 		if (duration <= 0 || !effect.endsWithin(duration)) {
 			return original;
 		}
 		float remaining = effect.getDuration() - partialTick;
 		float t = Mth.clamp(remaining / (float) duration, 0.0f, 1.0f);
-		if (NightVisionCurve.fromCode(TweakifyMod.CONFIG.modified.nightVisionFadeOutCurve) == NightVisionCurve.LINEAR) {
+		if (NightVisionCurve.fromCode(TweakifyMod.config().modified.nightVisionFadeOutCurve) == NightVisionCurve.LINEAR) {
 			return t;
 		}
 		// smoothstep：两端变化更慢，避免淡出开始/结束时出现明显的折角。

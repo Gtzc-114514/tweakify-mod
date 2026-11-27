@@ -14,8 +14,8 @@ public class SignTextRenderFilterMixin {
 	@ModifyExpressionValue(method = "extractRenderState", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/client/Minecraft;isTextFilteringEnabled()Z"))
 	private boolean tweakify$disableSignTextFiltering(boolean original) {
-		return TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.optimization.signTextOptimization
-			&& TweakifyMod.CONFIG.optimization.signTextOptimizationSkipFiltering
+		return TweakifyMod.config() != null && TweakifyMod.config().optimization.signTextOptimization
+			&& TweakifyMod.config().optimization.signTextOptimizationSkipFiltering
 			? false
 			: original;
 	}

@@ -51,7 +51,7 @@ public class ServerPlayerGameModeMixin {
 	private InteractionResult tweakify$shovelOneSnowLayer(ServerPlayer serverPlayer, Level world, ItemStack stack,
 			InteractionHand hand, BlockHitResult hitResult, Operation<InteractionResult> original) {
 		HookProbe.markOnce(TWEAKIFY$SHOVEL_SNOW_PROBE, "shovelOneSnowLayer");
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || hand != InteractionHand.MAIN_HAND || serverPlayer.isSpectator()) {
 			return original.call(serverPlayer, world, stack, hand, hitResult);
 		}

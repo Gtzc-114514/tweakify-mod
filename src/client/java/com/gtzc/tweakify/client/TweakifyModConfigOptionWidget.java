@@ -58,7 +58,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 
 	// 搜索高亮色：只给命中片段换色，其余文字保持原色，不引入额外背景色块。
 	private static int highlightColor() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return SearchHighlightColor.argbOf(config == null
 			? TweakifyModConfig.DEFAULT_SEARCH_HIGHLIGHT_COLOR
 			: config.general.searchHighlightColor);

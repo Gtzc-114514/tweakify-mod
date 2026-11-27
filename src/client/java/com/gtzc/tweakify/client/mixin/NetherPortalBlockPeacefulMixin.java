@@ -26,7 +26,7 @@ public class NetherPortalBlockPeacefulMixin {
 		if (current != Difficulty.PEACEFUL) {
 			return current;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return current;
 		}
@@ -42,7 +42,7 @@ public class NetherPortalBlockPeacefulMixin {
 		if (current != Difficulty.PEACEFUL) {
 			return current;
 		}
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null) {
 			return current;
 		}

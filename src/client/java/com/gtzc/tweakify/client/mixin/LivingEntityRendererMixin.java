@@ -15,8 +15,8 @@ public class LivingEntityRendererMixin {
 	// 更好的隐身：隐身时连装备、手持物品、披风等附加层一起隐藏（原版只隐藏身体）。
 	@ModifyReturnValue(method = "shouldRenderLayers", at = @At("RETURN"))
 	private boolean tweakify$hideLayersWhenInvisible(boolean original, LivingEntityRenderState state) {
-		if (TweakifyMod.CONFIG != null && TweakifyMod.CONFIG.modified.betterInvisibility
-			&& TweakifyMod.CONFIG.modified.betterInvisibilityLayers && state.isInvisible) {
+		if (TweakifyMod.config() != null && TweakifyMod.config().modified.betterInvisibility
+			&& TweakifyMod.config().modified.betterInvisibilityLayers && state.isInvisible) {
 			return false;
 		}
 		return original;
@@ -27,17 +27,17 @@ public class LivingEntityRendererMixin {
 	@ModifyReturnValue(method = "getOverlayCoords", at = @At("RETURN"))
 	private static int tweakify$disableHurtTint(int original, LivingEntityRenderState state,
 			float whiteOverlayProgress) {
-		if (TweakifyMod.CONFIG == null || !TweakifyMod.CONFIG.modified.disableHurtTint
+		if (TweakifyMod.config() == null || !TweakifyMod.config().modified.disableHurtTint
 			|| !state.hasRedOverlay || state.deathTime > 0.0f) {
 			return original;
 		}
-		if (TweakifyMod.CONFIG.modified.hurtTintPlayersOnly
+		if (TweakifyMod.config().modified.hurtTintPlayersOnly
 			&& state.entityType != EntityTypes.PLAYER) {
 			return original;
 		}
 		// 保留白色 overlay 进度（受伤闪白等），仅关闭红色 overlay。
 		// 子设置关闭时把白闪进度也归零，即受伤时完全不叠加 overlay。
 		return OverlayTexture.pack(HurtTintState.whiteFlashProgress(
-			whiteOverlayProgress, TweakifyMod.CONFIG.modified.hurtTintKeepWhiteFlash), false);
+			whiteOverlayProgress, TweakifyMod.config().modified.hurtTintKeepWhiteFlash), false);
 	}
 }

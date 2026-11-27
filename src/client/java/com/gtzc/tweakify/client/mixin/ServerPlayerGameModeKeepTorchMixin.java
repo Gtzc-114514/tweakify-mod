@@ -35,7 +35,7 @@ public class ServerPlayerGameModeKeepTorchMixin {
 		target = "Lnet/minecraft/world/item/ItemStack;useOn(Lnet/minecraft/world/item/context/UseOnContext;)Lnet/minecraft/world/InteractionResult;"))
 	private InteractionResult tweakify$skipLastTorchPlacement(ItemStack stack, UseOnContext context,
 		Operation<InteractionResult> original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		Player player = context.getPlayer();
 		if (config != null && config.modified.keepLastTorch && player != null && !player.isCreative()) {
 			HookProbe.markOnce(TWEAKIFY$KEEP_TORCH_PROBE, "keepLastTorch");

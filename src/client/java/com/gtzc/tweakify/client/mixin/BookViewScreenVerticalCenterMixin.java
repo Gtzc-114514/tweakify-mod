@@ -32,7 +32,7 @@ public abstract class BookViewScreenVerticalCenterMixin {
 
 	@ModifyReturnValue(method = "backgroundTop", at = @At("RETURN"), require = 0)
 	private int tweakify$centerBookBackground(int original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean enabled = config != null && config.fix.bookGuiVerticalCenterFix
 			&& config.fix.bookGuiCenterViewScreen;
 		if (enabled) {

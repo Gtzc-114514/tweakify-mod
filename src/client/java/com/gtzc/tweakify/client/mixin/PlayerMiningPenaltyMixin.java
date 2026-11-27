@@ -20,7 +20,7 @@ public class PlayerMiningPenaltyMixin {
 			target = "Lnet/minecraft/world/entity/ai/attributes/AttributeInstance;getValue()D"))
 	private double tweakify$removeUnderwaterPenalty(AttributeInstance instance) {
 		double value = instance.getValue();
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableUnderwaterMiningPenalty) {
 			return value;
 		}
@@ -35,7 +35,7 @@ public class PlayerMiningPenaltyMixin {
 	// 空中惩罚：离地时 getDestroySpeed 末尾固定除以 5，按保留百分比把除数拉向 1。
 	@ModifyConstant(method = "getDestroySpeed", constant = @Constant(floatValue = 5.0F))
 	private float tweakify$removeAirPenalty(float original) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.modified.disableAirMiningPenalty) {
 			return original;
 		}

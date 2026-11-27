@@ -124,7 +124,7 @@ public class TweakifyModCommands {
 	}
 
 	private static int toggle(CommandSourceStack source, BooleanCommand command) {
-		return apply(source, command, !TweakifyMod.CONFIG.getBoolean(command.name()));
+		return apply(source, command, !TweakifyMod.config().getBoolean(command.name()));
 	}
 
 	private static int set(CommandSourceStack source, BooleanCommand command, boolean value) {
@@ -134,7 +134,7 @@ public class TweakifyModCommands {
 	// 改值后立即写盘：整个「读旧值 + 改值 + 写盘 + 失败回滚」在配置锁内完成，
 	// 因此不会把同一时刻客户端线程的其它修改一起回滚掉。
 	private static int apply(CommandSourceStack source, BooleanCommand command, boolean value) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		String name = command.name();
 		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> {
 			config.setBoolean(name, value);
@@ -152,7 +152,7 @@ public class TweakifyModCommands {
 	private static int addItem(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		Item item = itemFrom(context, "item");
 		String id = BuiltInRegistries.ITEM.getKey(item).toString();
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> config.addItem(id));
 		if (result == TweakifyModConfig.ApplyResult.UNCHANGED) {
 			context.getSource().sendFailure(Component.translatable(ITEM_DUPLICATE, id));
@@ -169,7 +169,7 @@ public class TweakifyModCommands {
 	private static int removeItem(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		Item item = itemFrom(context, "item");
 		String id = BuiltInRegistries.ITEM.getKey(item).toString();
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> config.removeItem(id));
 		if (result == TweakifyModConfig.ApplyResult.UNCHANGED) {
 			context.getSource().sendFailure(Component.translatable(ITEM_MISSING, id));
@@ -184,7 +184,7 @@ public class TweakifyModCommands {
 	}
 
 	private static int listItems(CommandSourceStack source, int page) {
-		List<String> items = TweakifyMod.CONFIG.getRestrictedOffhandItems();
+		List<String> items = TweakifyMod.config().getRestrictedOffhandItems();
 		int totalPages = Math.max(1, (items.size() + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE);
 		if (page > totalPages) {
 			source.sendFailure(Component.translatable(ITEM_PAGE_RANGE, totalPages));
@@ -201,7 +201,7 @@ public class TweakifyModCommands {
 	}
 
 	private static int resetItems(CommandSourceStack source) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		TweakifyModConfig.ApplyResult result = config.applyAndSave(() -> {
 			config.resetToLightSources();
 			return true;
@@ -218,7 +218,7 @@ public class TweakifyModCommands {
 	// 把当前整套配置存成命名档案（同名覆盖）。
 	private static int saveProfile(CommandContext<CommandSourceStack> context) {
 		String name = StringArgumentType.getString(context, "name");
-		ConfigProfiles.SaveOutcome outcome = ConfigProfiles.save(name, TweakifyMod.CONFIG);
+		ConfigProfiles.SaveOutcome outcome = ConfigProfiles.save(name, TweakifyMod.config());
 		if (outcome.result() != ConfigProfiles.Result.OK) {
 			if (outcome.backupPath() != null) {
 				// 已备份但写盘失败：把备份路径告诉玩家，否则旧档案等于“消失”。
@@ -248,7 +248,7 @@ public class TweakifyModCommands {
 		}
 		ConfigProfiles.Loaded profile = read.profile();
 
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		TweakifyModConfig.ApplyResult result;
 		try {
 			result = config.applyAndSave(() -> {
@@ -345,7 +345,7 @@ public class TweakifyModCommands {
 		source.sendFailure(Component.translatable(SAVE_FAILED));
 		// 服务端已回滚（或兜底重写）：请求客户端界面同步回真实值，
 		// 否则关闭配置界面时 MaLiLib 会把界面里的失败值再次推回配置。
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null) {
 			config.requestOptionSync();
 		}

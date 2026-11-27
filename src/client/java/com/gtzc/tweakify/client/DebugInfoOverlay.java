@@ -67,7 +67,7 @@ public final class DebugInfoOverlay {
 
 	// 由 Hud.extractRenderState 末尾调用：此时原版 HUD 已经提交。
 	public static void render(GuiGraphicsExtractor graphics, Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.testing.debugInfoOverlay) {
 			CACHE.reset();
 			return;

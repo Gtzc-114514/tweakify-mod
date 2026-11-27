@@ -4,6 +4,7 @@ import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigBoolean;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.TweakifyModTestSupport;
 import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.FavoritesStorage;
 import com.gtzc.tweakify.config.TweakifyModConfig;
@@ -164,11 +165,11 @@ class TweakifyModConfigScreenTest {
 	// 取消收藏后重新取列表，该行应立即消失。
 	@Test
 	void favoritesTabShowsOnlyFavoritedOptions(@TempDir Path tempDir) {
-		TweakifyModConfig previousConfig = TweakifyMod.CONFIG;
+		TweakifyModConfig previousConfig = TweakifyMod.config();
 		TweakifyModConfig config = new TweakifyModConfig();
 		// 本用例验证「逐项收藏」旧行为：显式关闭父项连带子项。
 		config.general.favoriteIncludeChildren = false;
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
 		try {
 			assertTrue(FavoritesStorage.toggleConfigFavorite("cameraMotion"));
@@ -187,7 +188,7 @@ class TweakifyModConfigScreenTest {
 			// 等待异步写盘完成任务，避免后台线程在临时目录清理时仍写文件。
 			AsyncFileWriter.drain(15_000L);
 			FavoritesStorage.clearForTest();
-			TweakifyMod.CONFIG = previousConfig;
+			TweakifyModTestSupport.installConfig(previousConfig);
 			// 恢复 ALL 标签的 NODE_INFO，避免影响其它用例。
 			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
 		}
@@ -196,10 +197,10 @@ class TweakifyModConfigScreenTest {
 	// 收藏系统总开关关闭时：收藏标签为空、星标禁用，但收藏数据仍在存储层保留。
 	@Test
 	void disablingFavoriteSystemHidesFavoritesContent(@TempDir Path tempDir) {
-		TweakifyModConfig previousConfig = TweakifyMod.CONFIG;
+		TweakifyModConfig previousConfig = TweakifyMod.config();
 		TweakifyModConfig config = new TweakifyModConfig();
 		config.general.favoriteSystem = false;
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
 		try {
 			assertTrue(FavoritesStorage.toggleConfigFavorite("cameraMotion"));
@@ -210,7 +211,7 @@ class TweakifyModConfigScreenTest {
 		} finally {
 			AsyncFileWriter.drain(15_000L);
 			FavoritesStorage.clearForTest();
-			TweakifyMod.CONFIG = previousConfig;
+			TweakifyModTestSupport.installConfig(previousConfig);
 			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
 		}
 	}
@@ -218,10 +219,10 @@ class TweakifyModConfigScreenTest {
 	// 「收藏包含子项」开启时，收藏父项会连带显示全部后代；关闭后回到逐项收藏。
 	@Test
 	void favoritesTabIncludesChildrenOfFavoritedParents(@TempDir Path tempDir) {
-		TweakifyModConfig previousConfig = TweakifyMod.CONFIG;
+		TweakifyModConfig previousConfig = TweakifyMod.config();
 		TweakifyModConfig config = new TweakifyModConfig();
 		config.general.favoriteIncludeChildren = true;
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
 		try {
 			assertTrue(FavoritesStorage.toggleConfigFavorite("cameraMotion"));
@@ -243,7 +244,7 @@ class TweakifyModConfigScreenTest {
 		} finally {
 			AsyncFileWriter.drain(15_000L);
 			FavoritesStorage.clearForTest();
-			TweakifyMod.CONFIG = previousConfig;
+			TweakifyModTestSupport.installConfig(previousConfig);
 			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
 		}
 	}
@@ -336,10 +337,10 @@ class TweakifyModConfigScreenTest {
 	// 收藏标签搜索仍只列收藏项：父项命中不带未收藏子项，子项命中也不补父级路径。
 	@Test
 	void favoritesSearchKeepsOnlyFavoritedOptions(@TempDir Path tempDir) {
-		TweakifyModConfig previousConfig = TweakifyMod.CONFIG;
+		TweakifyModConfig previousConfig = TweakifyMod.config();
 		TweakifyModConfig config = new TweakifyModConfig();
 		config.general.favoriteIncludeChildren = false;
-		TweakifyMod.CONFIG = config;
+		TweakifyModTestSupport.installConfig(config);
 		FavoritesStorage.resetForTest(tempDir.resolve(FavoritesStorage.FILE_NAME));
 		try {
 			assertTrue(FavoritesStorage.toggleConfigFavorite("betterBlockPlacement"));
@@ -357,7 +358,7 @@ class TweakifyModConfigScreenTest {
 		} finally {
 			AsyncFileWriter.drain(15_000L);
 			FavoritesStorage.clearForTest();
-			TweakifyMod.CONFIG = previousConfig;
+			TweakifyModTestSupport.installConfig(previousConfig);
 			TweakifyModConfigScreen.visibleConfigs(TweakifyModConfigScreen.ConfigTab.ALL);
 		}
 	}

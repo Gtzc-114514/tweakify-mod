@@ -26,7 +26,7 @@ public class ChunkBorderRendererChunkCenterMixin {
 	@Inject(method = "emitGizmos", at = @At("RETURN"))
 	private void tweakify$drawChunkCenter(double camX, double camY, double camZ, DebugValueAccess debugValues,
 									  Frustum frustum, float partialTicks, CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.chunkCenterIndicator) {
 			return;
 		}

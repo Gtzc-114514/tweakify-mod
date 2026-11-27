@@ -122,7 +122,7 @@ final class BlockMarkerScanner {
 	}
 
 	static void tick(Minecraft client) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		boolean available = client.player != null && client.level != null;
 		boolean barrier = config != null && config.functions.barrierVisibility && available;
 		boolean bedrock = config != null && config.functions.highlightSingleLayerBedrock && available;
@@ -346,7 +346,7 @@ final class BlockMarkerScanner {
 	}
 
 	private static int maxBarrierMarkers() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		int configured = config == null ? TweakifyModConfig.DEFAULT_BARRIER_MARKERS
 			: config.functions.barrierVisibilityMaxMarkers;
 		return Math.max(TweakifyModConfig.MIN_BARRIER_MARKERS,
@@ -354,7 +354,7 @@ final class BlockMarkerScanner {
 	}
 
 	private static int maxBedrockMarkers() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		int configured = config == null ? TweakifyModConfig.DEFAULT_BEDROCK_MARKERS
 			: config.functions.highlightSingleLayerBedrockMaxMarkers;
 		return Math.max(TweakifyModConfig.MIN_BEDROCK_MARKERS,
@@ -363,7 +363,7 @@ final class BlockMarkerScanner {
 
 	// 屏障扫描半径：配置缺失或越界时夹紧到允许范围。
 	private static int barrierScanRadius() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		int configured = config == null ? TweakifyModConfig.DEFAULT_BARRIER_SCAN_RADIUS
 			: config.functions.barrierVisibilityScanRadius;
 		return Math.max(TweakifyModConfig.MIN_BARRIER_SCAN_RADIUS,
@@ -372,7 +372,7 @@ final class BlockMarkerScanner {
 
 	// 基岩扫描半径：配置缺失或越界时夹紧到允许范围。
 	private static int bedrockScanRadius() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		int configured = config == null ? TweakifyModConfig.DEFAULT_BEDROCK_SCAN_RADIUS
 			: config.functions.highlightSingleLayerBedrockScanRadius;
 		return Math.max(TweakifyModConfig.MIN_BEDROCK_SCAN_RADIUS,

@@ -28,7 +28,7 @@ public abstract class ExperienceBarAlwaysShowXpMixin {
 	@Inject(method = "extractRenderState", at = @At("RETURN"))
 	private void tweakify$overlayLocatorMarkers(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker,
 												CallbackInfo ci) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !config.functions.locatorBarHeads
 			|| !config.functions.locatorBarAlwaysShowXp) {
 			return;

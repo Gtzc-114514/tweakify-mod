@@ -67,7 +67,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			TweakifyModConfigOptions.flushPendingSave();
 			TweakifyModConfigOptions.pollSaveResults();
 			ScrollMemory.tick();
-			TweakifyModConfig config = TweakifyMod.CONFIG;
+			TweakifyModConfig config = TweakifyMod.config();
 			if (config != null && config.consumeOptionSyncRequest()) {
 				TweakifyModConfigOptions.syncFromConfig();
 			}
@@ -262,13 +262,13 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		// 已启用功能报表（测试标签）：只列根级布尔开关，用于快速核对当前配置组合。
 		TestingConfigOptions.DEBUG_ENABLED_FEATURES_REPORT.getKeybind().setCallback((action, key) -> {
 			Minecraft client = Minecraft.getInstance();
-			if (client.gui == null || TweakifyMod.CONFIG == null) {
+			if (client.gui == null || TweakifyMod.config() == null) {
 				return false;
 			}
 			List<String> enabled = new ArrayList<>();
 			for (ConfigCatalog.Entry entry : ConfigCatalog.commandEntries()) {
 				if (entry.isRoot()
-					&& TweakifyMod.CONFIG.getBoolean(entry.name())) {
+					&& TweakifyMod.config().getBoolean(entry.name())) {
 					enabled.add(entry.name());
 				}
 			}

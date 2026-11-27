@@ -41,7 +41,7 @@ public class ServerGamePacketListenerImplPickMixin {
 		// 低频路径（仅中键取物包），用字符串版本即可；名字带 Server 后缀以区别于客户端同名探针。
 		HookProbe.markOnce("pickFluidBucketServer");
 		ItemStack cloneStack = original.call(state, level, pos, includeData);
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config == null || !cloneStack.isEmpty()) {
 			return cloneStack;
 		}

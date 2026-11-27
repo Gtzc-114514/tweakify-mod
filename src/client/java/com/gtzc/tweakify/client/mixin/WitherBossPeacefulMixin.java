@@ -18,7 +18,7 @@ public class WitherBossPeacefulMixin {
 	@Redirect(method = "checkDespawn", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/entity/EntityType;isAllowedInPeaceful()Z"))
 	private boolean tweakify$keepPeacefulWither(EntityType<?> type) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config != null && SpawnFeatureState.shouldStayInPeaceful(
 			config.functions.peacefulModeMonsters, config.isPeacefulModeMonster(type))) {
 			return true;

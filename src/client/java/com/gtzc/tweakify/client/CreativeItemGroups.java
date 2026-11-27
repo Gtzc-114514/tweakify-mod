@@ -709,27 +709,27 @@ public final class CreativeItemGroups {
 	// ---------------------------------------------------------------- 配置
 
 	private static boolean isEnabled() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && config.functions.itemGroups;
 	}
 
 	private static boolean includeDefaultGroups() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config == null || config.functions.itemGroupsAddAll;
 	}
 
 	private static boolean showItemsInGroup() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && config.functions.itemGroupsShowItems;
 	}
 
 	private static boolean isAlphabetical() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config != null && SORT_ALPHABETICAL.equals(config.functions.itemGroupsSort);
 	}
 
 	private static List<String> customGroupEntries() {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
+		TweakifyModConfig config = TweakifyMod.config();
 		return config == null
 			? List.of()
 			: config.getStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD);
