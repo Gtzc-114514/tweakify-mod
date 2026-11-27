@@ -905,11 +905,12 @@ public class TweakifyModConfig {
 				}
 				config.configPath = configPath;
 				// JSON null 视为缺省：Gson 对原始类型保留字段默认值，不能当成“已是当前版本”。
+				// 两处版本判定必须用同一个 versionPresent，否则会出现“不升级版本却按旧版本迁移”。
 				JsonElement versionElement = root.get(CONFIG_VERSION_FIELD);
-				int loadedVersion = versionElement != null && !versionElement.isJsonNull()
-					? config.configVersion : 0;
+				boolean versionPresent = versionElement != null && !versionElement.isJsonNull();
+				int loadedVersion = versionPresent ? config.configVersion : 0;
 				// 前置迁移：只处理版本号与缺失键，不做字段值校验。
-				boolean corrected = ConfigMigration.sanitizeConfigVersion(config, root.has("configVersion"))
+				boolean corrected = ConfigMigration.sanitizeConfigVersion(config, versionPresent)
 					| ConfigMigration.migrateScrollListMemoryDefault(config, loadedVersion)
 					| ConfigMigration.migrateLegacyFeatureKeys(config, root)
 					| ConfigMigration.migrateLocatorHeadOptions(config, root)

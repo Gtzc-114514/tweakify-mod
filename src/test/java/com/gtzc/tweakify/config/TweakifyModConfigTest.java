@@ -627,6 +627,27 @@ class TweakifyModConfigTest {
 			assertTrue(config.functions.betterArmorStands);
 		}
 
+		// JSON null 等同于缺版本号：版本号必须被重写为当前版本，且与迁移判定保持一致，
+		// 不能出现「版本号看起来已是最新、迁移却按旧版本处理」的矛盾。
+		@Test
+		void loadTreatsNullConfigVersionAsMissing() throws IOException {
+			Path path = configPath();
+			Files.writeString(path, """
+				{
+				  "configVersion": null,
+				  "armorStandArms": true
+				}
+				""");
+
+			TweakifyModConfig config = TweakifyModConfig.load(path);
+
+			assertEquals(TweakifyModConfig.CURRENT_CONFIG_VERSION, config.configVersion);
+			assertTrue(config.functions.betterArmorStands, "null 版本号按旧配置跑 v5 迁移");
+			assertTrue(Files.readString(path).contains(
+				"\"configVersion\": " + TweakifyModConfig.CURRENT_CONFIG_VERSION),
+				"null 版本号应被重写为当前版本");
+		}
+
 		// 姿态预设是代码列表而不是物品 ID 列表：清洗不得把它写成命名空间形式，
 		// 否则 ArmorStandPoses.resolve 全部落空、姿态功能静默失效。
 		@Test

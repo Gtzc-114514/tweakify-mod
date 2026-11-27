@@ -25,6 +25,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -82,13 +83,17 @@ class MixinInjectionTargetTest {
 	private static final Pattern AT_ATTRIBUTE = Pattern.compile("\\bat\\s*=\\s*@At\\b");
 	private static final Pattern VALUE_ATTRIBUTE = Pattern.compile("\\bvalue\\s*=\\s*");
 	private static final Pattern TARGET_ATTRIBUTE = Pattern.compile("\\btarget\\s*=\\s*");
+	// @ModifyVariable 的参数槽位属性：argsOnly=true 时 index 必须落在目标方法的参数起始槽位上。
+	private static final Pattern INDEX_ATTRIBUTE = Pattern.compile("\\bindex\\s*=\\s*(\\d+)");
+	private static final Pattern ARGS_ONLY_ATTRIBUTE = Pattern.compile("\\bargsOnly\\s*=\\s*(true|false)");
 
 	// 目标类不可加载时的豁免：只允许「可选模组不在测试 classpath」这类与签名无关的原因。
 	private static final Set<String> SKIPPED_TARGETS = Set.of();
 
 	// 源码里的一条注入声明：memberName 为 Accessor/Invoker 的成员名，handlerName 为处理器方法名。
+	// index/argsOnly 仅对 @ModifyVariable 有意义（其余注入为 -1 / false）。
 	private record Injection(String annotation, List<String> methods, String atValue, String atTarget,
-			String memberName, String handlerName) {
+			String memberName, String handlerName, int index, boolean argsOnly) {
 	}
 
 	@Test
@@ -154,6 +159,116 @@ class MixinInjectionTargetTest {
 				loader, failures, skipped, visitedTargets);
 			checkWrapOperationHandler(mixinModel, mixin, injection, loader, failures);
 		}
+		checkArgsOnlyIndex(mixin, mixinModel, injection, targets, loader, failures);
+	}
+
+	// @ModifyVariable(argsOnly = true, index = N) 的槽位校验：
+	// 目标方法在 index 处必须正好是某个参数的起始槽位（double/long 占两个槽），
+	// 且处理器参数类型与该参数类型一致。实例方法的 slot 0（this）、
+	// 双槽类型的第二个槽位与参数类型写错都会在这里被拦住；
+	// 两个同类型参数之间的选择仍靠人工核对（无 LVT 时无法从字节码区分）。
+	private static void checkArgsOnlyIndex(String mixin, ClassModel mixinModel, Injection injection,
+			Set<String> targets, ClassLoader loader, List<String> failures) {
+		if (!"ModifyVariable".equals(injection.annotation()) || !injection.argsOnly()
+			|| injection.index() < 0) {
+			return;
+		}
+		MethodModel handler = findHandlerModel(mixinModel, injection.handlerName());
+		if (handler == null) {
+			failures.add(mixin + " 的 @ModifyVariable 处理器 " + injection.handlerName() + " 不在 mixin 类中");
+			return;
+		}
+		List<Class<?>> handlerTypes;
+		try {
+			handlerTypes = MethodType.fromMethodDescriptorString(
+				handler.methodType().stringValue(), loader).parameterList();
+		} catch (RuntimeException error) {
+			failures.add(mixin + " 的 @ModifyVariable 处理器描述符无法解析: " + error.getMessage());
+			return;
+		}
+		for (String targetName : targets) {
+			Class<?> target = loadTargetQuietly(targetName, loader);
+			if (target == null) {
+				continue;
+			}
+			Method method = findTargetMethod(target, injection.methods());
+			if (method == null) {
+				continue; // method 属性校验那一轮已经报过
+			}
+			Class<?> slotType = parameterAtSlot(method, injection.index());
+			if (slotType == null) {
+				failures.add(mixin + " 的 @ModifyVariable index=" + injection.index()
+					+ " 不是 " + targetName + "." + method.getName() + " 的参数起始槽位");
+				continue;
+			}
+			if (!handlerTypes.contains(slotType)) {
+				failures.add(mixin + " 的 @ModifyVariable 处理器参数类型与 " + targetName + "."
+					+ method.getName() + " 的槽位 " + injection.index()
+					+ "（" + slotType.getSimpleName() + "）不匹配");
+			}
+		}
+	}
+
+	private static MethodModel findHandlerModel(ClassModel model, String name) {
+		if (name == null) {
+			return null;
+		}
+		for (MethodModel method : model.methods()) {
+			if (method.methodName().stringValue().equals(name)) {
+				return method;
+			}
+		}
+		return null;
+	}
+
+	// 槽位校验专用：不可加载的目标类直接跳过，与方法签名校验同一口径（不额外计入豁免）。
+	private static Class<?> loadTargetQuietly(String name, ClassLoader loader) {
+		try {
+			return Class.forName(name, false, loader);
+		} catch (Throwable error) {
+			return null;
+		}
+	}
+
+	// 取注入方法声明里的第一个同名方法；method 属性已单独校验过存在性。
+	private static Method findTargetMethod(Class<?> target, List<String> specs) {
+		for (String spec : specs) {
+			if (spec.isEmpty() || "*".equals(spec)) {
+				continue;
+			}
+			int paren = spec.indexOf('(');
+			String name = paren >= 0 ? spec.substring(0, paren) : spec;
+			for (Class<?> current = target; current != null; current = current.getSuperclass()) {
+				for (Method method : current.getDeclaredMethods()) {
+					if (method.getName().equals(name)) {
+						return method;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	// 参数起始槽位：实例方法 slot 0 为 this，double/long 占两个槽位。
+	private static Class<?> parameterAtSlot(Method method, int index) {
+		int slot = Modifier.isStatic(method.getModifiers()) ? 0 : 1;
+		for (Class<?> type : method.getParameterTypes()) {
+			if (slot == index) {
+				return type;
+			}
+			slot += (type == long.class || type == double.class) ? 2 : 1;
+		}
+		return null;
+	}
+
+	private static int intAttribute(String args, Pattern pattern) {
+		Matcher matcher = pattern.matcher(args);
+		return matcher.find() ? Integer.parseInt(matcher.group(1)) : -1;
+	}
+
+	private static boolean booleanAttribute(String args, Pattern pattern) {
+		Matcher matcher = pattern.matcher(args);
+		return matcher.find() && Boolean.parseBoolean(matcher.group(1));
 	}
 
 	// Accessor/Invoker：注解值就是目标字段/方法名。
@@ -784,7 +899,7 @@ class MixinInjectionTargetTest {
 			String args = extractParen(code, paren);
 			String name = firstString(args);
 			if (name != null) {
-				result.add(new Injection(accessor.group(1), List.of(), null, null, name, null));
+				result.add(new Injection(accessor.group(1), List.of(), null, null, name, null, -1, false));
 			}
 		}
 
@@ -810,7 +925,11 @@ class MixinInjectionTargetTest {
 			if (!methods.isEmpty() || atTarget != null) {
 				int close = closingParen(code, paren);
 				String handlerName = close < 0 ? null : findHandlerName(code, close + 1);
-				result.add(new Injection(injection.group(1), methods, atValue, atTarget, null, handlerName));
+				// 只有 @ModifyVariable 会用这两个属性做槽位校验（@ModifyArg 的 index 含义不同）。
+				int index = intAttribute(args, INDEX_ATTRIBUTE);
+				boolean argsOnly = booleanAttribute(args, ARGS_ONLY_ATTRIBUTE);
+				result.add(new Injection(injection.group(1), methods, atValue, atTarget, null, handlerName,
+					index, argsOnly));
 			}
 		}
 		return result;

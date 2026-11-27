@@ -35,8 +35,8 @@ public class ArmorStandPoseMixin {
 		if (stand.level().isClientSide()) {
 			return;
 		}
-		// 标记盔甲架保留原版交互（通常用于装饰/碰撞标记，不参与姿态循环）。
-		if (stand.isMarker()) {
+		// 标记盔甲架保留原版交互；旁观者与原版一致只读，不参与姿态循环。
+		if (stand.isMarker() || player.isSpectator()) {
 			return;
 		}
 		if (!player.isShiftKeyDown() || !player.getItemInHand(hand).isEmpty()) {

@@ -14,12 +14,14 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.ChiseledBookShelfBlock;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -71,6 +73,7 @@ public final class ChiseledBookshelfVisualizer {
 
 	private static long tickCounter;
 	private static BlockPos lastRequestedPos;
+	private static ResourceKey<Level> lastRequestedDimension;
 	private static int lastRequestedSignature = -1;
 	private static long lastRequestTick;
 
@@ -82,8 +85,8 @@ public final class ChiseledBookshelfVisualizer {
 		static final Target EMPTY = new Target(null, -1, new ItemStack[0], new boolean[0]);
 	}
 
-	private record ServerSnapshot(BlockPos pos, ItemStack[] stacks) {
-		static final ServerSnapshot EMPTY = new ServerSnapshot(null, new ItemStack[0]);
+	private record ServerSnapshot(BlockPos pos, ResourceKey<Level> dimension, ItemStack[] stacks) {
+		static final ServerSnapshot EMPTY = new ServerSnapshot(null, null, new ItemStack[0]);
 	}
 
 	// Fabric HUD 元素入口：在 TweakifyModClient 里用 HudElementRegistry.addLast 注册。
@@ -125,7 +128,7 @@ public final class ChiseledBookshelfVisualizer {
 		requestServerSnapshot(client, pos, occupied);
 	}
 
-	private static boolean[] occupiedSlots(BlockState state) {
+	static boolean[] occupiedSlots(BlockState state) {
 		boolean[] occupied = new boolean[SLOT_COUNT];
 		List<BooleanProperty> properties = ChiseledBookShelfBlock.SLOT_OCCUPIED_PROPERTIES;
 		for (int slot = 0; slot < SLOT_COUNT && slot < properties.size(); slot++) {
@@ -135,9 +138,12 @@ public final class ChiseledBookshelfVisualizer {
 	}
 
 	// 优先使用集成服务端回填的副本；没有时读客户端方块实体（区块加载时同步过来的数据）。
+	// 快照必须同时匹配坐标与维度：跨维度返回同一坐标时不能用上个维度的内容。
 	private static ItemStack[] knownStacks(Minecraft client, BlockPos pos) {
 		ServerSnapshot snapshot = serverSnapshot;
-		if (snapshot.pos != null && snapshot.pos.equals(pos)) {
+		if (snapshot.pos != null && snapshot.pos.equals(pos)
+			&& client.level != null && snapshot.dimension != null
+			&& snapshot.dimension.equals(client.level.dimension())) {
 			return snapshot.stacks;
 		}
 		if (!(client.level.getBlockEntity(pos) instanceof ChiseledBookShelfBlockEntity shelf)) {
@@ -166,17 +172,19 @@ public final class ChiseledBookshelfVisualizer {
 		if (server == null || client.level == null) {
 			return;
 		}
-		ServerLevel level = server.getLevel(client.level.dimension());
+		ResourceKey<Level> dimension = client.level.dimension();
+		ServerLevel level = server.getLevel(dimension);
 		if (level == null) {
 			return;
 		}
 		int signature = signatureOf(occupied);
-		boolean sameTarget = pos.equals(lastRequestedPos);
+		boolean sameTarget = pos.equals(lastRequestedPos) && dimension.equals(lastRequestedDimension);
 		if (sameTarget && signature == lastRequestedSignature
 			&& tickCounter - lastRequestTick < SERVER_REFRESH_INTERVAL_TICKS) {
 			return;
 		}
 		lastRequestedPos = pos.immutable();
+		lastRequestedDimension = dimension;
 		lastRequestedSignature = signature;
 		lastRequestTick = tickCounter;
 		BlockPos immutablePos = lastRequestedPos;
@@ -195,7 +203,7 @@ public final class ChiseledBookshelfVisualizer {
 				for (int slot = 0; slot < SLOT_COUNT; slot++) {
 					stacks[slot] = slot < items.size() ? items.get(slot).copy() : ItemStack.EMPTY;
 				}
-				serverSnapshot = new ServerSnapshot(immutablePos, stacks);
+				serverSnapshot = new ServerSnapshot(immutablePos, dimension, stacks);
 			} catch (RuntimeException error) {
 				// 方块实体在关卡卸载阶段不可访问时不能把异常漏到服务端线程。
 				TweakifyMod.LOGGER.warn("Failed to read chiseled bookshelf contents", error);
@@ -203,7 +211,8 @@ public final class ChiseledBookshelfVisualizer {
 		});
 	}
 
-	private static int signatureOf(boolean[] occupied) {
+	// 占用位图（供测试与节流共用）：bit N 对应槽位 N 是否占用。
+	static int signatureOf(boolean[] occupied) {
 		int signature = 0;
 		for (int slot = 0; slot < occupied.length; slot++) {
 			if (occupied[slot]) {
@@ -249,16 +258,28 @@ public final class ChiseledBookshelfVisualizer {
 			&& !(screen instanceof AbstractContainerScreen);
 	}
 
+	static int panelSlotCount(boolean allSlots, int hoveredSlot) {
+		if (allSlots) {
+			return SLOT_COUNT;
+		}
+		return hoveredSlot >= 0 ? 1 : 0;
+	}
+
+	// 面板居中：多个槽位时返回整行的起始 x。
+	static int slotRowStartX(int centerX, int count) {
+		int totalWidth = count * SLOT_SIZE + Math.max(0, count - 1) * SLOT_GAP;
+		return centerX - totalWidth / 2;
+	}
+
 	private static void drawPanel(GuiGraphicsExtractor graphics, Minecraft client, FunctionConfig functions,
 			Target current, int centerX, int rowY) {
 		boolean allSlots = functions.chiseledBookshelfVisualizerShowAllSlots;
 		int firstSlot = allSlots ? 0 : Math.max(0, current.hoveredSlot);
-		int count = allSlots ? SLOT_COUNT : (current.hoveredSlot >= 0 ? 1 : 0);
+		int count = panelSlotCount(allSlots, current.hoveredSlot);
 		if (count == 0) {
 			return;
 		}
-		int totalWidth = count * SLOT_SIZE + (count - 1) * SLOT_GAP;
-		int startX = centerX - totalWidth / 2;
+		int startX = slotRowStartX(centerX, count);
 		for (int index = 0; index < count; index++) {
 			int slot = firstSlot + index;
 			if (slot < 0 || slot >= SLOT_COUNT) {
@@ -307,7 +328,7 @@ public final class ChiseledBookshelfVisualizer {
 		}
 	}
 
-	private static void appendEnchantmentLines(ItemStack stack, List<Component> lines) {
+	static void appendEnchantmentLines(ItemStack stack, List<Component> lines) {
 		ItemEnchantments stored = stack.get(DataComponents.STORED_ENCHANTMENTS);
 		if (stored != null && !stored.isEmpty()) {
 			appendEnchantmentLines(stored, lines);
@@ -319,7 +340,7 @@ public final class ChiseledBookshelfVisualizer {
 		}
 	}
 
-	private static void appendEnchantmentLines(ItemEnchantments enchantments, List<Component> lines) {
+	static void appendEnchantmentLines(ItemEnchantments enchantments, List<Component> lines) {
 		for (Holder<Enchantment> enchantment : enchantments.keySet()) {
 			lines.add(Enchantment.getFullname(enchantment, enchantments.getLevel(enchantment)));
 		}
@@ -331,6 +352,7 @@ public final class ChiseledBookshelfVisualizer {
 		target = Target.EMPTY;
 		serverSnapshot = ServerSnapshot.EMPTY;
 		lastRequestedPos = null;
+		lastRequestedDimension = null;
 		lastRequestedSignature = -1;
 		lastRequestTick = 0L;
 	}
