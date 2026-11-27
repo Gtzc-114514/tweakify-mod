@@ -190,7 +190,8 @@
 		"BlockStateHelpfulSelectionMixin",
 		"ChatComponentHideSigningMixin",
 		"ToastManagerHideSigningMixin",
-		"MultiPlayerGameModeDropConfirmMixin"
+		"MultiPlayerGameModeDropConfirmMixin",
+		"MinecraftStartupTimeMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"
