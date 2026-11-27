@@ -31,11 +31,11 @@ public abstract class ExperienceBarHighLevelFixMixin {
 		require = 0)
 	private int tweakify$keepExperienceBarVisible(int original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.fix.experienceBarHighLevelFix;
+		boolean enabled = config.fix.experienceBarHighLevelFix;
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$EXPERIENCE_BAR_HIGH_LEVEL_PROBE, "experienceBarHighLevelFix");
 		}
-		int minLevel = config == null ? 0 : config.fix.experienceBarHighLevelFixMinLevel;
+		int minLevel = config.fix.experienceBarHighLevelFixMinLevel;
 		Minecraft client = Minecraft.getInstance();
 		int currentLevel = client.player == null ? 0 : client.player.experienceLevel;
 		return ExperienceBarState.xpNeededForNextLevel(enabled, minLevel, currentLevel, original);

@@ -51,7 +51,7 @@ public final class BetterScreenshotManager {
 
 	public static void capture(Minecraft client, boolean fourK) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.betterScreenshot) {
+		if (!config.functions.betterScreenshot) {
 			return;
 		}
 		if (HIGH_RES_STATE.isPending()) {

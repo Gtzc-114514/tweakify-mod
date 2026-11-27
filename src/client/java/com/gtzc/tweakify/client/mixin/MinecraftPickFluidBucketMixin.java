@@ -33,7 +33,7 @@ public class MinecraftPickFluidBucketMixin {
 	private void tweakify$pickFluidBucket(CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
 		Minecraft client = (Minecraft) (Object) this;
-		if (config == null || client.player == null || client.level == null || client.gameMode == null) {
+		if (client.player == null || client.level == null || client.gameMode == null) {
 			return;
 		}
 		// 创造模式归“中键获得液体桶”；生存模式归“生存模式中键取物”。

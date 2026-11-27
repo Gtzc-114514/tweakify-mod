@@ -33,7 +33,7 @@ public class EnchantmentScreenInfoMixin {
 											float partialTick, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
 		AbstractContainerMenu containerMenu = ((MenuAccess<?>) (Object) this).getMenu();
-		if (config == null || !config.functions.enchantingTableInfo
+		if (!config.functions.enchantingTableInfo
 			|| !(containerMenu instanceof EnchantmentMenu menu)) {
 			return;
 		}

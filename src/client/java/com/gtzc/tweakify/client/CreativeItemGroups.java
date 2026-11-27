@@ -710,29 +710,27 @@ public final class CreativeItemGroups {
 
 	private static boolean isEnabled() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.functions.itemGroups;
+		return config.functions.itemGroups;
 	}
 
 	private static boolean includeDefaultGroups() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config == null || config.functions.itemGroupsAddAll;
+		return config.functions.itemGroupsAddAll;
 	}
 
 	private static boolean showItemsInGroup() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.functions.itemGroupsShowItems;
+		return config.functions.itemGroupsShowItems;
 	}
 
 	private static boolean isAlphabetical() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && SORT_ALPHABETICAL.equals(config.functions.itemGroupsSort);
+		return SORT_ALPHABETICAL.equals(config.functions.itemGroupsSort);
 	}
 
 	private static List<String> customGroupEntries() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config == null
-			? List.of()
-			: config.getStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD);
+		return config.getStringList(TweakifyModConfig.CUSTOM_ITEM_GROUPS_FIELD);
 	}
 
 	// 配置签名：只包含会影响分组结果的项。轮播开关只影响渲染，不参与签名，

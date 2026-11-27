@@ -36,11 +36,11 @@ public abstract class LivingEntityShieldHurtSoundMixin {
 			Operation<Void> original, @Local(argsOnly = true) float damage,
 			@Local(index = 7) boolean blocked) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.fix.shieldBlockHurtSoundFix;
+		boolean enabled = config.fix.shieldBlockHurtSoundFix;
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$SHIELD_HURT_SOUND_PROBE, "shieldBlockHurtSoundFix");
 		}
-		boolean playersOnly = config != null && config.fix.shieldBlockHurtSoundFixPlayersOnly;
+		boolean playersOnly = config.fix.shieldBlockHurtSoundFixPlayersOnly;
 		if (ShieldHurtSoundState.shouldPlayHurtSound(enabled, playersOnly,
 			instance instanceof Player, blocked, damage)) {
 			original.call(instance, source);

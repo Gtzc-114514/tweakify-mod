@@ -43,9 +43,6 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 	// 标签记忆关闭时按配置的默认标签开始；无配置时回到“全部”。
 	private static ConfigTab initialTab() {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return ConfigTab.ALL;
-		}
 		if (config.general.rememberSelectedTab) {
 			return rememberedTab;
 		}
@@ -393,8 +390,7 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 			// 先取一次快照：遍历配置树时逐项查询会把同一把锁重复加几十次。
 			Set<String> favorites = FavoritesStorage.configFavoriteSnapshot();
 			// 配置尚未初始化时按默认值（开启）处理。
-			boolean includeChildren = TweakifyMod.config() == null
-				|| TweakifyMod.config().general.favoriteIncludeChildren;
+			boolean includeChildren = TweakifyMod.config().general.favoriteIncludeChildren;
 			for (ConfigGroupNode root : ROOTS) {
 				appendFavorites(root, 0, result, favorites, false, includeChildren);
 			}

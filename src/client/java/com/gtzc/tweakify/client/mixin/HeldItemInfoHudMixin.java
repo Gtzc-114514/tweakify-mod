@@ -75,8 +75,8 @@ public abstract class HeldItemInfoHudMixin {
 			return;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		FunctionConfig functions = config == null ? null : config.functions;
-		boolean enabled = functions != null && functions.heldItemInfo;
+		FunctionConfig functions = config.functions;
+		boolean enabled = functions.heldItemInfo;
 		boolean enabledChanged = HeldItemInfoRenderer.noteEnabled(enabled);
 		boolean stackChanged = this.lastToolHighlight != this.tweakify$stackBeforeTick;
 		if (!enabled) {

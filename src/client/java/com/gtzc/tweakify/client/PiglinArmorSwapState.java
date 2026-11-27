@@ -91,7 +91,7 @@ public final class PiglinArmorSwapState {
 			missedScans = 0;
 		}
 
-		boolean enabled = config != null && config.functions.piglinGoldArmorSwap;
+		boolean enabled = config.functions.piglinGoldArmorSwap;
 		if (!enabled && SWAPPED.isEmpty()) {
 			SUPPRESSED.clear();
 			return;

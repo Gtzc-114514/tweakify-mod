@@ -47,9 +47,6 @@ public final class QuickBurnFeature {
 			return false;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return isBurnTool(item);
-		}
 		return config.isQuickBurnIgniter(item);
 	}
 

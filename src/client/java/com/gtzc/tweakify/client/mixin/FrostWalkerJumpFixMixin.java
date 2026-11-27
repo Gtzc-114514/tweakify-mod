@@ -37,7 +37,7 @@ public class FrostWalkerJumpFixMixin {
 			return true;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.fix.frostWalkerJumpFix) {
+		if (!config.fix.frostWalkerJumpFix) {
 			return false;
 		}
 		// 只放宽冰霜行者用的磁盘替换效果，其余附魔效果的要求保持原样。

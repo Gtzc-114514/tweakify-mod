@@ -21,7 +21,7 @@ public final class BetterBlockPlacementState {
 
 	public static boolean canReplacePlant(BlockState state, BlockPlaceContext context) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.betterBlockPlacement || state == null || context == null) {
+		if (!config.functions.betterBlockPlacement || state == null || context == null) {
 			return false;
 		}
 		// 潜行放行：开启时潜行交回原版，先打掉植物再放置。

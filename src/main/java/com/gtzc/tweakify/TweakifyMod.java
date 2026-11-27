@@ -14,20 +14,34 @@ public class TweakifyMod implements ModInitializer {
 	// 与模组 ID 同名，日志会带上模组名便于排查。
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
+	// 默认实例：配置加载完成前（以及加载失败时）的安全兜底，保证 config() 恒非 null。
+	// 加载完成前按默认值生效（不再依赖 null 回退）；isConfigLoaded() 只用于阻止默认值
+	// 在 onInitialize 之前回写磁盘或同步界面，不参与功能判定。
+	private static final TweakifyModConfig DEFAULTS = TweakifyModConfig.createDefaultInstance();
+
 	// volatile：/tweakify 命令在集成服务端线程执行，客户端线程同时在读配置。
 	// 字段私有：读取统一走 config()，写入只发生在 onInitialize 与测试接缝。
-	private static volatile TweakifyModConfig CONFIG;
+	private static volatile TweakifyModConfig CONFIG = DEFAULTS;
 
 	/**
-	 * 当前配置。模组初始化完成前可能为 {@code null}，调用方需按原逻辑兜底。
+	 * 当前配置；恒非 null，配置加载完成前返回默认实例。
 	 */
 	public static TweakifyModConfig config() {
 		return CONFIG;
 	}
 
+	/**
+	 * 真实配置是否已加载完成。写盘与选项同步等配置核心逻辑用它区分默认实例，
+	 * 避免在 onInitialize 之前把默认值写回磁盘。
+	 */
+	public static boolean isConfigLoaded() {
+		return CONFIG != DEFAULTS;
+	}
+
 	// 包私有测试接缝：仅 test 源集的 TweakifyModTestSupport 访问。
+	// 传入 null 时重置为默认实例，仍可模拟「配置尚未加载」。
 	static void setConfigForTest(TweakifyModConfig config) {
-		CONFIG = config;
+		CONFIG = config != null ? config : DEFAULTS;
 	}
 
 	@Override

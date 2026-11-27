@@ -42,7 +42,7 @@ public class ServerGamePacketListenerImplPickMixin {
 		HookProbe.markOnce("pickFluidBucketServer");
 		ItemStack cloneStack = original.call(state, level, pos, includeData);
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !cloneStack.isEmpty()) {
+		if (!cloneStack.isEmpty()) {
 			return cloneStack;
 		}
 		// 创造模式归“中键获得液体桶”；生存模式归“生存模式中键取物”。

@@ -29,7 +29,7 @@ public class EntityRendererSelfNameMixin {
 													float partialTick, double nameTagDistance,
 													double belowNameDistance, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.thirdPersonPlayerName) {
+		if (!config.modified.thirdPersonPlayerName) {
 			return;
 		}
 

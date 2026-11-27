@@ -21,7 +21,7 @@ public class PlayerMiningPenaltyMixin {
 	private double tweakify$removeUnderwaterPenalty(AttributeInstance instance) {
 		double value = instance.getValue();
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.disableUnderwaterMiningPenalty) {
+		if (!config.modified.disableUnderwaterMiningPenalty) {
 			return value;
 		}
 		Player self = (Player) (Object) this;
@@ -36,7 +36,7 @@ public class PlayerMiningPenaltyMixin {
 	@ModifyConstant(method = "getDestroySpeed", constant = @Constant(floatValue = 5.0F))
 	private float tweakify$removeAirPenalty(float original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.disableAirMiningPenalty) {
+		if (!config.modified.disableAirMiningPenalty) {
 			return original;
 		}
 		Player self = (Player) (Object) this;

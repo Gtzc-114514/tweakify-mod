@@ -29,12 +29,11 @@ public abstract class FishingHookRendererThirdPersonLineMixin {
 		require = 0)
 	private float tweakify$attachFishingLineWhileCrouching(float original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.fix.fishingLineThirdPersonFix;
+		boolean enabled = config.fix.fishingLineThirdPersonFix;
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$FISHING_LINE_PROBE, "fishingLineThirdPersonFix");
 		}
-		double offset = config == null ? TweakifyModConfig.DEFAULT_FISHING_LINE_FIX_OFFSET
-			: config.fix.fishingLineThirdPersonFixOffset;
+		double offset = config.fix.fishingLineThirdPersonFixOffset;
 		return FishingLineState.crouchOffset(enabled, offset, original);
 	}
 }

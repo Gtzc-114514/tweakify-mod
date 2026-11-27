@@ -820,6 +820,15 @@ public class TweakifyModConfig {
 	private transient boolean cachedHighlightPreset2;
 	private transient boolean cachedHighlightPreset3;
 
+	// 默认实例：不读盘，列表与缓存按 load() 的默认分支初始化。
+	// 供 TweakifyMod 在配置加载完成前充当安全兜底；调用方不得修改这个共享实例。
+	public static TweakifyModConfig createDefaultInstance() {
+		TweakifyModConfig config = new TweakifyModConfig();
+		config.applyDefaultItemLists();
+		config.rebuildCache();
+		return config;
+	}
+
 	public static TweakifyModConfig load() {
 		Path configPath = ConfigStorage.defaultPath();
 		ConfigStorage.migrateLegacy(configPath);

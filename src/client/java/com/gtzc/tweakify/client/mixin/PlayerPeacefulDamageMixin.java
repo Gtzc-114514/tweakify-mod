@@ -26,7 +26,7 @@ public class PlayerPeacefulDamageMixin {
 	private Difficulty tweakify$allowListedMobDamage(ServerLevel level, ServerLevel targetLevel,
 													  DamageSource source, float amount) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && level.getDifficulty() == Difficulty.PEACEFUL) {
+		if (level.getDifficulty() == Difficulty.PEACEFUL) {
 			Entity attacker = source.getEntity();
 			if (attacker instanceof Mob mob && SpawnFeatureState.shouldAllowPeacefulAggression(
 				config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterNoAttack, true,

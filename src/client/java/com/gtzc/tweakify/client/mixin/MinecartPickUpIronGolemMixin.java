@@ -39,10 +39,10 @@ public class MinecartPickUpIronGolemMixin {
 		HookProbe.markOnce(TWEAKIFY$GOLEM_MINECART_PROBE, "ironGolemMinecart");
 		AbstractMinecart minecart = (AbstractMinecart) (Object) this;
 		TweakifyModConfig config = TweakifyMod.config();
-		int maxDistance = config == null ? 0 : config.modified.ironGolemRideMinecartMaxDistance;
+		int maxDistance = config.modified.ironGolemRideMinecartMaxDistance;
 		boolean playerFound = maxDistance > 0
 			&& minecart.level().getNearestPlayer(minecart, maxDistance) != null;
-		if (!IronGolemMinecartState.shouldPickUp(config != null && config.modified.ironGolemRideMinecart,
+		if (!IronGolemMinecartState.shouldPickUp(config.modified.ironGolemRideMinecart,
 			minecart.level().isClientSide(), !minecart.getPassengers().isEmpty(),
 			IronGolemMinecartState.isPlainMinecart(minecart),
 			IronGolemMinecartState.isPlayerInRange(maxDistance, playerFound))) {
@@ -54,7 +54,7 @@ public class MinecartPickUpIronGolemMixin {
 			return;
 		}
 		AABB searchBox = IronGolemMinecartState.searchBox(minecart.getBoundingBox());
-		boolean emptyHandOnly = config != null && config.modified.ironGolemRideMinecartEmptyHandOnly;
+		boolean emptyHandOnly = config.modified.ironGolemRideMinecartEmptyHandOnly;
 		List<IronGolem> golems = minecart.level().getEntitiesOfClass(IronGolem.class, searchBox,
 			golem -> !golem.isPassenger() && !golem.isVehicle() && golem.isAlive()
 				&& (!emptyHandOnly || IronGolemMinecartState.hasEmptyHands(

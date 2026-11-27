@@ -77,8 +77,7 @@ public final class AttackRangeRenderer {
 	// 调色板由配置决定；配置缺失时用旧版蓝色。
 	private static int paletteRgb() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return AttackRangePalette.rgbOf(config == null ? TweakifyModConfig.ATTACK_RANGE_PALETTE_BLUE
-			: config.functions.attackRangePalette);
+		return AttackRangePalette.rgbOf(config.functions.attackRangePalette);
 	}
 
 	private static void writeVisible(VertexConsumer vertices, PoseStack.Pose pose,

@@ -34,7 +34,7 @@ public class CraftingMenuWartDecompositionMixin {
 												   CraftingContainer container, ResultContainer result,
 												   RecipeHolder<CraftingRecipe> recipe, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.wartBlockDecomposition) {
+		if (!config.modified.wartBlockDecomposition) {
 			return;
 		}
 		if (config.modified.wartBlockDecompositionRequireSneak && !player.isShiftKeyDown()) {

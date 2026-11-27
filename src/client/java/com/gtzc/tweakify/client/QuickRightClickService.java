@@ -60,7 +60,7 @@ public final class QuickRightClickService {
 	public static boolean tryOpenFromSlot(Slot slot, int mouseButton, ContainerInput type,
 			AbstractContainerMenu menu, boolean sneaking) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.inventoryQuickRightClick) {
+		if (!config.functions.inventoryQuickRightClick) {
 			return false;
 		}
 		if (mouseButton != 1) {
@@ -105,7 +105,7 @@ public final class QuickRightClickService {
 	// 客户端判定：避免对不支持的物品发送无效请求。
 	public static boolean isSupported(ItemStack stack) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.inventoryQuickRightClick || stack.isEmpty()) {
+		if (!config.functions.inventoryQuickRightClick || stack.isEmpty()) {
 			return false;
 		}
 		FunctionConfig functions = config.functions;
@@ -122,7 +122,7 @@ public final class QuickRightClickService {
 	// sneaking 是客户端点击瞬间的状态：包到达前松开 Shift 时仍按点击时判定。
 	public static void open(ServerPlayer player, int containerId, int slotIndex, boolean sneaking) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.inventoryQuickRightClick || player.isSpectator()) {
+		if (!config.functions.inventoryQuickRightClick || player.isSpectator()) {
 			return;
 		}
 		FunctionConfig functions = config.functions;

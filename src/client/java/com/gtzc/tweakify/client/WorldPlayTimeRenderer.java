@@ -23,7 +23,7 @@ public final class WorldPlayTimeRenderer {
 
 	public static void draw(GuiGraphicsExtractor gui, WorldSelectionList.WorldListEntry entry) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.savePlayTime) {
+		if (!config.functions.savePlayTime) {
 			return;
 		}
 		long ticks = WorldPlayTime.ticksFor(entry.getLevelSummary());

@@ -46,7 +46,7 @@ public final class SpawnEggThrower {
 
 		// 潜行放行：开启后潜行时交回原版放置，不改成投掷。
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.functions.throwSpawnEggSneakBypass && player.isShiftKeyDown()) {
+		if (config.functions.throwSpawnEggSneakBypass && player.isShiftKeyDown()) {
 			return InteractionResult.PASS;
 		}
 
@@ -75,8 +75,7 @@ public final class SpawnEggThrower {
 	// 投掷速度百分比：配置缺失时回退默认值（100 = 原版鸡蛋速度）。
 	private static int throwVelocityPercent() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config == null ? TweakifyModConfig.DEFAULT_SPAWN_EGG_VELOCITY
-			: config.functions.throwSpawnEggVelocity;
+		return config.functions.throwSpawnEggVelocity;
 	}
 
 	/**

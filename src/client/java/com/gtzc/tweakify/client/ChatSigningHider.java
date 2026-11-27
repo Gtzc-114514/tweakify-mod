@@ -19,7 +19,7 @@ public final class ChatSigningHider {
 	// 配置缺失或关闭时保持原版显示。
 	static boolean isEnabled() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.modified.hideChatSigning;
+		return config.modified.hideChatSigning;
 	}
 
 	// 聊天行渲染使用的标签：开启后一律按“无签名标记”处理。

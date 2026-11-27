@@ -52,7 +52,7 @@ public final class LocatorCompass {
 
 	private static void render(GuiGraphicsExtractor graphics, Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.locatorBarCompass) {
+		if (!config.functions.locatorBarCompass) {
 			return;
 		}
 		// F1 隐藏 HUD，以及非聊天/容器的界面（ESC 菜单等）都不画。

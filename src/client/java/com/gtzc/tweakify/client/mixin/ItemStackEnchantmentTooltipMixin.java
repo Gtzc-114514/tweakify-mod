@@ -41,7 +41,7 @@ public class ItemStackEnchantmentTooltipMixin {
 	private List<Component> tweakify$appendEnchantmentDescriptions(List<Component> original,
 			Item.TooltipContext context, Player player, TooltipFlag flag) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.enchantmentDescriptions) {
+		if (!config.modified.enchantmentDescriptions) {
 			return original;
 		}
 		// 可选的潜行门控：只在按住潜行键时追加，避免提示过长。

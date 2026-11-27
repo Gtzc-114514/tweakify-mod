@@ -29,15 +29,12 @@ public final class FavoriteStarRenderer {
 	// 收藏系统总开关：配置尚未加载时按开启处理。
 	public static boolean isEnabled() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config == null || config.general.favoriteSystem;
+		return config.general.favoriteSystem;
 	}
 
 	// 当前样式：配置尚未加载时按默认（自绘星形）处理。
 	public static FavoriteStarStyle selectedStyle() {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return FavoriteStarStyle.STAR;
-		}
 		return FavoriteStarStyle.fromCode(config.general.favoriteStarStyle);
 	}
 

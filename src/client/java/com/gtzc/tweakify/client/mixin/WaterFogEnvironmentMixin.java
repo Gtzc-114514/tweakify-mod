@@ -20,6 +20,6 @@ public class WaterFogEnvironmentMixin {
 	@ModifyReturnValue(method = "isApplicable", at = @At("RETURN"))
 	private boolean tweakify$disableWaterFog(boolean original, FogType fogType, Entity entity) {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.modified.disableOverlayEffects && config.modified.disableWaterFog ? false : original;
+		return config.modified.disableOverlayEffects && config.modified.disableWaterFog ? false : original;
 	}
 }

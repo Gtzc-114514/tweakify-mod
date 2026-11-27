@@ -44,7 +44,7 @@ public abstract class TreeFeatureSaplingGrowthMixin {
 	private int tweakify$fixTwoByTwoOffset(int start,
 			@Local(argsOnly = true, index = 2) int maxTreeHeight) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.fix.saplingGrowthFix;
+		boolean enabled = config.fix.saplingGrowthFix;
 		if (enabled) {
 			HookProbe.markOnce(TWEAKIFY$SAPLING_GROWTH_PROBE, "saplingGrowthFix");
 		}

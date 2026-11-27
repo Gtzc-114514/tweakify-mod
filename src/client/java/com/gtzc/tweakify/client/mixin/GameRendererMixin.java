@@ -26,7 +26,7 @@ public class GameRendererMixin {
 	@Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
 	private void tweakify$disableHurtShake(CameraRenderState camera, PoseStack pose, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.disableHurtShake) {
+		if (!config.modified.disableHurtShake) {
 			return;
 		}
 		if (config.modified.hurtShakePlayersOnly
@@ -45,7 +45,7 @@ public class GameRendererMixin {
 	// 夜视淡出：原版在剩余时间内用正弦值闪烁，改为按剩余时间平滑淡出。
 	@ModifyReturnValue(method = "nightVisionScale", at = @At("RETURN"))
 	private static float tweakify$fadeOutNightVision(float original, LivingEntity entity, float partialTick) {
-		if (TweakifyMod.config() == null || !TweakifyMod.config().modified.nightVisionFadeOut) {
+		if (!TweakifyMod.config().modified.nightVisionFadeOut) {
 			return original;
 		}
 		MobEffectInstance effect = entity.getEffect(MobEffects.NIGHT_VISION);

@@ -56,6 +56,6 @@ public class ExperienceOrbDespawnMixin {
 
 	private static int tweakify$configuredLifetime() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config == null ? VANILLA_LIFETIME : config.modified.itemDespawnTimeXpOrbs;
+		return config.modified.itemDespawnTimeXpOrbs;
 	}
 }

@@ -28,7 +28,7 @@ public final class BetterAdvancements {
 
 	public static boolean enabled() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.modified.betterAdvancements;
+		return config.modified.betterAdvancements;
 	}
 
 	static TweakifyModConfig config() {
@@ -37,39 +37,37 @@ public final class BetterAdvancements {
 
 	public static int tabSpacing() {
 		TweakifyModConfig config = config();
-		return config == null ? TweakifyModConfig.DEFAULT_ADVANCEMENT_TAB_SPACING
-			: config.modified.betterAdvancementsTabSpacing;
+		return config.modified.betterAdvancementsTabSpacing;
 	}
 
 	public static int pinnedTabSpacing() {
 		TweakifyModConfig config = config();
-		return config == null ? TweakifyModConfig.DEFAULT_ADVANCEMENT_PINNED_TAB_SPACING
-			: config.modified.betterAdvancementsPinnedTabSpacing;
+		return config.modified.betterAdvancementsPinnedTabSpacing;
 	}
 
 	public static boolean pagination() {
 		TweakifyModConfig config = config();
-		return config == null || config.modified.betterAdvancementsPagination;
+		return config.modified.betterAdvancementsPagination;
 	}
 
 	public static boolean pinTabs() {
 		TweakifyModConfig config = config();
-		return config == null || config.modified.betterAdvancementsPinTabs;
+		return config.modified.betterAdvancementsPinTabs;
 	}
 
 	public static boolean rememberTab() {
 		TweakifyModConfig config = config();
-		return config == null || config.modified.betterAdvancementsRememberTab;
+		return config.modified.betterAdvancementsRememberTab;
 	}
 
 	public static boolean disableFade() {
 		TweakifyModConfig config = config();
-		return config != null && config.modified.betterAdvancementsDisableFade;
+		return config.modified.betterAdvancementsDisableFade;
 	}
 
 	public static boolean copyId() {
 		TweakifyModConfig config = config();
-		return config == null || config.modified.betterAdvancementsCopyId;
+		return config.modified.betterAdvancementsCopyId;
 	}
 
 	public static int tabStride() {

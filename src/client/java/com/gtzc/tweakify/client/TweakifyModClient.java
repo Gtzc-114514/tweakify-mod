@@ -68,7 +68,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 			TweakifyModConfigOptions.pollSaveResults();
 			ScrollMemory.tick();
 			TweakifyModConfig config = TweakifyMod.config();
-			if (config != null && config.consumeOptionSyncRequest()) {
+			if (config.consumeOptionSyncRequest()) {
 				TweakifyModConfigOptions.syncFromConfig();
 			}
 			// 药水效果计时：在玩家效果 tick 与配置同步之后重建缓存，渲染帧只查表。
@@ -262,7 +262,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		// 已启用功能报表（测试标签）：只列根级布尔开关，用于快速核对当前配置组合。
 		TestingConfigOptions.DEBUG_ENABLED_FEATURES_REPORT.getKeybind().setCallback((action, key) -> {
 			Minecraft client = Minecraft.getInstance();
-			if (client.gui == null || TweakifyMod.config() == null) {
+			if (client.gui == null) {
 				return false;
 			}
 			List<String> enabled = new ArrayList<>();

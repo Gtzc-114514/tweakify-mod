@@ -15,7 +15,7 @@ public final class EntityHighlightState {
 
 	public static boolean shouldGlow(Entity entity) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || entity == null) {
+		if (entity == null) {
 			return false;
 		}
 		Level level = entity.level();
@@ -42,7 +42,7 @@ public final class EntityHighlightState {
 	// 配置的描边颜色；未命中、配置缺失或 vanilla 时返回原值（保留原版队伍色）。
 	public static int outlineColor(Entity entity, int original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !shouldGlow(entity)) {
+		if (!shouldGlow(entity)) {
 			return original;
 		}
 		int configured = EntityHighlightColor.argbOf(config.functions.entityHighlightColor);

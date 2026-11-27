@@ -34,7 +34,7 @@ public class SnowGolemBiomeImmunityMixin {
 	private Object tweakify$skipBiomeMelting(EnvironmentAttributeSystem system,
 			EnvironmentAttribute<?> attribute, Vec3 pos) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && attribute == EnvironmentAttributes.SNOW_GOLEM_MELTS) {
+		if (attribute == EnvironmentAttributes.SNOW_GOLEM_MELTS) {
 			SnowGolem self = (SnowGolem) (Object) this;
 			boolean overworld = self.level().dimension() == Level.OVERWORLD;
 			if (config.modified.snowGolemBiomeImmunityOnlyWhenRaining

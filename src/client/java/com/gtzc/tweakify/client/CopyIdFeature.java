@@ -34,7 +34,7 @@ public final class CopyIdFeature {
 		TweakifyModConfig config = TweakifyMod.config();
 		Target target = resolveTarget(client);
 		if (target == null) {
-			if (config == null || config.functions.copyItemIdChatMessage) {
+			if (config.functions.copyItemIdChatMessage) {
 				showMessage(client, Component.translatable(NO_TARGET_KEY));
 			}
 			return;
@@ -42,7 +42,7 @@ public final class CopyIdFeature {
 
 		String text = formatTarget(target, config);
 		client.keyboardHandler.setClipboard(text);
-		if (config == null || config.functions.copyItemIdChatMessage) {
+		if (config.functions.copyItemIdChatMessage) {
 			// 聊天栏里重复显示一份可点击的 ID，点击即再次复制。
 			Component clickableId = Component.literal(text).withStyle(style -> style
 				.withColor(ChatFormatting.AQUA)
@@ -50,7 +50,7 @@ public final class CopyIdFeature {
 				.withClickEvent(new ClickEvent.CopyToClipboard(text)));
 			showMessage(client, Component.translatable(COPIED_KEY, clickableId));
 		}
-		if (config != null && config.functions.copyItemIdCloseContainer
+		if (config.functions.copyItemIdCloseContainer
 			&& client.gui.screen() instanceof AbstractContainerScreen<?>) {
 			client.gui.setScreen(null);
 		}

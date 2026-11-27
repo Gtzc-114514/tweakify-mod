@@ -20,7 +20,7 @@ public class LocalPlayerPortalEffectMixin {
 		target = "Lnet/minecraft/client/sounds/SoundManager;play(Lnet/minecraft/client/resources/sounds/SoundInstance;)Lnet/minecraft/client/sounds/SoundEngine$PlayResult;"))
 	private SoundEngine.PlayResult tweakify$mutePortalSound(SoundManager soundManager, SoundInstance sound) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.disableNetherPortalEffect && config.modified.disableNetherPortalSound) {
+		if (config.modified.disableNetherPortalEffect && config.modified.disableNetherPortalSound) {
 			return SoundEngine.PlayResult.NOT_STARTED;
 		}
 		return soundManager.play(sound);

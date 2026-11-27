@@ -59,7 +59,7 @@ public final class HelpfulBlockSelection {
 	// 配置缺失或关闭时保持原版选区。
 	static boolean enabled() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.functions.helpfulBlockSelection;
+		return config.functions.helpfulBlockSelection;
 	}
 
 	// 需要放宽选区的细长/可连接方块；普通方块不处理。

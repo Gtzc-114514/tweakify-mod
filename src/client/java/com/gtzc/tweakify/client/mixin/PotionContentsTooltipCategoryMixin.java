@@ -38,11 +38,11 @@ public abstract class PotionContentsTooltipCategoryMixin {
 	private static MobEffectCategory tweakify$fixTooltipCategory(
 			MobEffectCategory original, @Local MobEffectInstance effect) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.fix.potionTooltipCategoryFix;
+		boolean enabled = config.fix.potionTooltipCategoryFix;
 		boolean glowing = effect.is(MobEffects.GLOWING);
 		boolean badOmen = effect.is(MobEffects.BAD_OMEN);
-		boolean fixGlowing = config == null || config.fix.potionTooltipCategoryGlowing;
-		boolean fixBadOmen = config == null || config.fix.potionTooltipCategoryBadOmen;
+		boolean fixGlowing = config.fix.potionTooltipCategoryGlowing;
+		boolean fixBadOmen = config.fix.potionTooltipCategoryBadOmen;
 		if (enabled) {
 			if (glowing) {
 				HookProbe.markOnce(TWEAKIFY$GLOWING_TOOLTIP_PROBE, "potionTooltipCategoryGlowing");

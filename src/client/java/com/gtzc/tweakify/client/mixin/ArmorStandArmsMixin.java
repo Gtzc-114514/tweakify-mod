@@ -19,7 +19,7 @@ public class ArmorStandArmsMixin {
 	@ModifyReturnValue(method = "showArms", at = @At("RETURN"))
 	private boolean tweakify$forceShowArms(boolean original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.armorStandArms) {
+		if (!config.modified.armorStandArms) {
 			return original;
 		}
 		ArmorStand stand = (ArmorStand) (Object) this;

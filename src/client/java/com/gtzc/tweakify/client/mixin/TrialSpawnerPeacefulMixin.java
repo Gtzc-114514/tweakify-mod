@@ -21,9 +21,6 @@ public class TrialSpawnerPeacefulMixin {
 		target = "Lnet/minecraft/server/level/ServerLevel;getDifficulty()Lnet/minecraft/world/Difficulty;"))
 	private Difficulty tweakify$allowPeacefulTrialSpawner(ServerLevel level) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return level.getDifficulty();
-		}
 		if (level.getDifficulty() == Difficulty.PEACEFUL) {
 			TrialSpawner self = (TrialSpawner) (Object) this;
 			boolean allListed = SpawnFeatureState.allSpawnPotentialsListed(

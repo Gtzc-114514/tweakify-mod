@@ -21,7 +21,7 @@ public class ServerPlayerBedMixin {
 	private boolean tweakify$ignoreBedDistance(ServerPlayer self, BlockPos pos, Direction direction) {
 		TweakifyModConfig config = TweakifyMod.config();
 		boolean vanillaInRange = ((ServerPlayerAccessor) (Object) self).tweakify$bedInRange(pos, direction);
-		if (config != null && config.modified.disableBedTooFar) {
+		if (config.modified.disableBedTooFar) {
 			double distanceSq = self.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 			return BedDistanceState.shouldAllowSleep(true, vanillaInRange, distanceSq,
 				config.modified.bedTooFarMaxDistance);

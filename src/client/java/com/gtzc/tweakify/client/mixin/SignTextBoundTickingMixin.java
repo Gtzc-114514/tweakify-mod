@@ -24,7 +24,7 @@ public class SignTextBoundTickingMixin<T extends BlockEntity> {
 
 	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
 	private void tweakify$skipClientSignTick(CallbackInfo ci) {
-		if (TweakifyMod.config() == null || !TweakifyMod.config().optimization.signTextOptimization
+		if (!TweakifyMod.config().optimization.signTextOptimization
 			|| !TweakifyMod.config().optimization.signTextOptimizationSkipTicking) {
 			return;
 		}

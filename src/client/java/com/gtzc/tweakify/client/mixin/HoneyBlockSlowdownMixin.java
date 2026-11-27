@@ -23,7 +23,7 @@ public class HoneyBlockSlowdownMixin {
 			return;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.disableHoneyBlockSlowdown) {
+		if (config.modified.disableHoneyBlockSlowdown) {
 			cir.setReturnValue(1.0F);
 		}
 	}

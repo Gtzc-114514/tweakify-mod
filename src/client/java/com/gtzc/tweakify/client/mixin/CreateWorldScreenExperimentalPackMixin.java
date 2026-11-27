@@ -25,7 +25,7 @@ public abstract class CreateWorldScreenExperimentalPackMixin {
 	private static boolean tweakify$skipExperimentalPackConfirm(FeatureFlagSet flags) {
 		boolean experimental = FeatureFlags.isExperimental(flags);
 		TweakifyModConfig config = TweakifyMod.config();
-		if (experimental && config != null && config.modified.disableExperimentalWarning
+		if (experimental && config.modified.disableExperimentalWarning
 			&& config.modified.experimentalWarningDataPacks) {
 			HookProbe.markOnce("disableExperimentalWarningPacks");
 			return false;

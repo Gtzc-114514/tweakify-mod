@@ -20,7 +20,7 @@ public class AbstractClientPlayerFovMixin {
 	private float tweakify$disableSprintFov(float original, boolean firstPerson, float effectScale) {
 		TweakifyModConfig config = TweakifyMod.config();
 		AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
-		if (config == null || !config.modified.disableSprintFov || !self.isSprinting() || self.isScoping()) {
+		if (!config.modified.disableSprintFov || !self.isSprinting() || self.isScoping()) {
 			return original;
 		}
 		if (config.modified.sprintFovOnlyFirstPerson && !firstPerson) {

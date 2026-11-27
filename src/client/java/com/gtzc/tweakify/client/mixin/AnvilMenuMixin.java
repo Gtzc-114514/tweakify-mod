@@ -37,7 +37,7 @@ public class AnvilMenuMixin {
 		target = "Lnet/minecraft/world/entity/player/Player;hasInfiniteMaterials()Z"))
 	private boolean tweakify$ignoreTooExpensive(Player player, Operation<Boolean> original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.disableTooExpensive
+		if (config.modified.disableTooExpensive
 			&& AnvilPickupState.shouldAllowResult(true, this.cost.get(),
 				config.modified.tooExpensiveMaxLevelCost, config.modified.tooExpensiveWarnOnly)) {
 			HookProbe.markOnce("anvilCreateResult");
@@ -53,7 +53,7 @@ public class AnvilMenuMixin {
 		at = @At("RETURN"), require = 0)
 	private boolean tweakify$allowPickup(boolean original, Player player, boolean hasStack) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.disableTooExpensive) {
+		if (!config.modified.disableTooExpensive) {
 			return original;
 		}
 		int cost = this.cost.get();
@@ -76,7 +76,7 @@ public class AnvilMenuMixin {
 	private boolean tweakify$ignoreEnchantmentConflicts(Holder<Enchantment> first, Holder<Enchantment> second,
 			Operation<Boolean> original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.removeEnchantmentConflicts) {
+		if (!config.modified.removeEnchantmentConflicts) {
 			return original.call(first, second);
 		}
 		Player player = ((ItemCombinerMenuAccessor) (Object) this).tweakify$getPlayer();

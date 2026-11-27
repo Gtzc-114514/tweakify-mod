@@ -50,7 +50,7 @@ public class MobPeacefulMixin {
 		target = "Lnet/minecraft/world/entity/EntityType;isAllowedInPeaceful()Z"))
 	private boolean tweakify$keepPeacefulMonster(EntityType<?> type) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && SpawnFeatureState.shouldStayInPeaceful(
+		if (SpawnFeatureState.shouldStayInPeaceful(
 			config.functions.peacefulModeMonsters, config.isPeacefulModeMonster(type))) {
 			return true;
 		}
@@ -59,7 +59,7 @@ public class MobPeacefulMixin {
 
 	private static boolean shouldPreventPlayerTarget(Mob mob, LivingEntity target) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || target == null) {
+		if (target == null) {
 			return false;
 		}
 		return SpawnFeatureState.shouldPreventAttack(config.functions.peacefulModeMonsters,

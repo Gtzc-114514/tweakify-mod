@@ -64,7 +64,7 @@ public class MultiPlayerGameModeMixin {
 		HookProbe.markOnce(TWEAKIFY$RECORD_MINING_TOOL_PROBE, "keepMiningProgressRecordTool");
 		TweakifyModConfig config = TweakifyMod.config();
 		Minecraft client = Minecraft.getInstance();
-		if (config != null && config.modified.keepMiningProgressOnItemSwitch
+		if (config.modified.keepMiningProgressOnItemSwitch
 			&& config.modified.keepMiningProgressSameToolOnly && client.player != null) {
 			KeepMiningProgressState.recordTool(client.player.getMainHandItem().getItem());
 		}
@@ -77,7 +77,7 @@ public class MultiPlayerGameModeMixin {
 	private boolean tweakify$keepMiningProgress(boolean original, BlockPos pos) {
 		HookProbe.markOnce(TWEAKIFY$SAME_TARGET_PROBE, "keepMiningProgressOnItemSwitch");
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.keepMiningProgressOnItemSwitch) {
+		if (config.modified.keepMiningProgressOnItemSwitch) {
 			Minecraft client = Minecraft.getInstance();
 			double distanceSq = client.player == null ? 0.0
 				: client.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);

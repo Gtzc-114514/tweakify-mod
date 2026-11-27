@@ -44,7 +44,7 @@ public class AbstractContainerScreenQuickBurnMixin {
 											CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$QUICK_BURN_PROBE, "slotClicked");
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.quickBurnItem) {
+		if (!config.functions.quickBurnItem) {
 			return;
 		}
 		// 只有右键 + PICKUP 才是"拿着物品点击槽位"的交互；左键/快速移动保持原版。
@@ -71,7 +71,7 @@ public class AbstractContainerScreenQuickBurnMixin {
 										  float partialTick, CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$QUICK_BURN_HINT_PROBE, "quickBurnHint");
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.quickBurnItem
+		if (!config.functions.quickBurnItem
 			|| !config.functions.quickBurnItemShowHint) {
 			return;
 		}

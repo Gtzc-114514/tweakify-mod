@@ -62,9 +62,6 @@ public class ItemEntityMixin {
 
 	private static int tweakify$configuredLifetime(ItemEntity self) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return VANILLA_LIFETIME;
-		}
 		// 仅对玩家丢弃的掉落物生效：怪物掉落、方块掉落等保持原版时长。
 		if (config.modified.itemDespawnPlayerDroppedOnly && !(self.getOwner() instanceof Player)) {
 			return VANILLA_LIFETIME;

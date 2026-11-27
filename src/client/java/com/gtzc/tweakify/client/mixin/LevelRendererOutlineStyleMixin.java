@@ -33,7 +33,7 @@ public class LevelRendererOutlineStyleMixin {
 	private int tweakify$customOutlineColor(int original) {
 		HookProbe.markOnce(TWEAKIFY$COLOR_PROBE, "customBlockOutline");
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !BlockOutlineStyleState.shouldApplyCustomStyle(config.functions.customBlockOutline,
+		if (!BlockOutlineStyleState.shouldApplyCustomStyle(config.functions.customBlockOutline,
 			Minecraft.getInstance().options.highContrastBlockOutline().get())) {
 			return original;
 		}
@@ -45,7 +45,7 @@ public class LevelRendererOutlineStyleMixin {
 	private float tweakify$customOutlineWidth(float original) {
 		HookProbe.markOnce(TWEAKIFY$WIDTH_PROBE, "customBlockOutlineWidth");
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !BlockOutlineStyleState.shouldApplyCustomStyle(config.functions.customBlockOutline,
+		if (!BlockOutlineStyleState.shouldApplyCustomStyle(config.functions.customBlockOutline,
 			Minecraft.getInstance().options.highContrastBlockOutline().get())) {
 			return original;
 		}

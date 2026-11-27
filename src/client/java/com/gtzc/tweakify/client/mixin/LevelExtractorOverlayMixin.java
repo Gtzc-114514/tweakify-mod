@@ -23,9 +23,6 @@ public class LevelExtractorOverlayMixin {
 	private void tweakify$adjustPlayerOverlays(Camera camera, DeltaTracker deltaTracker, float partialTick,
 											   PlayerRenderState state, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return;
-		}
 		if (config.modified.disableNetherPortalEffect && config.modified.disableNetherPortalCamera) {
 			state.portalEffectIntensity = 0.0f;
 		}

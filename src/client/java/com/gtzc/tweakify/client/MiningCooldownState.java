@@ -30,7 +30,7 @@ public final class MiningCooldownState {
 
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.miningCooldown || client.player == null) {
+		if (!config.functions.miningCooldown || client.player == null) {
 			reset();
 			return;
 		}
@@ -56,14 +56,14 @@ public final class MiningCooldownState {
 	// 挖掘拦截：总开关关闭或标记不属于当前 tick 时不拦截。
 	public static boolean shouldBlockMining() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.functions.miningCooldown
+		return config.functions.miningCooldown
 			&& (isMarkedThisTick() || cooldownTicksRemaining > 0);
 	}
 
 	// 攻击拦截：除总开关外还需要 miningCooldownAttacks。
 	public static boolean shouldBlockAttack() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.functions.miningCooldown && config.functions.miningCooldownAttacks
+		return config.functions.miningCooldown && config.functions.miningCooldownAttacks
 			&& (isMarkedThisTick() || cooldownTicksRemaining > 0);
 	}
 
@@ -75,7 +75,7 @@ public final class MiningCooldownState {
 	// 方块被挖掉时由 MultiPlayerGameModeMixin 回调置位。
 	public static void markBlockMined() {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.miningCooldown) {
+		if (!config.functions.miningCooldown) {
 			return;
 		}
 		SESSION.mark();
@@ -85,7 +85,7 @@ public final class MiningCooldownState {
 	// 攻击实体后同样标记：miningCooldownAttacks 开启时一次按住只打一下。
 	public static void markEntityAttacked() {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.miningCooldown || !config.functions.miningCooldownAttacks) {
+		if (!config.functions.miningCooldown || !config.functions.miningCooldownAttacks) {
 			return;
 		}
 		SESSION.mark();

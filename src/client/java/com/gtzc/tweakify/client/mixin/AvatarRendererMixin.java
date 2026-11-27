@@ -16,7 +16,7 @@ public class AvatarRendererMixin {
 	@ModifyReturnValue(method = "shouldRenderLayers(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)Z",
 		at = @At("RETURN"))
 	private boolean tweakify$hideLayersWhenInvisible(boolean original, AvatarRenderState state) {
-		if (TweakifyMod.config() != null && TweakifyMod.config().modified.betterInvisibility
+		if (TweakifyMod.config().modified.betterInvisibility
 			&& TweakifyMod.config().modified.betterInvisibilityLayers && state.isInvisible) {
 			return false;
 		}

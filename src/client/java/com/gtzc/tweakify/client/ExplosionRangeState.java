@@ -47,7 +47,7 @@ public final class ExplosionRangeState {
 
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.functions.explosionRangeDisplay
+		boolean enabled = config.functions.explosionRangeDisplay
 			&& client.player != null && client.level != null;
 		if (!enabled) {
 			resetState();

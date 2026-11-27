@@ -30,7 +30,7 @@ public class CobwebSlowdownMixin {
 	private void tweakify$disableCobwebSlowdown(BlockState state, Level level, BlockPos pos, Entity entity,
 												InsideBlockEffectApplier applier, boolean bl, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.disableCobwebSlowdown) {
+		if (!config.modified.disableCobwebSlowdown) {
 			return;
 		}
 		// 默认只解除玩家减速：怪物、掉落物仍按原版被蛛网拖住。
@@ -45,7 +45,7 @@ public class CobwebSlowdownMixin {
 		target = "Lnet/minecraft/world/entity/Entity;makeStuckInBlock(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/phys/Vec3;)V"))
 	private void tweakify$keepJumpPenalty(Entity entity, BlockState state, Vec3 multiplier) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.disableCobwebSlowdown
+		if (config.modified.disableCobwebSlowdown
 			&& config.modified.cobwebSlowdownKeepJumpPenalty
 			&& (entity instanceof Player || config.modified.cobwebSlowdownAllEntities)) {
 			entity.makeStuckInBlock(state, CobwebSlowdownState.horizontalFree(multiplier));

@@ -15,7 +15,7 @@ public class LivingEntityRendererMixin {
 	// 更好的隐身：隐身时连装备、手持物品、披风等附加层一起隐藏（原版只隐藏身体）。
 	@ModifyReturnValue(method = "shouldRenderLayers", at = @At("RETURN"))
 	private boolean tweakify$hideLayersWhenInvisible(boolean original, LivingEntityRenderState state) {
-		if (TweakifyMod.config() != null && TweakifyMod.config().modified.betterInvisibility
+		if (TweakifyMod.config().modified.betterInvisibility
 			&& TweakifyMod.config().modified.betterInvisibilityLayers && state.isInvisible) {
 			return false;
 		}
@@ -27,7 +27,7 @@ public class LivingEntityRendererMixin {
 	@ModifyReturnValue(method = "getOverlayCoords", at = @At("RETURN"))
 	private static int tweakify$disableHurtTint(int original, LivingEntityRenderState state,
 			float whiteOverlayProgress) {
-		if (TweakifyMod.config() == null || !TweakifyMod.config().modified.disableHurtTint
+		if (!TweakifyMod.config().modified.disableHurtTint
 			|| !state.hasRedOverlay || state.deathTime > 0.0f) {
 			return original;
 		}

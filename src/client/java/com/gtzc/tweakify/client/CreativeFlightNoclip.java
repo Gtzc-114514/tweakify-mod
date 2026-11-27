@@ -19,7 +19,7 @@ public final class CreativeFlightNoclip {
 			return false;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		return isActive(config != null && config.functions.creativeFlightNoclip,
+		return isActive(config.functions.creativeFlightNoclip,
 			player.isCreative(), player.getAbilities().flying);
 	}
 

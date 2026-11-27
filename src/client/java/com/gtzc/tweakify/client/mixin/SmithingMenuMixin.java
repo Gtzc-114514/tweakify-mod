@@ -29,7 +29,7 @@ public class SmithingMenuMixin {
 			target = "Lnet/minecraft/world/inventory/SmithingMenu;shrinkStackInSlot(I)V"))
 	private void tweakify$skipTemplateShrink(SmithingMenu menu, int slot) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.disableSmithingTemplateConsumption
+		if (config.modified.disableSmithingTemplateConsumption
 			&& slot == SmithingMenu.TEMPLATE_SLOT) {
 			Player player = ((ItemCombinerMenuAccessor) (Object) this).tweakify$getPlayer();
 			if (config.modified.smithingTemplateSurvivalOnly

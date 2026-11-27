@@ -67,7 +67,7 @@ public final class HeldItemInfoRenderer {
 	// 当前功能是否可用（关闭或构建失败时 Mixin 回退到原版渲染）。
 	public static boolean isActive() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && config.functions.heldItemInfo && !failed;
+		return config.functions.heldItemInfo && !failed;
 	}
 
 	public static void clear() {
@@ -115,9 +115,6 @@ public final class HeldItemInfoRenderer {
 	// 语言或字体切换后重新测量行宽：文本在绘制时按当前语言解析，缓存宽度必须同步更新。
 	public static void refreshFontMetrics(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return;
-		}
 		int signature = System.identityHashCode(Language.getInstance());
 		signature = 31 * signature
 			+ (config.general.language == null ? 0 : config.general.language.hashCode());
@@ -189,7 +186,7 @@ public final class HeldItemInfoRenderer {
 	 */
 	public static boolean update(Minecraft client, ItemStack stack) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.heldItemInfo || client.level == null) {
+		if (!config.functions.heldItemInfo || client.level == null) {
 			clear();
 			return false;
 		}
@@ -249,7 +246,7 @@ public final class HeldItemInfoRenderer {
 	public static void render(GuiGraphicsExtractor graphics, Font font, int textY, int textColor,
 			Minecraft client, @Nullable Player cameraPlayer, int lastHealth, int displayHealth) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || lines.isEmpty()) {
+		if (lines.isEmpty()) {
 			return;
 		}
 		FunctionConfig functions = config.functions;
@@ -286,7 +283,7 @@ public final class HeldItemInfoRenderer {
 	// 动作栏消息与加高后的提示重叠时整体上移，行为与参考实现一致。
 	public static void shiftOverlayMessage(GuiGraphicsExtractor graphics) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.heldItemInfoPreventOverlap || lastTooltipY < 0) {
+		if (!config.functions.heldItemInfoPreventOverlap || lastTooltipY < 0) {
 			return;
 		}
 		int tooltipYOffset = graphics.guiHeight() - lastTooltipY;

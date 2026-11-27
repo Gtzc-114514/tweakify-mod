@@ -54,7 +54,7 @@ public final class AttackRangeState {
 
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.functions.attackRangeDisplay
+		boolean enabled = config.functions.attackRangeDisplay
 			&& client.player != null && client.level != null;
 		if (!enabled) {
 			resetState();

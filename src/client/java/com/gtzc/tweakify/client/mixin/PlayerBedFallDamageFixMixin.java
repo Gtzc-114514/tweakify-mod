@@ -28,7 +28,7 @@ public class PlayerBedFallDamageFixMixin {
 												 BedRule rule, BlockPos pos,
 												 CallbackInfoReturnable<Either<Player.BedSleepingProblem, Unit>> cir) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.fix.bedFallDamageFix) {
+		if (!config.fix.bedFallDamageFix) {
 			return;
 		}
 		Player player = (Player) (Object) this;

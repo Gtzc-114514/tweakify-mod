@@ -19,7 +19,7 @@ public class ExplosionShakeMixin {
 	@Inject(method = "handleExplosion", at = @At("RETURN"))
 	private void tweakify$addExplosionShake(ClientboundExplodePacket packet, CallbackInfo callback) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.cameraMotion || !config.functions.cameraMotionScreenShake) {
+		if (!config.functions.cameraMotion || !config.functions.cameraMotionScreenShake) {
 			return;
 		}
 		Vec3 center = packet.center();

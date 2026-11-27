@@ -27,7 +27,7 @@ public class HudExperienceLevelMixin {
 	private void tweakify$liftExperienceLevel(GuiGraphicsExtractor graphics, Font font, int level,
 											  Operation<Void> original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.locatorBarCompass) {
+		if (!config.functions.locatorBarCompass) {
 			original.call(graphics, font, level);
 			return;
 		}

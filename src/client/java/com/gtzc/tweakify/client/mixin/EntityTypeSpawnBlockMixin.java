@@ -27,7 +27,7 @@ public class EntityTypeSpawnBlockMixin {
 	private Entity tweakify$blockDisabledSpawn(Level level, EntitySpawnRequest request,
 			Operation<Entity> original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || request == null) {
+		if (request == null) {
 			return original.call(level, request);
 		}
 		EntityType<?> type = (EntityType<?>) (Object) this;

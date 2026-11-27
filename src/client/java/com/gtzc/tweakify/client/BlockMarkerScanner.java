@@ -124,8 +124,8 @@ final class BlockMarkerScanner {
 	static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
 		boolean available = client.player != null && client.level != null;
-		boolean barrier = config != null && config.functions.barrierVisibility && available;
-		boolean bedrock = config != null && config.functions.highlightSingleLayerBedrock && available;
+		boolean barrier = config.functions.barrierVisibility && available;
+		boolean bedrock = config.functions.highlightSingleLayerBedrock && available;
 
 		// 切换维度/重进世界时清空旧标记并立即重扫，避免在新维度里看到上个维度的坐标。
 		// 退回标题界面（level == null）时也要断开引用：静态字段持有 ClientLevel 会连带留住整个客户端世界。
@@ -347,16 +347,14 @@ final class BlockMarkerScanner {
 
 	private static int maxBarrierMarkers() {
 		TweakifyModConfig config = TweakifyMod.config();
-		int configured = config == null ? TweakifyModConfig.DEFAULT_BARRIER_MARKERS
-			: config.functions.barrierVisibilityMaxMarkers;
+		int configured = config.functions.barrierVisibilityMaxMarkers;
 		return Math.max(TweakifyModConfig.MIN_BARRIER_MARKERS,
 			Math.min(TweakifyModConfig.MAX_BARRIER_MARKERS, configured));
 	}
 
 	private static int maxBedrockMarkers() {
 		TweakifyModConfig config = TweakifyMod.config();
-		int configured = config == null ? TweakifyModConfig.DEFAULT_BEDROCK_MARKERS
-			: config.functions.highlightSingleLayerBedrockMaxMarkers;
+		int configured = config.functions.highlightSingleLayerBedrockMaxMarkers;
 		return Math.max(TweakifyModConfig.MIN_BEDROCK_MARKERS,
 			Math.min(TweakifyModConfig.MAX_BEDROCK_MARKERS, configured));
 	}
@@ -364,8 +362,7 @@ final class BlockMarkerScanner {
 	// 屏障扫描半径：配置缺失或越界时夹紧到允许范围。
 	private static int barrierScanRadius() {
 		TweakifyModConfig config = TweakifyMod.config();
-		int configured = config == null ? TweakifyModConfig.DEFAULT_BARRIER_SCAN_RADIUS
-			: config.functions.barrierVisibilityScanRadius;
+		int configured = config.functions.barrierVisibilityScanRadius;
 		return Math.max(TweakifyModConfig.MIN_BARRIER_SCAN_RADIUS,
 			Math.min(TweakifyModConfig.MAX_BARRIER_SCAN_RADIUS, configured));
 	}
@@ -373,8 +370,7 @@ final class BlockMarkerScanner {
 	// 基岩扫描半径：配置缺失或越界时夹紧到允许范围。
 	private static int bedrockScanRadius() {
 		TweakifyModConfig config = TweakifyMod.config();
-		int configured = config == null ? TweakifyModConfig.DEFAULT_BEDROCK_SCAN_RADIUS
-			: config.functions.highlightSingleLayerBedrockScanRadius;
+		int configured = config.functions.highlightSingleLayerBedrockScanRadius;
 		return Math.max(TweakifyModConfig.MIN_BEDROCK_SCAN_RADIUS,
 			Math.min(TweakifyModConfig.MAX_BEDROCK_SCAN_RADIUS, configured));
 	}

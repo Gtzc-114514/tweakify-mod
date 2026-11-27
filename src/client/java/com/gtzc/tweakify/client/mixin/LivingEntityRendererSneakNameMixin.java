@@ -21,7 +21,7 @@ public abstract class LivingEntityRendererSneakNameMixin {
 			target = "Lnet/minecraft/world/entity/LivingEntity;isDiscrete()Z"))
 	private boolean tweakify$keepSneakName(LivingEntity entity) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.disableSneakNameHide) {
+		if (config.modified.disableSneakNameHide) {
 			return false;
 		}
 		return entity.isDiscrete();

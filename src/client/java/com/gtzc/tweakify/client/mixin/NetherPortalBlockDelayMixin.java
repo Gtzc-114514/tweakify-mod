@@ -24,7 +24,7 @@ public class NetherPortalBlockDelayMixin {
 	@ModifyReturnValue(method = "getPortalTransitionTime", at = @At("RETURN"))
 	private int tweakify$overridePortalDelay(int original, ServerLevel level, Entity entity) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !(entity instanceof Player player)) {
+		if (!(entity instanceof Player player)) {
 			return original;
 		}
 		// 自定义等待时间优先：大于 0 时对所有玩家统一生效，忽略下面的子开关。

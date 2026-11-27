@@ -41,7 +41,7 @@ public final class SpearFixes {
 
 	private static boolean root() {
 		TweakifyModConfig config = config();
-		return config != null && config.fix.spearFixes;
+		return config.fix.spearFixes;
 	}
 
 	public static boolean mc305835() {

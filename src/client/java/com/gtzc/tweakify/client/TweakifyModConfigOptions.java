@@ -232,10 +232,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	// 配置项名与 TweakifyModConfig 字段名一一对应，同步时按名字读写；
 	// 新增开关只需添加字段与配置项，不必再分别维护两段镜像代码。
 	public static void syncFromConfig() {
-		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
+		if (!TweakifyMod.isConfigLoaded()) {
 			return;
 		}
+		TweakifyModConfig config = TweakifyMod.config();
 
 		// 同步期间屏蔽值变更回调，避免每个赋值都触发一次写盘。
 		boolean previousSyncing = syncing;
@@ -322,10 +322,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		if (savePending) {
 			flushPendingSaveNow();
 		}
-		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
+		if (!TweakifyMod.isConfigLoaded()) {
 			return;
 		}
+		TweakifyModConfig config = TweakifyMod.config();
 		long covered;
 		AsyncFileWriter.WriteHandle handle;
 		synchronized (config) {
@@ -471,10 +471,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 
 	// 单配置项变化：只同步这一项，避免每次切换开关都清洗 8 个列表并重建缓存。
 	static void syncAndSave(IConfigBase changed) {
-		TweakifyModConfig config = TweakifyMod.config();
-		if (syncing || config == null || changed == null) {
+		if (syncing || !TweakifyMod.isConfigLoaded() || changed == null) {
 			return;
 		}
+		TweakifyModConfig config = TweakifyMod.config();
 		syncing = true;
 		try {
 			markPending(config);
@@ -489,10 +489,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 
 	// 全量同步：快捷键编辑结束、配置界面重建等没有明确变化项时使用（低频）。
 	static void syncAndSave() {
-		TweakifyModConfig config = TweakifyMod.config();
-		if (syncing || config == null) {
+		if (syncing || !TweakifyMod.isConfigLoaded()) {
 			return;
 		}
+		TweakifyModConfig config = TweakifyMod.config();
 		syncing = true;
 		try {
 			markPending(config);
@@ -536,12 +536,12 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		if (!savePending) {
 			return;
 		}
-		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
+		if (!TweakifyMod.isConfigLoaded()) {
 			savePending = false;
 			pendingSnapshot = null;
 			return;
 		}
+		TweakifyModConfig config = TweakifyMod.config();
 		TweakifyModConfig.Snapshot snapshot = pendingSnapshot;
 		boolean snapshotFailed = false;
 		synchronized (config) {
@@ -596,7 +596,7 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		boolean success;
 		try {
 			TweakifyModConfig config = TweakifyMod.config();
-			success = config != null && config.writeJsonTree(jsonTree, writeSequence);
+			success = TweakifyMod.isConfigLoaded() && config.writeJsonTree(jsonTree, writeSequence);
 		} catch (RuntimeException e) {
 			// 非 IOException 的写盘异常（路径非法、安全策略等）也必须产出失败结果：
 			// 否则 pollSaveResults 永远收不到这次结果，回滚与日志会一起静默丢失。
@@ -625,7 +625,7 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 				continue;
 			}
 			TweakifyModConfig config = TweakifyMod.config();
-			if (config != null) {
+			if (TweakifyMod.isConfigLoaded()) {
 				applyFailedWriteRollback(config, result.snapshot(), result.afterSnapshot());
 			}
 		}
@@ -703,10 +703,10 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 	static void flushOnShutdown() {
 		savePending = false;
 		pendingSnapshot = null;
-		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
+		if (!TweakifyMod.isConfigLoaded()) {
 			return;
 		}
+		TweakifyModConfig config = TweakifyMod.config();
 		if (config.saveForShutdown()) {
 			return;
 		}

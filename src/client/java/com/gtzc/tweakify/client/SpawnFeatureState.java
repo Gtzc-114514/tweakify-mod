@@ -148,9 +148,6 @@ public final class SpawnFeatureState {
 	// 纯函数版本保留在上方，单测与调用方仍可显式传参，不依赖全局配置。
 	public static Difficulty peacefulSpawnDifficulty(LevelAccessor level, EntityType<?> type) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return level.getDifficulty();
-		}
 		return peacefulSpawnDifficulty(level.getDifficulty(),
 			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(type));
@@ -160,7 +157,7 @@ public final class SpawnFeatureState {
 	// 只回答“是否放行”，原版返回值仍由调用方兜底（配置未加载时不放行）。
 	public static boolean shouldAllowPeacefulSpawn(EntityType<?> type) {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config != null && shouldAllowPeacefulSpawn(
+		return shouldAllowPeacefulSpawn(
 			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(type));
 	}

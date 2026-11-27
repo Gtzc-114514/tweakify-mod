@@ -44,16 +44,16 @@ public final class ConnectedBlockOutlineState {
 		}
 		TweakifyModConfig config = TweakifyMod.config();
 		if (state.getBlock() instanceof DoorBlock) {
-			return config == null || config.modified.connectedBlockOutlineDoors;
+			return config.modified.connectedBlockOutlineDoors;
 		}
 		if (state.getBlock() instanceof AbstractBedBlock) {
-			return config == null || config.modified.connectedBlockOutlineBeds;
+			return config.modified.connectedBlockOutlineBeds;
 		}
 		if (state.getBlock() instanceof ChestBlock) {
-			return config == null || config.modified.connectedBlockOutlineChests;
+			return config.modified.connectedBlockOutlineChests;
 		}
 		if (state.getBlock() instanceof DoublePlantBlock) {
-			return config == null || config.modified.connectedBlockOutlinePlants;
+			return config.modified.connectedBlockOutlinePlants;
 		}
 		return false;
 	}
@@ -151,7 +151,7 @@ public final class ConnectedBlockOutlineState {
 	// 配置缺失时保持 2 格视觉高度（旧行为）。
 	private static boolean doorFullHeightEnabled() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config == null || config.modified.connectedBlockOutlineDoorFullHeight;
+		return config.modified.connectedBlockOutlineDoorFullHeight;
 	}
 
 	// 门：保留原版形状的 x/z 范围，把 y 范围扩到两格（下半 0..2，上半 -1..1）。

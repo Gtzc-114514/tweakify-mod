@@ -27,7 +27,7 @@ public class ItemFrameHideMixin {
 	private void tweakify$hideFilledFrame(ItemFrame frame, ItemFrameRenderState state,
 									float partialTick, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.hideItemFrames) {
+		if (!config.modified.hideItemFrames) {
 			return;
 		}
 		boolean empty = state.item.isEmpty();

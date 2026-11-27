@@ -80,7 +80,7 @@ public final class StatusEffectTimerRenderer {
 	// tick 级更新：排序、过滤、格式化与 TextPlacement 都只在这里构建一次。
 	static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.statusEffectDurationDisplay || client.player == null) {
+		if (!config.functions.statusEffectDurationDisplay || client.player == null) {
 			CACHE.reset();
 			return;
 		}
@@ -92,7 +92,7 @@ public final class StatusEffectTimerRenderer {
 	// 由 Hud.extractEffects 末尾调用：缓存命中时只遍历预构建条目并绘制。
 	public static void render(GuiGraphicsExtractor gui, Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.statusEffectDurationDisplay || client.player == null) {
+		if (!config.functions.statusEffectDurationDisplay || client.player == null) {
 			return;
 		}
 		int guiWidth = guiWidth(client);
@@ -219,7 +219,7 @@ public final class StatusEffectTimerRenderer {
 	// 计算文字位置：固定 0.5 倍，底边贴住图标下沿；坐标取整避免字体像素落在半像素上。
 	public static TextPlacement placementFor(Font font, MobEffectInstance effect, int x, int y) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean alwaysSeconds = config != null && config.functions.statusEffectDurationAlwaysSeconds;
+		boolean alwaysSeconds = config.functions.statusEffectDurationAlwaysSeconds;
 		return placementFor(font, effect, x, y, alwaysSeconds);
 	}
 

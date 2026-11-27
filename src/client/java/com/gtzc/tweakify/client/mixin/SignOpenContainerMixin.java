@@ -51,7 +51,7 @@ public class SignOpenContainerMixin {
 	@Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true, require = 0)
 	private void tweakify$openContainerBehindSign(CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || this.player == null || this.level == null || this.gameMode == null) {
+		if (this.player == null || this.level == null || this.gameMode == null) {
 			return;
 		}
 		if (!(this.hitResult instanceof BlockHitResult blockHit)

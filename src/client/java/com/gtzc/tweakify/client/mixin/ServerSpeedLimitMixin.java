@@ -25,7 +25,7 @@ public class ServerSpeedLimitMixin {
 	@ModifyReturnValue(method = "shouldCheckPlayerMovement", at = @At("RETURN"))
 	private boolean tweakify$skipSpeedLimit(boolean original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.removeSpeedLimit) {
+		if (!config.modified.removeSpeedLimit) {
 			return original;
 		}
 		boolean vehiclesOnly = config.modified.removeSpeedLimitOnlyVehicles;

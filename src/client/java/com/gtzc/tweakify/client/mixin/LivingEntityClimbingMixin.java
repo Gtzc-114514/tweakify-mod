@@ -64,7 +64,7 @@ public abstract class LivingEntityClimbingMixin {
 		HookProbe.markOnce(TWEAKIFY$NO_SLOWDOWN_PROBE, "climbablePassNoSlowdown");
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && self instanceof LocalPlayer && self.level().isClientSide()
+		if (self instanceof LocalPlayer && self.level().isClientSide()
 			&& ClimbablePassState.shouldSkipClamp(config.modified.climbablePassNoSlowdown,
 				config.modified.climbablePassNoSlowdownSneakOnly, self.isShiftKeyDown())) {
 			BlockState inBlock = self.getInBlockState();
@@ -89,7 +89,7 @@ public abstract class LivingEntityClimbingMixin {
 		HookProbe.markOnce(TWEAKIFY$FAST_DESCEND_PROBE, "climbingFastDescend");
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.functions.betterClimbing && config.functions.climbingFastDescend
+		if (config.functions.betterClimbing && config.functions.climbingFastDescend
 			&& self instanceof LocalPlayer && self.level().isClientSide()) {
 			double maxDown = Mth.clampedMap(self.getXRot(), 20.0f, 90.0f, downSpeed, -0.4);
 			if (maxDown < -0.15) {
@@ -130,7 +130,7 @@ public abstract class LivingEntityClimbingMixin {
 		HookProbe.markOnce(TWEAKIFY$FASTER_ASCEND_PROBE, "climbingFasterAscend");
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.betterClimbing || !self.level().isClientSide()
+		if (!config.functions.betterClimbing || !self.level().isClientSide()
 			|| !(self instanceof LocalPlayer) || !self.onClimbable()) {
 			return climbSpeed;
 		}
@@ -155,7 +155,7 @@ public abstract class LivingEntityClimbingMixin {
 		// 先走链上原操作取值：handler 内直接读字段会绕过其它模组对同一字段的包装。
 		boolean collision = original.call(entity);
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.functions.betterClimbing && config.functions.climbingCancelCollision
+		if (config.functions.betterClimbing && config.functions.climbingCancelCollision
 			&& entity.level().isClientSide() && entity instanceof LocalPlayer player) {
 			return collision && player.input.getMoveVector().length() > 0.0f;
 		}

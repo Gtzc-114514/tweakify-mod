@@ -32,7 +32,7 @@ public class CreativeModeInventoryScreenQuickBurnMixin {
 											CallbackInfo ci) {
 		HookProbe.markOnce(TWEAKIFY$CREATIVE_BURN_PROBE, "creativeQuickBurn");
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.quickBurnItem || mouseButton != 1 || type != ContainerInput.PICKUP) {
+		if (!config.functions.quickBurnItem || mouseButton != 1 || type != ContainerInput.PICKUP) {
 			return;
 		}
 		Minecraft client = Minecraft.getInstance();

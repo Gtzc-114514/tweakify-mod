@@ -28,7 +28,7 @@ public abstract class WorldSelectionListPlayTimeMixin {
 		TweakifyModConfig config = TweakifyMod.config();
 		if (((WorldSelectionListAccessor) list).tweakify$entryType()
 			!= WorldSelectionList.EntryType.SINGLEPLAYER
-			|| config == null || !config.functions.savePlayTime) {
+			|| !config.functions.savePlayTime) {
 			WorldPlayTime.clear();
 			return;
 		}

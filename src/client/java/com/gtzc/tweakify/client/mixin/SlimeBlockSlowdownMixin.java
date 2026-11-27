@@ -25,7 +25,7 @@ public class SlimeBlockSlowdownMixin {
 	private void tweakify$disableSlowdown(Level level, BlockPos pos, BlockState state, Entity entity,
 										  CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.disableSlimeBlockSlowdown
+		if (config.modified.disableSlimeBlockSlowdown
 			&& (!config.modified.disableSlimeBlockSlowdownPlayersOnly || entity instanceof Player)) {
 			ci.cancel();
 		}

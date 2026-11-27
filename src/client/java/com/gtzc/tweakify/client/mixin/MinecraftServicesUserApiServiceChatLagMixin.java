@@ -43,7 +43,7 @@ public abstract class MinecraftServicesUserApiServiceChatLagMixin {
 	@Inject(method = "isBlockedPlayer", at = @At("HEAD"), cancellable = true, require = 0)
 	private void tweakify$fetchBlockListAsync(UUID uuid, CallbackInfoReturnable<Boolean> cir) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.fix.chatLagFix) {
+		if (!config.fix.chatLagFix) {
 			return;
 		}
 		HookProbe.markOnce(TWEAKIFY$CHAT_LAG_PROBE, "chatLagFix");

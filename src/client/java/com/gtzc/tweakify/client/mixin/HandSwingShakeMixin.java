@@ -28,7 +28,7 @@ public class HandSwingShakeMixin {
 			return original;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.cameraMotion) {
+		if (!config.functions.cameraMotion) {
 			return original;
 		}
 		CameraMotion.notifyPlayerAction();

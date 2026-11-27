@@ -84,7 +84,7 @@ public final class LockedTradeService {
 	// 从未打开过交易界面的村民也会在这里提前生成，保证升级路径与界面显示用的是同一份缓存。
 	public static void ensureGenerated(Villager villager) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.visibleTraders) {
+		if (!config.modified.visibleTraders) {
 			return;
 		}
 		getOrGenerate(villager);
@@ -102,12 +102,8 @@ public final class LockedTradeService {
 	// 合并剩余锁定交易，用于下发给客户端；只限制展示内容，不改变升级时消耗的完整组。
 	public static Optional<MerchantOffers> condense(Villager villager) {
 		TweakifyModConfig config = TweakifyMod.config();
-		int configuredLevels = config == null
-			? TweakifyModConfig.DEFAULT_VISIBLE_TRADER_FUTURE_LEVELS
-			: config.modified.visibleTradersFutureLevels;
-		int configuredOffers = config == null
-			? TweakifyModConfig.DEFAULT_VISIBLE_TRADER_LOCKED_OFFERS
-			: config.modified.visibleTradersMaxLockedOffers;
+		int configuredLevels = config.modified.visibleTradersFutureLevels;
+		int configuredOffers = config.modified.visibleTradersMaxLockedOffers;
 		List<MerchantOffers> locked = getOrGenerate(villager);
 		MerchantOffers combined = new MerchantOffers();
 		int levelsToShow = VisibleTradersState.futureLevelsToShow(configuredLevels, locked.size());
@@ -126,7 +122,7 @@ public final class LockedTradeService {
 	// 会按升级后的等级重新生成，导致发放的交易整体错位一级。
 	public static void send(Villager villager, ServerPlayer player) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.visibleTraders) {
+		if (!config.modified.visibleTraders) {
 			return;
 		}
 		Optional<MerchantOffers> locked = condense(villager);
@@ -139,7 +135,7 @@ public final class LockedTradeService {
 	// 随村民存档，保证卸载/重进世界后看到的未来交易与升级后获得的完全一致。
 	public static void save(Villager villager, ValueOutput output) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.visibleTraders) {
+		if (!config.modified.visibleTraders) {
 			return;
 		}
 		List<MerchantOffers> locked = LOCKED.get(key(villager));

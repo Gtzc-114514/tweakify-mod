@@ -128,10 +128,6 @@ public final class ProfileEditorScreen extends Screen {
 		this.pendingDelete = null;
 		TweakifyModConfig config = TweakifyMod.config();
 		String name = this.nameField == null ? "" : this.nameField.getValue().trim();
-		if (config == null) {
-			this.setStatus(Component.translatable("tweakify-mod.command.profile.save_failed", name), ERROR_COLOR);
-			return;
-		}
 		if (name.isEmpty()) {
 			this.setStatus(Component.translatable("tweakify-mod.gui.profile_editor.name_required"), ERROR_COLOR);
 			return;
@@ -167,10 +163,6 @@ public final class ProfileEditorScreen extends Screen {
 		}
 
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			this.setStatus(Component.translatable("tweakify-mod.command.profile.load_failed", name), ERROR_COLOR);
-			return;
-		}
 		try {
 			// 先提交尚未写盘的修改；applyAndSave 的写盘会排在同一串行队列并等待，
 			// 更早的旧写一定先完成，不会覆盖刚加载的档案。

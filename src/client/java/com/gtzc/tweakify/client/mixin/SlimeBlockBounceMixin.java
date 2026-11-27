@@ -23,7 +23,7 @@ public class SlimeBlockBounceMixin {
 			return;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && config.modified.disableSlimeBlockSlowdown
+		if (config.modified.disableSlimeBlockSlowdown
 			&& config.modified.disableSlimeBlockBounce) {
 			cir.setReturnValue(0.0F);
 		}

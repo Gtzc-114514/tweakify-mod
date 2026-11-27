@@ -57,9 +57,9 @@ public abstract class MerchantMenuMixin implements MerchantMenuAccess {
 		// 每次都用最新的真实列表数量，避免补货/声望刷新后 originalCount 过时。
 		// 只显示锁定交易时原始数量按 0 计算，所有行都会被标记为锁定。
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean onlyLocked = config != null && config.modified.visibleTradersOnlyLocked;
+		boolean onlyLocked = config.modified.visibleTradersOnlyLocked;
 		this.tweakify$originalCount = VisibleTradersState.originalCount(onlyLocked, original.size());
-		if (config == null || !config.modified.visibleTraders
+		if (!config.modified.visibleTraders
 			|| this.tweakify$lockedOffers == null || this.tweakify$lockedOffers.isEmpty()) {
 			return original;
 		}

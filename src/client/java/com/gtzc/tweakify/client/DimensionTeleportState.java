@@ -21,7 +21,7 @@ public final class DimensionTeleportState {
 
 	public static boolean shouldBlockPortal(Portal portal, Entity entity) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.disableDimensionTeleport || entity == null) {
+		if (!config.functions.disableDimensionTeleport || entity == null) {
 			return false;
 		}
 

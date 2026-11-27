@@ -39,7 +39,7 @@ public abstract class LevelExtractorSpectatorOverlayMixin {
 	private void tweakify$hideSpectatorOverlays(Camera camera, DeltaTracker deltaTracker, float worldPartialTicks,
 			PlayerRenderState state, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.fix.spectatorOverlayFix;
+		boolean enabled = config.fix.spectatorOverlayFix;
 		boolean spectator = this.minecraft.player != null && this.minecraft.player.isSpectator();
 		if (!SpectatorOverlayState.shouldHideOverlays(enabled, spectator)) {
 			return;

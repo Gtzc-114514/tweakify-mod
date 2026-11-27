@@ -51,7 +51,7 @@ public abstract class ChatComponentFadeBarMixin {
 									   boolean changeCursorOnInsertions, Operation<Void> original) {
 		original.call(graphics, font, ticks, mouseX, mouseY, mode, changeCursorOnInsertions);
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.chatFadeProgressBar) {
+		if (!config.functions.chatFadeProgressBar) {
 			return;
 		}
 		if (this.trimmedMessages.isEmpty()) {

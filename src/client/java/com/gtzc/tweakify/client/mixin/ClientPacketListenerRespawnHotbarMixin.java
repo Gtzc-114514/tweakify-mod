@@ -45,7 +45,7 @@ public abstract class ClientPacketListenerRespawnHotbarMixin {
 		boolean death = oldPlayer.isDeadOrDying();
 		boolean dimensionChange = !death && !oldPlayer.level().dimension()
 			.equals(packet.commonPlayerSpawnInfo().dimension());
-		boolean enabled = config != null && RespawnHotbarState.shouldRestore(
+		boolean enabled = RespawnHotbarState.shouldRestore(
 			config.fix.respawnHotbarFix, config.fix.respawnHotbarKeepOnDimensionChange, dimensionChange);
 		int slot = RespawnHotbarState.slotToRestore(enabled,
 			oldPlayer.getInventory().getSelectedSlot());

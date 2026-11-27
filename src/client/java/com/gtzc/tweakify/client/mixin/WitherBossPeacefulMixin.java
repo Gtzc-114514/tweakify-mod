@@ -19,7 +19,7 @@ public class WitherBossPeacefulMixin {
 		target = "Lnet/minecraft/world/entity/EntityType;isAllowedInPeaceful()Z"))
 	private boolean tweakify$keepPeacefulWither(EntityType<?> type) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null && SpawnFeatureState.shouldStayInPeaceful(
+		if (SpawnFeatureState.shouldStayInPeaceful(
 			config.functions.peacefulModeMonsters, config.isPeacefulModeMonster(type))) {
 			return true;
 		}

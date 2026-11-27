@@ -41,7 +41,7 @@ public class LocalPlayerCutThroughMixin {
 	private HitResult tweakify$cutThroughPlants(HitResult original, float partialTick, Entity camera) {
 		TweakifyModConfig config = TweakifyMod.config();
 		LocalPlayer self = (LocalPlayer) (Object) this;
-		if (config == null || !config.functions.swordCutThroughPlants || self.level() == null) {
+		if (!config.functions.swordCutThroughPlants || self.level() == null) {
 			return original;
 		}
 		// 潜行时恢复原版：先把植物打掉，方便“先清理再攻击”。

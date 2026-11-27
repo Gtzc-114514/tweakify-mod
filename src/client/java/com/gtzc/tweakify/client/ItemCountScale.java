@@ -21,7 +21,7 @@ public final class ItemCountScale {
 	// 当前缩放百分比；配置未初始化时按原版 100%。
 	public static int currentPercent() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config == null ? TweakifyModConfig.DEFAULT_ITEM_COUNT_SCALE : config.modified.itemCountScale;
+		return config.modified.itemCountScale;
 	}
 
 	// 原版只在数量不为 1 或显式提供文本时绘制。

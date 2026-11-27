@@ -207,9 +207,7 @@ public final class WorldPlayTime {
 	// 小时文本：100 小时以上取整，否则按配置保留小数位。
 	static String hoursText(long ticks) {
 		TweakifyModConfig config = TweakifyMod.config();
-		int decimals = config == null
-			? TweakifyModConfig.DEFAULT_SAVE_PLAY_TIME_DECIMALS
-			: config.functions.savePlayTimeDecimals;
+		int decimals = config.functions.savePlayTimeDecimals;
 		return hoursText(ticks, decimals);
 	}
 

@@ -38,9 +38,6 @@ public abstract class ResourcePackCompatibilityMixin {
 			return original;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return original;
-		}
 		// 仅警告：保留不兼容标记与说明，只在确认流程里放行。
 		if (config.modified.resourcePackCompatibilityWarnOnly) {
 			return original;

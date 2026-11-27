@@ -28,8 +28,8 @@ public final class TotemInventory {
 	public static boolean tryUseInventoryTotem(Player player) {
 		Inventory inventory = player.getInventory();
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean includeHotbar = config == null || config.modified.totemInventoryIncludeHotbar;
-		boolean hotbarFirst = config == null || config.modified.totemInventoryHotbarFirst;
+		boolean includeHotbar = config.modified.totemInventoryIncludeHotbar;
+		boolean hotbarFirst = config.modified.totemInventoryHotbarFirst;
 		int slot = findTotemSlot(inventory, Inventory.INVENTORY_SIZE, includeHotbar, hotbarFirst);
 		if (slot < 0) {
 			return false;

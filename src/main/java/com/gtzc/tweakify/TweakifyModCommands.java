@@ -346,9 +346,7 @@ public class TweakifyModCommands {
 		// 服务端已回滚（或兜底重写）：请求客户端界面同步回真实值，
 		// 否则关闭配置界面时 MaLiLib 会把界面里的失败值再次推回配置。
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config != null) {
-			config.requestOptionSync();
-		}
+		config.requestOptionSync();
 		return false;
 	}
 

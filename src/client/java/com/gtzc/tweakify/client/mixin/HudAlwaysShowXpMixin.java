@@ -24,7 +24,7 @@ public class HudAlwaysShowXpMixin {
 	@Inject(method = "willPrioritizeExperienceInfo", at = @At("RETURN"), cancellable = true)
 	private void tweakify$prioritizeExperienceBar(CallbackInfoReturnable<Boolean> cir) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.locatorBarHeads
+		if (!config.functions.locatorBarHeads
 			|| !config.functions.locatorBarAlwaysShowXp) {
 			return;
 		}

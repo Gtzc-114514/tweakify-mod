@@ -22,7 +22,7 @@ public class AnvilScreenMixin {
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;hasInfiniteMaterials()Z"))
 	private boolean tweakify$hideTooExpensiveText(LocalPlayer player, Operation<Boolean> original) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.modified.disableTooExpensive) {
+		if (!config.modified.disableTooExpensive) {
 			return original.call(player);
 		}
 		AnvilMenu menu = ((AnvilScreen) (Object) this).getMenu();

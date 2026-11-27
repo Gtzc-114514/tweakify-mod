@@ -82,7 +82,7 @@ public class TweakifyModConfigListWidget extends WidgetListConfigOptions {
 	// 搜索高亮开关：配置尚未加载时按默认（开启）处理。
 	private static boolean searchHighlightEnabled() {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config == null || config.general.searchHighlight;
+		return config.general.searchHighlight;
 	}
 
 	// 当前搜索过滤串（小写、| 分隔）；高亮关闭或搜索框未展开时返回空串。

@@ -37,7 +37,7 @@ public class ServerPlayerGameModeKeepTorchMixin {
 		Operation<InteractionResult> original) {
 		TweakifyModConfig config = TweakifyMod.config();
 		Player player = context.getPlayer();
-		if (config != null && config.modified.keepLastTorch && player != null && !player.isCreative()) {
+		if (config.modified.keepLastTorch && player != null && !player.isCreative()) {
 			HookProbe.markOnce(TWEAKIFY$KEEP_TORCH_PROBE, "keepLastTorch");
 			boolean offhandSpare = config.modified.keepLastTorchIgnoreOffhand
 				&& player.getOffhandItem().getItem() == stack.getItem();

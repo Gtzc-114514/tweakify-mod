@@ -20,7 +20,7 @@ public final class UseCooldownState {
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
 		// 总开关关闭或两手冷却都关闭时不再跟踪会话，省掉每 tick 的按键读取。
-		if (config == null || !config.functions.useCooldown
+		if (!config.functions.useCooldown
 			|| (!config.functions.mainHandUseCooldown && !config.functions.offhandUseCooldown)
 			|| client.player == null) {
 			MAIN_HAND.reset();

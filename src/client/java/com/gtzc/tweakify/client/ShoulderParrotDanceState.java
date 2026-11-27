@@ -28,7 +28,7 @@ public final class ShoulderParrotDanceState {
 
 	public static boolean shouldDance(AvatarRenderState playerState) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.fix.parrotDanceOnShoulder || playerState == null) {
+		if (!config.fix.parrotDanceOnShoulder || playerState == null) {
 			return false;
 		}
 		// 可选的本地玩家限定：其它玩家肩膀上的鹦鹉保持原版姿态。

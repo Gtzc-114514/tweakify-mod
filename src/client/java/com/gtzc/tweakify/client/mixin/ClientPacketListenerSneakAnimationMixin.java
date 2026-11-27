@@ -36,10 +36,10 @@ public abstract class ClientPacketListenerSneakAnimationMixin {
 	private void tweakify$stripLocalPlayerPose(ClientboundSetEntityDataPacket packet, CallbackInfo ci,
 			@Local(ordinal = 0) Entity entity) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.fix.sneakAnimationFix;
+		boolean enabled = config.fix.sneakAnimationFix;
 		Minecraft client = Minecraft.getInstance();
-		boolean onlyOnGround = config != null && config.fix.sneakAnimationFixOnlyOnGround;
-		boolean onlyWhenSneaking = config != null && config.fix.sneakAnimationFixOnlyWhenSneaking;
+		boolean onlyOnGround = config.fix.sneakAnimationFixOnlyOnGround;
+		boolean onlyWhenSneaking = config.fix.sneakAnimationFixOnlyWhenSneaking;
 		boolean onGround = entity != null && entity.onGround();
 		boolean sneaking = entity != null && entity.isShiftKeyDown();
 		if (!SneakAnimationState.shouldStripPose(enabled, onlyOnGround, onlyWhenSneaking,

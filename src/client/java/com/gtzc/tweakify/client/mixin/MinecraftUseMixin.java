@@ -65,7 +65,7 @@ public class MinecraftUseMixin {
 	// 滑翔中使用烟花后，等烟花加速结束才能再次使用。
 	private boolean tweakify$blockElytraFirework() {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.elytraFireworkCooldown || this.player == null) {
+		if (!config.functions.elytraFireworkCooldown || this.player == null) {
 			return false;
 		}
 		return this.player.isFallFlying()
@@ -77,7 +77,7 @@ public class MinecraftUseMixin {
 	// 允许使用烟花时记录本次使用；只在真正会触发烟花加速的场景下置位。
 	private void tweakify$markElytraFireworkUsed() {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.elytraFireworkCooldown || this.player == null) {
+		if (!config.functions.elytraFireworkCooldown || this.player == null) {
 			return;
 		}
 		if (this.player.isFallFlying() && tweakify$isAimingAtAir() && tweakify$hasFireworkInHands()) {
@@ -97,7 +97,7 @@ public class MinecraftUseMixin {
 	// 一次右键只使用一次：按主/副手分会话，命中冷却物品列表的手在用过一次后被拦截。
 	private boolean tweakify$blockUseCooldown() {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.useCooldown || this.player == null) {
+		if (!config.functions.useCooldown || this.player == null) {
 			return false;
 		}
 		if (!this.options.keyUse.isDown()) {

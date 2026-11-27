@@ -27,9 +27,6 @@ public class NetherPortalBlockPeacefulMixin {
 			return current;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return current;
-		}
 		return SpawnFeatureState.peacefulSpawnDifficulty(current,
 			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(EntityTypes.ZOMBIFIED_PIGLIN));
@@ -43,9 +40,6 @@ public class NetherPortalBlockPeacefulMixin {
 			return current;
 		}
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null) {
-			return current;
-		}
 		return SpawnFeatureState.peacefulSpawnDifficulty(current,
 			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
 			config.isPeacefulModeMonster(EntityTypes.ZOMBIFIED_PIGLIN));

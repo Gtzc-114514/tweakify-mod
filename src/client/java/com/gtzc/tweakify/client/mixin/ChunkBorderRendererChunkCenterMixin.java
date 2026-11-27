@@ -27,7 +27,7 @@ public class ChunkBorderRendererChunkCenterMixin {
 	private void tweakify$drawChunkCenter(double camX, double camY, double camZ, DebugValueAccess debugValues,
 									  Frustum frustum, float partialTicks, CallbackInfo ci) {
 		TweakifyModConfig config = TweakifyMod.config();
-		if (config == null || !config.functions.chunkCenterIndicator) {
+		if (!config.functions.chunkCenterIndicator) {
 			return;
 		}
 		Minecraft client = Minecraft.getInstance();

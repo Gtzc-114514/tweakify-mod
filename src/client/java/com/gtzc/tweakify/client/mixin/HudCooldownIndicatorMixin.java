@@ -43,7 +43,7 @@ public abstract class HudCooldownIndicatorMixin {
 	private boolean tweakify$skipEmptyCooldownBackground(GuiGraphicsExtractor graphics, RenderPipeline pipeline,
 			Identifier sprite, int x, int y, int width, int height) {
 		TweakifyModConfig config = TweakifyMod.config();
-		boolean enabled = config != null && config.fix.cooldownIndicatorFix;
+		boolean enabled = config.fix.cooldownIndicatorFix;
 		if (!enabled || this.minecraft.player == null) {
 			return true;
 		}
