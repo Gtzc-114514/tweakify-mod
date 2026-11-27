@@ -2,6 +2,7 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.state.ArmorStandPoses;
+import com.gtzc.tweakify.client.state.ArmorStandRedstoneTrigger;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -25,11 +26,9 @@ import java.util.List;
  */
 @Mixin(LivingEntity.class)
 public class LivingEntityArmorStandRedstoneMixin {
+	// 上升沿状态机：首 tick 只播种电平，持续通电不会反复切换。
 	@Unique
-	private boolean tweakify$armorStandPosePowered;
-
-	@Unique
-	private boolean tweakify$armorStandPoseSeeded;
+	private final ArmorStandRedstoneTrigger tweakify$armorStandPoseTrigger = new ArmorStandRedstoneTrigger();
 
 	@Inject(method = "tick", at = @At("HEAD"))
 	private void tweakify$cyclePoseOnRedstone(CallbackInfo ci) {
@@ -45,15 +44,7 @@ public class LivingEntityArmorStandRedstoneMixin {
 			return;
 		}
 		boolean powered = stand.level().hasNeighborSignal(stand.blockPosition());
-		if (!this.tweakify$armorStandPoseSeeded) {
-			// 首个 tick 只记录当前电平，不触发切换。
-			this.tweakify$armorStandPoseSeeded = true;
-			this.tweakify$armorStandPosePowered = powered;
-			return;
-		}
-		boolean wasPowered = this.tweakify$armorStandPosePowered;
-		this.tweakify$armorStandPosePowered = powered;
-		if (!powered || wasPowered) {
+		if (!this.tweakify$armorStandPoseTrigger.update(powered)) {
 			return;
 		}
 		List<ArmorStandPose> presets = ArmorStandPoses.resolve(config.functions.armorStandPosePresets);

@@ -76,16 +76,16 @@ mixin 文件             : 48 个含注入/探针的文件（其中两处刻意�
 | `ItemStackEnchantmentTooltipMixin` | 注入点本身不再直接记录，探针在 `EnchantmentTooltipDescriptions` helper 中 |
 | `PotionContentsTooltipCategoryMixin` | 一个注入点按「发光」与「不祥之兆」分别记录两个探针 |
 
-当前实测（2026-11-27，同一脚本口径；新增注入点后请重跑本节脚本并同步此块）：
+当前实测（2026-11-28，同一脚本口径；新增注入点后请重跑本节脚本并同步此块）：
 
 ```
-非注释 require = 0 注解 : 76
-HookProbe.markOnce 调用 : 79
-AtomicBoolean 探针字段  : 58
-mixin 文件             : 53 个含注入/探针的文件
+非注释 require = 0 注解 : 78
+HookProbe.markOnce 调用 : 81
+AtomicBoolean 探针字段  : 60
+mixin 文件             : 55 个含注入/探针的文件
 ```
 
-当前共 5 个文件不配平（76 个 `require = 0` 注入点已全部有探针）：
+当前共 5 个文件不配平（78 个 `require = 0` 注入点已全部有探针）：
 
 - 上表两处：探针不在注入点内 / 一注多探针；
 - `CreateWorldScreenExperimentalPackMixin`、`LocatorBarHeadsMixin`、`WorldOpenFlowsExperimentalWarningMixin`
@@ -94,6 +94,10 @@ mixin 文件             : 53 个含注入/探针的文件
 > 2026-11-27 补齐 3 个缺口：`AbstractContainerScreenQuickRightClickMixin`、
 > `CreativeModeInventoryScreenQuickRightClickMixin`、`MultiPlayerGameModeMixin`（`startDestroyBlock`）；
 > 同时拆开 `BookEditScreenVerticalCenterMixin` 两处注入共用的探针名，保证探针名全局唯一。
+>
+> 2026-11-28 新增 2 个探针：`MouseHandlerFastScrollMixin`（`fastScroll`）与
+> `CommandSuggestionsNbtAutocompleteMixin`（`nbtAutocomplete`）。这两处是滚动/命令补全类
+> 模组的常见改写目标，改为 `require = 0` + 探针，冲突时降级而不是启动失败。
 
 最近补齐的 8 处（`56f1e07` 补齐，`604cd94` 统一字段命名）：
 
@@ -131,9 +135,9 @@ for f in files:
     req += r; probes += p; fields += fld
     if r or p:
         per_file.append((f, r, p))
-print("require=0 :", req)          # 73
-print("markOnce  :", probes)       # 73
-print("AtomicBool:", fields)       # 54
+print("require=0 :", req)          # v1.1.1 基线 73，2026-11-28 实测 78
+print("markOnce  :", probes)       # 基线 73，实测 81
+print("AtomicBool:", fields)       # 基线 54，实测 60
 print("mixin 文件:", len(per_file),
       "整体配平:", all(r == p for _, r, p in per_file))   # False；当前 5 个文件不配平，见上方说明
 ```
@@ -159,6 +163,6 @@ print("mixin 文件:", len(per_file),
 | 文件 | 作用 |
 | --- | --- |
 | `src/main/java/com/gtzc/tweakify/util/HookProbe.java` | 探针实现（两种重载） |
-| `src/client/java/com/gtzc/tweakify/client/mixin/**` | `require = 0` 注入点所在（v1.1.1 基线 73 个，2026-11-27 实测 76 个） |
+| `src/client/java/com/gtzc/tweakify/client/mixin/**` | `require = 0` 注入点所在（v1.1.1 基线 73 个，2026-11-28 实测 78 个） |
 | `docs/release-pipeline.md` | 发布流水线说明与 L1–L3 / H2 取舍 |
 | `docs/tech-debt.md` | 技术债台账（T1–T3：测试覆盖缺口、顶点缓存、主线程扫描） |

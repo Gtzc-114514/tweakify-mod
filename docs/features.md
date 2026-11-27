@@ -205,7 +205,7 @@
 | `betterArmorStands` 更好的盔甲架 | 盔甲架姿态与手臂的总开关；关闭时下面的子项全部不生效。姿态与红石判定在集成服务端执行，仅单人/局域网生效 | 布尔值 | 关 |
 | `armorStandPoses` 盔甲架姿态 | 空手潜行右键盔甲架时循环到下一个预设姿态（参考基岩版）；潜行+空手时不再取下装备（取下请松开潜行），其余右键操作保持原版 | 布尔值 | 开 |
 | `armorStandPosesRedstone` 红石驱动姿态 | 红石脉冲的上升沿让盔甲架循环到下一个预设姿态；持续通电不会反复切换，区块重载后首次观测也不会误切 | 布尔值 | 开 |
-| `armorStandPosePresets` 姿态预设列表 | 参与循环的姿态代码，按内置顺序生效：`default` / `sitting` / `waving` / `bowing` / `thinking` / `cheering`；未知代码忽略，空列表则不循环 | 字符串列表 | 全部预设 |
+| `armorStandPosePresets` 姿态预设列表 | 参与循环的姿态代码，按内置顺序生效：`default` / `sitting` / `waving` / `bowing` / `thinking` / `cheering`；未知代码忽略，可省略 `minecraft:` 前缀，空列表则不循环 | 字符串列表 | 全部预设 |
 | `armorStandArms` 盔甲架手臂 | 所有盔甲架默认显示手臂；单人/局域网下可直接把物品放上双手；远程服务器只影响本地渲染 | 布尔值 | 关 |
 | `armorStandArmsOnlyWithItems` 仅持物时显示 | 只给手中拿着物品的盔甲架强制显示手臂 | 布尔值 | 关 |
 | `armorStandArmsOnlySmall` 仅小型盔甲架 | 只对小型盔甲架强制显示手臂 | 布尔值 | 关 |
@@ -479,7 +479,7 @@
 | `signTextOptimization` 告示牌文本优化 | 缓存原始/过滤文本状态并跳过客户端告示牌空 tick；开启后告示牌渲染不显示过滤文本 | 布尔值 | 关 |
 | `consumableOptimization` 消耗品优化 | 客户端本地完成进食与饮用，不再等待服务器往返确认；高延迟下不再卡在进食动画里；只在远程服务器生效，单人/局域网主机保持原版 | 布尔值 | 关 |
 | `consumableOptimizationInstantFeedback` 本地立即反馈 | 进食音效、粒子与打嗝在本地立即播放，不等服务端确认 | 布尔值 | 开 |
-| `consumableOptimizationSuppressServerFeedback` 抑制服务端重复反馈 | 吃掉服务器随后回放的完成事件与重复音效，避免同一口食物出现两次音效与粒子 | 布尔值 | 开 |
+| `consumableOptimizationSuppressServerFeedback` 抑制服务端重复反馈 | 吃掉服务器随后回放的完成事件与重复音效，避免同一口食物出现两次音效与粒子；抑制窗口按当前延迟自适应（3×RTT，500ms–2s），音效归属半径 2–6 格随 RTT 放宽：高延迟下不会过早放弃，也不会误吞远处其他玩家的进食声 | 布尔值 | 开 |
 | `consumableOptimizationSkipHandSwapAnimation` 跳过切换手动画 | 吃完同一堆叠里的一件后，手部物品直接替换，不播放过渡动画 | 布尔值 | 开 |
 
 </details>

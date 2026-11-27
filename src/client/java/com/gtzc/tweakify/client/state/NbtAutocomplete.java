@@ -198,7 +198,8 @@ public final class NbtAutocomplete {
 		used.add(shortName(key));
 	}
 
-	// 过滤建议：按已输入前缀匹配（大小写敏感，与 SNBT / 组件 ID 一致），并排除当前容器里写过的键。
+	// 过滤建议：前缀匹配大小写不敏感（SNBT 键名区分大小写，但输入习惯不应受限），
+	// 插入时仍使用候选的规范大小写；同时排除当前容器里写过的键。
 	public static List<String> filter(Collection<String> candidates, Analysis analysis) {
 		List<String> result = new ArrayList<>();
 		if (!analysis.isActive() || candidates == null) {
@@ -206,7 +207,7 @@ public final class NbtAutocomplete {
 		}
 		Set<String> seen = new LinkedHashSet<>();
 		for (String candidate : candidates) {
-			if (candidate == null || candidate.isEmpty() || !candidate.startsWith(analysis.prefix())) {
+			if (candidate == null || candidate.isEmpty() || !startsWithIgnoreCase(candidate, analysis.prefix())) {
 				continue;
 			}
 			if (analysis.usedKeys().contains(candidate) || analysis.usedKeys().contains(shortName(candidate))) {
@@ -217,6 +218,10 @@ public final class NbtAutocomplete {
 			}
 		}
 		return result;
+	}
+
+	private static boolean startsWithIgnoreCase(String value, String prefix) {
+		return prefix.isEmpty() || value.regionMatches(true, 0, prefix, 0, prefix.length());
 	}
 
 	private static String shortName(String key) {

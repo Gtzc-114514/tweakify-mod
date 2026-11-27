@@ -98,11 +98,22 @@ class NbtAutocompleteTest {
 	}
 
 	@Test
-	void prefixMatchIsCaseSensitive() {
-		String text = "/summon minecraft:armor_stand ~ ~ ~ {cus";
+	void prefixMatchIgnoresCaseButKeepsCanonicalSuggestion() {
+		String text = "/summon minecraft:armor_stand ~ ~ ~ {cust";
 		NbtAutocomplete.Analysis analysis = NbtAutocomplete.analyze(text, text.length());
 
-		assertTrue(NbtAutocomplete.filter(NBT_KEYS, analysis).isEmpty(),
-			"SNBT 键名区分大小写，小写前缀不应匹配 CustomName");
+		assertEquals(List.of("CustomName", "CustomNameVisible"),
+			NbtAutocomplete.filter(NBT_KEYS, analysis),
+			"小写前缀应匹配驼峰键名，插入时使用候选的规范大小写");
+	}
+
+	@Test
+	void componentPrefixIgnoresCase() {
+		String text = "/give @s minecraft:stone[minecraft:CUSTOM";
+		NbtAutocomplete.Analysis analysis = NbtAutocomplete.analyze(text, text.length());
+
+		assertEquals(List.of("minecraft:custom_name"),
+			NbtAutocomplete.filter(COMPONENTS, analysis),
+			"组件 ID 前缀同样不区分大小写");
 	}
 }

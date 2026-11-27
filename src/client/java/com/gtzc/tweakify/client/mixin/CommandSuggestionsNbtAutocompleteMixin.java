@@ -4,6 +4,7 @@ import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.state.NbtAutocomplete;
 import com.gtzc.tweakify.client.state.NbtAutocompleteKeys;
 import com.gtzc.tweakify.config.TweakifyModConfig;
+import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestion;
@@ -13,10 +14,12 @@ import net.minecraft.client.gui.components.EditBox;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * NBT 自动补全：在 {@code updateCommandInfo} 取到原版补全结果后，
@@ -24,9 +27,13 @@ import java.util.concurrent.CompletableFuture;
  *
  * <p>只在原版没有任何补全时接管，避免与命令树自身的候选（物品 ID、选择器选项等）
  * 产生不同区间混排；替换后的区间从当前词起点开始，Tab / 点击插入的行为与原版一致。
+ * 注入点为命令补全类模组的常见改写目标：{@code require = 0} + 探针，冲突时降级而不是启动失败。
  */
 @Mixin(CommandSuggestions.class)
 public class CommandSuggestionsNbtAutocompleteMixin {
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$NBT_AUTOCOMPLETE_PROBE = new AtomicBoolean();
+
 	@Shadow
 	@Final
 	private EditBox input;
@@ -34,8 +41,10 @@ public class CommandSuggestionsNbtAutocompleteMixin {
 	@ModifyExpressionValue(method = "updateCommandInfo",
 		at = @At(value = "INVOKE",
 			target = "Lcom/mojang/brigadier/CommandDispatcher;getCompletionSuggestions("
-				+ "Lcom/mojang/brigadier/ParseResults;I)Ljava/util/concurrent/CompletableFuture;"))
+				+ "Lcom/mojang/brigadier/ParseResults;I)Ljava/util/concurrent/CompletableFuture;"),
+		require = 0)
 	private CompletableFuture<Suggestions> tweakify$appendNbtKeys(CompletableFuture<Suggestions> original) {
+		HookProbe.markOnce(TWEAKIFY$NBT_AUTOCOMPLETE_PROBE, "nbtAutocomplete");
 		TweakifyModConfig config = TweakifyMod.config();
 		if (!config.functions.nbtAutocomplete || this.input == null) {
 			return original;

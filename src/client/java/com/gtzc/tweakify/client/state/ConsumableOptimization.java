@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client.state;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
@@ -29,9 +30,6 @@ import net.minecraft.world.item.component.Consumable;
 public final class ConsumableOptimization {
 	// 与参考实现一致：一次性粒子/音效数量。
 	private static final int CONSUME_PARTICLES = 16;
-
-	// 服务端音效的坐标容差（格）：只吃掉玩家脚下附近的那一次，避免误吞其他玩家。
-	private static final double SELF_SOUND_MAX_DISTANCE = 3.0D;
 
 	private static final ConsumableOptimizationState STATE = new ConsumableOptimizationState();
 
@@ -90,15 +88,18 @@ public final class ConsumableOptimization {
 		if (config.optimization.consumableOptimizationInstantFeedback) {
 			playLocalFeedback(player, active);
 		}
+		// 等待窗口、换手动画窗口与音效归属半径都按当前 RTT 自适应（见 ConsumableOptimizationState）。
+		long now = System.currentTimeMillis();
+		long waitMillis = ConsumableOptimizationState.adaptiveServerWaitMillis(playerLatencyMillis(client));
 		player.stopUsingItem();
-		STATE.startServerWait(System.currentTimeMillis());
+		STATE.startServerWait(now, waitMillis);
 		Consumable component = active.get(DataComponents.CONSUMABLE);
 		if (config.optimization.consumableOptimizationSuppressServerFeedback && component != null) {
 			STATE.suppressSound(component.sound().value());
 			STATE.suppressBurp();
 		}
 		if (config.optimization.consumableOptimizationSkipHandSwapAnimation) {
-			STATE.suppressEquipmentAnimation(System.currentTimeMillis());
+			STATE.suppressEquipmentAnimation(now, waitMillis);
 		}
 	}
 
@@ -148,7 +149,7 @@ public final class ConsumableOptimization {
 	}
 
 	// 服务端回复的进食音效与打嗝：与本地播放重复，各吃掉一次。
-	// 只吃自己身上发出的那一次：按坐标限定在玩家附近，避免把其他玩家的进食声一起吞掉。
+	// 只吃自己身上发出的那一次：半径随 RTT 自适应（2–6 格），避免误吞其他玩家的进食声。
 	public static boolean shouldSuppressServerSound(ClientboundSoundPacket packet) {
 		Minecraft client = Minecraft.getInstance();
 		LocalPlayer player = client.player;
@@ -165,10 +166,11 @@ public final class ConsumableOptimization {
 			STATE.consumeSuppressedBurp();
 			return false;
 		}
+		double maxDistance = ConsumableOptimizationState.adaptiveSoundRadius(playerLatencyMillis(client));
 		double dx = packet.getX() - player.getX();
 		double dy = packet.getY() - player.getY();
 		double dz = packet.getZ() - player.getZ();
-		if (dx * dx + dy * dy + dz * dz > SELF_SOUND_MAX_DISTANCE * SELF_SOUND_MAX_DISTANCE) {
+		if (dx * dx + dy * dy + dz * dz > maxDistance * maxDistance) {
 			return false;
 		}
 		SoundEvent sound = packet.getSound().value();
@@ -201,6 +203,15 @@ public final class ConsumableOptimization {
 		}
 		STATE.clearEquipmentAnimation();
 		return true;
+	}
+
+	// 玩家列表里的延迟估计（毫秒）：未连接或拿不到资料时按 0 处理，退化为最小窗口。
+	private static int playerLatencyMillis(Minecraft client) {
+		if (client.getConnection() == null || client.player == null) {
+			return 0;
+		}
+		PlayerInfo info = client.getConnection().getPlayerInfo(client.player.getUUID());
+		return info != null ? Math.max(0, info.getLatency()) : 0;
 	}
 
 	// 断线或切换世界时复位，避免把上一次会话的标记带进新连接。
