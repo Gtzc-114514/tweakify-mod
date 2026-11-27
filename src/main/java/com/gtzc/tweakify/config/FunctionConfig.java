@@ -734,6 +734,32 @@ public final class FunctionConfig extends ConfigSection {
 	public volatile List<String> endPortalTeleportBlacklist = new ArrayList<>();
 	public volatile List<String> endGatewayTeleportBlacklist = new ArrayList<>();
 
+	// 更好的盔甲架：父开关，统管姿态与手臂；关闭时下面的子项全部不生效。
+	public volatile boolean betterArmorStands = false;
+	public volatile String hotkeyBetterArmorStands = "";
+
+	// 盔甲架姿态（参考基岩版）：空手潜行右键循环到下一个预设姿态。
+	public volatile boolean armorStandPoses = true;
+
+	// 盔甲架姿态也响应红石：红石脉冲的上升沿切换到下一个预设姿态。
+	public volatile boolean armorStandPosesRedstone = true;
+
+	// 参与循环的姿态预设代码；按内置预设顺序循环，未知代码忽略。
+	public volatile List<String> armorStandPosePresets = TweakifyModConfig.defaultArmorStandPosePresets();
+
+	// 盔甲架手臂：所有盔甲架默认显示手臂；单人/局域网下可直接把物品放上双手。
+	public volatile boolean armorStandArms = false;
+
+	// 只给手中拿着物品的盔甲架强制显示手臂。
+	public volatile boolean armorStandArmsOnlyWithItems = false;
+
+	// 只对小型盔甲架强制显示手臂。
+	public volatile boolean armorStandArmsOnlySmall = false;
+
+	// NBT 自动补全：命令输入框里补全数据组件与常用 NBT 键名。
+	public volatile boolean nbtAutocomplete = false;
+	public volatile String hotkeyNbtAutocomplete = "";
+
 	@Override
 	boolean sanitize() {
 		return runSanitizers(this.sanitizers);

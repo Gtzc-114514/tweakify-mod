@@ -918,4 +918,38 @@ public final class FunctionConfigOptions {
 	public static final ConfigStringList OFFHAND_USE_COOLDOWN_ITEMS = new ItemIdConfigStringList(
 		"offhandUseCooldownItems",
 		ImmutableList.copyOf(TweakifyModConfig.defaultInteractableItemIds())).apply(ConfigOptionKeys.LISTS_KEY);
+
+	// NBT 自动补全：命令输入框里补全数据组件与常用 NBT 键名。
+	public static final ConfigBooleanHotkeyed NBT_AUTOCOMPLETE = new ConfigBooleanHotkeyed(
+		"nbtAutocomplete", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 更好的盔甲架：姿态与手臂的父开关。
+	public static final ConfigBooleanHotkeyed BETTER_ARMOR_STANDS = new ConfigBooleanHotkeyed(
+		"betterArmorStands", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS)
+		.apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 盔甲架姿态：空手潜行右键循环到下一个预设姿态。
+	public static final ConfigBoolean ARMOR_STAND_POSES = new ConfigBoolean(
+		"armorStandPoses", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 盔甲架姿态也响应红石脉冲。
+	public static final ConfigBoolean ARMOR_STAND_POSES_REDSTONE = new ConfigBoolean(
+		"armorStandPosesRedstone", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 参与循环的姿态预设代码列表。
+	public static final ConfigStringList ARMOR_STAND_POSE_PRESETS = new ConfigStringList(
+		"armorStandPosePresets", ImmutableList.copyOf(TweakifyModConfig.defaultArmorStandPosePresets()))
+		.apply(ConfigOptionKeys.LISTS_KEY);
+
+	// 盔甲架手臂：所有盔甲架默认显示手臂。
+	public static final ConfigBoolean ARMOR_STAND_ARMS = new ConfigBoolean(
+		"armorStandArms", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 只给手中拿着物品的盔甲架显示手臂。
+	public static final ConfigBoolean ARMOR_STAND_ARMS_ONLY_WITH_ITEMS = new ConfigBoolean(
+		"armorStandArmsOnlyWithItems", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 只对小型盔甲架显示手臂。
+	public static final ConfigBoolean ARMOR_STAND_ARMS_ONLY_SMALL = new ConfigBoolean(
+		"armorStandArmsOnlySmall", false).apply(ConfigOptionKeys.GENERAL_KEY);
 }

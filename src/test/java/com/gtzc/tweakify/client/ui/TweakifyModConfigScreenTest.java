@@ -437,8 +437,10 @@ class TweakifyModConfigScreenTest {
 		assertTab("disableSlimeBlockBounce", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("disableHoneyBlockSlowdown", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		assertTab("disableHoneyBlockStick", TweakifyModConfigScreen.ConfigTab.MODIFIED);
-		// 盔甲架手臂与隐藏展示框归入修改标签。
-		assertTab("armorStandArms", TweakifyModConfigScreen.ConfigTab.MODIFIED);
+		// 隐藏展示框归入修改标签；盔甲架手臂已并入功能标签的「更好的盔甲架」。
+		assertTab("armorStandArms", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("armorStandPoses", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
+		assertTab("betterArmorStands", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);
 		assertTab("hideItemFrames", TweakifyModConfigScreen.ConfigTab.MODIFIED);
 		// 附魔台附魔信息归入功能标签；收藏包含子项归入通用标签。
 		assertTab("enchantingTableInfo", TweakifyModConfigScreen.ConfigTab.FUNCTIONS);

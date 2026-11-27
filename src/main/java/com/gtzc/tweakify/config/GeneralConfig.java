@@ -18,7 +18,8 @@ public final class GeneralConfig extends ConfigSection {
 	// 已登记字段级校验器的字段名：language 需要回退到支持的语言，标签回退需要合法代码，平滑时长需要夹紧范围。
 	private static final List<String> SANITIZED_FIELDS =
 		List.of("language", "rememberSelectedTabFallback", "smoothScrollDuration",
-			"favoriteStarStyle", "searchHighlightColor", "logCleanupKeepCount");
+			"favoriteStarStyle", "searchHighlightColor", "logCleanupKeepCount",
+			"fastScrollMultiplier");
 
 	// 模组界面语言代码（zh_cn / en_us / ru_ru / fr_fr）；跟随系统语言时忽略。
 	public volatile String language = "zh_cn";
@@ -56,6 +57,12 @@ public final class GeneralConfig extends ConfigSection {
 
 	// 平滑时长（毫秒，30 ~ 400）：越大越柔和、越小越跟手。
 	public volatile int smoothScrollDuration = TweakifyModConfig.DEFAULT_SMOOTH_SCROLL_DURATION;
+
+	// 快速滚动：按住 Shift 滚动时把滚轮增量放大，快速翻过长列表。
+	public volatile boolean fastScroll = false;
+
+	// 快速滚动的倍率（2 ~ 10，默认 4）。
+	public volatile int fastScrollMultiplier = TweakifyModConfig.DEFAULT_FAST_SCROLL_MULTIPLIER;
 
 	// 标签记忆：记住上次选择的分类标签，下次打开配置界面直接停在该标签。
 	public volatile boolean rememberSelectedTab = false;
@@ -106,6 +113,7 @@ public final class GeneralConfig extends ConfigSection {
 		changed |= sanitizeFavoriteStarStyle();
 		changed |= sanitizeSearchHighlightColor();
 		changed |= sanitizeLogCleanupKeepCount();
+		changed |= sanitizeFastScrollMultiplier();
 		return changed;
 	}
 
@@ -178,6 +186,18 @@ public final class GeneralConfig extends ConfigSection {
 		}
 		LOGGER.warn("Clamping logCleanupKeepCount from {} to {}", logCleanupKeepCount, clamped);
 		logCleanupKeepCount = clamped;
+		return true;
+	}
+
+	// 快速滚动倍率夹到 2 ~ 10：手工改坏时回退到合法范围。
+	private boolean sanitizeFastScrollMultiplier() {
+		int clamped = Math.max(TweakifyModConfig.MIN_FAST_SCROLL_MULTIPLIER,
+			Math.min(TweakifyModConfig.MAX_FAST_SCROLL_MULTIPLIER, fastScrollMultiplier));
+		if (clamped == fastScrollMultiplier) {
+			return false;
+		}
+		LOGGER.warn("Clamping fastScrollMultiplier from {} to {}", fastScrollMultiplier, clamped);
+		fastScrollMultiplier = clamped;
 		return true;
 	}
 }

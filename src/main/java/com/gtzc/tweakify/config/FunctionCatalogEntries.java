@@ -270,5 +270,15 @@ final class FunctionCatalogEntries {
 		// 丢弃确认（功能标签）：第一次按丢弃键只提示，再按一次才真正丢弃。
 		entries.add(function("dropConfirm", true));
 		entries.add(child("dropConfirm", "dropConfirmItems"));
+		// NBT 自动补全（功能标签）：命令输入框里补全数据组件与常用 NBT 键名。
+		entries.add(function("nbtAutocomplete", true));
+		// 更好的盔甲架（功能标签）：姿态与手臂的父开关，子项分别控制。
+		entries.add(function("betterArmorStands", true));
+		entries.add(child("betterArmorStands", "armorStandPoses"));
+		entries.add(child("armorStandPoses", "armorStandPosesRedstone"));
+		entries.add(child("betterArmorStands", "armorStandPosePresets"));
+		entries.add(child("betterArmorStands", "armorStandArms"));
+		entries.add(child("armorStandArms", "armorStandArmsOnlyWithItems"));
+		entries.add(child("armorStandArms", "armorStandArmsOnlySmall"));
 	}
 }

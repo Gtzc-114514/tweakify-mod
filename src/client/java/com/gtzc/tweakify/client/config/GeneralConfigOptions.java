@@ -121,4 +121,14 @@ public final class GeneralConfigOptions {
 	// 同时把启动耗时写入日志。
 	public static final ConfigBoolean STARTUP_TIME_LOG = new ConfigBoolean(
 		"startupTimeLog", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 快速滚动：按住 Shift 滚动时放大滚轮增量。
+	public static final ConfigBoolean FAST_SCROLL = new ConfigBoolean(
+		"fastScroll", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 快速滚动的倍率（2 ~ 10），使用滑条调节。
+	public static final ConfigInteger FAST_SCROLL_MULTIPLIER = new ConfigInteger(
+		"fastScrollMultiplier", TweakifyModConfig.DEFAULT_FAST_SCROLL_MULTIPLIER,
+		TweakifyModConfig.MIN_FAST_SCROLL_MULTIPLIER,
+		TweakifyModConfig.MAX_FAST_SCROLL_MULTIPLIER, true).apply(ConfigOptionKeys.GENERAL_KEY);
 }

@@ -81,7 +81,8 @@ public class TweakifyModConfig {
 
 	// 配置文件版本：字段语义发生变化时递增，并在 load() 里按旧版本做迁移。
 	// 版本 4：定位栏单名单+模式改为 included/excluded 双名单，描边粗细改为四档代码。
-	public static final int CURRENT_CONFIG_VERSION = 4;
+	// 版本 5：盔甲架手臂并入「更好的盔甲架」父开关，旧配置自动启用父开关。
+	public static final int CURRENT_CONFIG_VERSION = 5;
 
 	// 同步保存等待写盘完成的最长时间：超时后任务仍会按队列顺序继续执行，不会取消。
 	private static final long SAVE_TIMEOUT_MILLIS = 2000L;
@@ -105,6 +106,12 @@ public class TweakifyModConfig {
 	// 定位栏玩家过滤名单字段名：与参考实现一致拆成“包含/排除”两个名单（内容是玩家名，非物品 ID）。
 	public static final String LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD = "locatorBarHeadIncludedPlayers";
 	public static final String LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD = "locatorBarHeadExcludedPlayers";
+
+	// 盔甲架姿态预设列表字段名：内容是姿态代码（sitting 等），不参与物品 ID 规范化。
+	public static final String ARMOR_STAND_POSE_PRESETS_FIELD = "armorStandPosePresets";
+
+	// 「更好的盔甲架」父开关字段名：v5 迁移要把旧配置的盔甲架手臂映射到它。
+	public static final String BETTER_ARMOR_STANDS_FIELD = "betterArmorStands";
 
 	// 配置版本字段名：迁移步骤专用，档案加载时不复制（档案不应改写当前版本号）。
 	private static final String CONFIG_VERSION_FIELD = "configVersion";
@@ -732,6 +739,27 @@ public class TweakifyModConfig {
 	public static final int MAX_CHISELED_BOOKSHELF_MAX_DISTANCE = 10;
 	public static final int DEFAULT_CHISELED_BOOKSHELF_MAX_DISTANCE = 5;
 
+	// 快速滚动：按住 Shift 时滚轮增量的倍率（2 ~ 10，默认 4）。
+	public static final int MIN_FAST_SCROLL_MULTIPLIER = 2;
+	public static final int MAX_FAST_SCROLL_MULTIPLIER = 10;
+	public static final int DEFAULT_FAST_SCROLL_MULTIPLIER = 4;
+
+	// 盔甲架姿态预设：代码顺序即循环顺序；配置列表按代码过滤后沿用此顺序。
+	public static final String ARMOR_STAND_POSE_DEFAULT = "default";
+	public static final String ARMOR_STAND_POSE_SITTING = "sitting";
+	public static final String ARMOR_STAND_POSE_WAVING = "waving";
+	public static final String ARMOR_STAND_POSE_BOWING = "bowing";
+	public static final String ARMOR_STAND_POSE_THINKING = "thinking";
+	public static final String ARMOR_STAND_POSE_CHEERING = "cheering";
+	public static final List<String> SUPPORTED_ARMOR_STAND_POSE_PRESETS = List.of(
+		ARMOR_STAND_POSE_DEFAULT, ARMOR_STAND_POSE_SITTING, ARMOR_STAND_POSE_WAVING,
+		ARMOR_STAND_POSE_BOWING, ARMOR_STAND_POSE_THINKING, ARMOR_STAND_POSE_CHEERING);
+
+	// 盔甲架姿态预设的默认循环列表（与完整预设表一致）。
+	public static List<String> defaultArmorStandPosePresets() {
+		return new ArrayList<>(SUPPORTED_ARMOR_STAND_POSE_PRESETS);
+	}
+
 	// 使用物品时的移动减速保留百分比（0 ~ 100，默认 0 = 完全取消）。
 	public static final int MIN_USE_ITEM_SLOWDOWN_KEEP_PERCENT = 0;
 	public static final int MAX_USE_ITEM_SLOWDOWN_KEEP_PERCENT = 100;
@@ -876,12 +904,16 @@ public class TweakifyModConfig {
 					throw new JsonParseException("Config root cannot be null");
 				}
 				config.configPath = configPath;
-				int loadedVersion = root.has("configVersion") ? config.configVersion : 0;
+				// JSON null 视为缺省：Gson 对原始类型保留字段默认值，不能当成“已是当前版本”。
+				JsonElement versionElement = root.get(CONFIG_VERSION_FIELD);
+				int loadedVersion = versionElement != null && !versionElement.isJsonNull()
+					? config.configVersion : 0;
 				// 前置迁移：只处理版本号与缺失键，不做字段值校验。
 				boolean corrected = ConfigMigration.sanitizeConfigVersion(config, root.has("configVersion"))
 					| ConfigMigration.migrateScrollListMemoryDefault(config, loadedVersion)
 					| ConfigMigration.migrateLegacyFeatureKeys(config, root)
 					| ConfigMigration.migrateLocatorHeadOptions(config, root)
+					| ConfigMigration.migrateArmorStandGroup(config, root, loadedVersion)
 					| ConfigMigration.applyMissingListDefaults(config, root);
 				// 字段级校验：表驱动，新增数值/枚举字段未登记校验器时类加载期就失败。
 				corrected |= config.sanitizeAllFields();
@@ -1127,7 +1159,8 @@ public class TweakifyModConfig {
 	public static boolean isFreeFormListField(String name) {
 		return CUSTOM_ITEM_GROUPS_FIELD.equals(name)
 			|| LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD.equals(name)
-			|| LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD.equals(name);
+			|| LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD.equals(name)
+			|| ARMOR_STAND_POSE_PRESETS_FIELD.equals(name);
 	}
 
 	private void rebuildCache() {

@@ -16,6 +16,7 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -160,7 +161,16 @@ public final class ConfigProfiles {
 		}
 		try {
 			TweakifyModConfig config = ConfigStorage.fromJsonTree(json);
-			return new ReadResult(new Loaded(config, Set.copyOf(json.keySet())), Result.OK);
+			Set<String> fieldNames = new LinkedHashSet<>(json.keySet());
+			// 档案是独立于主配置的第二条数据入口：旧档案也要跑版本迁移，
+			// 否则旧档案里的 armorStandArms 会被导入、而父开关不跟着打开（功能静默失效）。
+			JsonElement version = json.get("configVersion");
+			int loadedVersion = version != null && !version.isJsonNull() ? config.configVersion : 0;
+			if (ConfigMigration.migrateArmorStandGroup(config, json, loadedVersion)) {
+				// 迁移写入的键在档案里原本不存在：补进字段名，否则 applyFrom 会跳过它。
+				fieldNames.add(TweakifyModConfig.BETTER_ARMOR_STANDS_FIELD);
+			}
+			return new ReadResult(new Loaded(config, Set.copyOf(fieldNames)), Result.OK);
 		} catch (RuntimeException e) {
 			// 单份档案损坏只影响这一份，不能连带其它档案一起失效。
 			LOGGER.error("Failed to parse config profile: {}", name, e);

@@ -243,7 +243,7 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 		TweakifyMod.LOGGER.warn("Connected to a remote server: server-side features (anvil, shovel snow, item despawn, "
 			+ "slime spawn, farmland, pick block, smithing, iron golem minecart, bone meal, active crawling, "
 			+ "thrown spawn eggs, cobweb/fluid/slime/honey physics, frost walker jump fix, "
-			+ "inventory quick right click) only work in single player or on a LAN host");
+			+ "inventory quick right click, armor stand poses/redstone) only work in single player or on a LAN host");
 	}
 
 	private static void logRenderBackendOnce() {

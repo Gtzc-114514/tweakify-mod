@@ -495,18 +495,6 @@ public final class ModifiedConfigOptions {
 	public static final ConfigBoolean FARMLAND_TRAMPLING_PLAYER_ONLY = new ConfigBoolean(
 		"farmlandTramplingPlayerOnly", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
-	// 盔甲架手臂：所有盔甲架默认显示手臂。
-	public static final ConfigBoolean ARMOR_STAND_ARMS = new ConfigBoolean(
-		"armorStandArms", false).apply(ConfigOptionKeys.GENERAL_KEY);
-
-	// 只给手中拿着物品的盔甲架显示手臂。
-	public static final ConfigBoolean ARMOR_STAND_ARMS_ONLY_WITH_ITEMS = new ConfigBoolean(
-		"armorStandArmsOnlyWithItems", false).apply(ConfigOptionKeys.GENERAL_KEY);
-
-	// 只对小型盔甲架显示手臂。
-	public static final ConfigBoolean ARMOR_STAND_ARMS_ONLY_SMALL = new ConfigBoolean(
-		"armorStandArmsOnlySmall", false).apply(ConfigOptionKeys.GENERAL_KEY);
-
 	// 禁用玩家盔甲渲染：玩家身上的盔甲层不再渲染。
 	public static final ConfigBoolean DISABLE_PLAYER_ARMOR_RENDERING = new ConfigBoolean(
 		"disablePlayerArmorRendering", false).apply(ConfigOptionKeys.GENERAL_KEY);

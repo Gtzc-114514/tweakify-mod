@@ -54,6 +54,29 @@ class ConfigProfilesTest {
 		assertTrue(read.profile().fieldNames().contains("configVersion"));
 	}
 
+	// v5 之前保存的档案：只有 armorStandArms，没有父开关。
+	// 读取时必须跑迁移并把新键补进字段名，否则 applyFrom 会跳过父开关，手臂功能静默失效。
+	@Test
+	void readMigratesLegacyArmorStandProfile() throws IOException {
+		Path path = profilesPath();
+		Files.writeString(path, """
+			{
+			  "Lege": {
+			    "configVersion": 4,
+			    "armorStandArms": true
+			  }
+			}
+			""");
+
+		ConfigProfiles.ReadResult read = ConfigProfiles.read(path, "Lege");
+
+		assertTrue(read.ok());
+		assertTrue(read.profile().config().functions.armorStandArms);
+		assertTrue(read.profile().config().functions.betterArmorStands);
+		assertTrue(read.profile().fieldNames().contains("betterArmorStands"),
+			"迁移写入的键必须在字段名里，applyFrom 才会复制它");
+	}
+
 	@Test
 	void saveOverwritesExistingProfile() {
 		Path path = profilesPath();

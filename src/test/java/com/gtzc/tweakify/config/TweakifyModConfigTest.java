@@ -578,6 +578,75 @@ class TweakifyModConfigTest {
 			assertFalse(rewritten.contains("hotkeyMiniHudFpsOptimization"),
 				"obsolete hotkey field should be removed on the next save");
 		}
+
+
+		// 版本 5：盔甲架手臂并入「更好的盔甲架」父开关，旧配置必须自动打开父开关。
+		@Test
+		void loadMigratesArmorStandArmsIntoParentSwitch() throws IOException {
+			Path path = configPath();
+			Files.writeString(path, """
+				{
+				  "configVersion": 4,
+				  "armorStandArms": true
+				}
+				""");
+
+			TweakifyModConfig config = TweakifyModConfig.load(path);
+
+			assertTrue(config.functions.armorStandArms, "手臂开关本身保留");
+			assertTrue(config.functions.betterArmorStands, "旧配置的手臂开启应自动打开父开关");
+			assertEquals(TweakifyModConfig.CURRENT_CONFIG_VERSION, config.configVersion);
+			assertTrue(Files.readString(path).contains("\"betterArmorStands\": true"));
+		}
+
+		// 已经写了新键的配置尊重用户选择，不再由旧手臂开关覆盖。
+		@Test
+		void loadKeepsExplicitBetterArmorStandsValue() throws IOException {
+			Path path = configPath();
+			Files.writeString(path, """
+				{
+				  "configVersion": 4,
+				  "armorStandArms": true,
+				  "betterArmorStands": false
+				}
+				""");
+
+			TweakifyModConfig config = TweakifyModConfig.load(path);
+
+			assertFalse(config.functions.betterArmorStands);
+		}
+
+		// 缺版本号的旧配置同样要跑 v5 迁移（loadedVersion 按 0 处理）。
+		@Test
+		void loadMigratesArmorStandsWithoutVersionField() throws IOException {
+			Path path = configPath();
+			Files.writeString(path, "{\"armorStandArms\": true}");
+
+			TweakifyModConfig config = TweakifyModConfig.load(path);
+
+			assertTrue(config.functions.betterArmorStands);
+		}
+
+		// 姿态预设是代码列表而不是物品 ID 列表：清洗不得把它写成命名空间形式，
+		// 否则 ArmorStandPoses.resolve 全部落空、姿态功能静默失效。
+		@Test
+		void loadKeepsArmorStandPosePresetCodes() throws IOException {
+			Path path = configPath();
+			Files.writeString(path, """
+				{
+				  "configVersion": 5,
+				  "armorStandPosePresets": ["default", "sitting", "waving"]
+				}
+				""");
+
+			TweakifyModConfig config = TweakifyModConfig.load(path);
+
+			assertEquals(List.of("default", "sitting", "waving"), config.functions.armorStandPosePresets);
+			assertTrue(Files.readString(path).contains("\"default\""), "写盘后仍是裸代码");
+			// 再读一次：确认不会被第二次加载清洗。
+			assertEquals(List.of("default", "sitting", "waving"),
+				TweakifyModConfig.load(path).functions.armorStandPosePresets);
+		}
 	}
 
 	@Nested

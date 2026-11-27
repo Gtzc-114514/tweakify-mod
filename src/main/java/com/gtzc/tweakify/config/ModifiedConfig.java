@@ -427,15 +427,6 @@ public final class ModifiedConfig extends ConfigSection {
 	// 「禁用屏幕覆盖层」的切换快捷键。
 	public volatile String hotkeyDisableOverlayEffects = "";
 
-	// 盔甲架手臂：所有盔甲架默认显示手臂；单人/局域网下可直接把物品放上双手。
-	public volatile boolean armorStandArms = false;
-
-	// 只给手中拿着物品的盔甲架强制显示手臂。
-	public volatile boolean armorStandArmsOnlyWithItems = false;
-
-	// 只对小型盔甲架强制显示手臂。
-	public volatile boolean armorStandArmsOnlySmall = false;
-
 	// 禁用玩家盔甲渲染：不再渲染玩家身上的盔甲层，手持物品与披风保持原版。
 	public volatile boolean disablePlayerArmorRendering = false;
 

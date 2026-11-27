@@ -53,5 +53,8 @@ final class GeneralCatalogEntries {
 		// 启动时间（通用标签）：加载完成后显示本次启动耗时。
 		entries.add(general("startupTime", false));
 		entries.add(child("startupTime", "startupTimeLog"));
+		// 快速滚动（通用标签）：按住 Shift 滚动时放大滚轮增量。
+		entries.add(general("fastScroll", false));
+		entries.add(child("fastScroll", "fastScrollMultiplier"));
 	}
 }

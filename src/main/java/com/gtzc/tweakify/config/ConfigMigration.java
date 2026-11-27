@@ -102,6 +102,21 @@ final class ConfigMigration {
 		return true;
 	}
 
+	// 版本 5：盔甲架手臂并入「更好的盔甲架」父开关。
+	// 旧配置里已经打开手臂的玩家自动打开父开关，避免升级后功能静默失效；
+	// 已经写了新键的配置尊重用户自己的选择。
+	static boolean migrateArmorStandGroup(TweakifyModConfig config, JsonObject root, int loadedVersion) {
+		if (loadedVersion >= 5 || root.has(TweakifyModConfig.BETTER_ARMOR_STANDS_FIELD)) {
+			return false;
+		}
+		if (!legacyBoolean(root, "armorStandArms")) {
+			return false;
+		}
+		LOGGER.info("Enabling betterArmorStands for configs older than version 5");
+		config.functions.betterArmorStands = true;
+		return true;
+	}
+
 	// 旧配置文件缺少物品列表键时补回默认值。
 	// 这三个列表的空列表语义是“不做任何限制”，而不是“使用默认值”：
 	// Gson 反序列化缺键会保留字段初始化器的空列表，对应功能就会静默失效。

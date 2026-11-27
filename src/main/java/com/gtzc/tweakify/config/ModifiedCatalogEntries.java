@@ -201,10 +201,6 @@ final class ModifiedCatalogEntries {
 		entries.add(child("keepMiningProgressOnItemSwitch", "keepMiningProgressSameToolOnly"));
 		entries.add(modified("disableFarmlandTrampling", true));
 		entries.add(child("disableFarmlandTrampling", "farmlandTramplingPlayerOnly"));
-		// 盔甲架默认显示手臂。
-		entries.add(modified("armorStandArms"));
-		entries.add(child("armorStandArms", "armorStandArmsOnlyWithItems"));
-		entries.add(child("armorStandArms", "armorStandArmsOnlySmall"));
 		// 装有物品的展示框只渲染物品，不渲染外框。
 		entries.add(modified("hideItemFrames"));
 		entries.add(child("hideItemFrames", "hideItemFramesOnlyMaps"));
