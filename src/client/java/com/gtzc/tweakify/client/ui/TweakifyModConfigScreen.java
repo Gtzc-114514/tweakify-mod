@@ -2,6 +2,7 @@ package com.gtzc.tweakify.client.ui;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.config.ConfigGuiTab;
+import com.gtzc.tweakify.client.config.GeneralConfigOptions;
 import com.gtzc.tweakify.client.config.TestingConfigOptions;
 import com.gtzc.tweakify.client.config.TweakifyModConfigOptions;
 import com.gtzc.tweakify.client.render.FavoriteStarRenderer;
@@ -174,12 +175,37 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		List<IConfigBase> result = new ArrayList<>(visibleConfigs(tab, respectExpansion));
 		if (tab == ConfigTab.TESTING) {
 			result.add(TestingConfigOptions.PROFILE_EDITOR);
-		} else if (tab == ConfigTab.FAVORITES && FavoriteStarRenderer.isEnabled()
-			&& FavoritesStorage.isConfigFavorite(TestingConfigOptions.PROFILE_EDITOR.getName())) {
-			// 档案编辑器不在配置目录里，不能被树遍历到；收藏后单独追加到收藏标签。
-			result.add(TestingConfigOptions.PROFILE_EDITOR);
+		} else if (tab == ConfigTab.GENERAL) {
+			// “立刻清理”是界面操作项：插在日志清理分组的可见成员之后，
+			// 不落到标签末尾（否则会被后续的启动时间分组隔开）。
+			result.add(logCleanupNowIndex(result), GeneralConfigOptions.LOG_CLEANUP_NOW);
+		}
+		// 界面操作项不在配置目录里，不能被树遍历到；收藏后单独追加到收藏标签。
+		if (tab == ConfigTab.FAVORITES && FavoriteStarRenderer.isEnabled()) {
+			if (FavoritesStorage.isConfigFavorite(TestingConfigOptions.PROFILE_EDITOR.getName())) {
+				result.add(TestingConfigOptions.PROFILE_EDITOR);
+			}
+			if (FavoritesStorage.isConfigFavorite(GeneralConfigOptions.LOG_CLEANUP_NOW.getName())) {
+				result.add(GeneralConfigOptions.LOG_CLEANUP_NOW);
+			}
 		}
 		return result;
+	}
+
+	// “立刻清理”的插入位置：日志清理根项之后；分组展开时跳过它的两个子项。
+	// 根项不在当前可见列表（搜索过滤等）时退回末尾，保证操作项仍可访问。
+	private static int logCleanupNowIndex(List<IConfigBase> configs) {
+		int index = configs.indexOf(GeneralConfigOptions.LOG_CLEANUP);
+		if (index < 0) {
+			return configs.size();
+		}
+		index++;
+		while (index < configs.size()
+			&& (configs.get(index) == GeneralConfigOptions.LOG_CLEANUP_KEEP_COUNT
+				|| configs.get(index) == GeneralConfigOptions.LOG_CLEANUP_ON_STARTUP)) {
+			index++;
+		}
+		return index;
 	}
 
 	// 在右下角绘制配置统计：总数 / 可用 / 已修改 / 已禁用。

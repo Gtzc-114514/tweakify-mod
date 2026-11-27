@@ -46,5 +46,12 @@ final class GeneralCatalogEntries {
 		entries.add(child("smoothScroll", "smoothScrollModMenu"));
 		entries.add(child("smoothScroll", "smoothScrollAdvancements"));
 		entries.add(child("smoothScroll", "smoothScrollDuration"));
+		// 日志清理（通用标签）：把 logs 目录的旧归档清理到保留数量。
+		entries.add(general("logCleanup", true));
+		entries.add(child("logCleanup", "logCleanupKeepCount"));
+		entries.add(child("logCleanup", "logCleanupOnStartup"));
+		// 启动时间（通用标签）：加载完成后显示本次启动耗时。
+		entries.add(general("startupTime", false));
+		entries.add(child("startupTime", "startupTimeLog"));
 	}
 }

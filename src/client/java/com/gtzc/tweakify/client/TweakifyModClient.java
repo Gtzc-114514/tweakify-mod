@@ -21,6 +21,7 @@ import com.gtzc.tweakify.client.state.EnchantmentTooltipDescriptions;
 import com.gtzc.tweakify.client.state.FlightDriftState;
 import com.gtzc.tweakify.client.state.ForceCrawlState;
 import com.gtzc.tweakify.client.state.LockedTradesPayload;
+import com.gtzc.tweakify.client.state.LogCleanupState;
 import com.gtzc.tweakify.client.state.MerchantMenuAccess;
 import com.gtzc.tweakify.client.state.MiningCooldownState;
 import com.gtzc.tweakify.client.state.OffhandFallbackState;
@@ -77,6 +78,8 @@ public class TweakifyModClient implements ClientModInitializer, IInitializationH
 	public void onInitializeClient() {
 		// 资源包兼容性钩子依赖字符串方法名和私有字段；目标改名时明确报错而不是静默跳过。
 		ResourcePackCompatibilitySelfCheck.verify();
+		// 日志清理：配置加载完成且允许启动清理时，把 logs 目录的旧归档清到保留数量。
+		LogCleanupState.runOnStartup();
 		InitializationHandler.getInstance().registerInitializationHandler(this);
 		// 各状态机合并到同一个 tick 监听：执行顺序固定，也省掉多监听器的分发开销。
 		ClientTickEvents.START_CLIENT_TICK.register(TweakifyModClient::onStartTick);

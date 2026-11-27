@@ -18,7 +18,7 @@ public final class GeneralConfig extends ConfigSection {
 	// 已登记字段级校验器的字段名：language 需要回退到支持的语言，标签回退需要合法代码，平滑时长需要夹紧范围。
 	private static final List<String> SANITIZED_FIELDS =
 		List.of("language", "rememberSelectedTabFallback", "smoothScrollDuration",
-			"favoriteStarStyle", "searchHighlightColor");
+			"favoriteStarStyle", "searchHighlightColor", "logCleanupKeepCount");
 
 	// 模组界面语言代码（zh_cn / en_us / ru_ru / fr_fr）；跟随系统语言时忽略。
 	public volatile String language = "zh_cn";
@@ -75,6 +75,24 @@ public final class GeneralConfig extends ConfigSection {
 	// 打开配置界面的快捷键，默认 G + C。
 	public volatile String hotkeyOpenConfigGui = "G,C";
 
+	// 日志清理：启动时把 logs 目录里的旧日志归档清理到指定数量，latest.log 永不删除。
+	public volatile boolean logCleanup = false;
+
+	// 日志清理的切换快捷键。
+	public volatile String hotkeyLogCleanup = "";
+
+	// 保留的最新日志归档数量（0 ~ 100）；0 表示删除全部归档。
+	public volatile int logCleanupKeepCount = TweakifyModConfig.DEFAULT_LOG_CLEANUP_KEEP_COUNT;
+
+	// 启动时自动执行一次清理；关闭时仍可用“立刻清理”按钮手动触发。
+	public volatile boolean logCleanupOnStartup = true;
+
+	// 启动时间：加载完成后显示本次启动耗时（每次进程只显示一次，不改变游戏行为）。
+	public volatile boolean startupTime = true;
+
+	// 同时把启动耗时写入模组日志，便于排查启动变慢的原因。
+	public volatile boolean startupTimeLog = true;
+
 	GeneralConfig() {
 		// 启动期校验：新增枚举/数值字段忘记登记校验器时直接失败。
 		assertSanitizerCoverage(SANITIZED_FIELDS);
@@ -87,6 +105,7 @@ public final class GeneralConfig extends ConfigSection {
 		changed |= sanitizeSmoothScrollDuration();
 		changed |= sanitizeFavoriteStarStyle();
 		changed |= sanitizeSearchHighlightColor();
+		changed |= sanitizeLogCleanupKeepCount();
 		return changed;
 	}
 
@@ -147,6 +166,18 @@ public final class GeneralConfig extends ConfigSection {
 		}
 		LOGGER.warn("Clamping smoothScrollDuration from {} to {}", smoothScrollDuration, clamped);
 		smoothScrollDuration = clamped;
+		return true;
+	}
+
+	// 保留日志数量夹到 0 ~ 100：0 表示删除全部归档，不删除 latest.log。
+	private boolean sanitizeLogCleanupKeepCount() {
+		int clamped = Math.max(TweakifyModConfig.MIN_LOG_CLEANUP_KEEP_COUNT,
+			Math.min(TweakifyModConfig.MAX_LOG_CLEANUP_KEEP_COUNT, logCleanupKeepCount));
+		if (clamped == logCleanupKeepCount) {
+			return false;
+		}
+		LOGGER.warn("Clamping logCleanupKeepCount from {} to {}", logCleanupKeepCount, clamped);
+		logCleanupKeepCount = clamped;
 		return true;
 	}
 }

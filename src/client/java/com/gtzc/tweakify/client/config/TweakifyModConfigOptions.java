@@ -72,6 +72,9 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 
 	// 配置项实例按名字索引：反射收集各分片类的静态 IConfigBase 字段。
 	// 新增配置项只需在对应标签页文件声明字段 + 在 ConfigCatalog 登记一行，不必再同步维护多份清单。
+	// 仅界面使用的操作项不写入配置文件，也不参与目录/字段校验。
+	private static final Set<String> UI_ONLY_OPTION_FIELDS = Set.of("PROFILE_EDITOR", "LOG_CLEANUP_NOW");
+
 	private static final Map<String, IConfigBase> OPTIONS_BY_NAME = indexOptions();
 
 	private static Map<String, IConfigBase> indexOptions() {
@@ -95,7 +98,7 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 				continue;
 			}
 			// 仅界面使用的操作项不参与配置字段/目录校验。
-			if (field.getName().equals("PROFILE_EDITOR")) {
+			if (UI_ONLY_OPTION_FIELDS.contains(field.getName())) {
 				continue;
 			}
 			try {
@@ -580,6 +583,17 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 					}
 				})) {
 					IN_FLIGHT_FLUSHES.decrementAndGet();
+					// 队列已关闭（退出收尾已开始）：直接同步写这份已冻结的快照，
+					// 避免退出时停留在配置界面、最后一批修改静默丢失。
+					try {
+						if (!config.writeJsonTree(tree, writeSequence)) {
+							TweakifyMod.LOGGER.error(
+								"Failed to save the final pending config changes synchronously");
+						}
+					} catch (RuntimeException e) {
+						TweakifyMod.LOGGER.error(
+							"Unexpected error while saving the final pending config changes", e);
+					}
 				}
 			}
 		}
@@ -698,9 +712,8 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		DEFERRED_RESULTS.clear();
 	}
 
-	// 客户端退出：saveForShutdown 会把这次写盘排在同一串行队列并等待；超时也不取消任务。
-	// 若等待仍失败，随后的 shutdown 可能 shutdownNow 丢弃排队任务，因此在关闭线程
-	// 直接同步写一份最终快照，保证最后一次修改不丢。
+	// 客户端退出（同步版）：用于测试、诊断与收尾线程超时后的同步兜底；
+	// 正常退出路径改用 flushOnShutdownAsync，避免在关闭流程里等待磁盘 IO。
 	public static void flushOnShutdown() {
 		savePending = false;
 		pendingSnapshot = null;
@@ -718,6 +731,21 @@ public final class TweakifyModConfigOptions implements IConfigHandler {
 		Boolean sync = config.writeSynchronously();
 		if (!Boolean.TRUE.equals(sync)) {
 			TweakifyMod.LOGGER.error("Failed to write Tweakify Mod configuration synchronously on shutdown");
+		}
+	}
+
+	// 客户端退出（非阻塞）：把最终完整快照提交到串行写盘队列后立即返回。
+	// 队列由 AsyncFileWriter.shutdownAsync 的非 daemon 收尾线程在后台排空，
+	// 关闭流程不再因磁盘 IO 卡住；磁盘异常时最多由收尾线程等待超时后放弃。
+	public static void flushOnShutdownAsync() {
+		savePending = false;
+		pendingSnapshot = null;
+		if (!TweakifyMod.isConfigLoaded()) {
+			return;
+		}
+		TweakifyModConfig config = TweakifyMod.config();
+		if (!config.submitSaveAsync()) {
+			TweakifyMod.LOGGER.error("Failed to queue the final config snapshot on shutdown");
 		}
 	}
 }

@@ -2,6 +2,7 @@ package com.gtzc.tweakify.client.config;
 
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.malilib.config.options.ConfigBoolean;
+import fi.dy.masa.malilib.config.options.ConfigBooleanHotkeyed;
 import fi.dy.masa.malilib.config.options.ConfigHotkey;
 import fi.dy.masa.malilib.config.options.ConfigInteger;
 import fi.dy.masa.malilib.config.options.ConfigOptionList;
@@ -94,4 +95,30 @@ public final class GeneralConfigOptions {
 		"smoothScrollDuration", TweakifyModConfig.DEFAULT_SMOOTH_SCROLL_DURATION,
 		TweakifyModConfig.MIN_SMOOTH_SCROLL_DURATION,
 		TweakifyModConfig.MAX_SMOOTH_SCROLL_DURATION).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 日志清理：启动时把 logs 目录的旧日志归档清理到指定数量。
+	public static final ConfigBooleanHotkeyed LOG_CLEANUP = new ConfigBooleanHotkeyed(
+		"logCleanup", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 保留的最新日志归档数量（0 ~ 100，0 = 删除全部归档），使用滑条调节。
+	public static final ConfigInteger LOG_CLEANUP_KEEP_COUNT = new ConfigInteger(
+		"logCleanupKeepCount", TweakifyModConfig.DEFAULT_LOG_CLEANUP_KEEP_COUNT,
+		TweakifyModConfig.MIN_LOG_CLEANUP_KEEP_COUNT,
+		TweakifyModConfig.MAX_LOG_CLEANUP_KEEP_COUNT, true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 启动时自动执行一次清理。
+	public static final ConfigBoolean LOG_CLEANUP_ON_STARTUP = new ConfigBoolean(
+		"logCleanupOnStartup", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 仅界面操作项：立刻清理一次，不写入配置（与档案编辑器同一种接线方式）。
+	public static final ConfigBoolean LOG_CLEANUP_NOW = new ConfigBoolean(
+		"logCleanupNow", false).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 启动时间：加载完成后显示本次启动耗时。
+	public static final ConfigBoolean STARTUP_TIME = new ConfigBoolean(
+		"startupTime", true).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 同时把启动耗时写入日志。
+	public static final ConfigBoolean STARTUP_TIME_LOG = new ConfigBoolean(
+		"startupTimeLog", true).apply(ConfigOptionKeys.GENERAL_KEY);
 }

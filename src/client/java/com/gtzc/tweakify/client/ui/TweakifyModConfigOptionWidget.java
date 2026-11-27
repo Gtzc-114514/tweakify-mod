@@ -3,10 +3,12 @@ package com.gtzc.tweakify.client.ui;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.config.BlockOutlineWidthSliderCallback;
 import com.gtzc.tweakify.client.config.FunctionConfigOptions;
+import com.gtzc.tweakify.client.config.GeneralConfigOptions;
 import com.gtzc.tweakify.client.config.SearchHighlightColor;
 import com.gtzc.tweakify.client.config.TestingConfigOptions;
 import com.gtzc.tweakify.client.mixin.EditBoxAccessor;
 import com.gtzc.tweakify.client.render.FavoriteStarRenderer;
+import com.gtzc.tweakify.client.state.LogCleanupState;
 import com.gtzc.tweakify.config.FavoritesStorage;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.malilib.config.IConfigBase;
@@ -99,6 +101,7 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 		this.addKeyLabel();
 		this.replaceStringListButton();
 		this.addProfileEditorButton();
+		this.addLogCleanupButton();
 		this.addFavoriteStar();
 	}
 
@@ -228,6 +231,21 @@ public class TweakifyModConfigOptionWidget extends WidgetConfigOption {
 			Screen parent = this.host instanceof Screen screen ? screen : null;
 			Minecraft.getInstance().setScreenAndShow(new ProfileEditorScreen(parent));
 		});
+		this.addWidget(button);
+	}
+
+	// 通用标签的“立刻清理”也是界面操作项：只保留一个执行按钮，点击后立即按保留数量清理。
+	private void addLogCleanupButton() {
+		if (this.config != GeneralConfigOptions.LOG_CLEANUP_NOW) {
+			return;
+		}
+		this.subWidgets.removeIf(widget -> widget instanceof ButtonBase);
+		int width = Math.max(80, this.elementWidth);
+		ButtonGeneric button = new ButtonGeneric(this.x + this.labelWidth + 10,
+			this.y + CONTROL_SHIFT, width, 20,
+			StringUtils.translate("tweakify-mod.gui.log_cleanup.now"));
+		button.setActionListener((buttonBase, mouseButton) ->
+			LogCleanupState.cleanupNowAndNotify(Minecraft.getInstance()));
 		this.addWidget(button);
 	}
 

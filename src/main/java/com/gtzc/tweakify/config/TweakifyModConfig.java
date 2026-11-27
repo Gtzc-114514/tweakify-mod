@@ -517,6 +517,14 @@ public class TweakifyModConfig {
 	public static final List<String> DEFAULT_QUICK_BURN_IGNITERS = List.of(
 		"minecraft:lava_bucket", "minecraft:flint_and_steel");
 
+	// 日志清理：保留的日志归档数量范围与默认值。latest.log 永远不参与清理。
+	public static final int MIN_LOG_CLEANUP_KEEP_COUNT = 0;
+	public static final int MAX_LOG_CLEANUP_KEEP_COUNT = 100;
+	public static final int DEFAULT_LOG_CLEANUP_KEEP_COUNT = 10;
+
+	// 丢弃确认：两次按丢弃键之间的最大确认间隔（毫秒）。
+	public static final long DROP_CONFIRM_WINDOW_MILLIS = 3000L;
+
 	// 聊天屏蔽名单异步拉取的超时时间（秒）。
 	public static final int MIN_CHAT_LAG_TIMEOUT_SECONDS = 1;
 	public static final int MAX_CHAT_LAG_TIMEOUT_SECONDS = 30;
@@ -909,8 +917,9 @@ public class TweakifyModConfig {
 		return Boolean.TRUE.equals(AsyncFileWriter.await(handle, SAVE_TIMEOUT_MILLIS, true));
 	}
 
-	// 退出路径：超时不取消任务，交给 AsyncFileWriter.shutdown 等待队列排空，
-	// 保证慢磁盘下最后一次保存不会因为超时被静默丢弃。
+	// 退出同步版保存：用于测试、诊断与收尾线程超时后的同步兜底。
+	// 兜底场景下写盘队列已关闭，任务可能无法入队；调用方随后改用 writeSynchronously()
+	// 完成最后一次保存，保证慢磁盘下不会静默丢弃。
 	public boolean saveForShutdown() {
 		AsyncFileWriter.WriteHandle handle = prepareSaveHandle();
 		return Boolean.TRUE.equals(AsyncFileWriter.await(handle, SAVE_TIMEOUT_MILLIS, false));
