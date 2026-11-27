@@ -3,6 +3,8 @@
 本清单对应 [`docs/tech-debt.md`](tech-debt.md) 的 T3（扫描与收集仍在主线程分帧执行）；
 T1 已由真实 `LevelChunk` GameTest 闭环，不再依赖本文的人工版本对比；
 如需排查历史性能回退，仍可复用 §二 的 A/B/C 场景（D 为两项全关的对照基线），基线版本取 v1.0.4。
+本轮尚未采集的项（B/E、T5 tooltip/定位栏、T6 256 回归/写盘）提供了可直接填写的表格：
+见 [`docs/t3-t5-t6-sampling-template.md`](t3-t5-t6-sampling-template.md)。
 T3 的触发条件是：profiler 确认 `BlockMarkerScanner.tick` 或 `AttackRangeState.tick` 占主线程超过约 5%，
 或收到“开启屏障可见后卡顿”的可复现反馈。两者是独立触发路径：未收到复现反馈且占比未达 5% 之前，T3 保持暂缓。
 

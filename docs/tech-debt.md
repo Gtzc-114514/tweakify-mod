@@ -589,4 +589,5 @@
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖；T8 的 `require = 0` 豁免以该文档的探针清单为准 |
 | `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T5/T6 复用其 §三/§四 的采集步骤与线程名口径，不新增独立清单；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
+| [`docs/t3-t5-t6-sampling-template.md`](t3-t5-t6-sampling-template.md) | T3/T5/T6 待采集项的可填写记录表（B/E 场景、tooltip/定位栏、256 回归与写盘峰值），采样后回填本文件 |
 | 本文件 | 测试覆盖、包结构与性能取舍类技术债（现行 T3–T8；T1/T2 已闭环归档；T9/T10 已闭环）；不搬运上述条目，避免两处维护漂移 |
