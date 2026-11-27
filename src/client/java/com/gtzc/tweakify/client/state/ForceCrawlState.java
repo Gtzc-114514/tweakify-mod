@@ -26,16 +26,26 @@ public final class ForceCrawlState {
 	// 由客户端 tick 调用：总开关关闭或没有玩家时立即清除按住状态。
 	public static void tick(Minecraft client) {
 		TweakifyModConfig config = TweakifyMod.config();
-		crawlKeyHeld = config.functions.forceCrawl
-			&& client.player != null
-			&& FunctionConfigOptions.FORCE_CRAWL_KEY.getKeybind().isKeybindHeld();
+		crawlKeyHeld = shouldHoldCrawlKey(config.functions.forceCrawl,
+			client.player != null, FunctionConfigOptions.FORCE_CRAWL_KEY.getKeybind().isKeybindHeld());
+	}
+
+	// 包私有：按住状态的纯布尔组合，供单测覆盖总开关/玩家存在性/按键。
+	static boolean shouldHoldCrawlKey(boolean forceCrawlEnabled, boolean hasPlayer, boolean keyHeld) {
+		return forceCrawlEnabled && hasPlayer && keyHeld;
 	}
 
 	public static boolean shouldForceCrawl(Player player) {
 		TweakifyModConfig config = TweakifyMod.config();
-		return config.functions.forceCrawl && crawlKeyHeld
-			&& isControlledPlayer(player)
-			&& (!config.functions.forceCrawlOnlyOnGround || player.onGround());
+		return shouldForceCrawl(config.functions.forceCrawl, crawlKeyHeld,
+			isControlledPlayer(player), config.functions.forceCrawlOnlyOnGround, player.onGround());
+	}
+
+	// 包私有：姿态门控的纯布尔组合，供单测覆盖总开关/按住/受控/落地条件。
+	static boolean shouldForceCrawl(boolean forceCrawlEnabled, boolean crawlKeyHeld,
+			boolean controlledPlayer, boolean onlyOnGround, boolean onGround) {
+		return forceCrawlEnabled && crawlKeyHeld && controlledPlayer
+			&& (!onlyOnGround || onGround);
 	}
 
 	// 客户端只认本地玩家；服务端只认单人/局域网房主，避免 LAN 访客跟着房主的按键一起爬。
