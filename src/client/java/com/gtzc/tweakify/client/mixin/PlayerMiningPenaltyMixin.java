@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.MiningPenaltyState;
+import com.gtzc.tweakify.client.state.MiningPenaltyRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.player.Player;
@@ -25,11 +25,11 @@ public class PlayerMiningPenaltyMixin {
 			return value;
 		}
 		Player self = (Player) (Object) this;
-		if (!MiningPenaltyState.shouldRemoveUnderwaterPenalty(
+		if (!MiningPenaltyRules.shouldRemoveUnderwaterPenalty(
 			config.modified.underwaterMiningPenaltySwimmingOnly, self.isSwimming())) {
 			return value;
 		}
-		return MiningPenaltyState.underwaterMultiplier(value, config.modified.underwaterMiningPenaltyKeep);
+		return MiningPenaltyRules.underwaterMultiplier(value, config.modified.underwaterMiningPenaltyKeep);
 	}
 
 	// 空中惩罚：离地时 getDestroySpeed 末尾固定除以 5，按保留百分比把除数拉向 1。
@@ -44,6 +44,6 @@ public class PlayerMiningPenaltyMixin {
 			&& self.getDeltaMovement().y >= 0.0) {
 			return original;
 		}
-		return MiningPenaltyState.airDivisor(original, config.modified.airMiningPenaltyKeep);
+		return MiningPenaltyRules.airDivisor(original, config.modified.airMiningPenaltyKeep);
 	}
 }

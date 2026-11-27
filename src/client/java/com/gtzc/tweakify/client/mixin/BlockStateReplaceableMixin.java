@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.state.BetterBlockPlacementState;
+import com.gtzc.tweakify.client.state.BetterBlockPlacementRules;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -17,7 +17,7 @@ public abstract class BlockStateReplaceableMixin {
 	@ModifyReturnValue(method = "canBeReplaced(Lnet/minecraft/world/item/context/BlockPlaceContext;)Z",
 		at = @At("RETURN"))
 	private boolean tweakify$allowPlantReplacement(boolean original, BlockPlaceContext context) {
-		if (BetterBlockPlacementState.canReplacePlant((BlockState) (Object) this, context)) {
+		if (BetterBlockPlacementRules.canReplacePlant((BlockState) (Object) this, context)) {
 			return true;
 		}
 		return original;

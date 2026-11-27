@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.SaplingGrowthState;
+import com.gtzc.tweakify.client.state.SaplingGrowthRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.expression.Definition;
@@ -49,6 +49,6 @@ public abstract class TreeFeatureSaplingGrowthMixin {
 			HookProbe.markOnce(TWEAKIFY$SAPLING_GROWTH_PROBE, "saplingGrowthFix");
 		}
 		int baseSize = this.minimumSize().getSizeAtHeight(maxTreeHeight, 0);
-		return SaplingGrowthState.fixedOffset(enabled, start, baseSize);
+		return SaplingGrowthRules.fixedOffset(enabled, start, baseSize);
 	}
 }

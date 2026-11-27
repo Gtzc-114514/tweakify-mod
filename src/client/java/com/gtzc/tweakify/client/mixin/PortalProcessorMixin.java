@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.state.DimensionTeleportState;
+import com.gtzc.tweakify.client.state.DimensionTeleportRules;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import net.minecraft.server.level.ServerLevel;
@@ -22,7 +22,7 @@ public class PortalProcessorMixin {
 	@WrapMethod(method = "processPortalTeleportation")
 	private boolean tweakify$blockDimensionTeleport(ServerLevel level, Entity entity, boolean canUsePortal,
 			Operation<Boolean> original) {
-		if (DimensionTeleportState.shouldBlockPortal(this.portal, entity)) {
+		if (DimensionTeleportRules.shouldBlockPortal(this.portal, entity)) {
 			return false;
 		}
 		return original.call(level, entity, canUsePortal);

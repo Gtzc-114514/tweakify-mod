@@ -106,11 +106,11 @@ public final class LockedTradeService {
 		int configuredOffers = config.modified.visibleTradersMaxLockedOffers;
 		List<MerchantOffers> locked = getOrGenerate(villager);
 		MerchantOffers combined = new MerchantOffers();
-		int levelsToShow = VisibleTradersState.futureLevelsToShow(configuredLevels, locked.size());
+		int levelsToShow = VisibleTradersRules.futureLevelsToShow(configuredLevels, locked.size());
 		for (int i = 0; i < levelsToShow; i++) {
 			combined.addAll(locked.get(i));
 		}
-		int offerLimit = VisibleTradersState.limitLockedOffers(configuredOffers, combined.size());
+		int offerLimit = VisibleTradersRules.limitLockedOffers(configuredOffers, combined.size());
 		while (combined.size() > offerLimit) {
 			combined.remove(combined.size() - 1);
 		}

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.SmithingTemplateState;
+import com.gtzc.tweakify.client.state.SmithingTemplateRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.SmithingMenu;
@@ -37,7 +37,7 @@ public class SmithingMenuMixin {
 				this.shrinkStackInSlot(slot);
 				return;
 			}
-			if (SmithingTemplateState.shouldKeepTemplate(true, config.modified.smithingTemplateKeepChance,
+			if (SmithingTemplateRules.shouldKeepTemplate(true, config.modified.smithingTemplateKeepChance,
 				ThreadLocalRandom.current().nextInt(100))) {
 				return;
 			}

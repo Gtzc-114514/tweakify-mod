@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.EnchantmentDescriptionState;
+import com.gtzc.tweakify.client.state.EnchantmentDescriptionRules;
 import com.gtzc.tweakify.client.state.EnchantmentTooltipDescriptions;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -45,7 +45,7 @@ public class ItemStackEnchantmentTooltipMixin {
 			return original;
 		}
 		// 可选的潜行门控：只在按住潜行键时追加，避免提示过长。
-		if (!EnchantmentDescriptionState.shouldAppend(true, config.modified.enchantmentDescriptionsSneakOnly,
+		if (!EnchantmentDescriptionRules.shouldAppend(true, config.modified.enchantmentDescriptionsSneakOnly,
 			player != null && player.isShiftKeyDown())) {
 			return original;
 		}

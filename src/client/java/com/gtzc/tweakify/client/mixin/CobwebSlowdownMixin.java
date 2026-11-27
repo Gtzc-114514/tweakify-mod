@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.CobwebSlowdownState;
+import com.gtzc.tweakify.client.state.CobwebSlowdownRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -48,7 +48,7 @@ public class CobwebSlowdownMixin {
 		if (config.modified.disableCobwebSlowdown
 			&& config.modified.cobwebSlowdownKeepJumpPenalty
 			&& (entity instanceof Player || config.modified.cobwebSlowdownAllEntities)) {
-			entity.makeStuckInBlock(state, CobwebSlowdownState.horizontalFree(multiplier));
+			entity.makeStuckInBlock(state, CobwebSlowdownRules.horizontalFree(multiplier));
 			return;
 		}
 		entity.makeStuckInBlock(state, multiplier);

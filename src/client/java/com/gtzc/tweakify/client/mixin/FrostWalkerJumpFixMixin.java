@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.FrostWalkerJumpState;
+import com.gtzc.tweakify.client.state.FrostWalkerJumpRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -53,7 +53,7 @@ public class FrostWalkerJumpFixMixin {
 		if (config.fix.frostWalkerJumpFixSprintOnly && !entity.isSprinting()) {
 			return false;
 		}
-		if (!FrostWalkerJumpState.shouldRelax(true, config.fix.frostWalkerJumpFixJumpOnly,
+		if (!FrostWalkerJumpRules.shouldRelax(true, config.fix.frostWalkerJumpFixJumpOnly,
 			entity.isPassenger(), entity.onGround(), entity.getDeltaMovement().y)) {
 			return false;
 		}

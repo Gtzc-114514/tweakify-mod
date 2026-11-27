@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.BedDistanceState;
+import com.gtzc.tweakify.client.state.BedDistanceRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -23,7 +23,7 @@ public class ServerPlayerBedMixin {
 		boolean vanillaInRange = ((ServerPlayerAccessor) (Object) self).tweakify$bedInRange(pos, direction);
 		if (config.modified.disableBedTooFar) {
 			double distanceSq = self.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
-			return BedDistanceState.shouldAllowSleep(true, vanillaInRange, distanceSq,
+			return BedDistanceRules.shouldAllowSleep(true, vanillaInRange, distanceSq,
 				config.modified.bedTooFarMaxDistance);
 		}
 		return vanillaInRange;

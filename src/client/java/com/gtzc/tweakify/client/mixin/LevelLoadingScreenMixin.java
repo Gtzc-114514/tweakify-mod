@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.LevelLoadingState;
+import com.gtzc.tweakify.client.state.LevelLoadingRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.Minecraft;
@@ -22,7 +22,7 @@ public class LevelLoadingScreenMixin {
 	@Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true, require = 0)
 	private void tweakify$skipRender(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick,
 									 CallbackInfo ci) {
-		if (LevelLoadingState.shouldHide()) {
+		if (LevelLoadingRules.shouldHide()) {
 			HookProbe.markOnce("forceCloseLoadingScreen");
 			ci.cancel();
 		}

@@ -2,7 +2,7 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.state.MerchantMenuAccess;
-import com.gtzc.tweakify.client.state.VisibleTradersState;
+import com.gtzc.tweakify.client.state.VisibleTradersRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -58,7 +58,7 @@ public abstract class MerchantMenuMixin implements MerchantMenuAccess {
 		// 只显示锁定交易时原始数量按 0 计算，所有行都会被标记为锁定。
 		TweakifyModConfig config = TweakifyMod.config();
 		boolean onlyLocked = config.modified.visibleTradersOnlyLocked;
-		this.tweakify$originalCount = VisibleTradersState.originalCount(onlyLocked, original.size());
+		this.tweakify$originalCount = VisibleTradersRules.originalCount(onlyLocked, original.size());
 		if (!config.modified.visibleTraders
 			|| this.tweakify$lockedOffers == null || this.tweakify$lockedOffers.isEmpty()) {
 			return original;

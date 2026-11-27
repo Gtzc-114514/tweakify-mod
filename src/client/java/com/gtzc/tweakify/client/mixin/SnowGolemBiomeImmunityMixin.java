@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.SnowGolemBiomeState;
+import com.gtzc.tweakify.client.state.SnowGolemBiomeRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.attribute.EnvironmentAttributeSystem;
@@ -41,7 +41,7 @@ public class SnowGolemBiomeImmunityMixin {
 				&& !self.level().isRainingAt(self.blockPosition())) {
 				return system.getValue(attribute, pos);
 			}
-			if (SnowGolemBiomeState.shouldSuppressMelting(config.modified.snowGolemBiomeImmunity,
+			if (SnowGolemBiomeRules.shouldSuppressMelting(config.modified.snowGolemBiomeImmunity,
 				config.modified.snowGolemBiomeImmunityOverworldOnly, overworld)) {
 				return Boolean.FALSE;
 			}

@@ -2,7 +2,7 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.state.UseCooldownState;
-import com.gtzc.tweakify.client.state.UseItemSlowdownState;
+import com.gtzc.tweakify.client.state.UseItemSlowdownRules;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
@@ -26,7 +26,7 @@ public class LocalPlayerMixin {
 			// 例外列表里的物品保持原版减速。
 			LocalPlayer self = (LocalPlayer) (Object) this;
 			if (!TweakifyMod.config().isUseItemSlowdownException(self.getUseItem().getItem())) {
-				return UseItemSlowdownState.multiplier(true,
+				return UseItemSlowdownRules.multiplier(true,
 					TweakifyMod.config().modified.useItemSlowdownKeepPercent, original);
 			}
 		}

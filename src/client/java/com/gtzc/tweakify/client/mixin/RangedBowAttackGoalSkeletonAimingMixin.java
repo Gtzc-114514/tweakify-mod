@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.SkeletonAimingState;
+import com.gtzc.tweakify.client.state.SkeletonAimingRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -52,7 +52,7 @@ public abstract class RangedBowAttackGoalSkeletonAimingMixin {
 			&& target.getY() <= this.mob.getY()) {
 			return;
 		}
-		if (!SkeletonAimingState.shouldForceLook(enabled, target != null)) {
+		if (!SkeletonAimingRules.shouldForceLook(enabled, target != null)) {
 			return;
 		}
 		HookProbe.markOnce(TWEAKIFY$SKELETON_AIMING_PROBE, "skeletonAimingFix");

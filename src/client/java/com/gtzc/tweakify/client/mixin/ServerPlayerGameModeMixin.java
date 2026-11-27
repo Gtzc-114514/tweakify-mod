@@ -2,7 +2,7 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
-import com.gtzc.tweakify.client.state.ShovelSnowLayerState;
+import com.gtzc.tweakify.client.state.ShovelSnowLayerRules;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
@@ -70,14 +70,14 @@ public class ServerPlayerGameModeMixin {
 		}
 		boolean snowLayer = state.getBlock() instanceof SnowLayerBlock;
 		int layers = snowLayer ? state.getValue(SnowLayerBlock.LAYERS) : 0;
-		if (!ShovelSnowLayerState.shouldReduceOneLayer(
+		if (!ShovelSnowLayerRules.shouldReduceOneLayer(
 			config.functions.disableShovelSnowFullBreak, stack.is(ItemTags.SHOVELS), snowLayer, layers)) {
 			return original.call(serverPlayer, world, stack, hand, hitResult);
 		}
 
 		// 进度触发器要用操作前的物品快照：reduceOneLayer 内部会消耗耐久。
 		ItemStack usedStack = stack.copy();
-		ShovelSnowLayerState.reduceOneLayer(this.level, this.player, pos, state,
+		ShovelSnowLayerRules.reduceOneLayer(this.level, this.player, pos, state,
 			config.functions.shovelSnowDropSnowball, config.functions.shovelSnowConsumeDurability);
 		// 原版后段的 ITEM_USED_ON_BLOCK 不会执行，这里按原版语义补回。
 		CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(this.player, pos, usedStack);

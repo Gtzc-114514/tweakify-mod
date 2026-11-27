@@ -2,7 +2,7 @@ package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.state.AnvilPickupState;
-import com.gtzc.tweakify.client.state.EnchantmentConflictState;
+import com.gtzc.tweakify.client.state.EnchantmentConflictRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -84,9 +84,9 @@ public class AnvilMenuMixin {
 			&& (player == null || !player.isShiftKeyDown())) {
 			return original.call(first, second);
 		}
-		boolean sameGroup = EnchantmentConflictState.sameExclusiveGroup(
+		boolean sameGroup = EnchantmentConflictRules.sameExclusiveGroup(
 			first.value().exclusiveSet().unwrapKey(), second.value().exclusiveSet().unwrapKey());
-		if (!EnchantmentConflictState.shouldBypass(true,
+		if (!EnchantmentConflictRules.shouldBypass(true,
 			config.modified.removeEnchantmentConflictsSameGroupOnly, sameGroup)) {
 			return original.call(first, second);
 		}

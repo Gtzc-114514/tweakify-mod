@@ -1,0 +1,46 @@
+package com.gtzc.tweakify.client.state;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * 可见交易：只显示锁定交易时，原始数量必须按 0 计算，客户端才会把所有行标成锁定。
+ */
+class VisibleTradersRulesTest {
+
+	@Test
+	void originalCountKeepsRealSizeByDefault() {
+		assertEquals(4, VisibleTradersRules.originalCount(false, 4));
+		assertEquals(0, VisibleTradersRules.originalCount(false, 0));
+	}
+
+	@Test
+	void onlyLockedForcesZeroOriginalCount() {
+		assertEquals(0, VisibleTradersRules.originalCount(true, 4));
+	}
+
+	@Test
+	void negativeSizeIsClampedToZero() {
+		assertEquals(0, VisibleTradersRules.originalCount(false, -3));
+	}
+
+	@Test
+	void futureLevelsAreClampedAndLimitedByAvailableGroups() {
+		assertEquals(4, VisibleTradersRules.futureLevelsToShow(4, 4));
+		assertEquals(1, VisibleTradersRules.futureLevelsToShow(0, 4));
+		assertEquals(4, VisibleTradersRules.futureLevelsToShow(99, 4));
+		assertEquals(2, VisibleTradersRules.futureLevelsToShow(3, 2));
+		assertEquals(0, VisibleTradersRules.futureLevelsToShow(3, 0));
+	}
+
+	@Test
+	void lockedOfferLimitTreatsZeroAsUnlimited() {
+		assertEquals(12, VisibleTradersRules.limitLockedOffers(0, 12));
+		assertEquals(0, VisibleTradersRules.limitLockedOffers(0, 0));
+		assertEquals(5, VisibleTradersRules.limitLockedOffers(5, 12));
+		assertEquals(12, VisibleTradersRules.limitLockedOffers(64, 12));
+		assertEquals(12, VisibleTradersRules.limitLockedOffers(99, 12));
+		assertEquals(0, VisibleTradersRules.limitLockedOffers(5, -1));
+	}
+}

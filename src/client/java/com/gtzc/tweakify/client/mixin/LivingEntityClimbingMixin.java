@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.ClimbablePassState;
+import com.gtzc.tweakify.client.state.ClimbablePassRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -65,14 +65,14 @@ public abstract class LivingEntityClimbingMixin {
 		LivingEntity self = (LivingEntity) (Object) this;
 		TweakifyModConfig config = TweakifyMod.config();
 		if (self instanceof LocalPlayer && self.level().isClientSide()
-			&& ClimbablePassState.shouldSkipClamp(config.modified.climbablePassNoSlowdown,
+			&& ClimbablePassRules.shouldSkipClamp(config.modified.climbablePassNoSlowdown,
 				config.modified.climbablePassNoSlowdownSneakOnly, self.isShiftKeyDown())) {
 			BlockState inBlock = self.getInBlockState();
 			boolean ladder = inBlock.getBlock() instanceof LadderBlock;
 			boolean trapdoor = inBlock.getBlock() instanceof TrapDoorBlock;
 			// 其它可攀爬方块统一按藤蔓类处理，兼容模组添加的攀爬方块。
 			boolean vine = !ladder && !trapdoor;
-			if (ClimbablePassState.allowsBlock(ladder, vine, trapdoor,
+			if (ClimbablePassRules.allowsBlock(ladder, vine, trapdoor,
 				config.modified.climbablePassLadders,
 				config.modified.climbablePassVines,
 				config.modified.climbablePassTrapdoors)) {

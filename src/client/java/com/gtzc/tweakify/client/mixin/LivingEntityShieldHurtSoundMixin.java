@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.ShieldHurtSoundState;
+import com.gtzc.tweakify.client.state.ShieldHurtSoundRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -41,7 +41,7 @@ public abstract class LivingEntityShieldHurtSoundMixin {
 			HookProbe.markOnce(TWEAKIFY$SHIELD_HURT_SOUND_PROBE, "shieldBlockHurtSoundFix");
 		}
 		boolean playersOnly = config.fix.shieldBlockHurtSoundFixPlayersOnly;
-		if (ShieldHurtSoundState.shouldPlayHurtSound(enabled, playersOnly,
+		if (ShieldHurtSoundRules.shouldPlayHurtSound(enabled, playersOnly,
 			instance instanceof Player, blocked, damage)) {
 			original.call(instance, source);
 		}

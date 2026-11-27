@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.FishingLineState;
+import com.gtzc.tweakify.client.state.FishingLineRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -34,6 +34,6 @@ public abstract class FishingHookRendererThirdPersonLineMixin {
 			HookProbe.markOnce(TWEAKIFY$FISHING_LINE_PROBE, "fishingLineThirdPersonFix");
 		}
 		double offset = config.fix.fishingLineThirdPersonFixOffset;
-		return FishingLineState.crouchOffset(enabled, offset, original);
+		return FishingLineRules.crouchOffset(enabled, offset, original);
 	}
 }
