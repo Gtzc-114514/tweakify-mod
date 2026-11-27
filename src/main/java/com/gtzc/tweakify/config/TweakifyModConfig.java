@@ -853,11 +853,11 @@ public class TweakifyModConfig {
 				config.configPath = configPath;
 				int loadedVersion = root.has("configVersion") ? config.configVersion : 0;
 				// 前置迁移：只处理版本号与缺失键，不做字段值校验。
-				boolean corrected = config.sanitizeConfigVersion(root.has("configVersion"))
-					| config.migrateScrollListMemoryDefault(loadedVersion)
-					| config.migrateLegacyFeatureKeys(root)
-					| config.migrateLocatorHeadOptions(root)
-					| config.applyMissingListDefaults(root);
+				boolean corrected = ConfigMigration.sanitizeConfigVersion(config, root.has("configVersion"))
+					| ConfigMigration.migrateScrollListMemoryDefault(config, loadedVersion)
+					| ConfigMigration.migrateLegacyFeatureKeys(config, root)
+					| ConfigMigration.migrateLocatorHeadOptions(config, root)
+					| ConfigMigration.applyMissingListDefaults(config, root);
 				// 字段级校验：表驱动，新增数值/枚举字段未登记校验器时类加载期就失败。
 				corrected |= config.sanitizeAllFields();
 				// 容器级校验：所有列表与热键字段按类型统一清洗。
@@ -992,122 +992,6 @@ public class TweakifyModConfig {
 	// 只格式化并落盘已冻结的 JSON 树，不读写字段：供后台写盘线程调用。
 	public boolean writeJsonTree(JsonObject jsonTree, long sequence) {
 		return ConfigStorage.writeAtomically(jsonTree, configPathOrDefault(), sequence);
-	}
-
-	// 修正配置版本：旧文件（缺少该字段）按 0 处理并升级到当前版本。
-	private boolean sanitizeConfigVersion(boolean versionPresent) {
-		int detected = versionPresent ? configVersion : 0;
-		if (detected == CURRENT_CONFIG_VERSION) {
-			return false;
-		}
-		LOGGER.info("Upgrading config version {} -> {}", detected, CURRENT_CONFIG_VERSION);
-		configVersion = CURRENT_CONFIG_VERSION;
-		return true;
-	}
-
-	// 版本 2：滚动列表记忆默认改为开启。版本 1 里该开关默认关闭，
-	// 统一升级为开，避免旧配置文件一直停在关闭状态。
-	private boolean migrateScrollListMemoryDefault(int loadedVersion) {
-		if (loadedVersion >= 2 || general.scrollListMemory) {
-			return false;
-		}
-		LOGGER.info("Enabling scrollListMemory for configs older than version 2");
-		general.scrollListMemory = true;
-		return true;
-	}
-
-	// 版本 3：相机运动与物品分组取代旧的“运动相机横移倾斜”与“创造物品栏条目合并”。
-	// 旧字段已从配置类移除，Gson 会忽略它们，因此需要从原始 JSON 里读出旧值迁移。
-	private boolean migrateLegacyFeatureKeys(JsonObject root) {
-		boolean changed = false;
-		if (!root.has("cameraMotion") && root.has("motionCameraTilt")) {
-			functions.cameraMotion = legacyBoolean(root, "motionCameraTilt");
-			changed = true;
-		}
-		if (!root.has("hotkeyCameraMotion") && root.has("hotkeyMotionCameraTilt")) {
-			functions.hotkeyCameraMotion = legacyString(root, "hotkeyMotionCameraTilt");
-			changed = true;
-		}
-		if (!root.has("itemGroups") && root.has("mergeCreativeItemEntries")) {
-			functions.itemGroups = legacyBoolean(root, "mergeCreativeItemEntries");
-			changed = true;
-		}
-		if (!root.has("hotkeyItemGroups") && root.has("hotkeyMergeCreativeItemEntries")) {
-			functions.hotkeyItemGroups = legacyString(root, "hotkeyMergeCreativeItemEntries");
-			changed = true;
-		}
-		// 优化标签已移除快捷键：旧文件里的字段没有对应配置字段，Gson 会忽略；
-		// 这里标记一次修正，让下一次写盘把旧键清掉。
-		if (root.has("hotkeyMiniHudFpsOptimization")) {
-			LOGGER.info("Removing obsolete config hotkey: hotkeyMiniHudFpsOptimization");
-			changed = true;
-		}
-		if (changed) {
-			LOGGER.info("Migrating legacy config keys");
-		}
-		return changed;
-	}
-
-	// 版本 4：定位栏玩家过滤由“单名单 + 模式”改为“包含/排除”两个名单。
-	// 旧键不参与反序列化：从原始 JSON 读出后按当前模式写入对应名单，返回 true 让写盘时清掉旧键。
-	private boolean migrateLocatorHeadOptions(JsonObject root) {
-		JsonElement legacy = root.get("locatorBarHeadFilterNames");
-		if (legacy == null || !legacy.isJsonArray()) {
-			return false;
-		}
-		boolean exclude = LOCATOR_HEAD_FILTER_EXCLUDE.equals(functions.locatorBarHeadFilter);
-		List<String> target = exclude
-			? functions.locatorBarHeadExcludedPlayers
-			: functions.locatorBarHeadIncludedPlayers;
-		if (target.isEmpty()) {
-			for (JsonElement name : legacy.getAsJsonArray()) {
-				if (name.isJsonPrimitive() && name.getAsJsonPrimitive().isString()) {
-					String value = name.getAsString().trim();
-					if (!value.isEmpty()) {
-						target.add(value);
-					}
-				}
-			}
-		}
-		LOGGER.info("Migrating locator filter names into {}",
-			exclude ? LOCATOR_HEAD_EXCLUDED_PLAYERS_FIELD : LOCATOR_HEAD_INCLUDED_PLAYERS_FIELD);
-		return true;
-	}
-
-	private static boolean legacyBoolean(JsonObject root, String key) {
-		JsonElement value = root.get(key);
-		return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean()
-			&& value.getAsBoolean();
-	}
-
-	private static String legacyString(JsonObject root, String key) {
-		JsonElement value = root.get(key);
-		return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
-			? value.getAsString() : "";
-	}
-
-	// 旧配置文件缺少物品列表键时补回默认值。
-	// 这三个列表的空列表语义是“不做任何限制”，而不是“使用默认值”：
-	// Gson 反序列化缺键会保留字段初始化器的空列表，对应功能就会静默失效。
-	// 用 root.has() 而不是判断列表是否为空，是为了保留用户主动清空列表的意图。
-	private boolean applyMissingListDefaults(JsonObject root) {
-		boolean changed = false;
-		if (!root.has(RESTRICTED_OFFHAND_ITEMS_FIELD)) {
-			LOGGER.info("Filling missing default list: {}", RESTRICTED_OFFHAND_ITEMS_FIELD);
-			setStringList(RESTRICTED_OFFHAND_ITEMS_FIELD, defaultLightSourceItemIds());
-			changed = true;
-		}
-		if (!root.has(MAIN_HAND_USE_COOLDOWN_ITEMS_FIELD)) {
-			LOGGER.info("Filling missing default list: {}", MAIN_HAND_USE_COOLDOWN_ITEMS_FIELD);
-			setStringList(MAIN_HAND_USE_COOLDOWN_ITEMS_FIELD, defaultInteractableItemIds());
-			changed = true;
-		}
-		if (!root.has(OFFHAND_USE_COOLDOWN_ITEMS_FIELD)) {
-			LOGGER.info("Filling missing default list: {}", OFFHAND_USE_COOLDOWN_ITEMS_FIELD);
-			setStringList(OFFHAND_USE_COOLDOWN_ITEMS_FIELD, defaultInteractableItemIds());
-			changed = true;
-		}
-		return changed;
 	}
 
 	// 新建配置文件：三个物品列表直接使用默认值（写入时统一走清洗）。
