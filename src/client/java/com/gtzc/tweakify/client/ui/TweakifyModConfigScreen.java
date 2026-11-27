@@ -50,12 +50,28 @@ public class TweakifyModConfigScreen extends GuiConfigsBase {
 		if (config.general.rememberSelectedTab) {
 			return rememberedTab;
 		}
-		return ConfigGuiTab.fromCode(config.general.rememberSelectedTabFallback).tab();
+		return tabOfCode(ConfigGuiTab.fromCode(config.general.rememberSelectedTabFallback).code());
+	}
+
+	// code → 标签页映射放在界面侧：ConfigGuiTab 只保留 code，避免 config 包反向依赖 ui 包。
+	// switch 覆盖全部枚举值，新增标签时编译器会强制同步这里。
+	static ConfigTab tabOfCode(String code) {
+		return switch (ConfigGuiTab.fromCode(code)) {
+			case ALL -> ConfigTab.ALL;
+			case GENERAL -> ConfigTab.GENERAL;
+			case FUNCTIONS -> ConfigTab.FUNCTIONS;
+			case DISPLAY -> ConfigTab.DISPLAY;
+			case MODIFIED -> ConfigTab.MODIFIED;
+			case FIXING -> ConfigTab.FIXING;
+			case OPTIMIZATION -> ConfigTab.OPTIMIZATION;
+			case TESTING -> ConfigTab.TESTING;
+			case FAVORITES -> ConfigTab.FAVORITES;
+		};
 	}
 	private final List<Button> tabButtons = new ArrayList<>();
 
-	// 公开：ConfigGuiTab（config 包）引用该嵌套枚举做 code→tab 映射。
-	public enum ConfigTab {
+	// 包私有：code → tab 映射与标签记忆都只在本界面内使用。
+	enum ConfigTab {
 		ALL("tweakify-mod.gui.tab.all"),
 		GENERAL("tweakify-mod.gui.tab.general"),
 		FUNCTIONS("tweakify-mod.gui.tab.functions"),

@@ -5,6 +5,7 @@ import fi.dy.masa.malilib.config.IConfigBoolean;
 import fi.dy.masa.malilib.hotkeys.IHotkey;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.TweakifyModTestSupport;
+import com.gtzc.tweakify.client.config.ConfigGuiTab;
 import com.gtzc.tweakify.client.config.TestingConfigOptions;
 import com.gtzc.tweakify.client.config.TweakifyModConfigOptions;
 import com.gtzc.tweakify.client.render.FavoriteStarRenderer;
@@ -528,5 +529,18 @@ class TweakifyModConfigScreenTest {
 			assertTrue(functions || display || modified || general || fixing || optimization || testing,
 				"option has no concrete tab: " + option.getName());
 		}
+	}
+
+	// code → 标签页映射：每个 ConfigGuiTab 的翻译键必须与目标标签一致，未知 code 回退 ALL。
+	@Test
+	void tabMappingCoversEveryConfigGuiTab() {
+		for (ConfigGuiTab tab : ConfigGuiTab.values()) {
+			assertEquals(tab.translationKey(), TweakifyModConfigScreen.tabOfCode(tab.code()).translationKey(),
+				"mismatched tab for code: " + tab.code());
+		}
+		assertEquals(TweakifyModConfigScreen.ConfigTab.ALL,
+			TweakifyModConfigScreen.tabOfCode("not-a-tab"));
+		assertEquals(TweakifyModConfigScreen.ConfigTab.ALL,
+			TweakifyModConfigScreen.tabOfCode(null));
 	}
 }

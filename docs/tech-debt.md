@@ -29,7 +29,7 @@
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
 | T8 | `AllMixinApplicationLoaderTest` | 主配置全部 mixin 的去重目标类在真实 Loader 中全部加载（2026-11-27：187 条 / 124 个目标类）；`require = 0` 的探针点按设计豁免（76 个） | 已修复（真实 Loader 全量织入，见详情） |
 | T9 | `PiglinArmorSwapState` / `TweakifyModConfigListWidget` / `FavoriteStarRenderer` / `WorldPlayTimeRenderer` / `CreativeItemGroups` / `CodeOptionEntry` | 6 个成员仅因跨包测试（或根包 `LangFilesTest`）需要而放宽为 public；原 15 处中 9 处已随 GameTest 迁移回退包私有 | 暂缓（P3 可选重构，见详情）（最近评估 2026-11-27，见详情） |
-| T10 | `ConfigGuiTab`（config）与 `TweakifyModConfigScreen.ConfigTab`（ui） | 配置枚举持有 UI 屏幕的嵌套枚举作为字段类型，形成 `config → ui` 反向依赖与包循环；`ConfigTab` 因此被迫 public | 暂缓（P3 可选重构，见详情）（最近评估 2026-11-27，见详情） |
+| T10 | `ConfigGuiTab`（config）与 `TweakifyModConfigScreen.ConfigTab`（ui） | 配置枚举持有 UI 屏幕的嵌套枚举作为字段类型，形成 `config → ui` 反向依赖与包循环；`ConfigTab` 因此被迫 public | 已修复（UI 侧 `tabOfCode` 映射，`ConfigTab` 收回包私有，见详情） |
 
 ### 已闭环归档
 
@@ -84,6 +84,10 @@
 > 2026-11-27 client 包按职责拆分为 config/render/state/ui（提交 `876e343`），新增两项遗留：
 > T9（6 处仅为跨包测试放宽的 public）与 T10（`ConfigGuiTab` 反依赖 UI 的 `ConfigTab`）；
 > 两条均为 P3 观察，不影响构建、测试与运行，触发条件见详情。
+>
+> 2026-11-27 T10 闭环：`ConfigGuiTab` 只保留 code/翻译键，`TweakifyModConfigScreen.tabOfCode`
+> 负责 code→tab 映射，`ConfigTab` 收回包私有；`client.config` 对 `client.ui` 的依赖降为 0。
+> `ConfigGuiTabTest` 移除 `tab()`/数量断言，`TweakifyModConfigScreenTest` 新增逐 code 映射断言。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -550,27 +554,28 @@
   GameTest 迁移已完成，9 处专用成员已回退。
 - **待办**：按触发条件择机处理；优先级 P3。
 
-## T10 详情：ConfigGuiTab 反依赖 UI 的 ConfigTab
+## T10 详情（已修复）：ConfigGuiTab 反依赖 UI 的 ConfigTab
 
-- **现状**：`config/ConfigGuiTab` 持有 `private final TweakifyModConfigScreen.ConfigTab tab`，
+- **修复前现状**：`config/ConfigGuiTab` 持有 `private final TweakifyModConfigScreen.ConfigTab tab`，
   构造器与 `tab()` 都引用 UI 包 `TweakifyModConfigScreen` 的嵌套枚举；
   `TweakifyModConfigScreen.initialTab()` 通过 `ConfigGuiTab.fromCode(...).tab()` 取分类。
   因此出现 `config → ui` 反向依赖，与 `ui → config` 形成包循环，`ConfigTab` 被迫 public。
-- **影响**：config 层无法脱离 UI 单独编译/测试；新增配置标签时需同时修改 UI 枚举与 config 枚举。
-  运行期行为与性能不受影响；当前全仓 `config → ui` 仅 `ConfigGuiTab` 一处。
-- **失败模式**：将来在无 UI 场景复用 `ConfigGuiTab`（专用服务器、命令行工具、纯逻辑测试）时，
-  会把 Screen 类依赖带入；或 UI 重构 `ConfigTab` 时牵连配置枚举。
-- **触发条件**：需要在不依赖 UI 的场景复用 `ConfigGuiTab`，或下一次调整配置标签/界面结构。
-- **判定口径**：`client.config` 包出现任何 `client.ui` 的 import（当前仅 `ConfigGuiTab` 一处）
-  即视为需要处理。
-- **建议方案**：
-  1. `ConfigGuiTab` 只保留 `code()`（与翻译键），移除 `tab` 字段、构造参数与 `tab()`；
-  2. `TweakifyModConfigScreen` 内部维护 `code → ConfigTab` 映射（`initialTab()` 内 switch 或静态 Map）；
-  3. 完成后 `ConfigTab` 收回包私有，`config → ui` 依赖消失。
-- **闭环动作**：按方案 1–3 实施，`ConfigGuiTabTest` 同步去掉 `tab()` 断言；编译与测试通过后关闭本条。
-- **缓解措施**：当前仅一处反向依赖，不得扩散；新增 config 类禁止 import `client.ui`。
-- **最近评估（2026-11-27）**：client 包拆分提交 `876e343` 引入；依赖方向记录在提交审查报告中。
-- **待办**：可选重构，优先级 P3。
+- **原影响**：config 层无法脱离 UI 单独编译/测试；新增配置标签时需同时修改 UI 枚举与 config 枚举。
+  运行期行为与性能不受影响；全仓 `config → ui` 仅 `ConfigGuiTab` 一处。
+- **采用方案（UI 侧映射 + 枚举穷尽 switch）**：
+  - `ConfigGuiTab` 只保留 `code()` 与 `translationKey()`，移除 `tab` 字段、构造参数与 `tab()`；
+  - `TweakifyModConfigScreen` 新增包私有 `tabOfCode(String)`，对 `ConfigGuiTab.fromCode(code)`
+    做 switch 映射——枚举穷尽 switch 让新增标签在编译期强制同步，未知 code 由 `fromCode` 回退 ALL；
+  - `initialTab()` 改为 `tabOfCode(ConfigGuiTab.fromCode(...).code())`；
+  - `ConfigTab` 收回包私有（包外已无引用）。
+- **修复记录（2026-11-27，当前工作区改动，提交待定）**：`ConfigGuiTab` 去掉对 `client.ui` 的 import
+  与 9 个 `ConfigTab` 构造参数；新增 `TweakifyModConfigScreen.tabOfCode`；`ConfigTab` 改包私有；
+  `ConfigGuiTabTest` 移除 `tab()` 与数量断言，`TweakifyModConfigScreenTest` 新增
+  `tabMappingCoversEveryConfigGuiTab`（逐 code 比对翻译键 + 未知 code 回退）。
+- **验证**：`gradlew test` 861 例、`gradlew loaderTest` 2 例、`gradlew build`（6 GameTest）全部通过；
+  `grep "client.ui." src/client/java/.../client/config` 为 0 处。
+- **回归条件**：若 `client.config` 再次出现 `client.ui` 的 import，或新增 `ConfigGuiTab` 枚举值未同步
+  `tabOfCode`（编译失败或映射缺失）时，重开本条。
 
 ## 与既有清单的关系
 
