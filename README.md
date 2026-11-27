@@ -58,7 +58,7 @@
 
 | 项 | 版本 |
 | --- | --- |
-| Tweakify Mod | 1.2.6 |
+| Tweakify Mod | 1.2.7 |
 | Minecraft | 26.3 |
 | Fabric Loader | >= 0.20.1 |
 | Fabric API | 0.163.0+26.3 |
