@@ -38,6 +38,7 @@
 | T8 | `AllMixinApplicationLoaderTest` | 真实 Loader 全量织入（187 条 / 124 个目标类） | [归档详情](tech-debt-archive.md#t8) |
 | T9 | 6 处跨包测试专用 public 成员 | 测试移入成员所在包/反射读取，全部收回包私有 | [归档详情](tech-debt-archive.md#t9) |
 | T10 | `ConfigGuiTab` 与 `TweakifyModConfigScreen.ConfigTab` | UI 侧 `tabOfCode` 映射，`ConfigTab` 收回包私有 | [归档详情](tech-debt-archive.md#t10) |
+| T11 | P2/P3 工程化与结构优化收尾 | CI Windows 编译、payload codec 测试、ConfigMigration、features.md、skipGameTest、*Rules 重命名 | [归档详情](tech-debt-archive.md#t11) |
 
 > v1.1.0 复评（2026-11-16）：T1 已通过真实 LevelChunk GameTest 闭环；T2 维持“已修复”；
 > T3/T4 仍未达到闭环条件（分别缺少实机 profiler 与 Mixin 集成测试），本轮只更新 T3/T4 的评估记录与缓解说明。
@@ -92,6 +93,10 @@
 >
 > 2026-11-27 T9 闭环：6 处测试专用 public 全部收回包私有——布局/几何断言拆到 render/ui 测试，
 > 默认组语言键测试移到 state 包，`LangFilesTest` 改为反射读取 `translationKey()`；生产代码无新增 public。
+>
+> 2026-11-27 P2/P3 收尾闭环：CI 新增 Windows 编译 job、`LockedTradesPayload` codec 测试、
+> `ConfigMigration` 抽取、README 功能表迁移 `docs/features.md`、`-PskipGameTest`、
+> 22+2 个纯规则类 `*State` → `*Rules`；详见 T11 归档。
 
 ## T3 详情：扫描与收集仍在主线程分帧执行
 
@@ -349,4 +354,4 @@
 | `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T5/T6 复用其 §三/§四 的采集步骤与线程名口径，不新增独立清单；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
 | [`docs/features.md`](features.md)「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
 | [`docs/t3-t5-t6-sampling-template.md`](t3-t5-t6-sampling-template.md) | T3/T5/T6 待采集项的可填写记录表（B/E 场景、tooltip/定位栏、256 回归与写盘峰值），采样后回填本文件 |
-| 本文件 | 测试覆盖、包结构与性能取舍类技术债（现行 T3/T5/T6）；已闭环 T1/T2/T4/T7/T8/T9/T10 的详情见 [`docs/tech-debt-archive.md`](tech-debt-archive.md)；不搬运上述条目，避免两处维护漂移 |
+| 本文件 | 测试覆盖、包结构与性能取舍类技术债（现行 T3/T5/T6）；已闭环 T1/T2/T4/T7/T8/T9/T10/T11 的详情见 [`docs/tech-debt-archive.md`](tech-debt-archive.md)；不搬运上述条目，避免两处维护漂移 |

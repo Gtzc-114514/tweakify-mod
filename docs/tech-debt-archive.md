@@ -262,3 +262,35 @@
   `grep "client.ui." src/client/java/.../client/config` 为 0 处。
 - **回归条件**：若 `client.config` 再次出现 `client.ui` 的 import，或新增 `ConfigGuiTab` 枚举值未同步
   `tabOfCode`（编译失败或映射缺失）时，重开本条。
+
+<a id="t11"></a>
+## T11 详情（已修复）：P2/P3 工程化与结构优化收尾
+
+- **修复前现状**：P1/P2 审查清单中的工程化项在 2026-11-27 集中收尾前：
+  - CI 只有 Linux 完整构建，Windows 路径/编码/大小写问题只能在本地或发布后暴露；
+  - `LockedTradesPayload.CODEC` 只有生产调用，无空/present 状态的编解码回归；
+  - 配置版本迁移与旧键清洗（约 120 行）集中在 `TweakifyModConfig`（1813 行）；
+  - README「功能一览」与正文混排（747 行，其中表格约 500 行），检索与维护成本高；
+  - GameTest 只能通过 `-x runGameTest` 跳过（任务名由插件生成，`-x` 失效时会报错）；
+  - `client/state` 的 47 个 `*State` 类中 26 个无字段（纯规则/判断），命名与实际职责不符。
+- **原影响**：Windows 平台问题缺少持续验证；网络包编解码无回归；配置类职责过载；
+  README 过长；离线/仅改文档时构建仍需启动真实 GameTest 服务端；纯规则类的 `State`
+  后缀误导读者。运行期行为不受影响。
+- **采用方案**：
+  1. CI 新增 `windows-compile` job（windows-latest + JDK 25，只跑三个源集编译，
+     与 Linux build 并行）；
+  2. `LockedTradesPayloadTest`：空 Optional 与 present 空列表的 codec 往返；
+  3. 抽取 `ConfigMigration`：版本修正、版本 2/3/4 迁移、缺失列表默认值；
+  4. README 功能表迁移到 [`docs/features.md`](features.md)，保留 `#features` 锚点，
+     `ReadmeConfigTableTest` 改为解析新文件；
+  5. 新增 `-PskipGameTest`（只禁用 `runGameTest` 执行，CI 默认仍执行）；
+  6. 纯规则类 `*State` → `*Rules`：批次 1 22 个、批次 2 2 个；有字段状态类、
+     `FlightDriftState` 状态机与 `SpawnFeatureState` 接线枢纽保留 `State`。
+- **修复记录（2026-11-27）**：`3e8355a`（codec 测试）、`15acff0`（CI Windows job）、
+  `6e4f062`（ConfigMigration）、`69aa1e4`（features.md）、`09cabc4`（skipGameTest）、
+  `b1829bf`（*Rules 批次 1）、`b1c9454`（*Rules 批次 2）。
+- **验证**：`gradlew test` 885 例、`gradlew loaderTest` 2 例、`gradlew build`（6 GameTest）
+  全部通过；GitHub Actions `build` 与 `Windows compile` 均 success。
+- **回归条件**：Windows runner 编译失败、`LockedTradesPayload` 协议变更无回归、
+  新增配置版本迁移未在 `ConfigMigration` 接线、功能表与 `ConfigCatalog` 不一致、
+  CI 误传 `-PskipGameTest`、纯规则类重新引入静态字段时，重开本条。
