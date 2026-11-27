@@ -267,5 +267,8 @@ final class FunctionCatalogEntries {
 		entries.add(child("inventoryQuickRightClick", "quickRightClickShulkerBoxes"));
 		entries.add(child("inventoryQuickRightClick", "quickRightClickEnderChest"));
 		entries.add(child("inventoryQuickRightClick", "quickRightClickRequireSneak"));
+		// 丢弃确认（功能标签）：第一次按丢弃键只提示，再按一次才真正丢弃。
+		entries.add(function("dropConfirm", true));
+		entries.add(child("dropConfirm", "dropConfirmItems"));
 	}
 }

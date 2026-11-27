@@ -189,7 +189,8 @@
 		"AdvancementsScreenSmoothScrollMixin",
 		"BlockStateHelpfulSelectionMixin",
 		"ChatComponentHideSigningMixin",
-		"ToastManagerHideSigningMixin"
+		"ToastManagerHideSigningMixin",
+		"MultiPlayerGameModeDropConfirmMixin"
 	],
 	"mixinextras": {
 		"minVersion": "0.5.5"

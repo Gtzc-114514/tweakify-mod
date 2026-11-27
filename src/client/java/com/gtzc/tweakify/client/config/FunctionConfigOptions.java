@@ -855,6 +855,14 @@ public final class FunctionConfigOptions {
 	public static final ConfigBoolean QUICK_RIGHT_CLICK_REQUIRE_SNEAK = new ConfigBoolean(
 		"quickRightClickRequireSneak", false).apply(ConfigOptionKeys.GENERAL_KEY);
 
+	// 丢弃确认：第一次按丢弃键只显示提示，再按一次才真正丢弃。
+	public static final ConfigBooleanHotkeyed DROP_CONFIRM = new ConfigBooleanHotkeyed(
+		"dropConfirm", false, "", ConfigOptionKeys.TOGGLE_HOTKEY_SETTINGS).apply(ConfigOptionKeys.GENERAL_KEY);
+
+	// 需要确认丢弃的物品 ID 列表；空列表 = 所有物品。
+	public static final ConfigStringList DROP_CONFIRM_ITEMS = new ItemIdConfigStringList(
+		"dropConfirmItems", ImmutableList.of()).apply(ConfigOptionKeys.LISTS_KEY);
+
 	public static final ConfigStringList NETHER_PORTAL_TELEPORT_BLACKLIST = new EntityIdConfigStringList(
 		"netherPortalTeleportBlacklist", ImmutableList.of()).apply(ConfigOptionKeys.LISTS_KEY);
 

@@ -627,6 +627,12 @@ public final class FunctionConfig extends ConfigSection {
 	// 需要潜行才打开，避免整理背包时误触。
 	public volatile boolean quickRightClickRequireSneak = false;
 
+	// 丢弃确认：手持物品按一次丢弃键只显示确认提示，再按一次才真正丢弃。
+	public volatile boolean dropConfirm = false;
+
+	// 丢弃确认的切换快捷键。
+	public volatile String hotkeyDropConfirm = "";
+
 	// 各功能根开关的切换快捷键，默认无快捷键（空字符串）。
 	// 功能标签只给根功能提供快捷键，子设置不占快捷键栏。
 	public volatile String hotkeyMiningCooldown = "";
@@ -676,6 +682,9 @@ public final class FunctionConfig extends ConfigSection {
 	// 受限的副手物品 ID 列表（namespace:path）。默认是所有光源物品。
 	// 仅当副手物品命中该列表时，主手用完瞬间才会拦截副手接手；可手动增删。
 	volatile List<String> restrictedOffhandItems = new ArrayList<>();
+
+	// 需要确认丢弃的物品 ID 列表；空列表 = 所有物品。
+	public volatile List<String> dropConfirmItems = new ArrayList<>();
 
 	// 实体高亮总开关：开启后按当前启用的预设列表显示发光描边。
 	public volatile boolean entityHighlight = false;
