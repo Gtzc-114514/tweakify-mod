@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.AnvilPickupState;
+import com.gtzc.tweakify.client.state.AnvilPickupRules;
 import com.gtzc.tweakify.client.state.EnchantmentConflictRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
@@ -38,7 +38,7 @@ public class AnvilMenuMixin {
 	private boolean tweakify$ignoreTooExpensive(Player player, Operation<Boolean> original) {
 		TweakifyModConfig config = TweakifyMod.config();
 		if (config.modified.disableTooExpensive
-			&& AnvilPickupState.shouldAllowResult(true, this.cost.get(),
+			&& AnvilPickupRules.shouldAllowResult(true, this.cost.get(),
 				config.modified.tooExpensiveMaxLevelCost, config.modified.tooExpensiveWarnOnly)) {
 			HookProbe.markOnce("anvilCreateResult");
 			return true;
@@ -57,11 +57,11 @@ public class AnvilMenuMixin {
 			return original;
 		}
 		int cost = this.cost.get();
-		if (AnvilPickupState.shouldBlockByCost(true, cost,
+		if (AnvilPickupRules.shouldBlockByCost(true, cost,
 			config.modified.tooExpensiveMaxLevelCost, config.modified.tooExpensiveWarnOnly)) {
 			return false;
 		}
-		if (AnvilPickupState.shouldAllowPickup(true, hasStack, cost,
+		if (AnvilPickupRules.shouldAllowPickup(true, hasStack, cost,
 			config.modified.tooExpensiveMaxLevelCost, config.modified.tooExpensiveWarnOnly)) {
 			HookProbe.markOnce("anvilMayPickup");
 			return true;

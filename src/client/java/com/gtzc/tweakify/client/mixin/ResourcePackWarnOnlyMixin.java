@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.ResourcePackCompatibilityState;
+import com.gtzc.tweakify.client.state.ResourcePackCompatibilityRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.Minecraft;
@@ -44,7 +44,7 @@ public class ResourcePackWarnOnlyMixin {
 		}
 		Path packDirectory = ((PackSelectionScreenAccessor) screen).tweakify$getPackDir();
 		Path resourcePackDirectory = client.getResourcePackDirectory();
-		if (!ResourcePackCompatibilityState.shouldHideCompatibility(true,
+		if (!ResourcePackCompatibilityRules.shouldHideCompatibility(true,
 			config.modified.resourcePackCompatibilityAlsoDataPacks,
 			packDirectory, resourcePackDirectory)) {
 			return;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.state.AnvilPickupState;
+import com.gtzc.tweakify.client.state.AnvilPickupRules;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -26,7 +26,7 @@ public class AnvilScreenMixin {
 			return original.call(player);
 		}
 		AnvilMenu menu = ((AnvilScreen) (Object) this).getMenu();
-		boolean showLabel = AnvilPickupState.shouldShowTooExpensiveLabel(true, menu.getCost(),
+		boolean showLabel = AnvilPickupRules.shouldShowTooExpensiveLabel(true, menu.getCost(),
 			config.modified.tooExpensiveMaxLevelCost);
 		if (!showLabel) {
 			HookProbe.markOnce("anvilScreenLabel");
