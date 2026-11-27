@@ -38,7 +38,7 @@ public class TweakifyModConfigListWidget extends WidgetListConfigOptions {
 	private static final int MIN_CONTROLS_TOTAL = 246;
 	private static final int LABEL_CONTROL_GAP = 10;
 	// 行右端固定留给收藏星：16px 星标 + 2px 右边距，再加重置按钮与间隙。
-	public static final int RIGHT_RESERVE = 56;
+	static final int RIGHT_RESERVE = 56;
 	private static final int MIN_CONFIG_WIDTH = 120;
 
 	// 拖动滚动只认鼠标左键；按下时先让条目控件处理，被消费的点击不会起拖。

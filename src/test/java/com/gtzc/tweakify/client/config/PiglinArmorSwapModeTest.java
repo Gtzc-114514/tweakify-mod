@@ -1,11 +1,11 @@
 package com.gtzc.tweakify.client.config;
 
-import com.gtzc.tweakify.client.state.PiglinArmorSwapState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.entity.EquipmentSlot;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,7 +26,8 @@ class PiglinArmorSwapModeTest {
 
 	@Test
 	void autoAllowsEveryArmorSlot() {
-		for (EquipmentSlot slot : PiglinArmorSwapState.ARMOR_SLOTS) {
+		for (EquipmentSlot slot : List.of(
+			EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)) {
 			assertTrue(PiglinArmorSwapMode.AUTO.allows(slot));
 		}
 	}

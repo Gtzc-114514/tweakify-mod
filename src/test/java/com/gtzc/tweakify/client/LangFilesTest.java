@@ -3,9 +3,7 @@ package com.gtzc.tweakify.client;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.gtzc.tweakify.client.config.CodeOptionEntry;
 import com.gtzc.tweakify.client.config.TweakifyModConfigOptions;
-import com.gtzc.tweakify.client.state.CreativeItemGroups;
 import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.malilib.config.IConfigBase;
@@ -23,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -97,29 +94,7 @@ class LangFilesTest {
 		}
 	}
 
-	// 默认物品组的组名翻译键必须在四种语言都存在：
-	// 键格式与参考模组（inventory-item-groups）一致，已有资源包可直接复用。
-	@Test
-	void defaultGroupNameTranslationsExistInEveryLanguage() throws IOException {
-		Set<String> names = new LinkedHashSet<>();
-		for (String tabId : List.of(
-			"minecraft:building_blocks", "minecraft:colored_blocks", "minecraft:natural_blocks",
-			"minecraft:functional_blocks", "minecraft:redstone_blocks",
-			"minecraft:tools_and_utilities", "minecraft:combat",
-			"minecraft:food_and_drinks", "minecraft:ingredients")) {
-			for (CreativeItemGroups.GroupDefinition definition : CreativeItemGroups.definitionsFor(tabId)) {
-				names.add(definition.name());
-			}
-		}
-		assertFalse(names.isEmpty(), "default groups must be defined");
-		for (String code : TweakifyModConfig.SUPPORTED_LANGUAGES) {
-			Set<String> keys = keysOf(code);
-			for (String name : names) {
-				String key = "group_name.inventory_item_groups." + name;
-				assertTrue(keys.contains(key), "missing " + key + " in " + code);
-			}
-		}
-	}
+	// 默认物品组的组名语言键校验在 state 包的 CustomGroupTranslationsTest（与 CreativeItemGroups 同包）。
 
 	// 26.3 全部原版附魔都应有描述键，防止漏配。
 	// 清单对齐 26.3 的 data/minecraft/tags/enchantment/tooltip_order.json（ 43 个），升级 MC 时需同步。
@@ -242,7 +217,15 @@ class LangFilesTest {
 		assertFalse(entryEnums.isEmpty(), "必须能发现选项枚举，否则本测试形同虚设");
 		for (Class<?> type : entryEnums) {
 			for (Object constant : type.getEnumConstants()) {
-				String key = ((CodeOptionEntry) constant).translationKey();
+				String key;
+				try {
+					java.lang.reflect.Method method = constant.getClass().getMethod("translationKey");
+					// 接口本身包私有：声明方法的接口对外不可见，需放宽后再调用。
+					method.setAccessible(true);
+					key = (String) method.invoke(constant);
+				} catch (ReflectiveOperationException e) {
+					throw new AssertionError("cannot read translationKey from " + type.getSimpleName(), e);
+				}
 				// 返回 null 表示由实现类自行提供显示名（如语言自称），不走语言文件。
 				if (key == null) {
 					continue;

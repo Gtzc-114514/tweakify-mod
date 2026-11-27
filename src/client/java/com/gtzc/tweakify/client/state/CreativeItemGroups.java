@@ -226,7 +226,7 @@ public final class CreativeItemGroups {
 	// ---------------------------------------------------------------- 组构建
 
 	// 内置默认组按标签页过滤；包私有供单测与语言文件键校验使用。
-	public static List<GroupDefinition> definitionsFor(String tabId) {
+	static List<GroupDefinition> definitionsFor(String tabId) {
 		String normalized = normalizeTabId(tabId);
 		List<GroupDefinition> definitions = new ArrayList<>();
 		for (GroupDefinition definition : DEFAULT_GROUPS) {

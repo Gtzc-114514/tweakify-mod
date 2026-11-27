@@ -84,7 +84,7 @@ public final class FavoriteStarRenderer {
 	}
 
 	// 配置行星标：贴在控件行最右侧按钮（重置/打开）右边，而不是行尾。
-	public static int rowStarX(int controlsRight) {
+	static int rowStarX(int controlsRight) {
 		return controlsRight + ROW_STAR_GAP;
 	}
 

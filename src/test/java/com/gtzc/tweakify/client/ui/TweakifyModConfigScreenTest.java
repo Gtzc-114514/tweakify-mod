@@ -543,4 +543,24 @@ class TweakifyModConfigScreenTest {
 		assertEquals(TweakifyModConfigScreen.ConfigTab.ALL,
 			TweakifyModConfigScreen.tabOfCode(null));
 	}
+
+	// 配置行布局：星标贴在重置/打开按钮右边，右边界不能越过行尾与滚动条。
+	@Test
+	void rowStarSitsRightOfTheResetButtonAndStaysClear() {
+		int listX = 10;
+		int listWidth = 300;
+		int rowX = listX + 3;
+		int rowWidth = listWidth - 14;
+		int controlsRight = rowX + rowWidth - TweakifyModConfigListWidget.RIGHT_RESERVE;
+		// 重置按钮从控件右 +2 开始、宽 20；星标在它右边 2px。
+		int resetRight = controlsRight + 22;
+		int starX = FavoriteStarRenderer.starXIfFits(resetRight, rowX, rowWidth);
+		assertEquals(resetRight + 2, starX, "star must sit right after the reset button");
+		assertTrue(starX + FavoriteStarRenderer.SIZE <= rowX + rowWidth,
+			"star must stay inside the row");
+		int scrollbarLeft = listX + listWidth - 9;
+		assertTrue(starX + FavoriteStarRenderer.SIZE <= scrollbarLeft,
+			"star must not overlap the scrollbar");
+		assertTrue(FavoriteStarRenderer.rowStarY(0, 24) > 0, "star must be vertically centred");
+	}
 }

@@ -37,8 +37,8 @@ public final class WorldPlayTimeRenderer {
 			entry.getContentY() + TOP_PAD, TEXT_COLOR, false);
 	}
 
-	// 右对齐到内容区右边界并留出 RIGHT_PAD；public 供 state 包的测试断言。
-	public static int xForRightAligned(int contentRight, int textWidth) {
+	// 右对齐到内容区右边界并留出 RIGHT_PAD；包私有供 render 包的测试断言。
+	static int xForRightAligned(int contentRight, int textWidth) {
 		return contentRight - textWidth - RIGHT_PAD;
 	}
 }

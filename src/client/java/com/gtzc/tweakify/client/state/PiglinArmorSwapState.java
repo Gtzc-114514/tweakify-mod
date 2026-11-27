@@ -51,7 +51,7 @@ public final class PiglinArmorSwapState {
 	static final int RELOCATE_GIVE_UP_TICKS = 60;
 
 	// 需要保护的四件护甲，按背包界面从上到下处理（自动模式按此顺序选第一件）。
-	public static final List<EquipmentSlot> ARMOR_SLOTS = List.of(
+	static final List<EquipmentSlot> ARMOR_SLOTS = List.of(
 		EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET);
 
 	// 替换记录：背包槽位（玩家背包菜单）、换下来的原装备、换上去的金装备，

@@ -9,7 +9,7 @@ import fi.dy.masa.malilib.util.StringUtils;
  * <p>Java 枚举不能继承类，因此这里用带 default 方法的接口承载样板代码：
  * 各枚举只需声明常量、实现 {@link #code()} 与自己的静态 fromCode。
  */
-public interface CodeOptionEntry extends IConfigOptionListEntry {
+interface CodeOptionEntry extends IConfigOptionListEntry {
 	String code();
 
 	// 显示名的翻译键；返回 null 表示由实现类自行提供显示名（如语言自称）。

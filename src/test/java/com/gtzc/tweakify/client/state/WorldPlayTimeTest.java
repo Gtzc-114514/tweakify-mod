@@ -1,7 +1,6 @@
 package com.gtzc.tweakify.client.state;
 
 import com.gtzc.tweakify.client.config.SavePlayTimeFormat;
-import com.gtzc.tweakify.client.render.WorldPlayTimeRenderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -168,11 +167,6 @@ class WorldPlayTimeTest {
 		assertEquals("", WorldPlayTime.displayText(0L, "clock"));
 		assertEquals("", WorldPlayTime.displayText(-1L, "hours"));
 		assertEquals("0:01", WorldPlayTime.displayText(1200L, "clock"));
-	}
-
-	@Test
-	void rightAlignedTextStaysInsideContent() {
-		assertEquals(76, WorldPlayTimeRenderer.xForRightAligned(100, 20));
 	}
 
 	private static void writeStats(Path file, long ticks) throws IOException {
