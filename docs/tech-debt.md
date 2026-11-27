@@ -28,6 +28,8 @@
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（渲染线程几何构建 0 样本、worker 空闲；峰值与写盘未覆盖，见详情）（最近复评 2026-11-21，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
 | T8 | `AllMixinApplicationLoaderTest` | 主配置全部 mixin 的去重目标类在真实 Loader 中全部加载（2026-11-27：187 条 / 124 个目标类）；`require = 0` 的探针点按设计豁免（76 个） | 已修复（真实 Loader 全量织入，见详情） |
+| T9 | `PiglinArmorSwapState` / `TweakifyModConfigListWidget` / `FavoriteStarRenderer` / `WorldPlayTimeRenderer` / `CreativeItemGroups` / `CodeOptionEntry` | 6 个成员仅因跨包测试（或根包 `LangFilesTest`）需要而放宽为 public；原 15 处中 9 处已随 GameTest 迁移回退包私有 | 暂缓（P3 可选重构，见详情）（最近评估 2026-11-27，见详情） |
+| T10 | `ConfigGuiTab`（config）与 `TweakifyModConfigScreen.ConfigTab`（ui） | 配置枚举持有 UI 屏幕的嵌套枚举作为字段类型，形成 `config → ui` 反向依赖与包循环；`ConfigTab` 因此被迫 public | 暂缓（P3 可选重构，见详情）（最近评估 2026-11-27，见详情） |
 
 ### 已闭环归档
 
@@ -78,6 +80,10 @@
 > 2026-11-27 T8 复评：清单已增至 187 条 mixin / 124 个去重目标类，`require = 0` 注入点 76 个
 > （均有探针，`HookProbe.markOnce` 共 79 处；统计口径见 [`docs/mixin-probes.md`](mixin-probes.md)）；
 > 机制未变，上文 145/100/73 与详情同口径数字保留为 2026-11-21 落地时的历史记录，无需重开本条。
+>
+> 2026-11-27 client 包按职责拆分为 config/render/state/ui（提交 `876e343`），新增两项遗留：
+> T9（6 处仅为跨包测试放宽的 public）与 T10（`ConfigGuiTab` 反依赖 UI 的 `ConfigTab`）；
+> 两条均为 P3 观察，不影响构建、测试与运行，触发条件见详情。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -513,6 +519,59 @@
   - 边界：不证明运行期行为，`require = 0` 的探针存活仍需实机日志确认；
     可选模组目标类不可加载时计入豁免（当前为空）。
 
+## T9 详情：跨包测试专用 public 成员
+
+- **现状**：client 包拆分（`876e343`）后，以下 6 个成员在 `src/main` / `src/client` 中没有生产调用，
+  仅因跨包测试或根包 `LangFilesTest` 访问而放宽为 public：
+  - `state/PiglinArmorSwapState.ARMOR_SLOTS` ← `config/PiglinArmorSwapModeTest`；
+  - `ui/TweakifyModConfigListWidget.RIGHT_RESERVE` ← `config/FavoriteStarStyleTest`；
+  - `render/FavoriteStarRenderer.rowStarX` ← `config/FavoriteStarStyleTest`；
+  - `render/WorldPlayTimeRenderer.xForRightAligned` ← `state/WorldPlayTimeTest`；
+  - `state/CreativeItemGroups.definitionsFor` ← 根包 `LangFilesTest`；
+  - `config/CodeOptionEntry`（接口）← 根包 `LangFilesTest`（实现枚举同包，接口本身可保持包私有）。
+  原 15 处同类放宽中，`BlockMarkerScanner.ScanJob`、`SectionKey`、两个构造器、`step` 与 4 个
+  `*ForTest` 共 9 处已在 `BlockMarkerScannerGameTest` 迁入 `client.render` 后回退包私有。
+- **影响**：非测试代码可以访问这些成员，包边界被弱化；运行期行为与性能不受影响。
+  风险在于后人把测试接缝当成正式 API 依赖，或在重构中删除/改名后仅由测试失败发现。
+- **失败模式**：新增生产调用依赖这些成员 → 回退包私有需要先补正式 API；或测试目录再次调整时，
+  跨包访问集中爆出编译错误，阻塞无关改动。
+- **触发条件**：出现真实跨包生产调用（应转为正式 API 并在注释说明）；或下一次调整测试目录/
+  包结构、需要收紧可见性时。
+- **判定口径**：某成员在 `src/main` 与 `src/client`（排除 `src/test` / `src/gametest`）存在调用 →
+  视为正式 public 并补注释；否则视为测试专用，可在下次触碰该文件时收紧。
+- **建议方案**：
+  1. 测试拆分：把断言布局常量的用例移入成员所在包（如把 `FavoriteStarStyleTest` 的布局断言拆到
+     `render`），成员即可回退包私有；
+  2. 断言等价化：`ARMOR_SLOTS` / `RIGHT_RESERVE` 改用同包可访问的等价常量，或从行为断言推导；
+  3. 接受现状，并为成员补一行「public 仅为跨包测试」注释，避免误认为正式扩展点。
+- **闭环动作**：按上述任一路径处理后，将对应成员回退包私有并更新本条目清单。
+- **缓解措施**：成员保持 public 但仅测试使用；新增生产调用前先评估是否应正式化为 API。
+- **最近评估（2026-11-27）**：client 包拆分提交 `876e343` 后复查，6 处清单与调用方如上；
+  GameTest 迁移已完成，9 处专用成员已回退。
+- **待办**：按触发条件择机处理；优先级 P3。
+
+## T10 详情：ConfigGuiTab 反依赖 UI 的 ConfigTab
+
+- **现状**：`config/ConfigGuiTab` 持有 `private final TweakifyModConfigScreen.ConfigTab tab`，
+  构造器与 `tab()` 都引用 UI 包 `TweakifyModConfigScreen` 的嵌套枚举；
+  `TweakifyModConfigScreen.initialTab()` 通过 `ConfigGuiTab.fromCode(...).tab()` 取分类。
+  因此出现 `config → ui` 反向依赖，与 `ui → config` 形成包循环，`ConfigTab` 被迫 public。
+- **影响**：config 层无法脱离 UI 单独编译/测试；新增配置标签时需同时修改 UI 枚举与 config 枚举。
+  运行期行为与性能不受影响；当前全仓 `config → ui` 仅 `ConfigGuiTab` 一处。
+- **失败模式**：将来在无 UI 场景复用 `ConfigGuiTab`（专用服务器、命令行工具、纯逻辑测试）时，
+  会把 Screen 类依赖带入；或 UI 重构 `ConfigTab` 时牵连配置枚举。
+- **触发条件**：需要在不依赖 UI 的场景复用 `ConfigGuiTab`，或下一次调整配置标签/界面结构。
+- **判定口径**：`client.config` 包出现任何 `client.ui` 的 import（当前仅 `ConfigGuiTab` 一处）
+  即视为需要处理。
+- **建议方案**：
+  1. `ConfigGuiTab` 只保留 `code()`（与翻译键），移除 `tab` 字段、构造参数与 `tab()`；
+  2. `TweakifyModConfigScreen` 内部维护 `code → ConfigTab` 映射（`initialTab()` 内 switch 或静态 Map）；
+  3. 完成后 `ConfigTab` 收回包私有，`config → ui` 依赖消失。
+- **闭环动作**：按方案 1–3 实施，`ConfigGuiTabTest` 同步去掉 `tab()` 断言；编译与测试通过后关闭本条。
+- **缓解措施**：当前仅一处反向依赖，不得扩散；新增 config 类禁止 import `client.ui`。
+- **最近评估（2026-11-27）**：client 包拆分提交 `876e343` 引入；依赖方向记录在提交审查报告中。
+- **待办**：可选重构，优先级 P3。
+
 ## 与既有清单的关系
 
 | 文件 | 范围 |
@@ -521,4 +580,4 @@
 | `docs/mixin-probes.md`「已知不改清单」 | HookProbe 探针覆盖；T8 的 `require = 0` 豁免以该文档的探针清单为准 |
 | `docs/t3-profiler-checklist.md` | T3 的实机 profiler 采集步骤、场景矩阵与判定标准；T5/T6 复用其 §三/§四 的采集步骤与线程名口径，不新增独立清单；T1 已由 GameTest 闭环，A/B/C 仅保留作可选的历史性能对比 |
 | `README.md`「功能一览」 | 屏障/基岩/攻击范围的半径、刷新频率与上限的用户侧声明（本文件的事实源之一） |
-| 本文件 | 测试覆盖与性能取舍类技术债（现行 T3–T8；T1/T2 已闭环归档）；不搬运上述条目，避免两处维护漂移 |
+| 本文件 | 测试覆盖、包结构与性能取舍类技术债（现行 T3–T10；T1/T2 已闭环归档）；不搬运上述条目，避免两处维护漂移 |
