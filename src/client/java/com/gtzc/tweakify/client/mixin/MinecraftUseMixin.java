@@ -1,9 +1,9 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.ElytraFireworkState;
-import com.gtzc.tweakify.client.OffhandFallbackState;
-import com.gtzc.tweakify.client.UseCooldownState;
+import com.gtzc.tweakify.client.state.ElytraFireworkState;
+import com.gtzc.tweakify.client.state.OffhandFallbackState;
+import com.gtzc.tweakify.client.state.UseCooldownState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.Minecraft;

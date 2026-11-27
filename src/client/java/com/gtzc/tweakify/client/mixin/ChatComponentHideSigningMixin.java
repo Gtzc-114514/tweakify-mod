@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.ChatSigningHider;
+import com.gtzc.tweakify.client.state.ChatSigningHider;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.multiplayer.chat.GuiMessage;

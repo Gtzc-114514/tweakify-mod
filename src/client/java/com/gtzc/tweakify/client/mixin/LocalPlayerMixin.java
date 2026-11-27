@@ -1,8 +1,8 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.UseCooldownState;
-import com.gtzc.tweakify.client.UseItemSlowdownState;
+import com.gtzc.tweakify.client.state.UseCooldownState;
+import com.gtzc.tweakify.client.state.UseItemSlowdownState;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;

@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.ChatSigningHider;
+import com.gtzc.tweakify.client.state.ChatSigningHider;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastManager;
 import org.spongepowered.asm.mixin.Mixin;

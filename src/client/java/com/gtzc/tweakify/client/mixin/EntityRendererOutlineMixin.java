@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.EntityHighlightState;
+import com.gtzc.tweakify.client.render.EntityHighlightState;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.SelfNameVisibility;
+import com.gtzc.tweakify.client.render.SelfNameVisibility;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRenderer;

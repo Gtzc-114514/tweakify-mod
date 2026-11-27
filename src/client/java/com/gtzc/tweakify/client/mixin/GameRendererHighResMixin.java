@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.BetterScreenshotManager;
+import com.gtzc.tweakify.client.render.BetterScreenshotManager;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

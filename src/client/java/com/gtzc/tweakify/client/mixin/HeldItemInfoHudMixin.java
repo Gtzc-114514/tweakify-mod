@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.HeldItemInfoRenderer;
+import com.gtzc.tweakify.client.render.HeldItemInfoRenderer;
 import com.gtzc.tweakify.config.FunctionConfig;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.DeltaTracker;

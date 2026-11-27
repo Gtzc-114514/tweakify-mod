@@ -1,8 +1,8 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.CreativeItemGroups;
-import com.gtzc.tweakify.client.SmoothScrolling;
+import com.gtzc.tweakify.client.state.CreativeItemGroups;
+import com.gtzc.tweakify.client.ui.SmoothScrolling;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;

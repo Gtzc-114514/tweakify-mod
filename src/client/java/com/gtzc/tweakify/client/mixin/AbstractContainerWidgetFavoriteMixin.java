@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.FavoriteStarRenderer;
-import com.gtzc.tweakify.client.WorldListFavorites;
+import com.gtzc.tweakify.client.render.FavoriteStarRenderer;
+import com.gtzc.tweakify.client.ui.WorldListFavorites;
 import fi.dy.masa.malilib.util.input.ScanCodes;
 import net.minecraft.client.gui.components.AbstractContainerWidget;
 import net.minecraft.client.gui.screens.worldselection.WorldSelectionList;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.SpawnEggThrower;
+import com.gtzc.tweakify.client.state.SpawnEggThrower;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
 import net.minecraft.world.item.SpawnEggItem;

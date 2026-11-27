@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.CurseRemovalScope;
+import com.gtzc.tweakify.client.config.CurseRemovalScope;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.core.component.DataComponents;

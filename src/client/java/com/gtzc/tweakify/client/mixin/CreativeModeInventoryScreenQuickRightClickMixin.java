@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.QuickRightClickService;
+import com.gtzc.tweakify.client.state.QuickRightClickService;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;

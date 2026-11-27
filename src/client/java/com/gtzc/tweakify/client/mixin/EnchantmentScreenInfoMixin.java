@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.EnchantingTableInfo;
+import com.gtzc.tweakify.client.state.EnchantingTableInfo;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

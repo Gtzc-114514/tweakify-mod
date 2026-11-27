@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.SmoothScrolling;
+import com.gtzc.tweakify.client.ui.SmoothScrolling;
 import net.minecraft.client.gui.components.AbstractScrollArea;
 import net.minecraft.client.gui.components.AbstractWidget;
 import org.spongepowered.asm.mixin.Mixin;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.SneakAnimationState;
+import com.gtzc.tweakify.client.render.SneakAnimationState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.sugar.Local;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.CooldownIndicatorState;
+import com.gtzc.tweakify.client.render.CooldownIndicatorState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;

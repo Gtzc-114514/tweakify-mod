@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.ChatFadeBar;
+import com.gtzc.tweakify.client.render.ChatFadeBar;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;

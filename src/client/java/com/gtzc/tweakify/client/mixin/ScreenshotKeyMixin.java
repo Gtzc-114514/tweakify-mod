@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.BetterScreenshotManager;
+import com.gtzc.tweakify.client.render.BetterScreenshotManager;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;

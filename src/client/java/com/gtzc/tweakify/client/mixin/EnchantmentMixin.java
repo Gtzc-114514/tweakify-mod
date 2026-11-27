@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.EnchantmentLevelStyle;
+import com.gtzc.tweakify.client.config.EnchantmentLevelStyle;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.LockedTradeService;
+import com.gtzc.tweakify.client.state.LockedTradeService;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;

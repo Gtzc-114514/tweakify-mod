@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.CameraMotion;
+import com.gtzc.tweakify.client.state.CameraMotion;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.player.LocalPlayer;

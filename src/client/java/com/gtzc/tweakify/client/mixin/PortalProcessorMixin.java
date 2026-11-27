@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.DimensionTeleportState;
+import com.gtzc.tweakify.client.state.DimensionTeleportState;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import net.minecraft.server.level.ServerLevel;

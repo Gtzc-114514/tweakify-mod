@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.SignContainerTargets;
+import com.gtzc.tweakify.client.state.SignContainerTargets;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.Minecraft;

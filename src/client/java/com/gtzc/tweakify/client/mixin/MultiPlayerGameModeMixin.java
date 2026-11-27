@@ -1,8 +1,8 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.KeepMiningProgressState;
-import com.gtzc.tweakify.client.MiningCooldownState;
+import com.gtzc.tweakify.client.state.KeepMiningProgressState;
+import com.gtzc.tweakify.client.state.MiningCooldownState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;

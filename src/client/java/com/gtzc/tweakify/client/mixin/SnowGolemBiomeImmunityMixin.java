@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.SnowGolemBiomeState;
+import com.gtzc.tweakify.client.state.SnowGolemBiomeState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.attribute.EnvironmentAttributeSystem;

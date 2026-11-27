@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.CobwebSlowdownState;
+import com.gtzc.tweakify.client.state.CobwebSlowdownState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.BoatStepHeightState;
+import com.gtzc.tweakify.client.state.BoatStepHeightState;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;

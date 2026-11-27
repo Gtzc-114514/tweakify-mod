@@ -3,6 +3,9 @@ package com.gtzc.tweakify.client;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.gtzc.tweakify.client.config.CodeOptionEntry;
+import com.gtzc.tweakify.client.config.TweakifyModConfigOptions;
+import com.gtzc.tweakify.client.state.CreativeItemGroups;
 import com.gtzc.tweakify.config.ConfigCatalog;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.malilib.config.IConfigBase;
@@ -40,7 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 语言文件必须保持相同键集：缺失键会静默回退到游戏语言，游戏内很难发现漏翻。
  */
 class LangFilesTest {
-	private static final Path OPTION_SOURCE_DIR = Path.of("src/client/java/com/gtzc/tweakify/client");
+	private static final Path OPTION_SOURCE_DIR = Path.of("src/client/java/com/gtzc/tweakify/client/config");
+	private static final String OPTION_PACKAGE = "com.gtzc.tweakify.client.config";
 	// 只认类型声明里的 implements：注释里提到接口名不算实现。
 	private static final Pattern IMPLEMENTS_OPTION_ENTRY =
 		Pattern.compile("(?s)\\bimplements\\b[^{]*?\\bCodeOptionEntry\\b");
@@ -275,7 +279,7 @@ class LangFilesTest {
 				String className = fileName.substring(0, fileName.length() - ".java".length());
 				Class<?> type;
 				try {
-					type = Class.forName(LangFilesTest.class.getPackageName() + "." + className);
+					type = Class.forName(OPTION_PACKAGE + "." + className);
 				} catch (ClassNotFoundException e) {
 					throw new AssertionError("源码扫描到 " + className + "，但测试类路径里没有该类", e);
 				}

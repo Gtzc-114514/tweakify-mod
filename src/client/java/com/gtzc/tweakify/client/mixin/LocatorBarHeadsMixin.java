@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.LocatorBarHeads;
+import com.gtzc.tweakify.client.render.LocatorBarHeads;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;

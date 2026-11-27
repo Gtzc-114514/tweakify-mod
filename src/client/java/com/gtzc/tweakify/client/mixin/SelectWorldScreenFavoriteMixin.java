@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.FavoriteStarRenderer;
+import com.gtzc.tweakify.client.render.FavoriteStarRenderer;
 import com.gtzc.tweakify.config.FavoritesStorage;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;

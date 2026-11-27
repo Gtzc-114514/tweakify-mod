@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.ResourcePackCompatibilityTargets;
+import com.gtzc.tweakify.client.state.ResourcePackCompatibilityTargets;
 import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;

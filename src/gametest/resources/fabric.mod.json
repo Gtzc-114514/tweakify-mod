@@ -6,7 +6,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"fabric-gametest": [
-			"com.gtzc.tweakify.client.BlockMarkerScannerGameTest"
+			"com.gtzc.tweakify.client.render.BlockMarkerScannerGameTest"
 		]
 	}
 }

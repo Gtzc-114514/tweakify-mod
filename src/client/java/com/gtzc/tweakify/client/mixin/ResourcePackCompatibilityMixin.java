@@ -1,8 +1,8 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.ResourcePackCompatibilityState;
-import com.gtzc.tweakify.client.ResourcePackCompatibilityTargets;
+import com.gtzc.tweakify.client.state.ResourcePackCompatibilityState;
+import com.gtzc.tweakify.client.state.ResourcePackCompatibilityTargets;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;

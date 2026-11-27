@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.WorldListFavorites;
+import com.gtzc.tweakify.client.ui.WorldListFavorites;
 import com.gtzc.tweakify.config.FavoritesStorage;
 import net.minecraft.client.gui.screens.worldselection.WorldSelectionList;
 import net.minecraft.world.level.storage.LevelSummary;

@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.ScrollMemory;
+import com.gtzc.tweakify.client.ui.ScrollMemory;
 import fi.dy.masa.malilib.gui.GuiConfigsBase;
 import fi.dy.masa.malilib.gui.widgets.WidgetListBase;
 import org.spongepowered.asm.mixin.Mixin;

@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.BetterBoneMeal;
+import com.gtzc.tweakify.client.state.BetterBoneMeal;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import net.minecraft.core.BlockPos;

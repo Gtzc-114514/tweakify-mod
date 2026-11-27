@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin.minihud;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.MiniHudState;
+import com.gtzc.tweakify.client.render.MiniHudState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import fi.dy.masa.minihud.event.RenderHandler;
 import org.spongepowered.asm.mixin.Mixin;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.BedFallDamageFix;
+import com.gtzc.tweakify.client.state.BedFallDamageFix;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.core.BlockPos;

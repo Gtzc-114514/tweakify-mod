@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.WorldPlayTimeRenderer;
+import com.gtzc.tweakify.client.render.WorldPlayTimeRenderer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.worldselection.WorldSelectionList;
 import org.spongepowered.asm.mixin.Mixin;

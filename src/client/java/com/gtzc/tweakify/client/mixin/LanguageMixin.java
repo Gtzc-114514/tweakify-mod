@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.LanguageOverrideState;
+import com.gtzc.tweakify.client.state.LanguageOverrideState;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.locale.Language;
 import org.spongepowered.asm.mixin.Mixin;

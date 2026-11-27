@@ -1,8 +1,8 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.CutThroughItemMode;
-import com.gtzc.tweakify.client.CutThroughPlantMode;
+import com.gtzc.tweakify.client.config.CutThroughItemMode;
+import com.gtzc.tweakify.client.config.CutThroughPlantMode;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;

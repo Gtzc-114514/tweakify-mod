@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.SmithingTemplateState;
+import com.gtzc.tweakify.client.state.SmithingTemplateState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.SmithingMenu;

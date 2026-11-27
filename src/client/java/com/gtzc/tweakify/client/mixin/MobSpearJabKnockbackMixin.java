@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.SpearFixes;
+import com.gtzc.tweakify.client.state.SpearFixes;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;

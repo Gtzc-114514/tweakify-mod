@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.HurtTintState;
+import com.gtzc.tweakify.client.render.HurtTintState;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;

@@ -1,6 +1,7 @@
 package com.gtzc.tweakify.client;
 
 import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.client.config.TweakifyModConfigOptions;
 import fi.dy.masa.malilib.hotkeys.IKeybindManager;
 import fi.dy.masa.malilib.hotkeys.IKeybindProvider;
 

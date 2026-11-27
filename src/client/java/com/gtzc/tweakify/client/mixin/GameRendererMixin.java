@@ -1,8 +1,8 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.HurtShakeState;
-import com.gtzc.tweakify.client.NightVisionCurve;
+import com.gtzc.tweakify.client.render.HurtShakeState;
+import com.gtzc.tweakify.client.config.NightVisionCurve;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.vertex.PoseStack;

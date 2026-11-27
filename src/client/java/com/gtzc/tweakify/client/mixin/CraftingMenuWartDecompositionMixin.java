@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.WartDecompositionState;
+import com.gtzc.tweakify.client.state.WartDecompositionState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerLevel;

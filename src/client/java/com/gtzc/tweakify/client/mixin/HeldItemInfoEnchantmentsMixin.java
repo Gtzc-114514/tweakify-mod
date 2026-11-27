@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.HeldItemInfoState;
+import com.gtzc.tweakify.client.render.HeldItemInfoState;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;

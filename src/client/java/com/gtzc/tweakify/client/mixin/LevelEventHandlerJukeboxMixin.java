@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.JukeboxMusicTracker;
+import com.gtzc.tweakify.client.state.JukeboxMusicTracker;
 import net.minecraft.client.renderer.LevelEventHandler;
 import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;

@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.BetterBlockPlacementState;
+import com.gtzc.tweakify.client.state.BetterBlockPlacementState;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.state.BlockBehaviour;

@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin.modmenu;
 
-import com.gtzc.tweakify.client.ScrollMemory;
-import com.gtzc.tweakify.client.SmoothScrolling;
+import com.gtzc.tweakify.client.ui.ScrollMemory;
+import com.gtzc.tweakify.client.ui.SmoothScrolling;
 import com.gtzc.tweakify.util.HookProbe;
 import com.terraformersmc.modmenu.gui.ModsScreen;
 import com.terraformersmc.modmenu.gui.widget.ModListWidget;

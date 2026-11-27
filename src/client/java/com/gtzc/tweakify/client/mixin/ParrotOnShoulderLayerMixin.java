@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.ShoulderParrotDanceState;
+import com.gtzc.tweakify.client.state.ShoulderParrotDanceState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.animal.parrot.ParrotModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;

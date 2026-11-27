@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.MiningPenaltyState;
+import com.gtzc.tweakify.client.state.MiningPenaltyState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.player.Player;

@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.ScreenshotChatCards;
+import com.gtzc.tweakify.client.render.ScreenshotChatCards;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Final;

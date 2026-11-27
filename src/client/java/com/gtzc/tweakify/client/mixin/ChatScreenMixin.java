@@ -1,8 +1,8 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.ChatInputMemoryState;
-import com.gtzc.tweakify.client.ChatSelectionState;
+import com.gtzc.tweakify.client.state.ChatInputMemoryState;
+import com.gtzc.tweakify.client.state.ChatSelectionState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;

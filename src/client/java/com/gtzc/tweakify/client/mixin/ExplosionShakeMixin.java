@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.CameraMotion;
+import com.gtzc.tweakify.client.state.CameraMotion;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundExplodePacket;

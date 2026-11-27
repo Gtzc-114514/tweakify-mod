@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.DebugInfoOverlay;
+import com.gtzc.tweakify.client.render.DebugInfoOverlay;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;

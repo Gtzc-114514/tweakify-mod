@@ -1,5 +1,6 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.client.state.EnchantmentTooltipDescriptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

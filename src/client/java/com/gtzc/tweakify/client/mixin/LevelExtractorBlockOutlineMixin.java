@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.ConnectedBlockOutlineState;
+import com.gtzc.tweakify.client.state.ConnectedBlockOutlineState;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.Camera;

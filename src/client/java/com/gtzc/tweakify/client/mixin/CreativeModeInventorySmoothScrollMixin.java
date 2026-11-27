@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.SmoothScrollAnimator;
-import com.gtzc.tweakify.client.SmoothScrolling;
+import com.gtzc.tweakify.client.ui.SmoothScrollAnimator;
+import com.gtzc.tweakify.client.ui.SmoothScrolling;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;

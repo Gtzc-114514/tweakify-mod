@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.TotemInventory;
+import com.gtzc.tweakify.client.state.TotemInventory;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.DamageTypeTags;

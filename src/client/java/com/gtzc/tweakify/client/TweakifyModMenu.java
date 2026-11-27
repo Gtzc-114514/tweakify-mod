@@ -1,5 +1,6 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.client.ui.TweakifyModConfigScreen;
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 

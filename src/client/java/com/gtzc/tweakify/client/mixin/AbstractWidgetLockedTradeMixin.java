@@ -1,6 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.MerchantMenuAccess;
+import com.gtzc.tweakify.client.state.MerchantMenuAccess;
 import com.gtzc.tweakify.util.HookProbe;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;

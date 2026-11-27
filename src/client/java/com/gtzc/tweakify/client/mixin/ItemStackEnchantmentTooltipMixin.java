@@ -1,8 +1,8 @@
 package com.gtzc.tweakify.client.mixin;
 
 import com.gtzc.tweakify.TweakifyMod;
-import com.gtzc.tweakify.client.EnchantmentDescriptionState;
-import com.gtzc.tweakify.client.EnchantmentTooltipDescriptions;
+import com.gtzc.tweakify.client.state.EnchantmentDescriptionState;
+import com.gtzc.tweakify.client.state.EnchantmentTooltipDescriptions;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.core.HolderLookup;

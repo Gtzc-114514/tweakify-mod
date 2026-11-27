@@ -1,7 +1,7 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.client.BetterAdvancementScreen;
-import com.gtzc.tweakify.client.BetterAdvancements;
+import com.gtzc.tweakify.client.ui.BetterAdvancementScreen;
+import com.gtzc.tweakify.client.ui.BetterAdvancements;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
