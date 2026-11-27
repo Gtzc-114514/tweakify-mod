@@ -1,8 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.SpawnFeatureState;
-import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
@@ -26,12 +24,6 @@ public class SlimePeacefulSpawnMixin {
 			EntityType<?> type, LevelAccessor levelAccessor,
 			EntitySpawnReason reason, BlockPos pos,
 			RandomSource random) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null) {
-			return level.getDifficulty();
-		}
-		return SpawnFeatureState.peacefulSpawnDifficulty(level.getDifficulty(),
-			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
-			config.isPeacefulModeMonster(type));
+		return SpawnFeatureState.peacefulSpawnDifficulty(level, type);
 	}
 }

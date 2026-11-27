@@ -26,15 +26,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 挖掘/攻击冷却与“切换物品不打断挖掘”。
  *
  * <p>destroyBlock / sameDestroyTarget / attack 是战斗与挖掘类模组的必争之地，
- * 四个注入点全部 require = 0：被其它模组整体重写时功能失效即可，不让注入失败拖垮启动。
+ * 五个注入点全部 require = 0：被其它模组整体重写时功能失效即可，不让注入失败拖垮启动。
  * 每个钩子第一次执行时会各记一条 “Mixin hook active” 日志，便于排查静默失效。
  */
 @Mixin(MultiPlayerGameMode.class)
 public class MultiPlayerGameModeMixin {
-	// 四个注入点都在高频路径（每次挖掘 / 每 tick 挖掘 / 每次攻击），
+	// 五个注入点都在高频路径（每次挖掘 / 每 tick 挖掘 / 每次攻击），
 	// 统一用 AtomicBoolean 探针：首次之后只剩一次 volatile 读。
 	@Unique
 	private static final AtomicBoolean TWEAKIFY$DESTROY_BLOCK_PROBE = new AtomicBoolean();
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$RECORD_MINING_TOOL_PROBE = new AtomicBoolean();
 	@Unique
 	private static final AtomicBoolean TWEAKIFY$SAME_TARGET_PROBE = new AtomicBoolean();
 	@Unique
@@ -59,6 +61,7 @@ public class MultiPlayerGameModeMixin {
 	// 记录开始挖掘时的工具，供“仅同工具保留进度”判定。
 	@Inject(method = "startDestroyBlock", at = @At("HEAD"), require = 0)
 	private void tweakify$recordMiningTool(BlockPos pos, Direction direction, CallbackInfoReturnable<Boolean> cir) {
+		HookProbe.markOnce(TWEAKIFY$RECORD_MINING_TOOL_PROBE, "keepMiningProgressRecordTool");
 		TweakifyModConfig config = TweakifyMod.CONFIG;
 		Minecraft client = Minecraft.getInstance();
 		if (config != null && config.modified.keepMiningProgressOnItemSwitch

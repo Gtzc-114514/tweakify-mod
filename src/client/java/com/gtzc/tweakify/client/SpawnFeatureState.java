@@ -1,5 +1,7 @@
 package com.gtzc.tweakify.client;
 
+import com.gtzc.tweakify.TweakifyMod;
+import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.random.Weighted;
@@ -8,12 +10,16 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.SpawnData;
 
 import java.util.function.Predicate;
 
 /**
  * 生成与和平模式判定的纯函数，便于单元测试与 mixin 共用。
+ *
+ * <p>类末尾的两个接线重载会自读全局配置，只供 mixin 层减少模板代码；
+ * 需要可测或与配置无关的判定时，请使用显式传参的纯函数版本。
  */
 public final class SpawnFeatureState {
 	private SpawnFeatureState() {
@@ -136,5 +142,26 @@ public final class SpawnFeatureState {
 			return Difficulty.NORMAL;
 		}
 		return current;
+	}
+
+	// 接线重载：按当前全局配置与实体类型给出注入点应返回的难度。
+	// 纯函数版本保留在上方，单测与调用方仍可显式传参，不依赖全局配置。
+	public static Difficulty peacefulSpawnDifficulty(LevelAccessor level, EntityType<?> type) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		if (config == null) {
+			return level.getDifficulty();
+		}
+		return peacefulSpawnDifficulty(level.getDifficulty(),
+			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
+			config.isPeacefulModeMonster(type));
+	}
+
+	// 接线重载：实体类型是否被和平模式功能与列表放行。
+	// 只回答“是否放行”，原版返回值仍由调用方兜底（配置未加载时不放行）。
+	public static boolean shouldAllowPeacefulSpawn(EntityType<?> type) {
+		TweakifyModConfig config = TweakifyMod.CONFIG;
+		return config != null && shouldAllowPeacefulSpawn(
+			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
+			config.isPeacefulModeMonster(type));
 	}
 }

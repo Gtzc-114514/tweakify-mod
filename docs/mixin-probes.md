@@ -56,9 +56,11 @@ Mixin hook active: <探针名>
 - 同一功能拆到客户端与服务端两侧时用 `Client` / `Server` 后缀区分（如 `pickFluidBucket` / `pickFluidBucketServer`；`keepLastTorch` 是未加后缀的历史命名）；
 - 建议按「功能域 + 具体动作」命名（如 `visibleTradersSaveLocked`）。
 
-## 覆盖情况（73/73）
+## 覆盖情况（v1.1.1 基线 73/73）
 
 统计口径：**非注释**的 `require = 0` 注解数 与 `HookProbe.markOnce` 调用数。
+
+v1.1.1 基线（2026-11-18）：
 
 ```
 非注释 require = 0 注解 : 73
@@ -67,12 +69,31 @@ AtomicBoolean 探针字段  : 54（全部为 TWEAKIFY$XXX_PROBE 命名）
 mixin 文件             : 48 个含注入/探针的文件（其中两处刻意例外见下表）
 ```
 
-其中两处刻意不按文件 1:1：
+其中两处刻意不按文件 1:1（基线时的例外，沿用至今）：
 
 | 文件 | 说明 |
 | --- | --- |
 | `ItemStackEnchantmentTooltipMixin` | 注入点本身不再直接记录，探针在 `EnchantmentTooltipDescriptions` helper 中 |
 | `PotionContentsTooltipCategoryMixin` | 一个注入点按「发光」与「不祥之兆」分别记录两个探针 |
+
+当前实测（2026-11-27，同一脚本口径；新增注入点后请重跑本节脚本并同步此块）：
+
+```
+非注释 require = 0 注解 : 76
+HookProbe.markOnce 调用 : 79
+AtomicBoolean 探针字段  : 58
+mixin 文件             : 53 个含注入/探针的文件
+```
+
+当前共 5 个文件不配平（76 个 `require = 0` 注入点已全部有探针）：
+
+- 上表两处：探针不在注入点内 / 一注多探针；
+- `CreateWorldScreenExperimentalPackMixin`、`LocatorBarHeadsMixin`、`WorldOpenFlowsExperimentalWarningMixin`
+  的探针挂在 `require >= 1` 的注入点上，属于额外记录，不是缺口。
+
+> 2026-11-27 补齐 3 个缺口：`AbstractContainerScreenQuickRightClickMixin`、
+> `CreativeModeInventoryScreenQuickRightClickMixin`、`MultiPlayerGameModeMixin`（`startDestroyBlock`）；
+> 同时拆开 `BookEditScreenVerticalCenterMixin` 两处注入共用的探针名，保证探针名全局唯一。
 
 最近补齐的 8 处（`56f1e07` 补齐，`604cd94` 统一字段命名）：
 
@@ -114,8 +135,15 @@ print("require=0 :", req)          # 73
 print("markOnce  :", probes)       # 73
 print("AtomicBool:", fields)       # 54
 print("mixin 文件:", len(per_file),
-      "整体配平:", all(r == p for _, r, p in per_file))   # False；两处刻意例外见上表
+      "整体配平:", all(r == p for _, r, p in per_file))   # False；当前 5 个文件不配平，见上方说明
 ```
+
+> CI 侧由 `MixinProbeCoverageTest`（`src/test/java/com/gtzc/tweakify/client`）自动校验，
+> 口径比上述脚本更严：逐个 `require = 0` 注入点检查其 handler 方法体内是否有探针；
+> 探针名全局唯一（扫描整个 `src/client/java`，含 helper 类）；`AtomicBoolean` 字段与探针名
+> 一一对应（同文件同字段只能对应一个名字）；计数前先剥离注释与字符串。
+> 例外清单（handler 内无探针 / 一注多探针 / 额外探针）与本节「当前实测」块一一对应，
+> 增删例外时两处同步。
 
 ## 已知不改清单
 
@@ -131,6 +159,6 @@ print("mixin 文件:", len(per_file),
 | 文件 | 作用 |
 | --- | --- |
 | `src/main/java/com/gtzc/tweakify/util/HookProbe.java` | 探针实现（两种重载） |
-| `src/client/java/com/gtzc/tweakify/client/mixin/**` | 73 个 `require = 0` 注入点所在 |
+| `src/client/java/com/gtzc/tweakify/client/mixin/**` | `require = 0` 注入点所在（v1.1.1 基线 73 个，2026-11-27 实测 76 个） |
 | `docs/release-pipeline.md` | 发布流水线说明与 L1–L3 / H2 取舍 |
 | `docs/tech-debt.md` | 技术债台账（T1–T3：测试覆盖缺口、顶点缓存、主线程扫描） |

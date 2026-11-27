@@ -33,8 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>判定依据：{@code require >= 1} 的注入点在目标类加载时就会校验，找不到目标方法/字段
  * 会直接抛 {@code InvalidInjectionException} 让加载失败；因此「目标类能加载」等价于
- * 「这批注入点全部命中」。{@code require = 0} 的 73 个探针式注入点按设计允许静默跳过
- * （见 {@code docs/mixin-probes.md}），不在本测试的判定范围内。
+ * 「这批注入点全部命中」。{@code require = 0} 的探针式注入点按设计允许静默跳过
+ * （统计以 {@code docs/mixin-probes.md} 为事实源，不在本测试里写死数字），
+ * 也不在本测试的判定范围内。
  *
  * <p>mixin 类本身不能 {@code Class.forName}（Mixin 会抛 {@code IllegalClassLoadError}），
  * 所以目标类名从编译产物的 {@code @Mixin} 注解里读：用 JDK 自带的 classfile API 解析

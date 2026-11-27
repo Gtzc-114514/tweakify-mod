@@ -27,7 +27,7 @@
 | T5 | `LocatorBarHeads` / `StatusEffectTimerRenderer` / `DebugInfoOverlay` / `ItemStackEnchantmentTooltipMixin` / `ConnectedBlockOutlineState` | HUD/GUI 每帧重复解析与分配：定位栏名单、效果计时文本、调试行、附魔 tooltip、连接方块轮廓合并；可缓存化 | 已缓解（调试层 1.40%、连接轮廓 0.36%、描述缓存 0.49%；tooltip 整体 2.54% 为原版构建；定位栏补采 0%，Mixin 签名已修复，见详情） |
 | T6 | `AttackRangeGeometryCache` / `BedrockGeometryCache` 重建；`TweakifyModConfig` 配置序列化 | 几何重建与配置序列化均已移出主线程（预防性实施，输入均为不可变快照） | 已缓解，待采样（渲染线程几何构建 0 样本、worker 空闲；峰值与写盘未覆盖，见详情）（最近复评 2026-11-21，见详情） |
 | T7 | `FavoriteStarRenderer` / `TweakifyModConfigOptionWidget` 的行内收藏星定位 | 极端窄窗口（4x/自动缩放 + 长名称）下星标被夹到行尾后落进重置按钮矩形，视觉重叠且点击被按钮优先命中 | 已修复（空间不足时隐藏星标，见详情） |
-| T8 | `AllMixinApplicationLoaderTest` | 主配置 145 个 mixin 的 100 个去重目标类在真实 Loader 中全部加载；`require = 0` 的 73 个探针点按设计豁免 | 已修复（真实 Loader 全量织入，见详情） |
+| T8 | `AllMixinApplicationLoaderTest` | 主配置全部 mixin 的去重目标类在真实 Loader 中全部加载（2026-11-27：187 条 / 124 个目标类）；`require = 0` 的探针点按设计豁免（76 个） | 已修复（真实 Loader 全量织入，见详情） |
 
 ### 已闭环归档
 
@@ -74,6 +74,10 @@
 > T5 调试层降负后 D 场景中位 1.40%（降负前 4.21%）；药水 HUD 另有 1.14%，属绘制成本。
 > T5 定位栏补采（双客户端）3 轮 0 样本、探针已触发；同时修复 Mixin 的 blitSprite 6 参签名。
 > 数据见 [`docs/t3-profiler-checklist.md`](t3-profiler-checklist.md) §六。
+>
+> 2026-11-27 T8 复评：清单已增至 187 条 mixin / 124 个去重目标类，`require = 0` 注入点 76 个
+> （均有探针，`HookProbe.markOnce` 共 79 处；统计口径见 [`docs/mixin-probes.md`](mixin-probes.md)）；
+> 机制未变，上文 145/100/73 与详情同口径数字保留为 2026-11-21 落地时的历史记录，无需重开本条。
 
 ## T1 详情（已归档）：section 预筛的集成测试缺口
 
@@ -446,6 +450,9 @@
   作为回归基线。
 
 ## T8 详情：全量 mixin 织入验证
+
+> 本节数字为 2026-11-21 落地时的基线（145 条 / 100 个目标类 / 73 个探针）；
+> 当前口径为 187 条 / 124 个目标类 / 76 个探针，见上方 2026-11-27 复评。
 
 - **修复前现状**：`loaderTest` 源集（T4 建立）只加载 `CreativeModeInventoryScreen` 一个目标类，
   其余 mixin 的注入点没有自动化校验；MC 升级导致目标方法改名或签名变化时，`require >= 1`

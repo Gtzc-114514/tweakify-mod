@@ -38,12 +38,13 @@ public final class AsyncFileWriter {
 	private AsyncFileWriter() {
 	}
 
-	// 测试钩子：替换全局写盘执行器；生产代码不得调用。
-	public static void installExecutorForTest(ExecutorService executor) {
+	// 包私有测试钩子：替换全局写盘执行器。
+	// 其它包的测试经 test 源集的 AsyncFileWriterTestSupport 访问，生产代码不可见。
+	static void installExecutorForTest(ExecutorService executor) {
 		writer = executor;
 	}
 
-	public static ExecutorService currentExecutorForTest() {
+	static ExecutorService currentExecutorForTest() {
 		return writer;
 	}
 

@@ -1,8 +1,6 @@
 package com.gtzc.tweakify.client.mixin;
 
-import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.client.SpawnFeatureState;
-import com.gtzc.tweakify.config.TweakifyModConfig;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
@@ -27,16 +25,8 @@ public class BaseSpawnerPeacefulMixin {
 	@Redirect(method = "serverTick", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/server/level/ServerLevel;getDifficulty()Lnet/minecraft/world/Difficulty;"))
 	private Difficulty tweakify$allowCustomRulePeacefulSpawn(ServerLevel level) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config == null) {
-			return level.getDifficulty();
-		}
+		// 无法解析实体 ID 的 spawn data 保持原版难度；其余交给接线重载读配置。
 		EntityType<?> type = SpawnFeatureState.spawnDataType(this.nextSpawnData);
-		if (type == null) {
-			return level.getDifficulty();
-		}
-		return SpawnFeatureState.peacefulSpawnDifficulty(level.getDifficulty(),
-			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
-			config.isPeacefulModeMonster(type));
+		return type == null ? level.getDifficulty() : SpawnFeatureState.peacefulSpawnDifficulty(level, type);
 	}
 }

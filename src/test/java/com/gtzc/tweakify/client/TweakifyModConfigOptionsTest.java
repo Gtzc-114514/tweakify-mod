@@ -3,6 +3,7 @@ package com.gtzc.tweakify.client;
 import com.gtzc.tweakify.TweakifyMod;
 import com.gtzc.tweakify.config.TweakifyModConfig;
 import com.gtzc.tweakify.util.AsyncFileWriter;
+import com.gtzc.tweakify.util.AsyncFileWriterTestSupport;
 import fi.dy.masa.malilib.config.IConfigBase;
 import fi.dy.masa.malilib.config.IConfigBoolean;
 import fi.dy.masa.malilib.config.IConfigDouble;
@@ -437,9 +438,9 @@ class TweakifyModConfigOptionsTest {
 	// 必须 await 真实的写盘失败结果，走同步兜底并回退序号。
 	@Test
 	void saveRollsBackSequenceWhenCallbackCannotBeQueued() throws Exception {
-		ExecutorService original = AsyncFileWriter.currentExecutorForTest();
+		ExecutorService original = AsyncFileWriterTestSupport.currentExecutor();
 		ExecutorService submitOnly = new SubmitOnlyExecutor();
-		AsyncFileWriter.installExecutorForTest(submitOnly);
+		AsyncFileWriterTestSupport.installExecutor(submitOnly);
 		// 安装静态执行器后立即进 try：中间的 IO/构造一旦抛异常，finally 也能恢复执行器。
 		try {
 			Path blocked = tempDir.resolve("callback-closed");
@@ -458,7 +459,7 @@ class TweakifyModConfigOptionsTest {
 			assertEquals(0L, TweakifyModConfigOptions.syncedSequenceForTest(),
 				"回调无法入队且同步兜底失败时必须回退乐观推进的序号");
 		} finally {
-			AsyncFileWriter.installExecutorForTest(original);
+			AsyncFileWriterTestSupport.installExecutor(original);
 			submitOnly.shutdownNow();
 			AsyncFileWriter.drain(DRAIN_TIMEOUT_MILLIS);
 			TweakifyModConfigOptions.resetForTest();

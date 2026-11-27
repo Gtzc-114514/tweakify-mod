@@ -40,12 +40,6 @@ public class SpawnPlacementsMixin {
 	@Redirect(method = "checkSpawnRules", at = @At(value = "INVOKE",
 		target = "Lnet/minecraft/world/entity/EntityType;isAllowedInPeaceful()Z"))
 	private static boolean tweakify$allowPeacefulSpawn(EntityType<?> type) {
-		TweakifyModConfig config = TweakifyMod.CONFIG;
-		if (config != null && SpawnFeatureState.shouldAllowPeacefulSpawn(
-			config.functions.peacefulModeMonsters, config.functions.peacefulModeMonsterSpawn,
-			config.isPeacefulModeMonster(type))) {
-			return true;
-		}
-		return type.isAllowedInPeaceful();
+		return SpawnFeatureState.shouldAllowPeacefulSpawn(type) || type.isAllowedInPeaceful();
 	}
 }

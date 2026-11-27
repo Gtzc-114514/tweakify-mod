@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class BookEditScreenVerticalCenterMixin {
 	@Unique
 	private static final AtomicBoolean TWEAKIFY$BOOK_EDIT_CENTER_PROBE = new AtomicBoolean();
+	// 背景与编辑框是两个独立注入点，必须分开探针，否则先命中者会让另一个永不打印。
+	@Unique
+	private static final AtomicBoolean TWEAKIFY$BOOK_EDIT_BACKGROUND_PROBE = new AtomicBoolean();
 
 	@Shadow
 	@Final
@@ -49,7 +52,7 @@ public abstract class BookEditScreenVerticalCenterMixin {
 	private int tweakify$centerBookBackground(int original) {
 		boolean enabled = bookCenterEnabled();
 		if (enabled) {
-			HookProbe.markOnce(TWEAKIFY$BOOK_EDIT_CENTER_PROBE, "bookGuiVerticalCenterEdit");
+			HookProbe.markOnce(TWEAKIFY$BOOK_EDIT_BACKGROUND_PROBE, "bookGuiVerticalCenterBackground");
 		}
 		return original + BookScreenLayout.verticalOffset(enabled,
 			((Screen) (Object) this).height, IMAGE_HEIGHT);
